@@ -1243,11 +1243,7 @@ def create_invoice():
 
         send_email(
             to=recipient_email,
-<<<<<<< HEAD
             subject=f'Your Invoice ({invoice.invoice_number}) from Source Point',
-=======
-            subject=f'Your Invoice ({invoice.invoice_number}) from DecConnect Hub',
->>>>>>> origin/main
             template='mail/professional_invoice_email.html',
             recipient_name=recipient_name,
             invoice_number=invoice.invoice_number,
@@ -1266,4 +1262,3 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(debug=True, use_reloader=False)
-
