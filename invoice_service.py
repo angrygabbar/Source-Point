@@ -8,9 +8,9 @@ class InvoiceGenerator:
         self.invoice = invoice
         self.pdf = FPDF()
         self.pdf.add_page()
-        
-        # Use a standard font like Arial
+        # Set Arial as the default font
         self.pdf.set_font("Arial", size=12)
+
 
     def generate_pdf(self):
         self._add_header()
@@ -19,7 +19,7 @@ class InvoiceGenerator:
         self._add_invoice_items()
         self._add_summary()
         self._add_footer()
-        # Return as bytes, encoded for attachment
+        # Return as bytes, FPDF handles the encoding
         return self.pdf.output(dest='S').encode('latin-1')
 
     def _add_header(self):
@@ -37,7 +37,7 @@ class InvoiceGenerator:
         self.pdf.set_font('Arial', '', 12)
         self.pdf.cell(0, 8, "Source Point", 0, 1, 'L')
         self.pdf.cell(0, 8, "123 Tech Park, Innovation Drive", 0, 1, 'L')
-        self.pdf.cell(0, 8, "Pune, Maharashtra, 411057", 0, 1, 'L')
+        self.pdf.cell(0, 8, "Pune, Maharashtra, 411001", 0, 1, 'L')
         self.pdf.cell(0, 8, "admin@sourcepoint.in", 0, 1, 'L')
         self.pdf.ln(10)
 
@@ -77,24 +77,24 @@ class InvoiceGenerator:
         for item in self.invoice.items:
             self.pdf.cell(100, 10, item.description, 1, 0)
             self.pdf.cell(30, 10, str(item.quantity), 1, 0, 'C')
-            self.pdf.cell(30, 10, f"Rs.{item.price:.2f}", 1, 0, 'R')
-            self.pdf.cell(30, 10, f"Rs.{item.quantity * item.price:.2f}", 1, 1, 'R')
+            self.pdf.cell(30, 10, f"INR {item.price:.2f}", 1, 0, 'R')
+            self.pdf.cell(30, 10, f"INR {item.quantity * item.price:.2f}", 1, 1, 'R')
         self.pdf.ln(10)
 
     def _add_summary(self):
         self.pdf.set_x(110)
         self.pdf.set_font('Arial', '', 12)
         self.pdf.cell(50, 8, "Subtotal:", 0, 0, 'R')
-        self.pdf.cell(40, 8, f"Rs.{self.invoice.subtotal:.2f}", 0, 1, 'R')
+        self.pdf.cell(40, 8, f"INR {self.invoice.subtotal:.2f}", 0, 1, 'R')
         
         self.pdf.set_x(110)
         self.pdf.cell(50, 8, f"Tax ({self.invoice.tax}%):", 0, 0, 'R')
-        self.pdf.cell(40, 8, f"Rs.{(self.invoice.subtotal * self.invoice.tax / 100):.2f}", 0, 1, 'R')
+        self.pdf.cell(40, 8, f"INR {(self.invoice.subtotal * self.invoice.tax / 100):.2f}", 0, 1, 'R')
         
         self.pdf.set_x(110)
         self.pdf.set_font('Arial', 'B', 14)
         self.pdf.cell(50, 10, "Total:", 0, 0, 'R')
-        self.pdf.cell(40, 10, f"Rs.{self.invoice.total_amount:.2f}", 0, 1, 'R')
+        self.pdf.cell(40, 10, f"INR {self.invoice.total_amount:.2f}", 0, 1, 'R')
         self.pdf.ln(10)
 
     def _add_footer(self):

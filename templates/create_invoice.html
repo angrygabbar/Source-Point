@@ -44,10 +44,6 @@
         <div id="invoice-items" class="border-t border-b border-gray-700 py-6">
             <h2 class="text-xl font-semibold text-white mb-4">Invoice Items</h2>
             <div class="space-y-3" id="items-container">
-<<<<<<< HEAD
-=======
-                <!-- Item Header -->
->>>>>>> origin/main
                 <div class="hidden md:flex items-center space-x-2 text-sm text-gray-400 px-1">
                     <div class="flex-grow">Description</div>
                     <div class="w-24 text-center">Quantity</div>
@@ -55,10 +51,6 @@
                     <div class="w-32 text-right">Total</div>
                     <div class="w-10"></div>
                 </div>
-<<<<<<< HEAD
-=======
-                <!-- Initial Item -->
->>>>>>> origin/main
                 <div class="item-row flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-2">
                     <input type="text" name="item_description[]" placeholder="Item Description" required class="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">
                     <input type="number" name="item_quantity[]" placeholder="Qty" required value="1" class="w-full md:w-24 text-center px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">
@@ -114,11 +106,7 @@
                 const quantity = parseFloat(row.querySelector('input[name="item_quantity[]"]').value) || 0;
                 const price = parseFloat(row.querySelector('input[name="item_price[]"]').value) || 0;
                 const total = quantity * price;
-<<<<<<< HEAD
                 row.querySelector('.item-total').textContent = `₹${total.toFixed(2)}`;
-=======
-                row.querySelector('.item-total').textContent = `₹₹{total.toFixed(2)}`;
->>>>>>> origin/main
                 subtotal += total;
             });
 
@@ -126,13 +114,8 @@
             const taxAmount = subtotal * (taxRate / 100);
             const grandTotal = subtotal + taxAmount;
 
-<<<<<<< HEAD
             document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
             document.getElementById('grand-total').textContent = `₹${grandTotal.toFixed(2)}`;
-=======
-            document.getElementById('subtotal').textContent = `₹₹{subtotal.toFixed(2)}`;
-            document.getElementById('grand-total').textContent = `₹₹{grandTotal.toFixed(2)}`;
->>>>>>> origin/main
         }
 
         function addItem() {
@@ -189,9 +172,4 @@
         calculateTotals();
     });
 </script>
-<<<<<<< HEAD
 {% endblock %}
-=======
-{% endblock %}
-
->>>>>>> origin/main

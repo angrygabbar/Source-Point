@@ -633,7 +633,7 @@ def approve_user(user_id):
     
     email_sent = send_email(
         to=user.email,
-        subject="Your Source Point Account is Approved!",
+        subject="Your DevConnect Hub Account is Approved!",
         template="mail/account_approved.html",
         user=user
     )
@@ -1243,7 +1243,7 @@ def create_invoice():
 
         send_email(
             to=recipient_email,
-            subject=f'Your Invoice ({invoice.invoice_number}) from Source Point',
+            subject=f'Your Invoice ({invoice.invoice_number}) from DecConnect Hub',
             template='mail/professional_invoice_email.html',
             recipient_name=recipient_name,
             invoice_number=invoice.invoice_number,
