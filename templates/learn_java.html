@@ -1,0 +1,216 @@
+{% extends "layout.html" %}
+{% block title %}Learn Java{% endblock %}
+{% block content %}
+<div class="flex flex-col md:flex-row gap-8">
+    <!-- Left Side: Sticky Navigation Index -->
+    <aside class="w-full md:w-1/4 lg:w-1/5">
+        <div class="sticky top-24">
+            <h2 class="text-xl font-bold text-white mb-4">Page Contents</h2>
+            <ul class="space-y-2 text-gray-400">
+                <li><a href="#overview" class="hover:text-indigo-400 transition-colors duration-200">1. Overview</a></li>
+                <li><a href="#environment" class="hover:text-indigo-400 transition-colors duration-200">2. Environment Setup</a></li>
+                <li><a href="#syntax" class="hover:text-indigo-400 transition-colors duration-200">3. Basic Syntax</a></li>
+                <li><a href="#objects" class="hover:text-indigo-400 transition-colors duration-200">4. Objects & Classes</a></li>
+                <li><a href="#datatypes" class="hover:text-indigo-400 transition-colors duration-200">5. Basic Datatypes</a></li>
+                <li><a href="#variables" class="hover:text-indigo-400 transition-colors duration-200">6. Variable Types</a></li>
+                <li><a href="#modifiers" class="hover:text-indigo-400 transition-colors duration-200">7. Modifier Types</a></li>
+                <li><a href="#operators" class="hover:text-indigo-400 transition-colors duration-200">8. Basic Operators</a></li>
+                <li><a href="#loops" class="hover:text-indigo-400 transition-colors duration-200">9. Loop Control</a></li>
+                <li><a href="#decision" class="hover:text-indigo-400 transition-colors duration-200">10. Decision Making</a></li>
+            </ul>
+        </div>
+    </aside>
+
+    <!-- Right Side: Main Content -->
+    <main class="w-full md:w-3/4 lg:w-4/5">
+        <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-8 animate-dynamic backdrop-blur-sm border border-white/10 text-gray-300">
+            <h1 class="text-4xl font-bold text-white mb-8 flex items-center"><i class="fab fa-java fa-fw mr-4 text-orange-400"></i> Java Tutorial</h1>
+            
+            <div class="space-y-6">
+                <!-- Section 1: Overview -->
+                <section id="overview" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">1. Java - Overview</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">What is Java?</summary>
+                        <p class="mt-2">Java is a high-level, object-oriented programming language developed by Sun Microsystems and released in 1995. It is designed to be "Write Once, Run Anywhere" (WORA), meaning compiled Java code can run on all platforms that support Java without recompilation.</p>
+                    </details>
+                    <details class="bg-white/5 rounded-lg p-4 mt-2">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Key Features</summary>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                            <li><strong>Object-Oriented:</strong> Everything in Java is an object.</li>
+                            <li><strong>Platform Independent:</strong> Compiled into platform-independent byte code that runs on a Java Virtual Machine (JVM).</li>
+                            <li><strong>Simple & Secure:</strong> Designed to be easy to learn and has built-in security features.</li>
+                            <li><strong>Robust & Multithreaded:</strong> Strong memory management and support for concurrent tasks.</li>
+                        </ul>
+                    </details>
+                </section>
+
+                <!-- Section 2: Environment Setup -->
+                <section id="environment" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">2. Environment Setup</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Local Environment Setup</summary>
+                        <p class="mt-2">To develop Java applications locally, you need to install the Java Development Kit (JDK). You can download it for free from Oracle or use an open-source alternative like OpenJDK. After installation, you must set the `JAVA_HOME` environment variable and add the JDK's `bin` directory to your system's `PATH`.</p>
+                    </details>
+                </section>
+
+                <!-- Section 3: Basic Syntax -->
+                <section id="syntax" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">3. Basic Syntax</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">First Java Program</summary>
+                        <p class="mt-2">The entry point for any Java application is the `public static void main(String[] args)` method.</p>
+                        <pre><code class="language-java">
+public class MyFirstJavaProgram {
+    public static void main(String[] args) {
+        System.out.println("Hello World"); // prints Hello World
+    }
+}
+                        </code></pre>
+                    </details>
+                    <details class="bg-white/5 rounded-lg p-4 mt-2">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Syntax Rules</summary>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                            <li><strong>Case-Sensitive:</strong> `myVariable` and `MyVariable` are different.</li>
+                            <li><strong>Class Names:</strong> Start with an uppercase letter (e.g., `MyClass`).</li>
+                            <li><strong>Method Names:</strong> Start with a lowercase letter (e.g., `myMethod`).</li>
+                            <li><strong>File Name:</strong> Must exactly match the public class name (e.g., `MyClass.java`).</li>
+                        </ul>
+                    </details>
+                </section>
+
+                <!-- Section 4: Objects & Classes -->
+                <section id="objects" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">4. Objects & Classes</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Understanding Objects and Classes</summary>
+                        <p class="mt-2">A **Class** is a blueprint for creating objects. It defines the properties (instance variables) and behaviors (methods) that its objects will have. An **Object** is an instance of a class.</p>
+                        <pre><code class="language-java">
+public class Dog {
+    // Instance variables
+    String breed;
+    int age;
+    String color;
+
+    // Methods
+    void barking() {
+        System.out.println("The dog is barking.");
+    }
+}
+
+// Creating an object (instance) of the Dog class
+Dog myDog = new Dog();
+                        </code></pre>
+                    </details>
+                     <details class="bg-white/5 rounded-lg p-4 mt-2">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Constructors</summary>
+                        <p class="mt-2">A constructor is a special method that is used to initialize objects. It is called when an object is created using the `new` keyword. If you don't define a constructor, Java provides a default one.</p>
+                        <pre><code class="language-java">
+public class Puppy {
+    // Constructor with one parameter
+    public Puppy(String name) {
+        System.out.println("Passed Name is: " + name);
+    }
+
+    public static void main(String []args) {
+        // The constructor is called here
+        Puppy myPuppy = new Puppy("tommy");
+    }
+}
+                        </code></pre>
+                    </details>
+                </section>
+
+                <!-- More sections based on the PDF content would follow this pattern... -->
+                 <section id="datatypes" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">5. Basic Datatypes</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Primitive vs. Reference Datatypes</summary>
+                        <p class="mt-2">Java has two categories of data types:</p>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                            <li><strong>Primitive Types:</strong> The most basic data types available. They store the data directly. Examples: `int`, `byte`, `short`, `long`, `float`, `double`, `boolean`, `char`.</li>
+                            <li><strong>Reference Types:</strong> These variables store a reference (or memory address) to an object. Examples: `String`, Arrays, and any class you create.</li>
+                        </ul>
+                    </details>
+                </section>
+
+                <section id="variables" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">6. Variable Types</h2>
+                     <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Types of Variables</summary>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                            <li><strong>Local Variables:</strong> Declared inside a method. Their scope is limited to that method.</li>
+                            <li><strong>Instance Variables:</strong> Declared inside a class but outside any method. Each object of the class has its own copy of these variables.</li>
+                            <li><strong>Class/Static Variables:</strong> Declared with the `static` keyword. There is only one copy of this variable, shared among all objects of the class.</li>
+                        </ul>
+                    </details>
+                </section>
+
+                <section id="modifiers" class="scroll-mt-20">
+                     <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">7. Modifier Types</h2>
+                     <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Access & Non-Access Modifiers</summary>
+                        <p class="mt-2">Modifiers are keywords that you add to definitions to change their meanings.</p>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                           <li><strong>Access Modifiers:</strong> Control the visibility. `public`, `protected`, `default`, `private`.</li>
+                           <li><strong>Non-Access Modifiers:</strong> Provide other functionality. `static`, `final`, `abstract`, `synchronized`, `volatile`.</li>
+                        </ul>
+                    </details>
+                </section>
+
+                <section id="operators" class="scroll-mt-20">
+                     <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">8. Basic Operators</h2>
+                     <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Common Operator Types</summary>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                           <li><strong>Arithmetic:</strong> `+`, `-`, `*`, `/`, `%` (modulus)</li>
+                           <li><strong>Relational:</strong> `==`, `!=`, `>`, `<`, `>=`, `<=`</li>
+                           <li><strong>Logical:</strong> `&&` (AND), `||` (OR), `!` (NOT)</li>
+                           <li><strong>Assignment:</strong> `=`, `+=`, `-=`, `*=`, `/=`</li>
+                        </ul>
+                    </details>
+                </section>
+                
+                <section id="loops" class="scroll-mt-20">
+                     <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">9. Loop Control</h2>
+                     <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Types of Loops</summary>
+                        <p class="mt-2">Loops are used to execute a block of code repeatedly.</p>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                           <li><strong>for loop:</strong> Executes a set number of times.</li>
+                           <li><strong>while loop:</strong> Executes as long as a condition is true.</li>
+                           <li><strong>do-while loop:</strong> Similar to a while loop, but the code block is executed at least once.</li>
+                           <li><strong>Enhanced for-each loop:</strong> A simpler way to iterate over arrays or collections.</li>
+                        </ul>
+                    </details>
+                </section>
+                
+                <section id="decision" class="scroll-mt-20">
+                     <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">10. Decision Making</h2>
+                     <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Conditional Statements</summary>
+                         <ul class="list-disc list-inside mt-2 space-y-1">
+                           <li><strong>if statement:</strong> Executes code if a condition is true.</li>
+                           <li><strong>if-else statement:</strong> Executes one block of code if the condition is true, and another if it's false.</li>
+                           <li><strong>if-else-if ladder:</strong> Used to decide among several alternatives.</li>
+                           <li><strong>switch statement:</strong> Allows a variable to be tested for equality against a list of values.</li>
+                        </ul>
+                    </details>
+                </section>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    // Smooth scrolling for the side navigation
+    document.querySelectorAll('aside a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends "layout.html" %}
+{% block title %}Learn PL/SQL{% endblock %}
+{% block content %}
+<div class="flex flex-col md:flex-row gap-8">
+    <!-- Left Side: Sticky Navigation Index -->
+    <aside class="w-full md:w-1/4 lg:w-1/5">
+        <div class="sticky top-24">
+            <h2 class="text-xl font-bold text-white mb-4">Page Contents</h2>
+            <ul class="space-y-2 text-gray-400">
+                <li><a href="#overview" class="hover:text-indigo-400 transition-colors duration-200">1. What is PL/SQL?</a></li>
+                <li><a href="#structure" class="hover:text-indigo-400 transition-colors duration-200">2. Block Structure</a></li>
+                <li><a href="#variables" class="hover:text-indigo-400 transition-colors duration-200">3. Variables & Types</a></li>
+                <li><a href="#cursors" class="hover:text-indigo-400 transition-colors duration-200">4. Cursors</a></li>
+                <li><a href="#procedures" class="hover:text-indigo-400 transition-colors duration-200">5. Stored Procedures</a></li>
+            </ul>
+        </div>
+    </aside>
+
+    <!-- Right Side: Main Content -->
+    <main class="w-full md:w-3/4 lg:w-4/5">
+        <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-8 animate-dynamic backdrop-blur-sm border border-white/10 text-gray-300">
+            <h1 class="text-4xl font-bold text-white mb-8 flex items-center"><i class="fas fa-cogs fa-fw mr-4 text-red-400"></i> PL/SQL Tutorial</h1>
+            
+            <div class="space-y-6">
+                <!-- Section 1: Overview -->
+                <section id="overview" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">1. What is PL/SQL?</h2>
+                    <details class="bg-white/5 rounded-lg p-4" open>
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Procedural Language for SQL</summary>
+                        <p class="mt-2">PL/SQL (Procedural Language for SQL) is Oracle Corporation's procedural extension for SQL and the Oracle relational database. It allows developers to combine the power of SQL with procedural statements like loops, conditions, and exception handling, enabling the creation of complex business logic directly within the database.</p>
+                    </details>
+                </section>
+
+                <!-- Section 2: Block Structure -->
+                <section id="structure" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">2. PL/SQL Block Structure</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">The Anonymous Block</summary>
+                        <p class="mt-2">PL/SQL code is organized into blocks. A block has three parts: a declarative part, an executable part, and an exception-handling part.</p>
+                        <pre><code class="language-sql">
+DECLARE
+   -- (Optional) Variables, constants, cursors, etc. are declared here.
+   message VARCHAR2(20) := 'Hello, World!';
+BEGIN
+   -- (Required) Statements to be executed.
+   DBMS_OUTPUT.PUT_LINE(message);
+EXCEPTION
+   -- (Optional) Actions to perform when errors occur.
+   WHEN OTHERS THEN
+      DBMS_OUTPUT.PUT_LINE('An error occurred');
+END;
+/
+                        </code></pre>
+                    </details>
+                </section>
+
+                <!-- Section 3: Variables & Types -->
+                <section id="variables" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">3. Variables & Data Types</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Declaring Variables</summary>
+                        <p class="mt-2">Variables must be declared in the DECLARE section. A powerful feature is the ability to anchor a variable's type to a database column using `%TYPE`.</p>
+                        <pre><code class="language-sql">
+DECLARE
+   -- Standard variable declaration
+   v_employee_count NUMBER;
+
+   -- Anchored declaration
+   v_employee_name employees.first_name%TYPE;
+BEGIN
+   SELECT first_name INTO v_employee_name
+   FROM employees
+   WHERE employee_id = 100;
+END;
+/
+                        </code></pre>
+                    </details>
+                </section>
+                
+                <!-- Section 4: Cursors -->
+                <section id="cursors" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">4. Cursors</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Handling Multi-Row Queries</summary>
+                        <p class="mt-2">A cursor is a pointer to a private SQL area that stores information about processing a specific `SELECT` statement. Cursors are used to handle the result set of a query that returns multiple rows, allowing you to process each row individually.</p>
+                    </details>
+                </section>
+
+                <!-- Section 5: Stored Procedures -->
+                <section id="procedures" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">5. Stored Procedures</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Reusable Code Blocks</summary>
+                        <p class="mt-2">A stored procedure is a named PL/SQL block which performs one or more specific tasks. It is stored in the database and can be executed by other applications or database users, promoting code reusability and security.</p>
+                    </details>
+                </section>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    // Smooth scrolling for the side navigation
+    document.querySelectorAll('aside a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,240 @@
+{% extends "layout.html" %}
+{% block title %}Learn SQL{% endblock %}
+{% block content %}
+<div class="flex flex-col md:flex-row gap-8">
+    <!-- Left Side: Sticky Navigation Index -->
+    <aside class="w-full md:w-1/4 lg:w-1/5">
+        <div class="sticky top-24">
+            <h2 class="text-xl font-bold text-white mb-4">Page Contents</h2>
+            <ul class="space-y-2 text-gray-400">
+                <li><a href="#overview" class="hover:text-indigo-400 transition-colors duration-200">1. SQL Overview</a></li>
+                <li><a href="#syntax" class="hover:text-indigo-400 transition-colors duration-200">2. Basic Syntax</a></li>
+                <li><a href="#datatypes" class="hover:text-indigo-400 transition-colors duration-200">3. Data Types</a></li>
+                <li><a href="#operators" class="hover:text-indigo-400 transition-colors duration-200">4. Operators</a></li>
+                <li><a href="#create-db" class="hover:text-indigo-400 transition-colors duration-200">5. CREATE Database</a></li>
+                <li><a href="#create-table" class="hover:text-indigo-400 transition-colors duration-200">6. CREATE Table</a></li>
+                <li><a href="#insert" class="hover:text-indigo-400 transition-colors duration-200">7. INSERT Query</a></li>
+                <li><a href="#select" class="hover:text-indigo-400 transition-colors duration-200">8. SELECT Query</a></li>
+                <li><a href="#where" class="hover:text-indigo-400 transition-colors duration-200">9. WHERE Clause</a></li>
+                <li><a href="#update" class="hover:text-indigo-400 transition-colors duration-200">10. UPDATE Query</a></li>
+                <li><a href="#delete" class="hover:text-indigo-400 transition-colors duration-200">11. DELETE Query</a></li>
+                <li><a href="#joins" class="hover:text-indigo-400 transition-colors duration-200">12. Joins</a></li>
+                <li><a href="#unions" class="hover:text-indigo-400 transition-colors duration-200">13. Unions</a></li>
+            </ul>
+        </div>
+    </aside>
+
+    <!-- Right Side: Main Content -->
+    <main class="w-full md:w-3/4 lg:w-4/5">
+        <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-8 animate-dynamic backdrop-blur-sm border border-white/10 text-gray-300">
+            <h1 class="text-4xl font-bold text-white mb-8 flex items-center"><i class="fas fa-database fa-fw mr-4 text-teal-400"></i> SQL Tutorial</h1>
+            
+            <div class="space-y-6">
+                <!-- Section 1: Overview -->
+                <section id="overview" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">1. SQL Overview</h2>
+                    <details class="bg-white/5 rounded-lg p-4" open>
+                        <summary class="font-semibold text-lg cursor-pointer text-white">What is SQL?</summary>
+                        <p class="mt-2">SQL stands for Structured Query Language. It is the standard language for relational database management systems (RDBMS). SQL is used to perform operations such as creating databases, inserting data, fetching data, modifying data, and deleting data.</p>
+                    </details>
+                    <details class="bg-white/5 rounded-lg p-4 mt-2">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">SQL Commands</summary>
+                        <p class="mt-2">SQL commands are broadly categorized into the following types:</p>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                            <li><strong>DDL (Data Definition Language):</strong> Used to define the database structure. Examples: `CREATE`, `ALTER`, `DROP`.</li>
+                            <li><strong>DML (Data Manipulation Language):</strong> Used for managing data within schema objects. Examples: `SELECT`, `INSERT`, `UPDATE`, `DELETE`.</li>
+                            <li><strong>DCL (Data Control Language):</strong> Used to control access to data. Examples: `GRANT`, `REVOKE`.</li>
+                        </ul>
+                    </details>
+                </section>
+
+                <!-- Section 2: Basic Syntax -->
+                <section id="syntax" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">2. Basic Syntax</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Key Syntax Rules</summary>
+                        <p class="mt-2">SQL statements are built using a standard set of keywords and follow a specific structure. Here are some fundamental rules:</p>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                            <li>SQL is case-insensitive, meaning `SELECT` is the same as `select`. However, table and column names can be case-sensitive depending on the RDBMS.</li>
+                            <li>Statements are terminated with a semicolon (;).</li>
+                            <li>Keywords like `SELECT`, `FROM`, and `WHERE` are used to structure queries.</li>
+                        </ul>
+                    </details>
+                </section>
+
+                <!-- Section 3: Data Types -->
+                <section id="datatypes" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">3. Data Types</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Common Data Types</summary>
+                        <p class="mt-2">Each column in a database table requires a name and a data type. Common SQL data types include:</p>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                            <li><strong>Numeric Types:</strong> `INT`, `BIGINT`, `DECIMAL(p, s)`, `FLOAT`.</li>
+                            <li><strong>Date and Time Types:</strong> `DATE`, `TIME`, `DATETIME`, `TIMESTAMP`.</li>
+                            <li><strong>Character String Types:</strong> `CHAR(n)`, `VARCHAR(n)`, `TEXT`.</li>
+                        </ul>
+                    </details>
+                </section>
+
+                <!-- Section 4: Operators -->
+                <section id="operators" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">4. Operators</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Types of Operators</summary>
+                        <p class="mt-2">Operators are used in the `WHERE` clause to perform comparisons and logical operations.</p>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                            <li><strong>Arithmetic Operators:</strong> `+`, `-`, `*`, `/`, `%`.</li>
+                            <li><strong>Comparison Operators:</strong> `=`, `!=`, `>`, `<`, `>=`, `<=`.</li>
+                            <li><strong>Logical Operators:</strong> `AND`, `OR`, `NOT`, `IN`, `BETWEEN`, `LIKE`.</li>
+                        </ul>
+                    </details>
+                </section>
+
+                <!-- Section 5: CREATE Database -->
+                <section id="create-db" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">5. CREATE Database</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Creating a Database</summary>
+                        <p class="mt-2">This command is used to create a new database in the RDBMS.</p>
+                        <pre><code class="language-sql">
+CREATE DATABASE TestDB;
+                        </code></pre>
+                    </details>
+                </section>
+
+                <!-- Section 6: CREATE Table -->
+                <section id="create-table" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">6. CREATE Table</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Creating a Table</summary>
+                        <p class="mt-2">This command creates a new table within a database. You must define each column's name and data type.</p>
+                        <pre><code class="language-sql">
+CREATE TABLE Customers (
+    ID   INT              NOT NULL,
+    NAME VARCHAR (20)     NOT NULL,
+    AGE  INT              NOT NULL,
+    ADDRESS  CHAR (25),
+    SALARY   DECIMAL (18, 2),       
+    PRIMARY KEY (ID)
+);
+                        </code></pre>
+                    </details>
+                </section>
+
+                <!-- Section 7: INSERT Query -->
+                <section id="insert" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">7. INSERT INTO Query</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Adding New Records</summary>
+                        <p class="mt-2">The `INSERT INTO` statement is used to add new rows of data to a table.</p>
+                        <pre><code class="language-sql">
+INSERT INTO Customers (ID, NAME, AGE, ADDRESS, SALARY)
+VALUES (1, 'Ramesh', 32, 'Ahmedabad', 2000.00);
+                        </code></pre>
+                    </details>
+                </section>
+
+                <!-- Section 8: SELECT Query -->
+                <section id="select" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">8. SELECT Query</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Retrieving Data</summary>
+                        <p class="mt-2">The `SELECT` statement is used to fetch data from a database. You can select specific columns or all columns using `*`.</p>
+                        <pre><code class="language-sql">
+-- Select specific columns
+SELECT NAME, SALARY FROM Customers;
+
+-- Select all columns
+SELECT * FROM Customers;
+                        </code></pre>
+                    </details>
+                </section>
+
+                 <!-- Section 9: WHERE Clause -->
+                <section id="where" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">9. WHERE Clause</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Filtering Records</summary>
+                        <p class="mt-2">The `WHERE` clause is used to filter records and extract only those that fulfill a specified condition.</p>
+                        <pre><code class="language-sql">
+SELECT ID, NAME, SALARY
+FROM Customers
+WHERE SALARY > 2000;
+                        </code></pre>
+                    </details>
+                </section>
+
+                 <!-- Section 10: UPDATE Query -->
+                <section id="update" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">10. UPDATE Query</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Modifying Records</summary>
+                        <p class="mt-2">The `UPDATE` statement is used to modify existing records in a table.</p>
+                        <pre><code class="language-sql">
+UPDATE Customers
+SET ADDRESS = 'Pune'
+WHERE ID = 6;
+                        </code></pre>
+                    </details>
+                </section>
+
+                <!-- Section 11: DELETE Query -->
+                <section id="delete" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">11. DELETE Query</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Deleting Records</summary>
+                        <p class="mt-2">The `DELETE` statement is used to delete existing records from a table.</p>
+                        <pre><code class="language-sql">
+DELETE FROM Customers
+WHERE ID = 6;
+                        </code></pre>
+                    </details>
+                </section>
+
+                <!-- Section 12: Joins -->
+                <section id="joins" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">12. Joins</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Combining Tables</summary>
+                        <p class="mt-2">A `JOIN` clause is used to combine rows from two or more tables based on a related column between them.</p>
+                        <pre><code class="language-sql">
+SELECT C.ID, C.NAME, O.AMOUNT
+FROM Customers AS C
+INNER JOIN Orders AS O
+ON C.ID = O.CUSTOMER_ID;
+                        </code></pre>
+                    </details>
+                </section>
+
+                <!-- Section 13: Unions -->
+                <section id="unions" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">13. Unions</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Combining Result Sets</summary>
+                        <p class="mt-2">The `UNION` operator is used to combine the result-set of two or more `SELECT` statements. It removes duplicate rows between the various `SELECT` statements.</p>
+                        <pre><code class="language-sql">
+SELECT City FROM Customers
+UNION
+SELECT City FROM Suppliers
+ORDER BY City;
+                        </code></pre>
+                    </details>
+                </section>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    // Smooth scrolling for the side navigation
+    document.querySelectorAll('aside a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+</script>
+{% endblock %}
+

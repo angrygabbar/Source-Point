@@ -1,0 +1,116 @@
+{% extends "layout.html" %}
+{% block title %}Learn DBMS{% endblock %}
+{% block content %}
+<div class="flex flex-col md:flex-row gap-8">
+    <!-- Left Side: Sticky Navigation Index -->
+    <aside class="w-full md:w-1/4 lg:w-1/5">
+        <div class="sticky top-24">
+            <h2 class="text-xl font-bold text-white mb-4">Page Contents</h2>
+            <ul class="space-y-2 text-gray-400">
+                <li><a href="#overview" class="hover:text-indigo-400 transition-colors duration-200">1. Overview</a></li>
+                <li><a href="#architecture" class="hover:text-indigo-400 transition-colors duration-200">2. Architecture</a></li>
+                <li><a href="#models" class="hover:text-indigo-400 transition-colors duration-200">3. Data Models</a></li>
+                <li><a href="#schemas" class="hover:text-indigo-400 transition-colors duration-200">4. Data Schemas</a></li>
+                <li><a href="#er-model" class="hover:text-indigo-400 transition-colors duration-200">5. E-R Model</a></li>
+                <li><a href="#normalization" class="hover:text-indigo-400 transition-colors duration-200">6. Normalization</a></li>
+                <li><a href="#transactions" class="hover:text-indigo-400 transition-colors duration-200">7. Transactions & ACID</a></li>
+            </ul>
+        </div>
+    </aside>
+
+    <!-- Right Side: Main Content -->
+    <main class="w-full md:w-3/4 lg:w-4/5">
+        <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-8 animate-dynamic backdrop-blur-sm border border-white/10 text-gray-300">
+            <h1 class="text-4xl font-bold text-white mb-8 flex items-center"><i class="fas fa-server fa-fw mr-4 text-purple-400"></i> DBMS Tutorial</h1>
+            
+            <div class="space-y-6">
+                <!-- Section 1: Overview -->
+                <section id="overview" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">1. DBMS Overview</h2>
+                    <details class="bg-white/5 rounded-lg p-4" open>
+                        <summary class="font-semibold text-lg cursor-pointer text-white">What is a DBMS?</summary>
+                        <p class="mt-2">A Database Management System (DBMS) is software for storing and retrieving user data while considering appropriate security measures. It consists of a group of programs that manipulate the database. The DBMS accepts requests for data from an application and instructs the operating system to provide the specific data.</p>
+                    </details>
+                </section>
+
+                <!-- Section 2: Architecture -->
+                <section id="architecture" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">2. DBMS Architecture</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">The 3-Tier Architecture</summary>
+                        <p class="mt-2">The design of a DBMS depends on its architecture. The 3-tier architecture, which is the most widely used, separates the system into three independent modules:</p>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                            <li><strong>Presentation Tier (Client):</strong> The top-most level of the application, where users interact directly with the system.</li>
+                            <li><strong>Application Tier (Business Logic):</strong> This tier contains the functional business logic that drives the application's core processes.</li>
+                            <li><strong>Data Tier (Database):</strong> At this tier, the database, along with its query processing languages, resides.</li>
+                        </ul>
+                    </details>
+                </section>
+
+                <!-- Section 3: Data Models -->
+                <section id="models" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">3. Data Models</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Structuring the Data</summary>
+                        <p class="mt-2">Data models define how the logical structure of a database is modeled. The most common is the Relational Model, which uses tables to represent data and the relationships between them. Each table has rows (records) and columns (attributes).</p>
+                    </details>
+                </section>
+                
+                <!-- Section 4: Data Schemas -->
+                <section id="schemas" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">4. Data Schemas</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Database Design</summary>
+                        <p class="mt-2">A database schema is the skeleton structure that represents the logical view of the entire database. It defines how the data is organized and how the relations among them are associated. It formulates all the constraints that are to be applied on the data.</p>
+                    </details>
+                </section>
+
+                <!-- Section 5: E-R Model -->
+                <section id="er-model" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">5. Entity-Relationship (E-R) Model</h2>
+                     <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Conceptual Data Modeling</summary>
+                        <p class="mt-2">The E-R model is a high-level data model that defines the conceptual view of a database. It is based on the notion of real-world entities and the relationships between them. E-R diagrams are used to illustrate the logical structure of databases.</p>
+                    </details>
+                </section>
+                
+                <!-- Section 6: Normalization -->
+                <section id="normalization" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">6. Normalization</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Minimizing Redundancy</summary>
+                        <p class="mt-2">Normalization is the process of organizing data in a database to avoid data redundancy, insertion anomaly, update anomaly & deletion anomaly. It involves dividing larger tables into smaller, well-structured tables and defining relationships between them.</p>
+                    </details>
+                </section>
+
+                <!-- Section 7: Transactions -->
+                <section id="transactions" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">7. Transactions & ACID Properties</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Ensuring Data Integrity</summary>
+                        <p class="mt-2">A transaction is a unit of work performed against a database. Transactions are designed to maintain data integrity through the ACID properties:</p>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                            <li><strong>Atomicity:</strong> All changes are performed, or none are.</li>
+                            <li><strong>Consistency:</strong> The database remains in a valid state.</li>
+                            <li><strong>Isolation:</strong> Concurrent transactions do not interfere with each other.</li>
+                            <li><strong>Durability:</strong> Committed changes are permanent.</li>
+                        </ul>
+                    </details>
+                </section>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    // Smooth scrolling for the side navigation
+    document.querySelectorAll('aside a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+</script>
+{% endblock %}

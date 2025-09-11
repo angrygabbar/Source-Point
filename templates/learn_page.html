@@ -1,0 +1,80 @@
+{% extends "layout.html" %}
+{% block title %}Learn {{ language|title }}{% endblock %}
+{% block content %}
+
+{% if current_user.role in ['admin', 'developer'] %}
+<div class="flex justify-end mb-4">
+    <button id="edit-content-btn" class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+        <i class="fas fa-pencil-alt mr-2"></i>Edit Content
+    </button>
+</div>
+{% endif %}
+
+<div id="learning-content">
+    {{ page_content|safe }}
+</div>
+
+
+{% if current_user.role in ['admin', 'developer'] %}
+<div id="edit-modal" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+            <form action="{{ url_for('update_learning_content') }}" method="POST">
+                <div class="bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <h3 class="text-lg leading-6 font-medium text-white" id="modal-title">Editing: {{ language|title }}</h3>
+                    <div class="mt-4">
+                        <input type="hidden" name="language_id" value="{{ language }}">
+                        <textarea name="content" id="editor">{{ page_content }}</textarea>
+                    </div>
+                </div>
+                <div class="bg-gray-900 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 sm:ml-3 sm:w-auto sm:text-sm">
+                        Save Changes
+                    </button>
+                    <button type="button" id="cancel-edit-btn" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-600 shadow-sm px-4 py-2 bg-gray-700 text-base font-medium text-white hover:bg-gray-600 sm:mt-0 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const editBtn = document.getElementById('edit-content-btn');
+        const cancelBtn = document.getElementById('cancel-edit-btn');
+        const modal = document.getElementById('edit-modal');
+
+        editBtn.addEventListener('click', () => {
+            modal.classList.remove('hidden');
+            tinymce.init({
+                selector: '#editor',
+                plugins: 'code table lists image link media autoresize',
+                toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | indent outdent | bullist numlist | code | table | image link media',
+                height: '60vh',
+                skin: 'oxide-dark',
+                content_css: 'dark',
+                // --- NEW CODE BLOCK TO EXPAND DETAILS ---
+                setup: function (editor) {
+                    editor.on('init', function () {
+                        // Find all 'details' elements in the editor and set them to 'open'
+                        const detailsElements = editor.dom.select('details');
+                        editor.dom.setAttrib(detailsElements, 'open', true);
+                    });
+                }
+                // --- END NEW CODE BLOCK ---
+            });
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            tinymce.remove('#editor');
+            modal.classList.add('hidden');
+        });
+    });
+</script>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,244 @@
+{% extends "layout.html" %}
+{% block title %}Learn C++{% endblock %}
+{% block content %}
+<div class="flex flex-col md:flex-row gap-8">
+    <!-- Left Side: Sticky Navigation Index -->
+    <aside class="w-full md:w-1/4 lg:w-1/5">
+        <div class="sticky top-24">
+            <h2 class="text-xl font-bold text-white mb-4">Page Contents</h2>
+            <ul class="space-y-2 text-gray-400">
+                <li><a href="#overview" class="hover:text-indigo-400 transition-colors duration-200">1. Overview</a></li>
+                <li><a href="#syntax" class="hover:text-indigo-400 transition-colors duration-200">2. Basic Syntax</a></li>
+                <li><a href="#datatypes" class="hover:text-indigo-400 transition-colors duration-200">3. Data Types</a></li>
+                <li><a href="#variables" class="hover:text-indigo-400 transition-colors duration-200">4. Variable Types</a></li>
+                <li><a href="#operators" class="hover:text-indigo-400 transition-colors duration-200">5. Operators</a></li>
+                <li><a href="#loops" class="hover:text-indigo-400 transition-colors duration-200">6. Loops</a></li>
+                <li><a href="#decision" class="hover:text-indigo-400 transition-colors duration-200">7. Decision Making</a></li>
+                <li><a href="#functions" class="hover:text-indigo-400 transition-colors duration-200">8. Functions</a></li>
+                <li><a href="#pointers" class="hover:text-indigo-400 transition-colors duration-200">9. Pointers</a></li>
+                <li><a href="#classes" class="hover:text-indigo-400 transition-colors duration-200">10. Classes & Objects</a></li>
+            </ul>
+        </div>
+    </aside>
+
+    <!-- Right Side: Main Content -->
+    <main class="w-full md:w-3/4 lg:w-4/5">
+        <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-8 animate-dynamic backdrop-blur-sm border border-white/10 text-gray-300">
+            <h1 class="text-4xl font-bold text-white mb-8 flex items-center"><i class="fas fa-file-code fa-fw mr-4 text-blue-400"></i> C++ Tutorial</h1>
+            
+            <div class="space-y-6">
+                <!-- Section 1: Overview -->
+                <section id="overview" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">1. C++ Overview</h2>
+                    <details class="bg-white/5 rounded-lg p-4" open>
+                        <summary class="font-semibold text-lg cursor-pointer text-white">What is C++?</summary>
+                        <p class="mt-2">C++ is a middle-level programming language developed by Bjarne Stroustrup at Bell Labs, starting in 1979. It was designed as an enhancement to the C language, adding object-oriented features. It is a compiled, statically-typed language known for its high performance.</p>
+                    </details>
+                    <details class="bg-white/5 rounded-lg p-4 mt-2">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Object-Oriented Programming (OOP)</summary>
+                        <p class="mt-2">C++ fully supports the four main pillars of object-oriented programming, which help in creating modular, reusable, and manageable code:</p>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                            <li><strong>Encapsulation:</strong> Bundling data and the functions that operate on that data into a single unit (a class).</li>
+                            <li><strong>Data Hiding:</strong> Restricting access to certain members of an object to prevent unauthorized access.</li>
+                            <li><strong>Inheritance:</strong> Creating new classes (derived classes) from existing classes (base classes), enabling code reuse.</li>
+                            <li><strong>Polymorphism:</strong> The ability to present the same interface for differing underlying forms (data types).</li>
+                        </ul>
+                    </details>
+                </section>
+
+                <!-- Section 2: Basic Syntax -->
+                <section id="syntax" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">2. Basic Syntax</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">First C++ Program</summary>
+                        <p class="mt-2">The entry point for any C++ application is the `main()` function. The `#include <iostream>` directive is used to include the standard input-output stream library.</p>
+                        <pre><code class="language-cpp">
+#include <iostream>
+
+// The using namespace std; line tells the compiler to use the standard namespace.
+using namespace std;
+
+// main() is where program execution begins.
+int main() {
+   cout << "Hello World"; // prints Hello World
+   return 0;
+}
+                        </code></pre>
+                    </details>
+                </section>
+
+                <!-- Section 3: Data Types -->
+                <section id="datatypes" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">3. Data Types</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Primitive Built-in Types</summary>
+                        <p class="mt-2">C++ provides a rich set of built-in data types. The most common ones include:</p>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                            <li><strong>bool:</strong> Stores either `true` or `false`.</li>
+                            <li><strong>char:</strong> Stores a single character.</li>
+                            <li><strong>int:</strong> Stores integer values.</li>
+                            <li><strong>float:</strong> Stores single-precision floating-point numbers.</li>
+                            <li><strong>double:</strong> Stores double-precision floating-point numbers.</li>
+                        </ul>
+                    </details>
+                </section>
+
+                <!-- Section 4: Variable Types -->
+                <section id="variables" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">4. Variable Types</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Variable Definition and Declaration</summary>
+                        <p class="mt-2">A variable definition allocates storage for the variable, while a declaration only specifies its name and type. You can declare a variable multiple times, but it can only be defined once.</p>
+                        <pre><code class="language-cpp">
+// Variable definition and initialization
+int i = 10;
+char c = 'A';
+
+// Variable declaration (using extern)
+extern int some_external_variable;
+                        </code></pre>
+                    </details>
+                </section>
+
+                <!-- Section 5: Operators -->
+                <section id="operators" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">5. Operators</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Common Operator Types</summary>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                           <li><strong>Arithmetic:</strong> `+`, `-`, `*`, `/`, `%` (modulus)</li>
+                           <li><strong>Relational:</strong> `==`, `!=`, `>`, `<`, `>=`, `<=`</li>
+                           <li><strong>Logical:</strong> `&&` (AND), `||` (OR), `!` (NOT)</li>
+                           <li><strong>Bitwise:</strong> `&` (AND), `|` (OR), `^` (XOR), `~` (NOT), `<<` (left shift), `>>` (right shift)</li>
+                        </ul>
+                    </details>
+                </section>
+                
+                <!-- Section 6: Loops -->
+                <section id="loops" class="scroll-mt-20">
+                     <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">6. Loop Types</h2>
+                     <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Types of Loops</summary>
+                        <p class="mt-2">Loops are used to execute a block of code repeatedly.</p>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                           <li><strong>for loop:</strong> Executes a known number of times.</li>
+                           <li><strong>while loop:</strong> Executes as long as a condition remains true. Checks the condition before executing.</li>
+                           <li><strong>do-while loop:</strong> Similar to a while loop, but the code block is guaranteed to execute at least once before the condition is checked.</li>
+                        </ul>
+                    </details>
+                </section>
+                
+                <!-- Section 7: Decision Making -->
+                <section id="decision" class="scroll-mt-20">
+                     <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">7. Decision Making</h2>
+                     <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Conditional Statements</summary>
+                         <ul class="list-disc list-inside mt-2 space-y-1">
+                           <li><strong>if statement:</strong> Executes code if a condition is true.</li>
+                           <li><strong>if-else statement:</strong> Executes one block of code if the condition is true, and another if it's false.</li>
+                           <li><strong>switch statement:</strong> Allows a variable to be tested for equality against a list of values (`case`).</li>
+                        </ul>
+                    </details>
+                </section>
+
+                 <!-- Section 8: Functions -->
+                <section id="functions" class="scroll-mt-20">
+                     <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">8. Functions</h2>
+                     <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Defining and Calling Functions</summary>
+                        <p class="mt-2">Functions are blocks of code that perform a specific task. They help organize code into manageable and reusable pieces.</p>
+                        <pre><code class="language-cpp">
+#include <iostream>
+
+// Function declaration (prototype)
+int max(int num1, int num2);
+
+int main() {
+   int a = 100;
+   int b = 200;
+   int ret;
+ 
+   // Calling the function
+   ret = max(a, b);
+   std::cout << "Max value is : " << ret << std::endl;
+ 
+   return 0;
+}
+
+// Function definition
+int max(int num1, int num2) {
+   int result;
+ 
+   if (num1 > num2)
+      result = num1;
+   else
+      result = num2;
+ 
+   return result; 
+}
+                        </code></pre>
+                    </details>
+                </section>
+
+                 <!-- Section 9: Pointers -->
+                <section id="pointers" class="scroll-mt-20">
+                     <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">9. Pointers</h2>
+                     <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">What Are Pointers?</summary>
+                        <p class="mt-2">A pointer is a variable whose value is the memory address of another variable. They are essential for dynamic memory allocation and efficient data manipulation in C++.</p>
+                        <pre><code class="language-cpp">
+int  var = 20;   // An actual variable
+int  *ip;        // A pointer to an integer
+
+ip = &var;      // Store the address of 'var' in the pointer
+
+std::cout << "Value of var: " << var << std::endl;
+
+// Access the value using the pointer
+std::cout << "Value of *ip: " << *ip << std::endl;
+                        </code></pre>
+                    </details>
+                </section>
+
+                 <!-- Section 10: Classes & Objects -->
+                <section id="classes" class="scroll-mt-20">
+                     <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">10. Classes and Objects</h2>
+                     <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Defining a Class</summary>
+                        <p class="mt-2">A class is a blueprint for creating objects. It bundles data members (attributes) and member functions (methods) into a single unit.</p>
+                        <pre><code class="language-cpp">
+class Box {
+   public:
+      double length;   // Length of a box
+      double breadth;  // Breadth of a box
+      double height;   // Height of a box
+
+      // Member function declaration
+      double getVolume(void);
+};
+
+// Member function definition
+double Box::getVolume(void) {
+    return length * breadth * height;
+}
+                        </code></pre>
+                    </details>
+                </section>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    // Smooth scrolling for the side navigation
+    document.querySelectorAll('aside a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+</script>
+{% endblock %}
+

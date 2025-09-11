@@ -16,3 +16,4 @@ APScheduler==3.10.4
 fpdf==1.7.2
 psycopg2-binary
 python-dotenv
+beautifulsoup4==4.12.3

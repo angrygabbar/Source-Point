@@ -1,0 +1,100 @@
+{% extends "layout.html" %}
+{% block title %}Learn MySQL{% endblock %}
+{% block content %}
+<div class="flex flex-col md:flex-row gap-8">
+    <!-- Left Side: Sticky Navigation Index -->
+    <aside class="w-full md:w-1/4 lg:w-1/5">
+        <div class="sticky top-24">
+            <h2 class="text-xl font-bold text-white mb-4">Page Contents</h2>
+            <ul class="space-y-2 text-gray-400">
+                <li><a href="#overview" class="hover:text-indigo-400 transition-colors duration-200">1. What is MySQL?</a></li>
+                <li><a href="#datatypes" class="hover:text-indigo-400 transition-colors duration-200">2. Common Data Types</a></li>
+                <li><a href="#engines" class="hover:text-indigo-400 transition-colors duration-200">3. Storage Engines</a></li>
+                <li><a href="#crud" class="hover:text-indigo-400 transition-colors duration-200">4. Basic CRUD Operations</a></li>
+            </ul>
+        </div>
+    </aside>
+
+    <!-- Right Side: Main Content -->
+    <main class="w-full md:w-3/4 lg:w-4/5">
+        <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-8 animate-dynamic backdrop-blur-sm border border-white/10 text-gray-300">
+            <h1 class="text-4xl font-bold text-white mb-8 flex items-center"><i class="fas fa-database fa-fw mr-4 text-cyan-400"></i> MySQL Tutorial</h1>
+            
+            <div class="space-y-6">
+                <!-- Section 1: Overview -->
+                <section id="overview" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">1. What is MySQL?</h2>
+                    <details class="bg-white/5 rounded-lg p-4" open>
+                        <summary class="font-semibold text-lg cursor-pointer text-white">The World's Most Popular Open Source Database</summary>
+                        <p class="mt-2">MySQL is an open-source relational database management system (RDBMS). It is a core component of the LAMP (Linux, Apache, MySQL, PHP) web application software stack. MySQL is known for its reliability, performance, and ease of use, making it a popular choice for web applications, from small projects to large-scale enterprise systems.</p>
+                    </details>
+                </section>
+
+                <!-- Section 2: Data Types -->
+                <section id="datatypes" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">2. Common Data Types</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">MySQL Data Types</summary>
+                        <p class="mt-2">MySQL supports a wide range of SQL data types. Some of the most common include:</p>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                            <li><strong>INT:</strong> A standard integer.</li>
+                            <li><strong>VARCHAR(size):</strong> A variable-length string.</li>
+                            <li><strong>TEXT:</strong> For long-form text strings.</li>
+                            <li><strong>DATE:</strong> Stores a date in YYYY-MM-DD format.</li>
+                            <li><strong>DATETIME:</strong> Stores a date and time in YYYY-MM-DD HH:MI:SS format.</li>
+                            <li><strong>TIMESTAMP:</strong> Automatically updated to the current timestamp when a row is modified.</li>
+                        </ul>
+                    </details>
+                </section>
+
+                <!-- Section 3: Storage Engines -->
+                <section id="engines" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">3. Storage Engines</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">InnoDB vs. MyISAM</summary>
+                        <p class="mt-2">MySQL uses storage engines to handle the SQL operations for different table types. The two most common engines are:</p>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                            <li><strong>InnoDB:</strong> The default storage engine. It is transaction-safe (ACID compliant) and supports foreign keys. Best for data-critical applications.</li>
+                            <li><strong>MyISAM:</strong> A simpler engine that does not support transactions or foreign keys. It is generally faster for read-heavy operations, such as in data warehousing.</li>
+                        </ul>
+                    </details>
+                </section>
+                
+                <!-- Section 4: CRUD Operations -->
+                <section id="crud" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">4. Basic CRUD Operations</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Create, Read, Update, Delete</summary>
+                        <p class="mt-2">These four basic functions of persistent storage are the bread and butter of database management.</p>
+                        <pre><code class="language-sql">
+-- CREATE (Insert a new record)
+INSERT INTO users (name, email) VALUES ('John Doe', 'john.doe@example.com');
+
+-- READ (Select records)
+SELECT * FROM users WHERE name = 'John Doe';
+
+-- UPDATE (Modify a record)
+UPDATE users SET email = 'johndoe@newemail.com' WHERE name = 'John Doe';
+
+-- DELETE (Remove a record)
+DELETE FROM users WHERE name = 'John Doe';
+                        </code></pre>
+                    </details>
+                </section>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    // Smooth scrolling for the side navigation
+    document.querySelectorAll('aside a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+</script>
+{% endblock %}

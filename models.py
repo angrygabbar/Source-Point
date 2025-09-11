@@ -13,6 +13,13 @@ candidate_contacts = db.Table('candidate_contacts',
     db.Column('developer_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
 )
 
+# --- NEW MODEL FOR LEARNING CONTENT ---
+class LearningContent(db.Model):
+    id = db.Column(db.String(50), primary_key=True) # e.g., 'java', 'cpp'
+    content = db.Column(db.Text, nullable=False)
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+# --- END NEW MODEL ---
+
 class ProblemStatement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
@@ -154,4 +161,3 @@ class InvoiceItem(db.Model):
     quantity = db.Column(db.Integer, nullable=False, default=1)
     price = db.Column(db.Float, nullable=False)
     invoice_id = db.Column(db.Integer, db.ForeignKey('invoice.id'), nullable=False)
-

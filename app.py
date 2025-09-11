@@ -9,7 +9,7 @@ load_dotenv()
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from models import db, User, Message, ActivityUpdate, CodeSnippet, JobOpening, JobApplication, CodeTestSubmission, ProblemStatement, AffiliateAd, Feedback, Invoice, InvoiceItem
+from models import db, User, Message, ActivityUpdate, CodeSnippet, JobOpening, JobApplication, CodeTestSubmission, ProblemStatement, AffiliateAd, Feedback, Invoice, InvoiceItem, LearningContent
 from functools import wraps
 import requests
 import time
@@ -19,17 +19,48 @@ from werkzeug.utils import secure_filename
 from flask_mail import Mail, Message as MailMessage
 from apscheduler.schedulers.background import BackgroundScheduler
 from invoice_service import InvoiceGenerator
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
-# --- NEW DATABASE INITIALIZATION COMMAND ---
-# This command can be run from the command line to create the database tables.
+# --- DATABASE COMMANDS ---
 @app.cli.command("init-db")
 def init_db():
     """Initializes the database by creating all tables."""
     db.create_all()
     print("Database tables created successfully.")
-# --- END NEW COMMAND ---
+
+@app.cli.command("populate-db")
+def populate_db():
+    """Populates the database with initial learning content."""
+    supported_languages = ['java', 'cpp', 'c', 'sql', 'dbms', 'plsql', 'mysql']
+    for lang in supported_languages:
+        # Clear existing content to ensure a fresh start
+        existing_content = LearningContent.query.get(lang)
+        if existing_content:
+            db.session.delete(existing_content)
+            
+        try:
+            with open(f'templates/learn_{lang}.html', 'r', encoding='utf-8') as f:
+                soup = BeautifulSoup(f.read(), 'html.parser')
+                # CORRECTED: Use a more robust selector to find the main content div
+                content_div = soup.select_one('main > div')
+                if content_div:
+                    content = str(content_div)
+                    new_content = LearningContent(id=lang, content=content)
+                    db.session.add(new_content)
+                    print(f"Content for {lang} added.")
+                else:
+                    print(f"Could not find content block for {lang}.")
+        except FileNotFoundError:
+            # Create a placeholder if the file is missing
+            placeholder_content = f"<h1>{lang.upper()} Tutorial</h1><p>No content has been added for this topic yet. An administrator or developer can add content by clicking the 'Edit Content' button.</p>"
+            new_content = LearningContent(id=lang, content=placeholder_content)
+            db.session.add(new_content)
+            print(f"File for {lang} not found. Created a placeholder.")
+    db.session.commit()
+    print("Database populated with learning content.")
+# --- END COMMANDS ---
 
 app.config['SECRET_KEY'] = 'a_very_secret_key_that_should_be_changed'
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
@@ -108,7 +139,6 @@ def send_email(to, subject, template, cc=None, attachments=None, **kwargs):
 
 # --- Background Scheduler for Email Reminders and Test Completion ---
 def send_test_reminders():
-    """Checks for tests starting in ~15 mins and sends reminders."""
     with app.app_context():
         now = datetime.utcnow()
         reminder_window_start = now + timedelta(minutes=14)
@@ -141,7 +171,6 @@ def send_test_reminders():
             db.session.commit()
 
 def check_completed_tests():
-    """Checks for tests that have ended and sends completion notifications."""
     with app.app_context():
         now = datetime.utcnow()
         completed_candidates = User.query.filter(
@@ -212,11 +241,7 @@ def role_required(roles):
         return decorated_view
     return wrapper
 
-# ... (All your existing routes like @app.route('/'), @app.route('/login-register'), etc. go here)
-# The file content is too large to repeat fully, so just imagine all your routes are here.
-# I am only showing the start and end of the file.
-
-# (Paste all your routes from the original app.py here)
+# --- All Routes ---
 
 @app.route('/')
 def home(): return render_template('home.html')
@@ -225,6 +250,49 @@ def home(): return render_template('home.html')
 def offers():
     ads = AffiliateAd.query.all()
     return render_template('offers.html', ads=ads)
+
+# --- UPDATED LEARNING ROUTES ---
+@app.route('/learning')
+@login_required
+@role_required(['candidate', 'admin', 'developer'])
+def learning():
+    return render_template('learning.html')
+
+@app.route('/learn/<language>')
+@login_required
+@role_required(['candidate', 'admin', 'developer'])
+def learn_language(language):
+    supported_languages = ['java', 'cpp', 'c', 'sql', 'dbms', 'plsql', 'mysql']
+    if language in supported_languages:
+        # Fetch content from the database
+        learning_content = LearningContent.query.get(language)
+        if not learning_content:
+            # If content doesn't exist, create a placeholder
+            learning_content = LearningContent(id=language, content=f'<h1>{language.upper()} Tutorial</h1><p>Content coming soon...</p>')
+            db.session.add(learning_content)
+            db.session.commit()
+        return render_template('learn_page.html', language=language, page_content=learning_content.content)
+    else:
+        flash('The requested learning page does not exist.', 'danger')
+        return redirect(url_for('learning'))
+
+@app.route('/update_learning_content', methods=['POST'])
+@login_required
+@role_required(['admin', 'developer'])
+def update_learning_content():
+    language_id = request.form.get('language_id')
+    content = request.form.get('content')
+    
+    learning_content = LearningContent.query.get(language_id)
+    if learning_content:
+        learning_content.content = content
+        db.session.commit()
+        flash(f'The {language_id.upper()} learning page has been updated.', 'success')
+    else:
+        flash(f'Could not find the learning page for {language_id.upper()}.', 'danger')
+        
+    return redirect(url_for('learn_language', language=language_id))
+# --- END UPDATED LEARNING ROUTES ---
 
 @app.route('/manage_ads', methods=['GET', 'POST'])
 @login_required
@@ -261,6 +329,7 @@ def delete_ad(ad_id):
 
 @app.route('/contact')
 def contact(): return render_template('contact.html')
+
 @app.route('/login-register', methods=['GET', 'POST'])
 def login_register():
     if current_user.is_authenticated: return redirect(url_for('dashboard'))
@@ -300,6 +369,7 @@ def login_register():
             login_user(user, remember=True)
             return redirect(url_for('dashboard'))
     return render_template('login_register.html')
+
 @app.route('/logout')
 @login_required
 def logout():
@@ -657,6 +727,7 @@ def approve_user(user_id):
         flash(f'User {user.username} has been approved, but the notification email could not be sent.', 'warning')
 
     return redirect(url_for('admin_dashboard'))
+
 @app.route('/send_message', methods=['POST'])
 @login_required
 def send_message():
@@ -751,6 +822,7 @@ def post_job():
     else:
         flash('Job title and description are required.', 'danger')
     return redirect(url_for('admin_dashboard'))
+
 @app.route('/apply_job/<int:job_id>')
 @login_required
 @role_required('candidate')
@@ -765,6 +837,7 @@ def apply_job(job_id):
         db.session.commit()
         flash('You have successfully applied for the job!', 'success')
     return redirect(url_for('candidate_dashboard'))
+
 @app.route('/accept_application/<int:app_id>')
 @login_required
 @role_required('admin')
@@ -774,6 +847,7 @@ def accept_application(app_id):
     db.session.commit()
     flash(f"Application from {application.candidate.username} for '{application.job.title}' has been accepted.", 'success')
     return redirect(url_for('admin_dashboard'))
+
 @app.route('/reject_application/<int:app_id>')
 @login_required
 @role_required('admin')
@@ -783,6 +857,7 @@ def reject_application(app_id):
     db.session.commit()
     flash(f"Application from {application.candidate.username} for '{application.job.title}' has been rejected.", 'warning')
     return redirect(url_for('admin_dashboard'))
+
 @app.route('/submit_code_test', methods=['POST'])
 @login_required
 @role_required('candidate')
@@ -805,6 +880,7 @@ def submit_code_test():
         db.session.commit()
         flash('Your code test has been submitted successfully!', 'success')
     return redirect(url_for('code_test'))
+
 @app.route('/run_code', methods=['POST'])
 @login_required
 def run_code():
@@ -824,6 +900,7 @@ def run_code():
         return jsonify(response.json())
     except requests.exceptions.RequestException as e:
         return jsonify({'error': str(e)}), 500
+
 @app.route('/create_problem', methods=['POST'])
 @login_required
 @role_required(['admin', 'developer', 'moderator'])
@@ -838,6 +915,7 @@ def create_problem():
         db.session.commit()
         flash('New problem statement created.', 'success')
     return redirect(url_for('events'))
+
 @app.route('/assign_problem', methods=['POST'])
 @login_required
 @role_required(['admin', 'developer', 'moderator'])
@@ -883,6 +961,7 @@ def assign_problem():
 
     flash(f'Problem assigned to {candidate.username}.', 'success')
     return redirect(url_for('events'))
+
 @app.route('/add_contact_for_candidate', methods=['POST'])
 @login_required
 @role_required('admin')
@@ -898,6 +977,7 @@ def add_contact_for_candidate():
     else:
         flash('Invalid selection. Please try again.', 'danger')
     return redirect(url_for('admin_dashboard'))
+
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
     if current_user.is_authenticated:
@@ -911,6 +991,7 @@ def forgot_password():
             flash('No account found with that email or no secret question is set.', 'warning')
             return redirect(url_for('forgot_password'))
     return render_template('forgot_password.html')
+
 @app.route('/reset_with_question/<int:user_id>', methods=['GET', 'POST'])
 def reset_with_question(user_id):
     if current_user.is_authenticated:
@@ -1273,4 +1354,3 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(debug=True, use_reloader=False)
-

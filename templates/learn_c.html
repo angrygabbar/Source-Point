@@ -1,0 +1,242 @@
+{% extends "layout.html" %}
+{% block title %}Learn C{% endblock %}
+{% block content %}
+<div class="flex flex-col md:flex-row gap-8">
+    <!-- Left Side: Sticky Navigation Index -->
+    <aside class="w-full md:w-1/4 lg:w-1/5">
+        <div class="sticky top-24">
+            <h2 class="text-xl font-bold text-white mb-4">Page Contents</h2>
+            <ul class="space-y-2 text-gray-400">
+                <li><a href="#overview" class="hover:text-indigo-400 transition-colors duration-200">1. C Overview</a></li>
+                <li><a href="#syntax" class="hover:text-indigo-400 transition-colors duration-200">2. Basic Syntax</a></li>
+                <li><a href="#datatypes" class="hover:text-indigo-400 transition-colors duration-200">3. Data Types</a></li>
+                <li><a href="#variables" class="hover:text-indigo-400 transition-colors duration-200">4. Variables</a></li>
+                <li><a href="#constants" class="hover:text-indigo-400 transition-colors duration-200">5. Constants</a></li>
+                <li><a href="#operators" class="hover:text-indigo-400 transition-colors duration-200">6. Operators</a></li>
+                <li><a href="#decision" class="hover:text-indigo-400 transition-colors duration-200">7. Decision Making</a></li>
+                <li><a href="#loops" class="hover:text-indigo-400 transition-colors duration-200">8. Loops</a></li>
+                <li><a href="#functions" class="hover:text-indigo-400 transition-colors duration-200">9. Functions</a></li>
+                <li><a href="#arrays" class="hover:text-indigo-400 transition-colors duration-200">10. Arrays</a></li>
+                <li><a href="#pointers" class="hover:text-indigo-400 transition-colors duration-200">11. Pointers</a></li>
+                <li><a href="#strings" class="hover:text-indigo-400 transition-colors duration-200">12. Strings</a></li>
+                <li><a href="#structures" class="hover:text-indigo-400 transition-colors duration-200">13. Structures</a></li>
+            </ul>
+        </div>
+    </aside>
+
+    <!-- Right Side: Main Content -->
+    <main class="w-full md:w-3/4 lg:w-4/5">
+        <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-8 animate-dynamic backdrop-blur-sm border border-white/10 text-gray-300">
+            <h1 class="text-4xl font-bold text-white mb-8 flex items-center"><i class="fas fa-file-code fa-fw mr-4 text-gray-400"></i> C Tutorial</h1>
+            
+            <div class="space-y-6">
+                <!-- Section 1: Overview -->
+                <section id="overview" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">1. C Overview</h2>
+                    <details class="bg-white/5 rounded-lg p-4" open>
+                        <summary class="font-semibold text-lg cursor-pointer text-white">What is C?</summary>
+                        <p class="mt-2">C is a powerful, general-purpose programming language developed by Dennis M. Ritchie at Bell Labs in 1972. It is a procedural language known for its efficiency, low-level memory manipulation, and portability, making it a foundational language for many modern systems and software.</p>
+                    </details>
+                    <details class="bg-white/5 rounded-lg p-4 mt-2">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Why Use C?</summary>
+                        <p class="mt-2">C was initially created for system development and produces code that runs nearly as fast as assembly language. It is widely used for:</p>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                            <li>Operating Systems (UNIX, Linux, Windows kernels)</li>
+                            <li>Embedded Systems and Device Drivers</li>
+                            <li>Compilers, Databases, and Language Interpreters</li>
+                            <li>High-performance computing</li>
+                        </ul>
+                    </details>
+                </section>
+
+                <!-- Section 2: Basic Syntax -->
+                <section id="syntax" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">2. Basic Syntax</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">"Hello, World!" Program</summary>
+                        <p class="mt-2">The entry point for every C program is the `main()` function. The `#include <stdio.h>` is a preprocessor directive that includes the standard input-output library, providing access to functions like `printf()`.</p>
+                        <pre><code class="language-c">
+#include <stdio.h>
+
+int main() {
+   /* my first program in C */
+   printf("Hello, World! \n");
+   
+   return 0;
+}
+                        </code></pre>
+                    </details>
+                </section>
+
+                <!-- Section 3: Data Types -->
+                <section id="datatypes" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">3. Data Types</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Fundamental Data Types</summary>
+                        <p class="mt-2">C has a set of basic data types that are used to declare variables. The type of a variable determines its size in memory and the range of values it can hold.</p>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                            <li><strong>Integer Types:</strong> `int`, `char`, `short`, `long`. These can be modified with `signed` or `unsigned`.</li>
+                            <li><strong>Floating-Point Types:</strong> `float`, `double`, `long double`. Used for numbers with decimal points.</li>
+                            <li><strong>The void Type:</strong> Indicates that no value is available. Used for functions that do not return a value or for generic pointers.</li>
+                        </ul>
+                    </details>
+                </section>
+
+                <!-- Section 4: Variables -->
+                <section id="variables" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">4. Variables</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Declaring and Initializing Variables</summary>
+                        <p class="mt-2">A variable is a name for a storage area. In C, all variables must be declared with a specific type before they are used.</p>
+                        <pre><code class="language-c">
+// Variable declaration
+int a, b, c;
+
+// Initialization
+a = 10;
+char grade = 'A';
+float score = 95.5f;
+                        </code></pre>
+                    </details>
+                </section>
+
+                <!-- Section 5: Constants -->
+                <section id="constants" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">5. Constants</h2>
+                    <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Defining Constants</summary>
+                        <p class="mt-2">Constants are fixed values that do not change. They can be defined using the `#define` preprocessor directive or the `const` keyword.</p>
+                        <pre><code class="language-c">
+#include <stdio.h>
+
+#define PI 3.14159
+const int MAX_USERS = 100;
+
+int main() {
+   printf("Value of PI: %f\n", PI);
+   printf("Max users: %d\n", MAX_USERS);
+   return 0;
+}
+                        </code></pre>
+                    </details>
+                </section>
+
+                <!-- Section 6: Operators -->
+                <section id="operators" class="scroll-mt-20">
+                    <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">6. Operators</h2>
+                     <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Common C Operators</summary>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                           <li><strong>Arithmetic:</strong> `+`, `-`, `*`, `/`, `%` (modulus)</li>
+                           <li><strong>Relational:</strong> `==`, `!=`, `>`, `<`, `>=`, `<=`</li>
+                           <li><strong>Logical:</strong> `&&` (AND), `||` (OR), `!` (NOT)</li>
+                           <li><strong>Bitwise:</strong> `&`, `|`, `^`, `~`, `<<`, `>>`</li>
+                        </ul>
+                    </details>
+                </section>
+                
+                <!-- Section 7: Decision Making -->
+                <section id="decision" class="scroll-mt-20">
+                     <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">7. Decision Making</h2>
+                     <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Conditional Logic</summary>
+                        <p class="mt-2">Control the flow of your program with conditional statements.</p>
+                         <ul class="list-disc list-inside mt-2 space-y-1">
+                           <li><strong>if-else:</strong> Execute different blocks of code based on a condition.</li>
+                           <li><strong>switch:</strong> Select one of many code blocks to be executed based on a variable's value.</li>
+                        </ul>
+                    </details>
+                </section>
+
+                <!-- Section 8: Loops -->
+                <section id="loops" class="scroll-mt-20">
+                     <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">8. Loops</h2>
+                     <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Executing Code Repeatedly</summary>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                           <li><strong>for loop:</strong> Best used when the number of iterations is known.</li>
+                           <li><strong>while loop:</strong> Repeats as long as a condition is true.</li>
+                           <li><strong>do-while loop:</strong> Guarantees the loop body is executed at least once.</li>
+                        </ul>
+                    </details>
+                </section>
+                
+                <!-- Section 9: Functions -->
+                <section id="functions" class="scroll-mt-20">
+                     <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">9. Functions</h2>
+                     <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Modular Code with Functions</summary>
+                        <p class="mt-2">Functions are blocks of code that perform a specific task and can be reused throughout a program.</p>
+                    </details>
+                </section>
+                
+                <!-- Section 10: Arrays -->
+                <section id="arrays" class="scroll-mt-20">
+                     <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">10. Arrays</h2>
+                     <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Storing Data Collections</summary>
+                        <p class="mt-2">Arrays store a fixed-size sequence of elements of the same data type.</p>
+                        <pre><code class="language-c">
+int numbers[5] = {10, 20, 30, 40, 50};
+                        </code></pre>
+                    </details>
+                </section>
+
+                <!-- Section 11: Pointers -->
+                <section id="pointers" class="scroll-mt-20">
+                     <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">11. Pointers</h2>
+                     <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Working with Memory Addresses</summary>
+                        <p class="mt-2">A pointer is a variable that stores the memory address of another variable, enabling direct memory access.</p>
+                        <pre><code class="language-c">
+int var = 20;
+int *ip = &var; // ip now holds the address of var
+                        </code></pre>
+                    </details>
+                </section>
+
+                <!-- Section 12: Strings -->
+                <section id="strings" class="scroll-mt-20">
+                     <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">12. Strings</h2>
+                     <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Strings as Character Arrays</summary>
+                        <p class="mt-2">In C, strings are represented as arrays of characters ending with a null character (`\0`).</p>
+                        <pre><code class="language-c">
+char greeting[] = "Hello";
+                        </code></pre>
+                    </details>
+                </section>
+
+                <!-- Section 13: Structures -->
+                <section id="structures" class="scroll-mt-20">
+                     <h2 class="text-3xl font-semibold text-white mb-4 border-b border-gray-700 pb-2">13. Structures</h2>
+                     <details class="bg-white/5 rounded-lg p-4">
+                        <summary class="font-semibold text-lg cursor-pointer text-white">Complex Data Types</summary>
+                        <p class="mt-2">Structures (`struct`) allow you to group variables of different data types under a single name.</p>
+                        <pre><code class="language-c">
+struct Book {
+   char  title[50];
+   char  author[50];
+   int   book_id;
+};
+                        </code></pre>
+                    </details>
+                </section>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    // Smooth scrolling for the side navigation
+    document.querySelectorAll('aside a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+</script>
+{% endblock %}
+

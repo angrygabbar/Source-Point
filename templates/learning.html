@@ -1,0 +1,61 @@
+{% extends "layout.html" %}
+{% block title %}Learning Hub{% endblock %}
+{% block content %}
+<div class="animate-dynamic text-center">
+    <h1 class="text-4xl font-extrabold text-white sm:text-5xl tracking-tight">Learning Hub</h1>
+    <p class="mt-4 max-w-2xl mx-auto text-xl text-gray-300">
+        Select a topic to start your learning journey and enhance your skills.
+    </p>
+</div>
+
+<div class="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+    <!-- Java Card -->
+    <a href="{{ url_for('learn_language', language='java') }}" class="interactive-card bg-white/5 dark:bg-gray-800/20 p-6 rounded-lg shadow-lg backdrop-blur-sm border border-white/10 animate-dynamic flex flex-col items-center text-center transition-transform transform hover:-translate-y-2">
+        <i class="fab fa-java fa-3x text-orange-400"></i>
+        <h4 class="mt-5 text-2xl font-semibold text-white">Java</h4>
+        <p class="mt-2 text-base text-gray-300">A versatile, object-oriented language for enterprise-level applications.</p>
+    </a>
+
+    <!-- C++ Card -->
+    <a href="{{ url_for('learn_language', language='cpp') }}" class="interactive-card bg-white/5 dark:bg-gray-800/20 p-6 rounded-lg shadow-lg backdrop-blur-sm border border-white/10 animate-dynamic flex flex-col items-center text-center transition-transform transform hover:-translate-y-2" style="animation-delay: 0.1s;">
+        <i class="fas fa-file-code fa-3x text-blue-400"></i>
+        <h4 class="mt-5 text-2xl font-semibold text-white">C++</h4>
+        <p class="mt-2 text-base text-gray-300">A powerful language known for performance in game development and system software.</p>
+    </a>
+
+    <!-- C Card -->
+    <a href="{{ url_for('learn_language', language='c') }}" class="interactive-card bg-white/5 dark:bg-gray-800/20 p-6 rounded-lg shadow-lg backdrop-blur-sm border border-white/10 animate-dynamic flex flex-col items-center text-center transition-transform transform hover:-translate-y-2" style="animation-delay: 0.2s;">
+         <i class="fas fa-file-code fa-3x text-gray-400"></i>
+        <h4 class="mt-5 text-2xl font-semibold text-white">C</h4>
+        <p class="mt-2 text-base text-gray-300">The foundational procedural language, valued for its efficiency and control.</p>
+    </a>
+
+    <!-- SQL Card -->
+    <a href="{{ url_for('learn_language', language='sql') }}" class="interactive-card bg-white/5 dark:bg-gray-800/20 p-6 rounded-lg shadow-lg backdrop-blur-sm border border-white/10 animate-dynamic flex flex-col items-center text-center transition-transform transform hover:-translate-y-2" style="animation-delay: 0.3s;">
+        <i class="fas fa-database fa-3x text-teal-400"></i>
+        <h4 class="mt-5 text-2xl font-semibold text-white">SQL</h4>
+        <p class="mt-2 text-base text-gray-300">The standard language for managing and querying relational databases.</p>
+    </a>
+
+    <!-- DBMS Card -->
+    <a href="{{ url_for('learn_language', language='dbms') }}" class="interactive-card bg-white/5 dark:bg-gray-800/20 p-6 rounded-lg shadow-lg backdrop-blur-sm border border-white/10 animate-dynamic flex flex-col items-center text-center transition-transform transform hover:-translate-y-2" style="animation-delay: 0.4s;">
+        <i class="fas fa-server fa-3x text-purple-400"></i>
+        <h4 class="mt-5 text-2xl font-semibold text-white">DBMS</h4>
+        <p class="mt-2 text-base text-gray-300">Learn the fundamental concepts of database management systems.</p>
+    </a>
+
+    <!-- PL/SQL Card -->
+    <a href="{{ url_for('learn_language', language='plsql') }}" class="interactive-card bg-white/5 dark:bg-gray-800/20 p-6 rounded-lg shadow-lg backdrop-blur-sm border border-white/10 animate-dynamic flex flex-col items-center text-center transition-transform transform hover:-translate-y-2" style="animation-delay: 0.5s;">
+        <i class="fas fa-cogs fa-3x text-red-400"></i>
+        <h4 class="mt-5 text-2xl font-semibold text-white">PL/SQL</h4>
+        <p class="mt-2 text-base text-gray-300">Explore Oracle's procedural language extension for SQL.</p>
+    </a>
+
+    <!-- MySQL Card -->
+    <a href="{{ url_for('learn_language', language='mysql') }}" class="interactive-card bg-white/5 dark:bg-gray-800/20 p-6 rounded-lg shadow-lg backdrop-blur-sm border border-white/10 animate-dynamic flex flex-col items-center text-center transition-transform transform hover:-translate-y-2" style="animation-delay: 0.6s;">
+        <i class="fas fa-database fa-3x text-cyan-400"></i>
+        <h4 class="mt-5 text-2xl font-semibold text-white">MySQL</h4>
+        <p class="mt-2 text-base text-gray-300">Get started with the world's most popular open-source database.</p>
+    </a>
+</div>
+{% endblock %}
