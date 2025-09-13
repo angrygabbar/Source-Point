@@ -62,7 +62,7 @@ def populate_db():
     print("Database populated with learning content.")
 # --- END COMMANDS ---
 
-app.config['SECRET_KEY'] = 'a_very_secret_key_that_should_be_changed'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_very_secret_key_that_should_be_changed')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=5)
@@ -880,7 +880,43 @@ def submit_code_test():
         )
         db.session.add(submission)
         db.session.commit()
-        flash('Your code test has been submitted successfully!', 'success')
+
+        # --- EMAIL NOTIFICATION LOGIC ---
+        try:
+            recipient = User.query.get(recipient_id)
+            admins = User.query.filter_by(role='admin').all()
+            # CORRECTED: Fetch a fresh User object instead of using the context-bound proxy
+            candidate = User.query.get(current_user.id)
+            problem_title = candidate.assigned_problem.title if candidate.assigned_problem else None
+
+            # Create a set of emails for CC to avoid duplicates
+            cc_email_set = {admin.email for admin in admins}
+            cc_email_set.add(candidate.email)
+            # Remove the primary recipient from CC list if they are in it (e.g., an admin is the recipient)
+            if recipient.email in cc_email_set:
+                cc_email_set.remove(recipient.email)
+
+            cc_list = list(cc_email_set)
+
+            send_email(
+                to=recipient.email,
+                cc=cc_list,
+                subject=f"New Code Submission from {candidate.username}",
+                template="mail/submit_code_test.html",
+                candidate=candidate,
+                recipient=recipient,
+                problem_title=problem_title,
+                language=language,
+                code=code,
+                output=output,
+                now=datetime.utcnow()
+            )
+            flash('Your code test has been submitted successfully and sent via email!', 'success')
+        except Exception as e:
+            app.logger.error(f"Failed to send code submission email. Error: {e}")
+            flash('Your code test was submitted, but there was an error sending the notification email.', 'warning')
+        # --- END LOGIC ---
+
     return redirect(url_for('code_test'))
 
 @app.route('/run_code', methods=['POST'])
@@ -1352,7 +1388,6 @@ def create_invoice():
             invoice_number=invoice.invoice_number,
             total_amount=invoice.total_amount,
             due_date=invoice.due_date.strftime('%B %d, %Y'),
-            now=datetime.utcnow(),
             attachments=[attachment]
         )
 
@@ -1375,3 +1410,4 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(debug=True, use_reloader=False)
+
