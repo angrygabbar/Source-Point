@@ -3,7 +3,7 @@
 {% block content %}
 <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-8 animate-dynamic backdrop-blur-sm border border-white/10">
     <h1 class="text-3xl font-bold text-white mb-6">Create New Invoice</h1>
-    <form action="{{ url_for('create_invoice') }}" method="POST" class="space-y-6">
+    <form action="{{ url_for('create_invoice') }}" method="POST" class="space-y-6" id="invoice-form">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
                 <label for="recipient_name" class="block text-sm font-medium text-gray-300">Recipient Name</label>
@@ -92,13 +92,29 @@
             </div>
         </div>
 
-        <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-green-600 hover:bg-green-700">Create and Send Invoice</button>
+        <button type="submit" id="submit-invoice-btn" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-green-600 hover:bg-green-700">
+            Create and Send Invoice
+        </button>
     </form>
 </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const itemsContainer = document.getElementById('items-container');
+        const invoiceForm = document.getElementById('invoice-form');
+        const submitButton = document.getElementById('submit-invoice-btn');
+
+
+        invoiceForm.addEventListener('submit', () => {
+            submitButton.disabled = true;
+            submitButton.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Creating...
+            `;
+        });
 
         function calculateTotals() {
             let subtotal = 0;

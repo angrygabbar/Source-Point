@@ -1349,6 +1349,16 @@ def create_invoice():
         return redirect(url_for('manage_invoices'))
     return render_template('create_invoice.html')
 
+@app.route('/admin/invoices/delete/<int:invoice_id>')
+@login_required
+@role_required('admin')
+def delete_invoice(invoice_id):
+    invoice = Invoice.query.get_or_404(invoice_id)
+    db.session.delete(invoice)
+    db.session.commit()
+    flash(f'Invoice {invoice.invoice_number} has been deleted.', 'success')
+    return redirect(url_for('manage_invoices'))
+
 
 if __name__ == '__main__':
     with app.app_context():

@@ -18,6 +18,7 @@
                     <th class="py-3 px-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Total Amount</th>
                     <th class="py-3 px-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Date Created</th>
                     <th class="py-3 px-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Due Date</th>
+                    <th class="py-3 px-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
                 </tr>
             </thead>
             <tbody id="invoice-table-body">
@@ -32,10 +33,13 @@
                     <td class="py-4 px-4 whitespace-nowrap text-sm text-white font-semibold">${{ "%.2f"|format(invoice.total_amount) }}</td>
                     <td class="py-4 px-4 whitespace-nowrap text-sm text-gray-300">{{ invoice.created_at.strftime('%b %d, %Y') }}</td>
                     <td class="py-4 px-4 whitespace-nowrap text-sm text-gray-300">{{ invoice.due_date.strftime('%b %d, %Y') if invoice.due_date else 'N/A' }}</td>
+                    <td class="py-4 px-4 whitespace-nowrap text-sm font-medium">
+                        <a href="{{ url_for('delete_invoice', invoice_id=invoice.id) }}" class="text-red-500 hover:text-red-700" onclick="return confirm('Are you sure you want to delete this invoice?');">Delete</a>
+                    </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6" class="text-center py-10 text-gray-400">
+                    <td colspan="7" class="text-center py-10 text-gray-400">
                         <p class="mb-2">No invoices have been created yet.</p>
                         <a href="{{ url_for('create_invoice') }}" class="text-indigo-400 hover:underline">Create the first one</a>
                     </td>
