@@ -16,10 +16,14 @@ import time
 from datetime import datetime, timedelta
 from sqlalchemy import or_
 from werkzeug.utils import secure_filename
-from flask_mail import Mail, Message as MailMessage
 from apscheduler.schedulers.background import BackgroundScheduler
 from invoice_service import InvoiceGenerator
 from bs4 import BeautifulSoup
+# --- BREVO (SIB) IMPORTS ---
+import sib_api_v3_sdk
+from sib_api_v3_sdk.rest import ApiException
+import base64
+
 
 app = Flask(__name__)
 
@@ -69,27 +73,19 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=5)
 app.config['UPLOAD_FOLDER'] = 'static/resumes'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
-# Mail Configuration
-app.config['MAIL_SERVER'] = 'smtpout.secureserver.net'
-app.config['MAIL_PORT'] = 465
-app.config['MAIL_USE_SSL'] = True
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
-app.config['MAIL_DEFAULT_SENDER'] = ('Source Point', os.environ.get('MAIL_USERNAME'))
-
-
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 db.init_app(app)
 bcrypt = Bcrypt(app)
-mail = Mail(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login_register'
 login_manager.login_message_category = 'info'
 
 JDOODLE_CLIENT_ID = os.environ.get('JDOODLE_CLIENT_ID')
 JDOODLE_CLIENT_SECRET = os.environ.get('JDOODLE_CLIENT_SECRET')
-
+BREVO_API_KEY = os.environ.get('BREVO_API_KEY')
+MAIL_DEFAULT_SENDER_EMAIL = os.environ.get('MAIL_USERNAME', 'admin@sourcepoint.in')
+MAIL_DEFAULT_SENDER_NAME = 'Source Point'
 
 # Predefined Secret Questions
 SECRET_QUESTIONS = [
@@ -101,43 +97,65 @@ SECRET_QUESTIONS = [
 ]
 
 def send_email(to, subject, template, cc=None, attachments=None, **kwargs):
-    """Function to send an email. Returns True on success, False on failure."""
-    with app.app_context():
-        with app.test_request_context():
-            if not app.config.get('MAIL_USERNAME') or not app.config.get('MAIL_PASSWORD'):
-                app.logger.error("Email credentials (MAIL_USERNAME, MAIL_PASSWORD) are not set in environment variables.")
-                return False
+    """Function to send an email using Brevo (SIB). Returns True on success, False on failure."""
+    if not BREVO_API_KEY:
+        app.logger.error("Brevo API key is not set.")
+        return False
+
+    configuration = sib_api_v3_sdk.Configuration()
+    configuration.api_key['api-key'] = BREVO_API_KEY
+    api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
+    
+    html_content = render_template(template, **kwargs)
+    
+    sender = {"name": MAIL_DEFAULT_SENDER_NAME, "email": MAIL_DEFAULT_SENDER_EMAIL}
+    
+    if isinstance(to, str):
+        to_list = [{"email": to}]
+    else:
+        to_list = [{"email": email} for email in to]
+    
+    cc_list = []
+    if cc:
+        if isinstance(cc, str):
+            cc_list = [{"email": cc}]
+        elif isinstance(cc, list):
+            cc_list = [{"email": email} for email in cc]
             
-            admin_cc_email = "admin@sourcepoint.in"
+    email_attachments = []
+    if attachments:
+        for attachment_data in attachments:
+            encoded_content = base64.b64encode(attachment_data['data']).decode()
+            email_attachments.append({
+                "content": encoded_content,
+                "name": attachment_data['filename']
+            })
 
-            try:
-                final_cc = []
-                if cc:
-                    if isinstance(cc, list):
-                        final_cc.extend(cc)
-                    else:
-                        final_cc.append(cc)
-                
-                if admin_cc_email not in final_cc:
-                    final_cc.append(admin_cc_email)
+    # Dynamically build the email payload
+    smtp_email_data = {
+        "to": to_list,
+        "sender": sender,
+        "subject": subject,
+        "html_content": html_content
+    }
+    if cc_list:
+        smtp_email_data["cc"] = cc_list
+    if email_attachments:
+        smtp_email_data["attachment"] = email_attachments
 
-                if to in final_cc:
-                    final_cc.remove(to)
+    send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(**smtp_email_data)
 
-                msg = MailMessage(subject, recipients=[to], cc=final_cc)
-                msg.html = render_template(template, **kwargs)
+    try:
+        api_response = api_instance.send_transac_email(send_smtp_email)
+        app.logger.info(f"Email sent successfully to {to}. Response: {api_response}")
+        return True
+    except ApiException as e:
+        app.logger.error(f"Exception when calling TransactionalEmailsApi->send_transac_email: {e}\n")
+        return False
+    except Exception as e:
+        app.logger.error(f"An unexpected error occurred while sending email to {to}: {e}")
+        return False
 
-                if attachments:
-                    for attachment in attachments:
-                        msg.attach(attachment['filename'], attachment['content_type'], attachment['data'])
-
-                mail.send(msg)
-                app.logger.info(f"Email sent successfully to {to} with CC: {final_cc}")
-                return True
-            except Exception as e:
-                error_message = f"Failed to send email to {to}. Error: {str(e)}"
-                app.logger.error(error_message)
-                return False
 
 # --- Background Scheduler for Email Reminders and Test Completion ---
 def send_test_reminders():
