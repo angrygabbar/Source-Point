@@ -41,6 +41,7 @@
                         
                         {% if current_user.role == 'admin' %}
                             <a href="{{ url_for('manage_users') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Manage Users</a>
+                            <a href="{{ url_for('manage_records') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Manage Records</a>
                         {% endif %}
                     {% else %}
                         <a href="{{ url_for('home') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Home</a>
@@ -82,6 +83,7 @@
                     
                     {% if current_user.role == 'admin' %}
                         <a href="{{ url_for('manage_users') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Manage Users</a>
+                        <a href="{{ url_for('manage_records') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Manage Records</a>
                     {% endif %}
                     <a href="{{ url_for('logout') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Logout</a>
                 {% else %}

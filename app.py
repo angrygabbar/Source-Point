@@ -9,7 +9,7 @@ load_dotenv()
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from models import db, User, Message, ActivityUpdate, CodeSnippet, JobOpening, JobApplication, CodeTestSubmission, ProblemStatement, AffiliateAd, Feedback, Invoice, InvoiceItem, LearningContent
+from models import db, User, Message, ActivityUpdate, CodeSnippet, JobOpening, JobApplication, CodeTestSubmission, ProblemStatement, AffiliateAd, Feedback, Invoice, InvoiceItem, LearningContent, ModeratorAssignmentHistory
 from functools import wraps
 import requests
 import time
@@ -155,7 +155,6 @@ def send_email(to, subject, template, cc=None, attachments=None, **kwargs):
     except Exception as e:
         app.logger.error(f"An unexpected error occurred while sending email to {to}: {e}")
         return False
-
 
 # --- Background Scheduler for Email Reminders and Test Completion ---
 def send_test_reminders():
@@ -798,7 +797,17 @@ def assign_moderator():
 
     candidate.moderator_id = moderator_id
     db.session.commit()
-    app.logger.info(f"Moderator {moderator.id} assigned to candidate {candidate.id} in DB.")
+    
+    # Create a history record
+    history_record = ModeratorAssignmentHistory(
+        candidate_id=candidate.id,
+        moderator_id=moderator.id,
+        problem_statement_id=candidate.problem_statement_id
+    )
+    db.session.add(history_record)
+    db.session.commit()
+
+    app.logger.info(f"Moderator {moderator.id} assigned to candidate {candidate.id} in DB and history recorded.")
 
     ist_offset = timedelta(hours=5, minutes=30)
     email_context = {
@@ -1424,8 +1433,83 @@ def delete_invoice(invoice_id):
     return redirect(url_for('manage_invoices'))
 
 
+@app.route('/admin/records')
+@login_required
+@role_required('admin')
+def manage_records():
+    jobs = JobOpening.query.order_by(JobOpening.created_at.desc()).all()
+    feedback = Feedback.query.order_by(Feedback.created_at.desc()).all()
+    submissions = CodeTestSubmission.query.order_by(CodeTestSubmission.submitted_at.desc()).all()
+    history = ModeratorAssignmentHistory.query.order_by(ModeratorAssignmentHistory.assigned_at.desc()).all()
+    events = User.query.filter(User.test_completed == True).order_by(User.test_end_time.desc()).all()
+    
+    # Create a map of moderator IDs to User objects for the template
+    moderator_ids = [e.moderator_id for e in events if e.moderator_id]
+    moderators = User.query.filter(User.id.in_(moderator_ids)).all()
+    moderators_map = {m.id: m for m in moderators}
+
+    return render_template('manage_records.html', jobs=jobs, feedback=feedback, submissions=submissions, history=history, events=events, moderators_map=moderators_map)
+
+
+@app.route('/admin/records/delete_job/<int:job_id>')
+@login_required
+@role_required('admin')
+def delete_job_opening(job_id):
+    job = JobOpening.query.get_or_404(job_id)
+    db.session.delete(job)
+    db.session.commit()
+    flash(f'Job opening "{job.title}" and all its applications have been deleted.', 'success')
+    return redirect(url_for('manage_records'))
+
+@app.route('/admin/records/delete_feedback/<int:feedback_id>')
+@login_required
+@role_required('admin')
+def delete_feedback(feedback_id):
+    feedback = Feedback.query.get_or_404(feedback_id)
+    db.session.delete(feedback)
+    db.session.commit()
+    flash('Feedback record has been deleted.', 'success')
+    return redirect(url_for('manage_records'))
+
+@app.route('/admin/records/delete_submission/<int:submission_id>')
+@login_required
+@role_required('admin')
+def delete_submission_record(submission_id):
+    submission = CodeTestSubmission.query.get_or_404(submission_id)
+    db.session.delete(submission)
+    db.session.commit()
+    flash('Code submission record has been deleted.', 'success')
+    return redirect(url_for('manage_records'))
+
+@app.route('/admin/records/delete_assignment_history/<int:history_id>')
+@login_required
+@role_required('admin')
+def delete_assignment_history(history_id):
+    history_record = ModeratorAssignmentHistory.query.get_or_404(history_id)
+    db.session.delete(history_record)
+    db.session.commit()
+    flash('Assignment history record has been deleted.', 'success')
+    return redirect(url_for('manage_records'))
+
+@app.route('/admin/records/delete_coding_event/<int:user_id>')
+@login_required
+@role_required('admin')
+def delete_coding_event(user_id):
+    candidate = User.query.get_or_404(user_id)
+    # This action will just clear the event details from the user, not delete the user
+    candidate.problem_statement_id = None
+    candidate.test_start_time = None
+    candidate.test_end_time = None
+    candidate.test_completed = False
+    candidate.moderator_id = None
+    # Also delete any submissions they made for this event
+    CodeTestSubmission.query.filter_by(candidate_id=user_id).delete()
+    db.session.commit()
+    flash(f'Coding event history for {candidate.username} has been cleared.', 'success')
+    return redirect(url_for('manage_records'))
+
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(debug=True, use_reloader=False)
-
