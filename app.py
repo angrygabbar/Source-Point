@@ -370,6 +370,19 @@ def login_register():
                 new_user.is_approved = True
             db.session.add(new_user)
             db.session.commit()
+
+            # --- EMAIL NOTIFICATION FOR ADMINS ---
+            admins = User.query.filter_by(role='admin').all()
+            admin_emails = [admin.email for admin in admins]
+            if admin_emails:
+                send_email(
+                    to=admin_emails,
+                    subject="New User Registration - Action Required",
+                    template="mail/new_user_admin_notification.html",
+                    new_user=new_user,
+                    now=datetime.utcnow()
+                )
+
             flash('Account created successfully! Please wait for admin approval.', 'success')
             return redirect(url_for('login_register'))
         if 'login' in request.form:
@@ -738,7 +751,8 @@ def approve_user(user_id):
         to=user.email,
         subject="Your DevConnect Hub Account is Approved!",
         template="mail/account_approved.html",
-        user=user
+        user=user,
+        now=datetime.utcnow()
     )
     if email_sent:
         flash(f'User {user.username} has been approved and a notification has been sent.', 'success')
@@ -816,7 +830,8 @@ def assign_moderator():
         "problem_title": candidate.assigned_problem.title,
         "start_time_ist": candidate.test_start_time + ist_offset,
         "end_time_ist": candidate.test_end_time + ist_offset,
-        "meeting_link": candidate.meeting_link
+        "meeting_link": candidate.meeting_link,
+        "now": datetime.utcnow()
     }
     
     app.logger.info(f"Attempting to send assignment email to {moderator.email} with CC to {candidate.email}")
@@ -864,6 +879,33 @@ def apply_job(job_id):
         new_application = JobApplication(user_id=current_user.id, job_id=job.id)
         db.session.add(new_application)
         db.session.commit()
+
+        # --- EMAIL NOTIFICATIONS ---
+        admins = User.query.filter_by(role='admin').all()
+        admin_emails = [admin.email for admin in admins]
+        candidate = User.query.get(current_user.id)
+
+        # Notify Admins
+        if admin_emails:
+            send_email(
+                to=admin_emails,
+                subject=f"New Job Application: {job.title}",
+                template="mail/application_submitted_admin.html",
+                candidate=candidate,
+                job=job,
+                now=datetime.utcnow()
+            )
+        
+        # Notify Candidate
+        send_email(
+            to=candidate.email,
+            subject=f"Application Received: {job.title}",
+            template="mail/application_submitted_candidate.html",
+            candidate=candidate,
+            job=job,
+            now=datetime.utcnow()
+        )
+
         flash('You have successfully applied for the job!', 'success')
     return redirect(url_for('candidate_dashboard'))
 
@@ -874,6 +916,18 @@ def accept_application(app_id):
     application = JobApplication.query.get_or_404(app_id)
     application.status = 'accepted'
     db.session.commit()
+
+    # --- EMAIL NOTIFICATION TO CANDIDATE ---
+    send_email(
+        to=application.candidate.email,
+        subject=f"Update on your application for {application.job.title}",
+        template="mail/application_status_update.html",
+        candidate=application.candidate,
+        job=application.job,
+        status="Accepted",
+        now=datetime.utcnow()
+    )
+
     flash(f"Application from {application.candidate.username} for '{application.job.title}' has been accepted.", 'success')
     return redirect(url_for('admin_dashboard'))
 
@@ -884,8 +938,21 @@ def reject_application(app_id):
     application = JobApplication.query.get_or_404(app_id)
     application.status = 'rejected'
     db.session.commit()
+
+    # --- EMAIL NOTIFICATION TO CANDIDATE ---
+    send_email(
+        to=application.candidate.email,
+        subject=f"Update on your application for {application.job.title}",
+        template="mail/application_status_update.html",
+        candidate=application.candidate,
+        job=application.job,
+        status="Rejected",
+        now=datetime.utcnow()
+    )
+
     flash(f"Application from {application.candidate.username} for '{application.job.title}' has been rejected.", 'warning')
     return redirect(url_for('admin_dashboard'))
+
 
 @app.route('/submit_code_test', methods=['POST'])
 @login_required
