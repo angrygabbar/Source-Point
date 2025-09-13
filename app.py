@@ -87,7 +87,9 @@ login_manager = LoginManager(app)
 login_manager.login_view = 'login_register'
 login_manager.login_message_category = 'info'
 
-RAPIDAPI_KEY = os.environ.get('RAPIDAPI_KEY', "0a6ba78971msh4c6e4bd030a7155p19e180jsnd30bdfc2386d")
+JDOODLE_CLIENT_ID = os.environ.get('JDOODLE_CLIENT_ID')
+JDOODLE_CLIENT_SECRET = os.environ.get('JDOODLE_CLIENT_SECRET')
+
 
 # Predefined Secret Questions
 SECRET_QUESTIONS = [
@@ -884,18 +886,27 @@ def submit_code_test():
 @app.route('/run_code', methods=['POST'])
 @login_required
 def run_code():
-    code = request.json.get('code')
+    data = request.get_json()
+    code = data.get('code')
+    stdin = data.get('stdin', '') # Get stdin, default to empty string if not provided
+
     if not code:
         return jsonify({'error': 'No code provided'}), 400
-    url = "https://online-java-compiler.p.rapidapi.com/compile"
-    payload = code
-    headers = {
-        "content-type": "text/plain",
-        "X-RapidAPI-Key": RAPIDAPI_KEY,
-        "X-RapidAPI-Host": "online-java-compiler.p.rapidapi.com"
+
+    url = "https://api.jdoodle.com/v1/execute"
+    payload = {
+        "clientId": JDOODLE_CLIENT_ID,
+        "clientSecret": JDOODLE_CLIENT_SECRET,
+        "script": code,
+        "stdin": stdin,
+        "language": "java",
+        "versionIndex": "0" 
     }
+    
+    headers = {"Content-Type": "application/json"}
+    
     try:
-        response = requests.post(url, data=payload.encode('utf-8'), headers=headers)
+        response = requests.post(url, json=payload, headers=headers)
         response.raise_for_status()
         return jsonify(response.json())
     except requests.exceptions.RequestException as e:
