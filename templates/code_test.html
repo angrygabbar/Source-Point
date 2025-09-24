@@ -13,62 +13,86 @@
     </p>
 {% endif %}
 
-<form action="{{ url_for('submit_code_test') }}" method="POST">
-    <!-- Hidden input for language, as it's always Java now -->
+<form action="{{ url_for('submit_code_test') }}" method="POST" id="code-test-form">
     <input type="hidden" name="language" value="java">
     
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Code Editor -->
-        <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-6 animate-dynamic backdrop-blur-sm border border-white/10" style="animation-delay: 0.2s;">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-2xl font-bold text-white">Code Editor</h2>
-                <div class="flex items-center space-x-2">
-                    <label for="recipient" class="text-sm font-medium text-gray-300">Submit to:</label>
-                    <select name="recipient_id" id="recipient" class="block pl-3 pr-8 py-1 text-base border-gray-600 rounded-md bg-gray-700/50 text-white">
-                        {% for user in messageable_users %}
-                            <option class="bg-gray-800" value="{{ user.id }}">{{ user.username }} ({{ user.role.title() }})</option>
-                        {% endfor %}
-                    </select>
+        <!-- Left Column -->
+        <div class="space-y-8">
+            <!-- Code Editor -->
+            <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-6 animate-dynamic backdrop-blur-sm border border-white/10" style="animation-delay: 0.2s;">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-white">Code Editor</h2>
+                    <div class="flex items-center space-x-2">
+                        <label for="recipient" class="text-sm font-medium text-gray-300">Submit to:</label>
+                        <select name="recipient_id" id="recipient" class="block pl-3 pr-8 py-1 text-base border-gray-600 rounded-md bg-gray-700/50 text-white">
+                            {% for user in messageable_users %}
+                                <option class="bg-gray-800" value="{{ user.id }}">{{ user.username }} ({{ user.role.title() }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
+                <textarea name="code" id="codeInput" rows="15" class="w-full font-mono text-sm p-2 border border-gray-600 rounded-md shadow-sm bg-gray-900/50 text-gray-300" placeholder="public class Main..."></textarea>
+                <input type="hidden" name="output" id="outputInput">
             </div>
-            <textarea name="code" id="codeInput" rows="20" class="w-full font-mono text-sm p-2 border border-gray-600 rounded-md shadow-sm bg-gray-900/50 text-gray-300" placeholder="public class Main...">public class Main {
-    public static void main(String[] args) {
-        // Your code here.
-        System.out.println("Hello, Java!");
-    }
-}</textarea>
-            <input type="hidden" name="output" id="outputInput">
+            
+            <!-- Standard Input -->
+            <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-6 animate-dynamic backdrop-blur-sm border border-white/10" style="animation-delay: 0.3s;">
+                <h2 class="text-2xl font-bold text-white mb-4">Standard Input (stdin)</h2>
+                <textarea id="stdinInput" rows="5" class="w-full font-mono text-sm p-2 border border-gray-600 rounded-md shadow-sm bg-gray-900/50 text-gray-300" placeholder="Enter input for your program here..."></textarea>
+            </div>
         </div>
 
-        <!-- Output Console -->
-        <div class="bg-gray-900 text-white rounded-lg shadow-xl p-6 font-mono text-sm animate-dynamic" style="animation-delay: 0.3s;">
+        <!-- Right Column: Output Console -->
+        <div class="bg-gray-900 text-white rounded-lg shadow-xl p-6 font-mono text-sm animate-dynamic h-full" style="animation-delay: 0.4s;">
             <h2 class="text-2xl font-bold mb-4">Console Output</h2>
-            <pre id="outputConsole" class="whitespace-pre-wrap h-96 overflow-y-auto"></pre>
+            <pre id="outputConsole" class="whitespace-pre-wrap h-full overflow-y-auto"></pre>
         </div>
     </div>
-    <!-- CORRECTED: Removed animation class from this container -->
+    
     <div class="mt-6 flex justify-end space-x-4">
         <button type="button" id="runCodeBtn" class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">Run Code</button>
-        <button type="submit" class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700">Submit Test</button>
+        <button type="submit" id="submit-test-btn" class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700">Submit Test</button>
     </div>
 </form>
 
 <script>
-    document.getElementById('runCodeBtn').addEventListener('click', async () => {
-        const code = document.getElementById('codeInput').value;
-        const outputConsole = document.getElementById('outputConsole');
-        const outputInput = document.getElementById('outputInput');
-        const runBtn = document.getElementById('runCodeBtn');
+document.addEventListener('DOMContentLoaded', () => {
+    const codeInput = document.getElementById('codeInput');
+    const stdinInput = document.getElementById('stdinInput');
+    const outputConsole = document.getElementById('outputConsole');
+    const outputInput = document.getElementById('outputInput');
+    const runBtn = document.getElementById('runCodeBtn');
+    const codeTestForm = document.getElementById('code-test-form');
+    const submitTestBtn = document.getElementById('submit-test-btn');
+    
+    // Set default Java code
+    codeInput.value = `public class Main {
+    public static void main(String[] args) {
+        // Your code here.
+        System.out.println("Hello, Java!");
+    }
+}`;
+
+    runBtn.addEventListener('click', async () => {
+        const code = codeInput.value;
+        const stdin = stdinInput.value;
 
         outputConsole.textContent = "Running code...";
         runBtn.disabled = true;
-        runBtn.textContent = "Running...";
+        runBtn.innerHTML = `
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Running...
+        `;
 
         try {
             const response = await fetch("{{ url_for('run_code') }}", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code: code }),
+                body: JSON.stringify({ code: code, stdin: stdin }),
             });
 
             if (!response.ok) {
@@ -76,17 +100,13 @@
             }
 
             const result = await response.json();
-            let finalOutput = "";
-
-            // UPDATED: Logic to handle the response from online-java-compiler
-            if (result.error) {
-                finalOutput += "--- ERROR ---\n" + result.error + "\n\n";
-            } else if (result.output) {
-                finalOutput += "--- OUTPUT ---\n" + result.output + "\n\n";
-            } else {
-                finalOutput += "--- STATUS ---\nExecution finished with no output.\n\n";
-            }
             
+            // Handle JDoodle's response format
+            let finalOutput = result.output || "Execution finished with no output.";
+            if(result.statusCode >= 400){
+                finalOutput = `Error:\n${result.error}`;
+            }
+
             outputConsole.textContent = finalOutput;
             outputInput.value = finalOutput;
 
@@ -97,5 +117,19 @@
             runBtn.textContent = "Run Code";
         }
     });
+    
+    if (codeTestForm) {
+        codeTestForm.addEventListener('submit', () => {
+            submitTestBtn.disabled = true;
+            submitTestBtn.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Submitting...
+            `;
+        });
+    }
+});
 </script>
 {% endblock %}

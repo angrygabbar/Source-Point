@@ -26,6 +26,8 @@ class ProblemStatement(db.Model):
     description = db.Column(db.Text, nullable=False)
     created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     users = db.relationship('User', foreign_keys='User.problem_statement_id', backref='assigned_problem', lazy=True)
+    assignment_history = db.relationship('ModeratorAssignmentHistory', backref='problem', lazy=True)
+
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -67,11 +69,13 @@ class User(UserMixin, db.Model):
     sent_snippets = db.relationship('CodeSnippet', foreign_keys='CodeSnippet.sender_id', backref='snippet_sender', lazy=True)
     received_snippets = db.relationship('CodeSnippet', foreign_keys='CodeSnippet.recipient_id', backref='snippet_recipient', lazy=True)
     applications = db.relationship('JobApplication', backref='candidate', lazy=True)
-    test_submissions = db.relationship('CodeTestSubmission', foreign_keys='CodeTestSubmission.candidate_id', backref='candidate_submitter', lazy=True)
+    test_submissions = db.relationship('CodeTestSubmission', foreign_keys='CodeTestSubmission.candidate_id', backref='candidate_submitter', lazy='dynamic')
     received_tests = db.relationship('CodeTestSubmission', foreign_keys='CodeTestSubmission.recipient_id', backref='test_recipient', lazy=True)
     feedback_given = db.relationship('Feedback', foreign_keys='Feedback.moderator_id', backref='moderator', lazy=True)
     feedback_received = db.relationship('Feedback', foreign_keys='Feedback.candidate_id', backref='candidate', lazy=True)
     invoices = db.relationship('Invoice', backref='admin', lazy=True)
+    moderator_assignments = db.relationship('ModeratorAssignmentHistory', foreign_keys='ModeratorAssignmentHistory.moderator_id', backref='moderator', lazy=True)
+    candidate_assignments = db.relationship('ModeratorAssignmentHistory', foreign_keys='ModeratorAssignmentHistory.candidate_id', backref='candidate', lazy=True)
 
 
 class Message(db.Model):
@@ -102,7 +106,7 @@ class JobOpening(db.Model):
     description = db.Column(db.Text, nullable=False)
     is_open = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)
-    applications = db.relationship('JobApplication', backref='job', lazy=True)
+    applications = db.relationship('JobApplication', backref='job', lazy=True, cascade="all, delete-orphan")
 
 class JobApplication(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -161,3 +165,11 @@ class InvoiceItem(db.Model):
     quantity = db.Column(db.Integer, nullable=False, default=1)
     price = db.Column(db.Float, nullable=False)
     invoice_id = db.Column(db.Integer, db.ForeignKey('invoice.id'), nullable=False)
+
+class ModeratorAssignmentHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    candidate_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    moderator_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    problem_statement_id = db.Column(db.Integer, db.ForeignKey('problem_statement.id'), nullable=False)
+    assigned_at = db.Column(db.DateTime, default=datetime.utcnow)
+

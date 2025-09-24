@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update on Your Job Application</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { margin: 0; padding: 0; background-color: #f4f7f6; font-family: 'Inter', sans-serif; }
+        .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .header { background-color: #4338ca; color: #ffffff; padding: 30px; text-align: center; }
+        .header h1 { margin: 0; font-size: 28px; }
+        .content { padding: 30px 40px; color: #333; line-height: 1.6; }
+        .content p { margin: 0 0 15px; }
+        .status-box { padding: 15px; margin: 25px 0; border-radius: 8px; text-align: center; font-size: 18px; font-weight: 600; }
+        .status-accepted { background-color: #dcfce7; color: #166534; border-left: 5px solid #22c55e;}
+        .status-rejected { background-color: #fee2e2; color: #991b1b; border-left: 5px solid #ef4444;}
+        .footer { background-color: #eef2ff; text-align: center; padding: 20px; font-size: 12px; color: #6b7280; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Application Status Update</h1>
+        </div>
+        <div class="content">
+            <h2>Hi {{ candidate.username }},</h2>
+            <p>This is an update regarding your application for the <strong>{{ job.title }}</strong> position.</p>
+            
+            <div class="status-box status-{{ status|lower }}">
+                Your application has been {{ status }}.
+            </div>
+
+            {% if status == 'Accepted' %}
+            <p>Congratulations! Our team will be in touch shortly with the next steps. We're excited to move forward with you.</p>
+            {% else %}
+            <p>Thank you for your interest and the time you invested in this application. While we will not be moving forward at this time, we encourage you to apply for other positions that may open in the future.</p>
+            {% endif %}
+
+            <p>Best regards,<br>The Source Point Team</p>
+        </div>
+        <div class="footer">
+            <p>&copy; {{ now.year }} Source Point. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

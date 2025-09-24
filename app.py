@@ -9,17 +9,21 @@ load_dotenv()
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from models import db, User, Message, ActivityUpdate, CodeSnippet, JobOpening, JobApplication, CodeTestSubmission, ProblemStatement, AffiliateAd, Feedback, Invoice, InvoiceItem, LearningContent
+from models import db, User, Message, ActivityUpdate, CodeSnippet, JobOpening, JobApplication, CodeTestSubmission, ProblemStatement, AffiliateAd, Feedback, Invoice, InvoiceItem, LearningContent, ModeratorAssignmentHistory
 from functools import wraps
 import requests
 import time
 from datetime import datetime, timedelta
 from sqlalchemy import or_
 from werkzeug.utils import secure_filename
-from flask_mail import Mail, Message as MailMessage
 from apscheduler.schedulers.background import BackgroundScheduler
 from invoice_service import InvoiceGenerator
 from bs4 import BeautifulSoup
+# --- BREVO (SIB) IMPORTS ---
+import sib_api_v3_sdk
+from sib_api_v3_sdk.rest import ApiException
+import base64
+
 
 app = Flask(__name__)
 
@@ -62,32 +66,26 @@ def populate_db():
     print("Database populated with learning content.")
 # --- END COMMANDS ---
 
-app.config['SECRET_KEY'] = 'a_very_secret_key_that_should_be_changed'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_very_secret_key_that_should_be_changed')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=5)
 app.config['UPLOAD_FOLDER'] = 'static/resumes'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
-# Mail Configuration
-app.config['MAIL_SERVER'] = 'smtpout.secureserver.net'
-app.config['MAIL_PORT'] = 465
-app.config['MAIL_USE_SSL'] = True
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
-app.config['MAIL_DEFAULT_SENDER'] = ('Source Point', os.environ.get('MAIL_USERNAME'))
-
-
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 db.init_app(app)
 bcrypt = Bcrypt(app)
-mail = Mail(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login_register'
 login_manager.login_message_category = 'info'
 
-RAPIDAPI_KEY = os.environ.get('RAPIDAPI_KEY', "0a6ba78971msh4c6e4bd030a7155p19e180jsnd30bdfc2386d")
+JDOODLE_CLIENT_ID = os.environ.get('JDOODLE_CLIENT_ID')
+JDOODLE_CLIENT_SECRET = os.environ.get('JDOODLE_CLIENT_SECRET')
+BREVO_API_KEY = os.environ.get('BREVO_API_KEY')
+MAIL_DEFAULT_SENDER_EMAIL = os.environ.get('MAIL_USERNAME', 'admin@sourcepoint.in')
+MAIL_DEFAULT_SENDER_NAME = 'Source Point'
 
 # Predefined Secret Questions
 SECRET_QUESTIONS = [
@@ -99,43 +97,80 @@ SECRET_QUESTIONS = [
 ]
 
 def send_email(to, subject, template, cc=None, attachments=None, **kwargs):
-    """Function to send an email. Returns True on success, False on failure."""
-    with app.app_context():
-        with app.test_request_context():
-            if not app.config.get('MAIL_USERNAME') or not app.config.get('MAIL_PASSWORD'):
-                app.logger.error("Email credentials (MAIL_USERNAME, MAIL_PASSWORD) are not set in environment variables.")
-                return False
+    """Function to send an email using Brevo (SIB). Adds admin@sourcepoint.in to CC. Returns True on success, False on failure."""
+    if not BREVO_API_KEY:
+        app.logger.error("Brevo API key is not set.")
+        return False
+
+    # --- MODIFIED BLOCK: Add admin email to the CC list ---
+    admin_email = "admin@sourcepoint.in"
+    
+    cc_emails = set()
+    if cc:
+        if isinstance(cc, str):
+            cc_emails.add(cc)
+        elif isinstance(cc, list):
+            cc_emails.update(cc)
+    
+    # Add the hardcoded admin email to the set of CCs
+    cc_emails.add(admin_email)
+    # --- END MODIFIED BLOCK ---
+
+    configuration = sib_api_v3_sdk.Configuration()
+    configuration.api_key['api-key'] = BREVO_API_KEY
+    api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
+    
+    html_content = render_template(template, **kwargs)
+    
+    sender = {"name": MAIL_DEFAULT_SENDER_NAME, "email": MAIL_DEFAULT_SENDER_EMAIL}
+    
+    # --- MODIFIED BLOCK: Handle primary recipients and filter them from CC list ---
+    primary_recipients_emails = set()
+    if isinstance(to, str):
+        to_list = [{"email": to}]
+        primary_recipients_emails.add(to)
+    else:
+        to_list = [{"email": email} for email in to]
+        primary_recipients_emails.update(to)
+    
+    # Filter out any primary recipients from the CC list to avoid sending them the email twice
+    final_cc_emails = cc_emails - primary_recipients_emails
+    cc_list = [{"email": email} for email in final_cc_emails]
+    # --- END MODIFIED BLOCK ---
             
-            admin_cc_email = "admin@sourcepoint.in"
+    email_attachments = []
+    if attachments:
+        for attachment_data in attachments:
+            encoded_content = base64.b64encode(attachment_data['data']).decode()
+            email_attachments.append({
+                "content": encoded_content,
+                "name": attachment_data['filename']
+            })
 
-            try:
-                final_cc = []
-                if cc:
-                    if isinstance(cc, list):
-                        final_cc.extend(cc)
-                    else:
-                        final_cc.append(cc)
-                
-                if admin_cc_email not in final_cc:
-                    final_cc.append(admin_cc_email)
+    # Dynamically build the email payload
+    smtp_email_data = {
+        "to": to_list,
+        "sender": sender,
+        "subject": subject,
+        "html_content": html_content
+    }
+    if cc_list:
+        smtp_email_data["cc"] = cc_list
+    if email_attachments:
+        smtp_email_data["attachment"] = email_attachments
 
-                if to in final_cc:
-                    final_cc.remove(to)
+    send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(**smtp_email_data)
 
-                msg = MailMessage(subject, recipients=[to], cc=final_cc)
-                msg.html = render_template(template, **kwargs)
-
-                if attachments:
-                    for attachment in attachments:
-                        msg.attach(attachment['filename'], attachment['content_type'], attachment['data'])
-
-                mail.send(msg)
-                app.logger.info(f"Email sent successfully to {to} with CC: {final_cc}")
-                return True
-            except Exception as e:
-                error_message = f"Failed to send email to {to}. Error: {str(e)}"
-                app.logger.error(error_message)
-                return False
+    try:
+        api_response = api_instance.send_transac_email(send_smtp_email)
+        app.logger.info(f"Email sent successfully to {to}. Response: {api_response}")
+        return True
+    except ApiException as e:
+        app.logger.error(f"Exception when calling TransactionalEmailsApi->send_transac_email: {e}\n")
+        return False
+    except Exception as e:
+        app.logger.error(f"An unexpected error occurred while sending email to {to}: {e}")
+        return False
 
 # --- Background Scheduler for Email Reminders and Test Completion ---
 def send_test_reminders():
@@ -193,18 +228,9 @@ def check_completed_tests():
                     problem_title=problem_title
                 )
 
-                email_sent_admins = all([
-                    send_email(
-                        to=admin.email,
-                        subject=f"Coding Test Completed by {candidate.username}",
-                        template="mail/test_completed_admin.html",
-                        admin=admin,
-                        candidate=candidate,
-                        problem_title=problem_title
-                    ) for admin in admins
-                ])
-                
-                if email_sent_candidate and email_sent_admins:
+                # Admins are already CC'd by the updated send_email function, so no need to send a separate email.
+                # Just check if the primary email was sent successfully.
+                if email_sent_candidate:
                     candidate.test_completed = True
                     db.session.commit()
                     app.logger.info(f"Marked test as complete for {candidate.username}")
@@ -351,6 +377,19 @@ def login_register():
                 new_user.is_approved = True
             db.session.add(new_user)
             db.session.commit()
+
+            # --- EMAIL NOTIFICATION FOR ADMINS ---
+            admins = User.query.filter_by(role='admin').all()
+            admin_emails = [admin.email for admin in admins]
+            if admin_emails:
+                send_email(
+                    to=admin_emails,
+                    subject="New User Registration - Action Required",
+                    template="mail/new_user_admin_notification.html",
+                    new_user=new_user,
+                    now=datetime.utcnow()
+                )
+
             flash('Account created successfully! Please wait for admin approval.', 'success')
             return redirect(url_for('login_register'))
         if 'login' in request.form:
@@ -719,7 +758,8 @@ def approve_user(user_id):
         to=user.email,
         subject="Your DevConnect Hub Account is Approved!",
         template="mail/account_approved.html",
-        user=user
+        user=user,
+        now=datetime.utcnow()
     )
     if email_sent:
         flash(f'User {user.username} has been approved and a notification has been sent.', 'success')
@@ -778,7 +818,17 @@ def assign_moderator():
 
     candidate.moderator_id = moderator_id
     db.session.commit()
-    app.logger.info(f"Moderator {moderator.id} assigned to candidate {candidate.id} in DB.")
+    
+    # Create a history record
+    history_record = ModeratorAssignmentHistory(
+        candidate_id=candidate.id,
+        moderator_id=moderator.id,
+        problem_statement_id=candidate.problem_statement_id
+    )
+    db.session.add(history_record)
+    db.session.commit()
+
+    app.logger.info(f"Moderator {moderator.id} assigned to candidate {candidate.id} in DB and history recorded.")
 
     ist_offset = timedelta(hours=5, minutes=30)
     email_context = {
@@ -787,7 +837,8 @@ def assign_moderator():
         "problem_title": candidate.assigned_problem.title,
         "start_time_ist": candidate.test_start_time + ist_offset,
         "end_time_ist": candidate.test_end_time + ist_offset,
-        "meeting_link": candidate.meeting_link
+        "meeting_link": candidate.meeting_link,
+        "now": datetime.utcnow()
     }
     
     app.logger.info(f"Attempting to send assignment email to {moderator.email} with CC to {candidate.email}")
@@ -835,6 +886,32 @@ def apply_job(job_id):
         new_application = JobApplication(user_id=current_user.id, job_id=job.id)
         db.session.add(new_application)
         db.session.commit()
+
+        # --- EMAIL NOTIFICATIONS ---
+        admins = User.query.filter_by(role='admin').all()
+        admin_emails = [admin.email for admin in admins]
+        candidate = User.query.get(current_user.id)
+
+        # Notify Admins (they will be CC'd automatically by the new send_email function)
+        send_email(
+            to=admin_emails, # This seems redundant, but it's okay as they will be filtered from CC
+            subject=f"New Job Application: {job.title}",
+            template="mail/application_submitted_admin.html",
+            candidate=candidate,
+            job=job,
+            now=datetime.utcnow()
+        )
+        
+        # Notify Candidate
+        send_email(
+            to=candidate.email,
+            subject=f"Application Received: {job.title}",
+            template="mail/application_submitted_candidate.html",
+            candidate=candidate,
+            job=job,
+            now=datetime.utcnow()
+        )
+
         flash('You have successfully applied for the job!', 'success')
     return redirect(url_for('candidate_dashboard'))
 
@@ -845,6 +922,18 @@ def accept_application(app_id):
     application = JobApplication.query.get_or_404(app_id)
     application.status = 'accepted'
     db.session.commit()
+
+    # --- EMAIL NOTIFICATION TO CANDIDATE ---
+    send_email(
+        to=application.candidate.email,
+        subject=f"Update on your application for {application.job.title}",
+        template="mail/application_status_update.html",
+        candidate=application.candidate,
+        job=application.job,
+        status="Accepted",
+        now=datetime.utcnow()
+    )
+
     flash(f"Application from {application.candidate.username} for '{application.job.title}' has been accepted.", 'success')
     return redirect(url_for('admin_dashboard'))
 
@@ -855,8 +944,21 @@ def reject_application(app_id):
     application = JobApplication.query.get_or_404(app_id)
     application.status = 'rejected'
     db.session.commit()
+
+    # --- EMAIL NOTIFICATION TO CANDIDATE ---
+    send_email(
+        to=application.candidate.email,
+        subject=f"Update on your application for {application.job.title}",
+        template="mail/application_status_update.html",
+        candidate=application.candidate,
+        job=application.job,
+        status="Rejected",
+        now=datetime.utcnow()
+    )
+
     flash(f"Application from {application.candidate.username} for '{application.job.title}' has been rejected.", 'warning')
     return redirect(url_for('admin_dashboard'))
+
 
 @app.route('/submit_code_test', methods=['POST'])
 @login_required
@@ -878,24 +980,58 @@ def submit_code_test():
         )
         db.session.add(submission)
         db.session.commit()
-        flash('Your code test has been submitted successfully!', 'success')
+
+        # --- EMAIL NOTIFICATION LOGIC ---
+        try:
+            recipient = User.query.get(recipient_id)
+            candidate = User.query.get(current_user.id)
+            problem_title = candidate.assigned_problem.title if candidate.assigned_problem else None
+
+            send_email(
+                to=recipient.email,
+                cc=[candidate.email], # Candidate will also be CC'd
+                subject=f"New Code Submission from {candidate.username}",
+                template="mail/submit_code_test.html",
+                candidate=candidate,
+                recipient=recipient,
+                problem_title=problem_title,
+                language=language,
+                code=code,
+                output=output,
+                now=datetime.utcnow()
+            )
+            flash('Your code test has been submitted successfully and sent via email!', 'success')
+        except Exception as e:
+            app.logger.error(f"Failed to send code submission email. Error: {e}")
+            flash('Your code test was submitted, but there was an error sending the notification email.', 'warning')
+        # --- END LOGIC ---
+
     return redirect(url_for('code_test'))
 
 @app.route('/run_code', methods=['POST'])
 @login_required
 def run_code():
-    code = request.json.get('code')
+    data = request.get_json()
+    code = data.get('code')
+    stdin = data.get('stdin', '') # Get stdin, default to empty string if not provided
+
     if not code:
         return jsonify({'error': 'No code provided'}), 400
-    url = "https://online-java-compiler.p.rapidapi.com/compile"
-    payload = code
-    headers = {
-        "content-type": "text/plain",
-        "X-RapidAPI-Key": RAPIDAPI_KEY,
-        "X-RapidAPI-Host": "online-java-compiler.p.rapidapi.com"
+
+    url = "https://api.jdoodle.com/v1/execute"
+    payload = {
+        "clientId": JDOODLE_CLIENT_ID,
+        "clientSecret": JDOODLE_CLIENT_SECRET,
+        "script": code,
+        "stdin": stdin,
+        "language": "java",
+        "versionIndex": "0" 
     }
+    
+    headers = {"Content-Type": "application/json"}
+    
     try:
-        response = requests.post(url, data=payload.encode('utf-8'), headers=headers)
+        response = requests.post(url, json=payload, headers=headers)
         response.raise_for_status()
         return jsonify(response.json())
     except requests.exceptions.RequestException as e:
@@ -1242,17 +1378,15 @@ def submit_feedback():
     db.session.add(feedback)
     db.session.commit()
 
-    admins = User.query.filter_by(role='admin').all()
-    for admin in admins:
-        send_email(
-            to=admin.email,
-            cc=[current_user.email],
-            subject=f"Feedback Submitted for {candidate.username}",
-            template="mail/feedback_notification.html",
-            moderator=current_user,
-            candidate=candidate,
-            feedback=feedback
-        )
+    send_email(
+        to=current_user.email, # Primary recipient is the moderator
+        cc=[], # Admins are already added by the main function
+        subject=f"Feedback Submitted for {candidate.username}",
+        template="mail/feedback_notification.html",
+        moderator=current_user,
+        candidate=candidate,
+        feedback=feedback
+    )
 
     flash('Feedback submitted successfully and admin has been notified.', 'success')
     return redirect(url_for('moderator_dashboard'))
@@ -1341,13 +1475,144 @@ def create_invoice():
             invoice_number=invoice.invoice_number,
             total_amount=invoice.total_amount,
             due_date=invoice.due_date.strftime('%B %d, %Y'),
-            now=datetime.utcnow(),
             attachments=[attachment]
         )
 
         flash('Invoice created and sent successfully!', 'success')
         return redirect(url_for('manage_invoices'))
     return render_template('create_invoice.html')
+
+@app.route('/admin/invoices/delete/<int:invoice_id>')
+@login_required
+@role_required('admin')
+def delete_invoice(invoice_id):
+    invoice = Invoice.query.get_or_404(invoice_id)
+    db.session.delete(invoice)
+    db.session.commit()
+    flash(f'Invoice {invoice.invoice_number} has been deleted.', 'success')
+    return redirect(url_for('manage_invoices'))
+
+
+@app.route('/admin/invoices/resend', methods=['POST'])
+@login_required
+@role_required('admin')
+def resend_invoice():
+    invoice_id = request.form.get('invoice_id')
+    recipient_emails_str = request.form.get('recipient_emails')
+    
+    if not invoice_id or not recipient_emails_str:
+        flash('Invalid request. Please try again.', 'danger')
+        return redirect(url_for('manage_invoices'))
+        
+    invoice = Invoice.query.get_or_404(invoice_id)
+    
+    # Process the recipient emails string into a list
+    recipient_list = [email.strip() for email in recipient_emails_str.split(',') if email.strip()]
+
+    if not recipient_list:
+        flash('Please provide at least one valid recipient email address.', 'danger')
+        return redirect(url_for('manage_invoices'))
+
+    # Regenerate the PDF
+    invoice_generator = InvoiceGenerator(invoice)
+    pdf_data = invoice_generator.generate_pdf()
+
+    attachment = {
+        'filename': f'{invoice.invoice_number}.pdf',
+        'content_type': 'application/pdf',
+        'data': pdf_data
+    }
+
+    # Resend the email to the new list of recipients
+    send_email(
+        to=recipient_list,
+        subject=f'Invoice ({invoice.invoice_number}) from Source Point',
+        template='mail/professional_invoice_email.html',
+        recipient_name=invoice.recipient_name,
+        invoice_number=invoice.invoice_number,
+        total_amount=invoice.total_amount,
+        due_date=invoice.due_date.strftime('%B %d, %Y'),
+        attachments=[attachment]
+    )
+
+    flash(f'Invoice {invoice.invoice_number} has been resent to the specified recipients!', 'success')
+    return redirect(url_for('manage_invoices'))
+
+
+@app.route('/admin/records')
+@login_required
+@role_required('admin')
+def manage_records():
+    jobs = JobOpening.query.order_by(JobOpening.created_at.desc()).all()
+    feedback = Feedback.query.order_by(Feedback.created_at.desc()).all()
+    submissions = CodeTestSubmission.query.order_by(CodeTestSubmission.submitted_at.desc()).all()
+    history = ModeratorAssignmentHistory.query.order_by(ModeratorAssignmentHistory.assigned_at.desc()).all()
+    events = User.query.filter(User.test_completed == True).order_by(User.test_end_time.desc()).all()
+    
+    # Create a map of moderator IDs to User objects for the template
+    moderator_ids = [e.moderator_id for e in events if e.moderator_id]
+    moderators = User.query.filter(User.id.in_(moderator_ids)).all()
+    moderators_map = {m.id: m for m in moderators}
+
+    return render_template('manage_records.html', jobs=jobs, feedback=feedback, submissions=submissions, history=history, events=events, moderators_map=moderators_map)
+
+
+@app.route('/admin/records/delete_job/<int:job_id>')
+@login_required
+@role_required('admin')
+def delete_job_opening(job_id):
+    job = JobOpening.query.get_or_404(job_id)
+    db.session.delete(job)
+    db.session.commit()
+    flash(f'Job opening "{job.title}" and all its applications have been deleted.', 'success')
+    return redirect(url_for('manage_records'))
+
+@app.route('/admin/records/delete_feedback/<int:feedback_id>')
+@login_required
+@role_required('admin')
+def delete_feedback(feedback_id):
+    feedback = Feedback.query.get_or_404(feedback_id)
+    db.session.delete(feedback)
+    db.session.commit()
+    flash('Feedback record has been deleted.', 'success')
+    return redirect(url_for('manage_records'))
+
+@app.route('/admin/records/delete_submission/<int:submission_id>')
+@login_required
+@role_required('admin')
+def delete_submission_record(submission_id):
+    submission = CodeTestSubmission.query.get_or_404(submission_id)
+    db.session.delete(submission)
+    db.session.commit()
+    flash('Code submission record has been deleted.', 'success')
+    return redirect(url_for('manage_records'))
+
+@app.route('/admin/records/delete_assignment_history/<int:history_id>')
+@login_required
+@role_required('admin')
+def delete_assignment_history(history_id):
+    history_record = ModeratorAssignmentHistory.query.get_or_404(history_id)
+    db.session.delete(history_record)
+    db.session.commit()
+    flash('Assignment history record has been deleted.', 'success')
+    return redirect(url_for('manage_records'))
+
+@app.route('/admin/records/delete_coding_event/<int:user_id>')
+@login_required
+@role_required('admin')
+def delete_coding_event(user_id):
+    candidate = User.query.get_or_404(user_id)
+    # This action will just clear the event details from the user, not delete the user
+    candidate.problem_statement_id = None
+    candidate.test_start_time = None
+    candidate.test_end_time = None
+    candidate.test_completed = False
+    candidate.moderator_id = None
+    # Also delete any submissions they made for this event
+    CodeTestSubmission.query.filter_by(candidate_id=user_id).delete()
+    db.session.commit()
+    flash(f'Coding event history for {candidate.username} has been cleared.', 'success')
+    return redirect(url_for('manage_records'))
 
 
 if __name__ == '__main__':
