@@ -9,7 +9,7 @@ load_dotenv()
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from models import db, User, Message, ActivityUpdate, CodeSnippet, JobOpening, JobApplication, CodeTestSubmission, ProblemStatement, AffiliateAd, Feedback, Invoice, InvoiceItem, LearningContent, ModeratorAssignmentHistory
+from models import db, User, Message, ActivityUpdate, CodeSnippet, JobOpening, JobApplication, CodeTestSubmission, ProblemStatement, AffiliateAd, Feedback, Invoice, InvoiceItem, LearningContent, ModeratorAssignmentHistory, Project, Transaction
 from functools import wraps
 import requests
 import time
@@ -103,7 +103,7 @@ def send_email(to, subject, template, cc=None, attachments=None, **kwargs):
         return False
 
     # --- MODIFIED BLOCK: Add admin email to the CC list ---
-    admin_email = "admin@sourcepoint.in"
+    admin_email = "sourcepoint.archieve@gmail.com"
     
     cc_emails = set()
     if cc:
@@ -1613,6 +1613,113 @@ def delete_coding_event(user_id):
     db.session.commit()
     flash(f'Coding event history for {candidate.username} has been cleared.', 'success')
     return redirect(url_for('manage_records'))
+
+# --- NEW PROJECT MANAGEMENT ROUTES ---
+
+@app.route('/projects')
+@login_required
+@role_required('admin')
+def projects():
+    projects = Project.query.order_by(Project.start_date.desc()).all()
+    return render_template('projects.html', projects=projects)
+
+@app.route('/create_project', methods=['POST'])
+@login_required
+@role_required('admin')
+def create_project():
+    name = request.form.get('name')
+    description = request.form.get('description')
+    start_date_str = request.form.get('start_date')
+    end_date_str = request.form.get('end_date')
+    budget = request.form.get('budget')
+    status = request.form.get('status')
+
+    start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else None
+    end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else None
+
+    new_project = Project(
+        name=name,
+        description=description,
+        start_date=start_date,
+        end_date=end_date,
+        budget=float(budget) if budget else 0.0,
+        status=status
+    )
+    db.session.add(new_project)
+    db.session.commit()
+    flash(f'Project "{name}" has been created successfully.', 'success')
+    return redirect(url_for('projects'))
+
+@app.route('/project/<int:project_id>')
+@login_required
+@role_required('admin')
+def project_detail(project_id):
+    project = Project.query.get_or_404(project_id)
+    return render_template('project_detail.html', project=project)
+
+@app.route('/project/<int:project_id>/add_transaction', methods=['POST'])
+@login_required
+@role_required('admin')
+def add_transaction(project_id):
+    project = Project.query.get_or_404(project_id)
+    description = request.form.get('description')
+    amount = float(request.form.get('amount'))
+    category = request.form.get('category')
+    date_str = request.form.get('date')
+    date = datetime.strptime(date_str, '%Y-%m-%d').date() if date_str else datetime.utcnow().date()
+
+    new_transaction = Transaction(
+        description=description,
+        amount=amount,
+        category=category,
+        date=date,
+        project_id=project.id
+    )
+    db.session.add(new_transaction)
+    db.session.commit()
+    flash(f'Transaction for "{project.name}" has been added.', 'success')
+    return redirect(url_for('project_detail', project_id=project_id))
+
+@app.route('/edit_transaction/<int:transaction_id>', methods=['GET', 'POST'])
+@login_required
+@role_required('admin')
+def edit_transaction(transaction_id):
+    transaction = Transaction.query.get_or_404(transaction_id)
+    if request.method == 'POST':
+        transaction.description = request.form.get('description')
+        transaction.amount = float(request.form.get('amount'))
+        transaction.category = request.form.get('category')
+        date_str = request.form.get('date')
+        transaction.date = datetime.strptime(date_str, '%Y-%m-%d').date() if date_str else transaction.date
+        db.session.commit()
+        flash('Transaction updated successfully.', 'success')
+        return redirect(url_for('project_detail', project_id=transaction.project_id))
+    return render_template('edit_transaction.html', transaction=transaction)
+
+@app.route('/delete_transaction/<int:transaction_id>')
+@login_required
+@role_required('admin')
+def delete_transaction(transaction_id):
+    transaction = Transaction.query.get_or_404(transaction_id)
+    project_id = transaction.project_id
+    db.session.delete(transaction)
+    db.session.commit()
+    flash('Transaction deleted successfully.', 'success')
+    return redirect(url_for('project_detail', project_id=project_id))
+
+@app.route('/project/<int:project_id>/update_status', methods=['POST'])
+@login_required
+@role_required('admin')
+def update_project_status(project_id):
+    project = Project.query.get_or_404(project_id)
+    new_status = request.form.get('status')
+    if new_status:
+        project.status = new_status
+        db.session.commit()
+        flash(f'Project status updated to "{new_status}".', 'success')
+    return redirect(url_for('project_detail', project_id=project_id))
+
+# --- END NEW PROJECT MANAGEMENT ROUTES ---
 
 
 if __name__ == '__main__':

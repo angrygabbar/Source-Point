@@ -173,3 +173,21 @@ class ModeratorAssignmentHistory(db.Model):
     problem_statement_id = db.Column(db.Integer, db.ForeignKey('problem_statement.id'), nullable=False)
     assigned_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+# --- NEW PROJECT AND TRANSACTION MODELS ---
+class Project(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    start_date = db.Column(db.Date, nullable=True)
+    end_date = db.Column(db.Date, nullable=True)
+    budget = db.Column(db.Float, nullable=False, default=0.0)
+    status = db.Column(db.String(50), nullable=False, default='Planning')  # Add this line
+    transactions = db.relationship('Transaction', backref='project', lazy=True, cascade="all, delete-orphan")
+
+class Transaction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    description = db.Column(db.String(200), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    date = db.Column(db.Date, nullable=False, default=datetime.utcnow)
+    category = db.Column(db.String(50), nullable=False)  # 'funding' or 'expense'
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
