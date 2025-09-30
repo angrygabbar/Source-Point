@@ -173,7 +173,19 @@ class ModeratorAssignmentHistory(db.Model):
     problem_statement_id = db.Column(db.Integer, db.ForeignKey('problem_statement.id'), nullable=False)
     assigned_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-# --- NEW PROJECT AND TRANSACTION MODELS ---
+# --- NEW BRD MODEL ---
+class BRD(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False, unique=True)
+    executive_summary = db.Column(db.Text, nullable=True)
+    project_objectives = db.Column(db.Text, nullable=True)
+    project_scope = db.Column(db.Text, nullable=True)
+    business_requirements = db.Column(db.Text, nullable=True)
+    key_stakeholders = db.Column(db.Text, nullable=True)
+    project_constraints = db.Column(db.Text, nullable=True)
+    cost_benefit_analysis = db.Column(db.Text, nullable=True)
+
+
 class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
@@ -183,6 +195,8 @@ class Project(db.Model):
     budget = db.Column(db.Float, nullable=False, default=0.0)
     status = db.Column(db.String(50), nullable=False, default='Planning')  # Add this line
     transactions = db.relationship('Transaction', backref='project', lazy=True, cascade="all, delete-orphan")
+    brd = db.relationship('BRD', backref='project', uselist=False, cascade="all, delete-orphan")
+
 
 class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)

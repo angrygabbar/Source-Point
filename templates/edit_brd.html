@@ -1,0 +1,54 @@
+{% extends "layout.html" %}
+{% block title %}Edit BRD for {{ project.name }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <a href="{{ url_for('view_brd', project_id=project.id) }}" class="text-indigo-400 hover:underline mb-4 inline-block">&larr; Back to BRD</a>
+    <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-6 animate-dynamic backdrop-blur-sm border border-white/10">
+        <h1 class="text-3xl font-bold text-white mb-6">Edit BRD: {{ project.name }}</h1>
+        <form action="{{ url_for('edit_brd', project_id=project.id) }}" method="POST" class="space-y-6">
+            <div>
+                <label for="executive_summary" class="block text-sm font-medium text-gray-300">Executive Summary</label>
+                <textarea name="executive_summary" class="brd-editor mt-1 w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">{{ brd.executive_summary or '' }}</textarea>
+            </div>
+            <div>
+                <label for="project_objectives" class="block text-sm font-medium text-gray-300">Project Objectives</label>
+                <textarea name="project_objectives" class="brd-editor mt-1 w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">{{ brd.project_objectives or '' }}</textarea>
+            </div>
+            <div>
+                <label for="project_scope" class="block text-sm font-medium text-gray-300">Project Scope</label>
+                <textarea name="project_scope" class="brd-editor mt-1 w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">{{ brd.project_scope or '' }}</textarea>
+            </div>
+            <div>
+                <label for="business_requirements" class="block text-sm font-medium text-gray-300">Business Requirements</label>
+                <textarea name="business_requirements" class="brd-editor mt-1 w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">{{ brd.business_requirements or '' }}</textarea>
+            </div>
+            <div>
+                <label for="key_stakeholders" class="block text-sm font-medium text-gray-300">Key Stakeholders</label>
+                <textarea name="key_stakeholders" class="brd-editor mt-1 w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">{{ brd.key_stakeholders or '' }}</textarea>
+            </div>
+            <div>
+                <label for="project_constraints" class="block text-sm font-medium text-gray-300">Project Constraints</label>
+                <textarea name="project_constraints" class="brd-editor mt-1 w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">{{ brd.project_constraints or '' }}</textarea>
+            </div>
+            <div>
+                <label for="cost_benefit_analysis" class="block text-sm font-medium text-gray-300">Cost-Benefit Analysis</label>
+                <textarea name="cost_benefit_analysis" class="brd-editor mt-1 w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">{{ brd.cost_benefit_analysis or '' }}</textarea>
+            </div>
+            <button type="submit" class="w-full py-2 px-4 rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Save BRD</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        tinymce.init({
+            selector: '.brd-editor',
+            plugins: 'code table lists image link media autoresize',
+            toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | indent outdent | bullist numlist | code | table | image link media',
+            height: '30vh',
+            skin: 'oxide-dark',
+            content_css: 'dark'
+        });
+    });
+</script>
+{% endblock %}

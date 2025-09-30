@@ -9,7 +9,7 @@ load_dotenv()
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from models import db, User, Message, ActivityUpdate, CodeSnippet, JobOpening, JobApplication, CodeTestSubmission, ProblemStatement, AffiliateAd, Feedback, Invoice, InvoiceItem, LearningContent, ModeratorAssignmentHistory, Project, Transaction
+from models import db, User, Message, ActivityUpdate, CodeSnippet, JobOpening, JobApplication, CodeTestSubmission, ProblemStatement, AffiliateAd, Feedback, Invoice, InvoiceItem, LearningContent, ModeratorAssignmentHistory, Project, Transaction, BRD
 from functools import wraps
 import requests
 import time
@@ -17,7 +17,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import or_
 from werkzeug.utils import secure_filename
 from apscheduler.schedulers.background import BackgroundScheduler
-from invoice_service import InvoiceGenerator
+from invoice_service import InvoiceGenerator, BrdGenerator
 from bs4 import BeautifulSoup
 # --- BREVO (SIB) IMPORTS ---
 import sib_api_v3_sdk
@@ -173,38 +173,6 @@ def send_email(to, subject, template, cc=None, attachments=None, **kwargs):
         return False
 
 # --- Background Scheduler for Email Reminders and Test Completion ---
-def send_test_reminders():
-    with app.app_context():
-        now = datetime.utcnow()
-        reminder_window_start = now + timedelta(minutes=14)
-        reminder_window_end = now + timedelta(minutes=16)
-
-        candidates_to_remind = User.query.filter(
-            User.role == 'candidate',
-            User.test_start_time.between(reminder_window_start, reminder_window_end),
-            User.reminder_sent == False
-        ).all()
-
-        for candidate in candidates_to_remind:
-            app.logger.info(f"Sending reminder to {candidate.username} for test at {candidate.test_start_time}")
-            
-            ist_offset = timedelta(hours=5, minutes=30)
-            start_time_ist = candidate.test_start_time + ist_offset
-            end_time_ist = candidate.test_end_time + ist_offset
-
-            send_email(
-                to=candidate.email,
-                subject="Reminder: Your Coding Test is Starting Soon",
-                template="mail/test_reminder.html",
-                candidate=candidate,
-                problem_title=candidate.assigned_problem.title,
-                start_time_ist=start_time_ist,
-                end_time_ist=end_time_ist
-            )
-            
-            candidate.reminder_sent = True
-            db.session.commit()
-
 def check_completed_tests():
     with app.app_context():
         now = datetime.utcnow()
@@ -239,10 +207,10 @@ def check_completed_tests():
 
 
 scheduler = BackgroundScheduler(daemon=True)
-scheduler.add_job(send_test_reminders, 'interval', minutes=1)
 scheduler.add_job(check_completed_tests, 'interval', minutes=1)
 scheduler.start()
 # --- End Scheduler ---
+
 
 @app.before_request
 def before_request():
@@ -1620,35 +1588,43 @@ def delete_coding_event(user_id):
 @login_required
 @role_required('admin')
 def projects():
-    projects = Project.query.order_by(Project.start_date.desc()).all()
-    return render_template('projects.html', projects=projects)
+    return render_template('projects_hub.html')
 
-@app.route('/create_project', methods=['POST'])
+@app.route('/manage_projects')
+@login_required
+@role_required('admin')
+def manage_projects():
+    projects = Project.query.order_by(Project.start_date.desc()).all()
+    return render_template('manage_projects.html', projects=projects)
+
+@app.route('/create_project', methods=['GET', 'POST'])
 @login_required
 @role_required('admin')
 def create_project():
-    name = request.form.get('name')
-    description = request.form.get('description')
-    start_date_str = request.form.get('start_date')
-    end_date_str = request.form.get('end_date')
-    budget = request.form.get('budget')
-    status = request.form.get('status')
+    if request.method == 'POST':
+        name = request.form.get('name')
+        description = request.form.get('description')
+        start_date_str = request.form.get('start_date')
+        end_date_str = request.form.get('end_date')
+        budget = request.form.get('budget')
+        status = request.form.get('status')
 
-    start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else None
-    end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else None
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else None
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else None
 
-    new_project = Project(
-        name=name,
-        description=description,
-        start_date=start_date,
-        end_date=end_date,
-        budget=float(budget) if budget else 0.0,
-        status=status
-    )
-    db.session.add(new_project)
-    db.session.commit()
-    flash(f'Project "{name}" has been created successfully.', 'success')
-    return redirect(url_for('projects'))
+        new_project = Project(
+            name=name,
+            description=description,
+            start_date=start_date,
+            end_date=end_date,
+            budget=float(budget) if budget else 0.0,
+            status=status
+        )
+        db.session.add(new_project)
+        db.session.commit()
+        flash(f'Project "{name}" has been created successfully.', 'success')
+        return redirect(url_for('manage_projects'))
+    return render_template('create_project.html')
 
 @app.route('/project/<int:project_id>')
 @login_required
@@ -1719,7 +1695,73 @@ def update_project_status(project_id):
         flash(f'Project status updated to "{new_status}".', 'success')
     return redirect(url_for('project_detail', project_id=project_id))
 
-# --- END NEW PROJECT MANAGEMENT ROUTES ---
+# --- NEW BRD ROUTES ---
+
+@app.route('/project/<int:project_id>/brd')
+@login_required
+@role_required('admin')
+def view_brd(project_id):
+    project = Project.query.get_or_404(project_id)
+    return render_template('brd_details.html', project=project)
+
+@app.route('/project/<int:project_id>/brd/edit', methods=['GET', 'POST'])
+@login_required
+@role_required('admin')
+def edit_brd(project_id):
+    project = Project.query.get_or_404(project_id)
+    brd = project.brd or BRD(project_id=project_id)
+
+    if request.method == 'POST':
+        brd.executive_summary = request.form.get('executive_summary')
+        brd.project_objectives = request.form.get('project_objectives')
+        brd.project_scope = request.form.get('project_scope')
+        brd.business_requirements = request.form.get('business_requirements')
+        brd.key_stakeholders = request.form.get('key_stakeholders')
+        brd.project_constraints = request.form.get('project_constraints')
+        brd.cost_benefit_analysis = request.form.get('cost_benefit_analysis')
+
+        if not project.brd:
+            db.session.add(brd)
+        
+        db.session.commit()
+        flash('BRD updated successfully.', 'success')
+        return redirect(url_for('view_brd', project_id=project.id))
+
+    return render_template('edit_brd.html', project=project, brd=brd)
+
+@app.route('/project/<int:project_id>/brd/share', methods=['POST'])
+@login_required
+@role_required('admin')
+def share_brd(project_id):
+    project = Project.query.get_or_404(project_id)
+    recipient_email = request.form.get('recipient_email')
+    
+    if not recipient_email:
+        flash('Recipient email is required.', 'danger')
+        return redirect(url_for('view_brd', project_id=project.id))
+
+    brd_generator = BrdGenerator(project)
+    pdf_data = brd_generator.generate_pdf()
+    
+    attachment = {
+        'filename': f'BRD_{project.name}.pdf',
+        'content_type': 'application/pdf',
+        'data': pdf_data
+    }
+
+    send_email(
+        to=recipient_email,
+        subject=f'Business Requirement Document for {project.name}',
+        template='mail/brd_shared.html',
+        project_name=project.name,
+        attachments=[attachment],
+        now=datetime.utcnow()
+    )
+    
+    flash(f'BRD for {project.name} has been sent to {recipient_email}.', 'success')
+    return redirect(url_for('view_brd', project_id=project.id))
+
+# --- END NEW BRD ROUTES ---
 
 
 if __name__ == '__main__':

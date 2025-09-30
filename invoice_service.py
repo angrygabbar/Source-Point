@@ -223,3 +223,50 @@ class InvoiceGenerator:
             self.pdf.set_font('Arial', '', 9)
             self.pdf.set_text_color(*self.secondary_color)
             self.pdf.multi_cell(0, 5, self.invoice.notes, 0, 'L')
+
+
+class BrdGenerator:
+    def __init__(self, project):
+        self.project = project
+        self.pdf = PDF()
+        self.pdf.add_page()
+        self.pdf.set_font("Arial", size=12)
+        self.primary_color = (79, 70, 229) # Indigo
+        self.secondary_color = (107, 114, 128) # Gray
+
+    def generate_pdf(self):
+        self._add_header()
+        self._add_brd_content()
+        return self.pdf.output(dest='S').encode('latin-1')
+
+    def _add_header(self):
+        self.pdf.set_fill_color(*self.primary_color)
+        self.pdf.rect(0, 0, 210, 40, 'F')
+        
+        self.pdf.set_y(15)
+        self.pdf.set_font('Arial', 'B', 24)
+        self.pdf.set_text_color(255, 255, 255)
+        self.pdf.cell(0, 10, f"BRD: {self.project.name}", 0, 1, 'C')
+        
+        self.pdf.ln(20)
+
+    def _add_brd_content(self):
+        brd_sections = {
+            "Executive Summary": self.project.brd.executive_summary,
+            "Project Objectives": self.project.brd.project_objectives,
+            "Project Scope": self.project.brd.project_scope,
+            "Business Requirements": self.project.brd.business_requirements,
+            "Key Stakeholders": self.project.brd.key_stakeholders,
+            "Project Constraints": self.project.brd.project_constraints,
+            "Cost-Benefit Analysis": self.project.brd.cost_benefit_analysis
+        }
+
+        for title, content in brd_sections.items():
+            self.pdf.set_font('Arial', 'B', 14)
+            self.pdf.set_text_color(0, 0, 0)
+            self.pdf.cell(0, 10, title, 0, 1, 'L')
+            
+            self.pdf.set_font('Arial', '', 12)
+            self.pdf.set_text_color(*self.secondary_color)
+            self.pdf.multi_cell(0, 10, content or 'Not provided')
+            self.pdf.ln(5)

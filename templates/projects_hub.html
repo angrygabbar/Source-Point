@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% block title %}Project Management{% endblock %}
+{% block content %}
+<div class="animate-dynamic text-center">
+    <h1 class="text-4xl font-extrabold text-white sm:text-5xl tracking-tight">Project Management Hub</h1>
+    <p class="mt-4 max-w-2xl mx-auto text-xl text-gray-300">
+        From here, you can create a new project or manage existing ones.
+    </p>
+</div>
+
+<div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
+    <a href="{{ url_for('create_project') }}" class="interactive-card bg-white/5 dark:bg-gray-800/20 p-6 rounded-lg shadow-lg backdrop-blur-sm border border-white/10 animate-dynamic flex flex-col items-center justify-center text-center transition-transform transform hover:-translate-y-2">
+        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-green-500 text-white mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+        </div>
+        <h4 class="text-2xl font-semibold text-white">Create a New Project</h4>
+        <p class="mt-2 text-base text-gray-300">Start a new project from scratch.</p>
+    </a>
+
+    <a href="{{ url_for('manage_projects') }}" class="interactive-card bg-white/5 dark:bg-gray-800/20 p-6 rounded-lg shadow-lg backdrop-blur-sm border border-white/10 animate-dynamic flex flex-col items-center justify-center text-center transition-transform transform hover:-translate-y-2" style="animation-delay: 0.1s;">
+        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-indigo-500 text-white mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+        </div>
+        <h4 class="text-2xl font-semibold text-white">Manage Existing Projects</h4>
+        <p class="mt-2 text-base text-gray-300">View, edit, and track all your current projects.</p>
+    </a>
+</div>
+{% endblock %}
