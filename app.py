@@ -69,6 +69,7 @@ def populate_db():
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_very_secret_key_that_should_be_changed')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_POOL_RECYCLE'] = 280 # Add this line to recycle connections every 5 minutes
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=5)
 app.config['UPLOAD_FOLDER'] = 'static/resumes'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
@@ -185,7 +186,6 @@ def check_completed_tests():
         ).all()
 
         if completed_candidates:
-            admins = User.query.filter_by(role='admin').all()
             for candidate in completed_candidates:
                 problem_title = candidate.assigned_problem.title if candidate.assigned_problem else "your assigned problem"
                 
@@ -197,8 +197,6 @@ def check_completed_tests():
                     problem_title=problem_title
                 )
 
-                # Admins are already CC'd by the updated send_email function, so no need to send a separate email.
-                # Just check if the primary email was sent successfully.
                 if email_sent_candidate:
                     candidate.test_completed = True
                     db.session.commit()
@@ -210,7 +208,7 @@ def check_completed_tests():
 # --- This scheduler is intended for local development and will not run on Render ---
 if os.environ.get('FLASK_ENV') == 'development':
     scheduler = BackgroundScheduler(daemon=True)
-    scheduler.add_job(check_completed_tests, 'interval', minutes=10)
+    scheduler.add_job(check_completed_tests, 'interval', minutes=15)
     scheduler.start()
 
 
@@ -237,7 +235,7 @@ def role_required(roles):
         return decorated_view
     return wrapper
 
-# --- All Routes ---
+# --- The rest of your routes remain unchanged ---
 
 @app.route('/')
 def home(): return render_template('home.html')
