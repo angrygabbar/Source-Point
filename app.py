@@ -174,6 +174,7 @@ def send_email(to, subject, template, cc=None, attachments=None, **kwargs):
 
 # --- Background Scheduler for Email Reminders and Test Completion ---
 def check_completed_tests():
+    """Checks for completed tests and sends notifications."""
     with app.app_context():
         now = datetime.utcnow()
         completed_candidates = User.query.filter(
@@ -206,10 +207,11 @@ def check_completed_tests():
                     app.logger.error(f"Failed to send completion emails for {candidate.username}, test status not updated.")
 
 
-scheduler = BackgroundScheduler(daemon=True)
-scheduler.add_job(check_completed_tests, 'interval', minutes=1)
-scheduler.start()
-# --- End Scheduler ---
+# --- This scheduler is intended for local development and will not run on Render ---
+if os.environ.get('FLASK_ENV') == 'development':
+    scheduler = BackgroundScheduler(daemon=True)
+    scheduler.add_job(check_completed_tests, 'interval', minutes=10)
+    scheduler.start()
 
 
 @app.before_request
@@ -1767,4 +1769,4 @@ def share_brd(project_id):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True, use_reloader=False)
+    app.run(debug=True)
