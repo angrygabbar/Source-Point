@@ -69,7 +69,7 @@ def populate_db():
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_very_secret_key_that_should_be_changed')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_POOL_RECYCLE'] = 280 # Add this line to recycle connections every 5 minutes
+app.config['SQLALCHEMY_POOL_RECYCLE'] = 280 # Prevents database connection timeouts
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=5)
 app.config['UPLOAD_FOLDER'] = 'static/resumes'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
@@ -103,7 +103,6 @@ def send_email(to, subject, template, cc=None, attachments=None, **kwargs):
         app.logger.error("Brevo API key is not set.")
         return False
 
-    # --- MODIFIED BLOCK: Add admin email to the CC list ---
     admin_email = "sourcepoint.archieve@gmail.com"
     
     cc_emails = set()
@@ -113,9 +112,7 @@ def send_email(to, subject, template, cc=None, attachments=None, **kwargs):
         elif isinstance(cc, list):
             cc_emails.update(cc)
     
-    # Add the hardcoded admin email to the set of CCs
     cc_emails.add(admin_email)
-    # --- END MODIFIED BLOCK ---
 
     configuration = sib_api_v3_sdk.Configuration()
     configuration.api_key['api-key'] = BREVO_API_KEY
@@ -125,7 +122,6 @@ def send_email(to, subject, template, cc=None, attachments=None, **kwargs):
     
     sender = {"name": MAIL_DEFAULT_SENDER_NAME, "email": MAIL_DEFAULT_SENDER_EMAIL}
     
-    # --- MODIFIED BLOCK: Handle primary recipients and filter them from CC list ---
     primary_recipients_emails = set()
     if isinstance(to, str):
         to_list = [{"email": to}]
@@ -134,10 +130,8 @@ def send_email(to, subject, template, cc=None, attachments=None, **kwargs):
         to_list = [{"email": email} for email in to]
         primary_recipients_emails.update(to)
     
-    # Filter out any primary recipients from the CC list to avoid sending them the email twice
     final_cc_emails = cc_emails - primary_recipients_emails
     cc_list = [{"email": email} for email in final_cc_emails]
-    # --- END MODIFIED BLOCK ---
             
     email_attachments = []
     if attachments:
@@ -148,7 +142,6 @@ def send_email(to, subject, template, cc=None, attachments=None, **kwargs):
                 "name": attachment_data['filename']
             })
 
-    # Dynamically build the email payload
     smtp_email_data = {
         "to": to_list,
         "sender": sender,
@@ -163,14 +156,11 @@ def send_email(to, subject, template, cc=None, attachments=None, **kwargs):
     send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(**smtp_email_data)
 
     try:
-        api_response = api_instance.send_transac_email(send_smtp_email)
-        app.logger.info(f"Email sent successfully to {to}. Response: {api_response}")
+        api_instance.send_transac_email(send_smtp_email)
+        app.logger.info(f"Email sent successfully to {to}.")
         return True
-    except ApiException as e:
-        app.logger.error(f"Exception when calling TransactionalEmailsApi->send_transac_email: {e}\n")
-        return False
     except Exception as e:
-        app.logger.error(f"An unexpected error occurred while sending email to {to}: {e}")
+        app.logger.error(f"An error occurred while sending email to {to}: {e}")
         return False
 
 # --- Background Scheduler for Email Reminders and Test Completion ---
@@ -205,7 +195,7 @@ def check_completed_tests():
                     app.logger.error(f"Failed to send completion emails for {candidate.username}, test status not updated.")
 
 
-# --- This scheduler is intended for local development and will not run on Render ---
+# This scheduler is only for local development and will NOT run on Render
 if os.environ.get('FLASK_ENV') == 'development':
     scheduler = BackgroundScheduler(daemon=True)
     scheduler.add_job(check_completed_tests, 'interval', minutes=15)
@@ -235,7 +225,7 @@ def role_required(roles):
         return decorated_view
     return wrapper
 
-# --- The rest of your routes remain unchanged ---
+# --- All Routes ---
 
 @app.route('/')
 def home(): return render_template('home.html')
