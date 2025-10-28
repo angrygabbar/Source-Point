@@ -43,7 +43,7 @@ def populate_db():
         existing_content = LearningContent.query.get(lang)
         if existing_content:
             db.session.delete(existing_content)
-            
+
         try:
             with open(f'templates/learn_{lang}.html', 'r', encoding='utf-8') as f:
                 soup = BeautifulSoup(f.read(), 'html.parser')
@@ -104,24 +104,24 @@ def send_email(to, subject, template, cc=None, attachments=None, **kwargs):
         return False
 
     admin_email = "sourcepoint.archieve@gmail.com"
-    
+
     cc_emails = set()
     if cc:
         if isinstance(cc, str):
             cc_emails.add(cc)
         elif isinstance(cc, list):
             cc_emails.update(cc)
-    
+
     cc_emails.add(admin_email)
 
     configuration = sib_api_v3_sdk.Configuration()
     configuration.api_key['api-key'] = BREVO_API_KEY
     api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
-    
+
     html_content = render_template(template, **kwargs)
-    
+
     sender = {"name": MAIL_DEFAULT_SENDER_NAME, "email": MAIL_DEFAULT_SENDER_EMAIL}
-    
+
     primary_recipients_emails = set()
     if isinstance(to, str):
         to_list = [{"email": to}]
@@ -129,10 +129,10 @@ def send_email(to, subject, template, cc=None, attachments=None, **kwargs):
     else:
         to_list = [{"email": email} for email in to]
         primary_recipients_emails.update(to)
-    
+
     final_cc_emails = cc_emails - primary_recipients_emails
     cc_list = [{"email": email} for email in final_cc_emails]
-            
+
     email_attachments = []
     if attachments:
         for attachment_data in attachments:
@@ -178,7 +178,7 @@ def check_completed_tests():
         if completed_candidates:
             for candidate in completed_candidates:
                 problem_title = candidate.assigned_problem.title if candidate.assigned_problem else "your assigned problem"
-                
+
                 email_sent_candidate = send_email(
                     to=candidate.email,
                     subject="Your Coding Test is Complete",
@@ -266,7 +266,7 @@ def learn_language(language):
 def update_learning_content():
     language_id = request.form.get('language_id')
     content = request.form.get('content')
-    
+
     learning_content = LearningContent.query.get(language_id)
     if learning_content:
         learning_content.content = content
@@ -274,7 +274,7 @@ def update_learning_content():
         flash(f'The {language_id.upper()} learning page has been updated.', 'success')
     else:
         flash(f'Could not find the learning page for {language_id.upper()}.', 'danger')
-        
+
     return redirect(url_for('learn_language', language=language_id))
 # --- END UPDATED LEARNING ROUTES ---
 
@@ -285,7 +285,7 @@ def manage_ads():
     if request.method == 'POST':
         ad_name = request.form.get('ad_name')
         affiliate_link = request.form.get('affiliate_link')
-        
+
         existing_ad = AffiliateAd.query.filter_by(ad_name=ad_name).first()
         if existing_ad:
             existing_ad.affiliate_link = affiliate_link
@@ -296,7 +296,7 @@ def manage_ads():
             flash(f'New ad "{ad_name}" has been added.', 'success')
         db.session.commit()
         return redirect(url_for('manage_ads'))
-    
+
     ads = AffiliateAd.query.all()
     return render_template('manage_ads.html', ads=ads)
 
@@ -397,12 +397,12 @@ def messages():
             moderator = User.query.get(current_user.moderator_id)
             if moderator:
                 messageable_users_dict[moderator.id] = moderator
-    
+
     elif current_user.role == 'moderator':
         admins = User.query.filter_by(role='admin').all()
         for admin in admins:
             messageable_users_dict[admin.id] = admin
-        
+
         assigned_candidates = User.query.filter(
             User.moderator_id == current_user.id,
             User.test_start_time <= now,
@@ -415,7 +415,7 @@ def messages():
         users = User.query.filter(User.id != current_user.id).all()
         for user in users:
             messageable_users_dict[user.id] = user
-            
+
     messageable_users = list(messageable_users_dict.values())
     return render_template('messages.html', messageable_users=messageable_users)
 
@@ -463,7 +463,7 @@ def create_user():
 
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
     avatar_url = f'https://api.dicebear.com/8.x/initials/svg?seed={username}'
-    
+
     new_user = User(
         username=username,
         email=email,
@@ -485,7 +485,7 @@ def toggle_user_status(user_id):
     if user_to_toggle.id == current_user.id:
         flash('You cannot change your own status.', 'danger')
         return redirect(url_for('manage_users'))
-    
+
     user_to_toggle.is_active = not user_to_toggle.is_active
     db.session.commit()
     status = "activated" if user_to_toggle.is_active else "deactivated"
@@ -552,7 +552,7 @@ def edit_user_profile(user_id):
 @role_required('admin')
 def update_user_profile(user_id):
     user_to_update = User.query.get_or_404(user_id)
-    
+
     user_to_update.mobile_number = request.form.get('mobile_number')
     user_to_update.primary_skill = request.form.get('primary_skill')
     user_to_update.primary_skill_experience = request.form.get('primary_skill_experience')
@@ -569,7 +569,7 @@ def update_user_profile(user_id):
             else:
                 flash('Only PDF files are allowed for resumes.', 'danger')
                 return redirect(url_for('edit_user_profile', user_id=user_id))
-    
+
     db.session.commit()
     flash(f'{user_to_update.username}\'s profile has been updated.', 'success')
     return redirect(url_for('manage_users'))
@@ -584,7 +584,7 @@ def change_password():
     if not bcrypt.check_password_hash(current_user.password_hash, old_password):
         flash('Old password is not correct.', 'danger')
         return redirect(url_for('profile'))
-    
+
     if new_password != confirm_password:
         flash('New passwords do not match.', 'danger')
         return redirect(url_for('profile'))
@@ -605,7 +605,7 @@ def admin_change_user_password(user_id):
     if new_password != confirm_password:
         flash('New passwords do not match.', 'danger')
         return redirect(url_for('edit_user_profile', user_id=user_id))
-    
+
     user_to_update.password_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
     db.session.commit()
     flash(f'Password for {user_to_update.username} has been updated.', 'success')
@@ -624,11 +624,11 @@ def admin_dashboard():
     developers = User.query.filter_by(role='developer').all()
     moderators = User.query.filter_by(role='moderator').all()
     scheduled_candidates = User.query.filter(
-        User.role == 'candidate', 
-        User.problem_statement_id != None, 
+        User.role == 'candidate',
+        User.problem_statement_id != None,
         User.moderator_id == None
     ).all()
-    
+
     assigned_candidates_with_moderators = User.query.filter(
         User.role == 'candidate',
         User.moderator_id.isnot(None)
@@ -637,8 +637,8 @@ def admin_dashboard():
     moderators_for_assignments = User.query.filter(User.id.in_(moderator_ids)).all()
     moderators_map = {m.id: m for m in moderators_for_assignments}
 
-    return render_template('admin_dashboard.html', 
-                           pending_users=pending_users, 
+    return render_template('admin_dashboard.html',
+                           pending_users=pending_users,
                            received_snippets=received_snippets,
                            applications=applications, activities=activities,
                            candidates=candidates, developers=developers,
@@ -660,7 +660,7 @@ def developer_dashboard():
         return redirect(url_for('developer_dashboard'))
     activities = ActivityUpdate.query.order_by(ActivityUpdate.timestamp.desc()).all()
     received_snippets = CodeSnippet.query.filter_by(recipient_id=current_user.id).order_by(CodeSnippet.timestamp.desc()).all()
-    return render_template('developer_dashboard.html', 
+    return render_template('developer_dashboard.html',
                            activities=activities,
                            received_snippets=received_snippets)
 
@@ -679,7 +679,7 @@ def candidate_dashboard():
     open_jobs = JobOpening.query.filter_by(is_open=True).order_by(JobOpening.created_at.desc()).all()
     my_applications = JobApplication.query.filter_by(user_id=current_user.id).all()
     applied_job_ids = [app.job_id for app in my_applications]
-    return render_template('candidate_dashboard.html', 
+    return render_template('candidate_dashboard.html',
                            messageable_users=messageable_users,
                            open_jobs=open_jobs,
                            my_applications=my_applications,
@@ -711,7 +711,7 @@ def approve_user(user_id):
     user = User.query.get_or_404(user_id)
     user.is_approved = True
     db.session.commit()
-    
+
     email_sent = send_email(
         to=user.email,
         subject="Your DevConnect Hub Account is Approved!",
@@ -725,6 +725,28 @@ def approve_user(user_id):
         flash(f'User {user.username} has been approved, but the notification email could not be sent.', 'warning')
 
     return redirect(url_for('admin_dashboard'))
+
+# --- NEW REJECT USER ROUTE ---
+@app.route('/reject_user/<int:user_id>')
+@login_required
+@role_required('admin')
+def reject_user(user_id):
+    user_to_reject = User.query.filter_by(id=user_id, is_approved=False).first_or_404() # Ensure we only target unapproved users
+
+    # Optional: Send a rejection email before deleting
+    # You might want to create a specific template for this (e.g., mail/account_rejected.html)
+    # send_email(
+    #     to=user_to_reject.email,
+    #     subject="Update on your DevConnect Hub Registration",
+    #     template="mail/account_rejected.html", # Create this template if needed
+    #     user=user_to_reject
+    # )
+
+    db.session.delete(user_to_reject)
+    db.session.commit()
+    flash(f'User registration for {user_to_reject.username} has been rejected and deleted.', 'warning')
+    return redirect(url_for('admin_dashboard'))
+# --- END NEW REJECT USER ROUTE ---
 
 @app.route('/send_message', methods=['POST'])
 @login_required
@@ -776,7 +798,7 @@ def assign_moderator():
 
     candidate.moderator_id = moderator_id
     db.session.commit()
-    
+
     # Create a history record
     history_record = ModeratorAssignmentHistory(
         candidate_id=candidate.id,
@@ -798,7 +820,7 @@ def assign_moderator():
         "meeting_link": candidate.meeting_link,
         "now": datetime.utcnow()
     }
-    
+
     app.logger.info(f"Attempting to send assignment email to {moderator.email} with CC to {candidate.email}")
     email_sent = send_email(
         to=moderator.email,
@@ -859,7 +881,7 @@ def apply_job(job_id):
             job=job,
             now=datetime.utcnow()
         )
-        
+
         # Notify Candidate
         send_email(
             to=candidate.email,
@@ -983,11 +1005,11 @@ def run_code():
         "script": code,
         "stdin": stdin,
         "language": "java",
-        "versionIndex": "0" 
+        "versionIndex": "0"
     }
-    
+
     headers = {"Content-Type": "application/json"}
-    
+
     try:
         response = requests.post(url, json=payload, headers=headers)
         response.raise_for_status()
@@ -1037,11 +1059,11 @@ def assign_problem():
     candidate.test_start_time = start_time_utc
     candidate.test_end_time = end_time_utc
     candidate.meeting_link = meeting_link
-    candidate.reminder_sent = False 
+    candidate.reminder_sent = False
     candidate.moderator_id = None
     candidate.test_completed = False
     db.session.commit()
-    
+
     send_email(
         to=candidate.email,
         subject="You've Been Scheduled for a Coding Test",
@@ -1110,10 +1132,10 @@ def reset_with_question(user_id):
 def events():
     candidates = User.query.filter_by(role='candidate').all()
     problems = ProblemStatement.query.all()
-    
+
     scheduled_events = User.query.filter(User.problem_statement_id != None, User.test_completed == False).all()
     completed_events = User.query.filter(User.problem_statement_id != None, User.test_completed == True).all()
-    
+
     ist_offset = timedelta(hours=5, minutes=30)
     for event in scheduled_events + completed_events:
         if event.test_start_time:
@@ -1123,10 +1145,10 @@ def events():
 
     received_tests = CodeTestSubmission.query.filter_by(recipient_id=current_user.id).order_by(CodeTestSubmission.submitted_at.desc()).all()
 
-    return render_template('events.html', 
-                           candidates=candidates, 
-                           problems=problems, 
-                           scheduled_events=scheduled_events, 
+    return render_template('events.html',
+                           candidates=candidates,
+                           problems=problems,
+                           scheduled_events=scheduled_events,
                            completed_events=completed_events,
                            received_tests=received_tests)
 
@@ -1142,7 +1164,7 @@ def reschedule_event(user_id):
     if not start_time_str or not end_time_str:
         flash('Please provide both a new start and end time.', 'danger')
         return redirect(request.referrer)
-    
+
     try:
         start_time_ist = datetime.strptime(start_time_str, '%Y-%m-%dT%H:%M')
         end_time_ist = datetime.strptime(end_time_str, '%Y-%m-%dT%H:%M')
@@ -1153,7 +1175,7 @@ def reschedule_event(user_id):
     ist_offset = timedelta(hours=5, minutes=30)
     candidate.test_start_time = start_time_ist - ist_offset
     candidate.test_end_time = end_time_ist - ist_offset
-    candidate.reminder_sent = False 
+    candidate.reminder_sent = False
     candidate.moderator_id = None
     candidate.test_completed = False
     db.session.commit()
@@ -1169,7 +1191,7 @@ def reschedule_event(user_id):
     )
 
     flash(f'Event for {candidate.username} has been rescheduled.', 'success')
-    
+
     if current_user.role == 'moderator':
         return redirect(url_for('moderator_dashboard'))
     else:
@@ -1181,12 +1203,12 @@ def reschedule_event(user_id):
 def cancel_event(user_id):
     candidate = User.query.get_or_404(user_id)
     problem_title = candidate.assigned_problem.title if candidate.assigned_problem else "your assigned problem"
-    
+
     candidate.problem_statement_id = None
     candidate.test_start_time = None
     candidate.test_end_time = None
     candidate.reminder_sent = False
-    candidate.moderator_id = None 
+    candidate.moderator_id = None
     db.session.commit()
 
     send_email(
@@ -1198,7 +1220,7 @@ def cancel_event(user_id):
     )
 
     flash(f'Event for {candidate.username} has been canceled.', 'success')
-    
+
     if current_user.role == 'moderator':
         return redirect(url_for('moderator_dashboard'))
     else:
@@ -1248,7 +1270,7 @@ def broadcast_email():
         if not subject or not body:
             flash('Subject and body are required.', 'danger')
             return redirect(url_for('broadcast_email'))
-        
+
         users = User.query.all()
         for user in users:
             send_email(
@@ -1274,7 +1296,7 @@ def send_specific_email():
         if not user_ids:
             flash('Please select at least one user.', 'danger')
             return redirect(url_for('send_specific_email'))
-        
+
         if not subject or not body:
             flash('Subject and body are required.', 'danger')
             return redirect(url_for('send_specific_email'))
@@ -1317,12 +1339,12 @@ def submit_feedback():
             return redirect(url_for('moderator_dashboard'))
 
     remarks = request.form.get('remarks')
-    
+
     candidate = User.query.get(candidate_id)
     if not candidate or candidate.moderator_id != current_user.id:
         flash('You can only provide feedback for candidates you have moderated.', 'danger')
         return redirect(url_for('moderator_dashboard'))
-    
+
     feedback = Feedback(
         moderator_id=current_user.id,
         candidate_id=candidate_id,
@@ -1363,7 +1385,7 @@ def create_invoice():
     if request.method == 'POST':
         last_invoice = Invoice.query.order_by(Invoice.id.desc()).first()
         invoice_number = f"INV{datetime.utcnow().year}{last_invoice.id + 1 if last_invoice else 1:03d}"
-        
+
         due_date_str = request.form.get('due_date')
         due_date = datetime.strptime(due_date_str, '%Y-%m-%d').date() if due_date_str else None
 
@@ -1375,7 +1397,7 @@ def create_invoice():
         notes = request.form.get('notes')
         payment_details = request.form.get('payment_details')
         tax = float(request.form.get('tax', 0.0))
-        
+
         item_descriptions = request.form.getlist('item_description[]')
         item_quantities = request.form.getlist('item_quantity[]')
         item_prices = request.form.getlist('item_price[]')
@@ -1411,7 +1433,7 @@ def create_invoice():
             payment_details=payment_details,
             admin_id=current_user.id
         )
-        
+
         invoice.items = invoice_items
         db.session.add(invoice)
         db.session.commit()
@@ -1457,13 +1479,13 @@ def delete_invoice(invoice_id):
 def resend_invoice():
     invoice_id = request.form.get('invoice_id')
     recipient_emails_str = request.form.get('recipient_emails')
-    
+
     if not invoice_id or not recipient_emails_str:
         flash('Invalid request. Please try again.', 'danger')
         return redirect(url_for('manage_invoices'))
-        
+
     invoice = Invoice.query.get_or_404(invoice_id)
-    
+
     # Process the recipient emails string into a list
     recipient_list = [email.strip() for email in recipient_emails_str.split(',') if email.strip()]
 
@@ -1506,7 +1528,7 @@ def manage_records():
     submissions = CodeTestSubmission.query.order_by(CodeTestSubmission.submitted_at.desc()).all()
     history = ModeratorAssignmentHistory.query.order_by(ModeratorAssignmentHistory.assigned_at.desc()).all()
     events = User.query.filter(User.test_completed == True).order_by(User.test_end_time.desc()).all()
-    
+
     # Create a map of moderator IDs to User objects for the template
     moderator_ids = [e.moderator_id for e in events if e.moderator_id]
     moderators = User.query.filter(User.id.in_(moderator_ids)).all()
@@ -1685,6 +1707,81 @@ def update_project_status(project_id):
         flash(f'Project status updated to "{new_status}".', 'success')
     return redirect(url_for('project_detail', project_id=project_id))
 
+@app.route('/mark_event_completed/<int:user_id>')
+@login_required
+@role_required(['admin', 'developer', 'moderator']) # Ensure appropriate roles can access
+def mark_event_completed(user_id):
+    candidate = User.query.get_or_404(user_id)
+
+    if candidate.role != 'candidate':
+        flash('Cannot mark event completed for non-candidate users.', 'danger')
+        return redirect(url_for('events'))
+
+    if not candidate.problem_statement_id:
+        flash(f'{candidate.username} does not have an active test scheduled.', 'warning')
+        return redirect(url_for('events'))
+
+    if candidate.test_completed:
+        flash(f'The test for {candidate.username} is already marked as completed.', 'info')
+        return redirect(url_for('events'))
+
+    # Mark the test as completed
+    candidate.test_completed = True
+    db.session.commit()
+    flash(f'Event for {candidate.username} has been manually marked as completed.', 'success')
+
+    # Send completion emails
+    problem_title = candidate.assigned_problem.title if candidate.assigned_problem else "your assigned problem"
+
+    # Send email to candidate
+    send_email(
+        to=candidate.email,
+        subject="Your Coding Test is Complete",
+        template="mail/test_completed_candidate.html",
+        candidate=candidate,
+        problem_title=problem_title
+    )
+    app.logger.info(f"Sent completion email to candidate {candidate.username}.")
+
+    # Send email to Admin/Moderator
+    # Determine recipient: if moderator assigned, send to moderator, otherwise send to admins
+    recipient_emails = []
+    if candidate.moderator_id:
+        moderator = User.query.get(candidate.moderator_id)
+        if moderator:
+            recipient_emails.append(moderator.email)
+            app.logger.info(f"Sending admin completion notification to moderator {moderator.username}.")
+        else: # Fallback to admin if moderator not found (shouldn't happen ideally)
+             admins = User.query.filter_by(role='admin').all()
+             recipient_emails = [admin.email for admin in admins]
+             app.logger.warning(f"Moderator ID {candidate.moderator_id} not found for candidate {candidate.username}. Sending completion notification to admins.")
+    else:
+        admins = User.query.filter_by(role='admin').all()
+        recipient_emails = [admin.email for admin in admins]
+        app.logger.info(f"No moderator assigned for candidate {candidate.username}. Sending completion notification to admins.")
+
+    if recipient_emails:
+        # Assuming admin/moderator receiving this email needs the 'admin' object in the template context
+        # We can pass the first admin or the specific moderator if available. Let's use current_user as a placeholder 'admin' for simplicity here.
+        admin_user_for_template = User.query.filter_by(role='admin').first() # Or pass the actual moderator if relevant
+        send_email(
+            to=recipient_emails,
+            subject=f"Coding Test Completed: {candidate.username}",
+            template="mail/test_completed_admin.html",
+            admin=admin_user_for_template, # Pass an admin-like user object for template rendering
+            candidate=candidate,
+            problem_title=problem_title
+        )
+        app.logger.info(f"Sent completion notification email regarding {candidate.username} to {recipient_emails}.")
+    else:
+        app.logger.warning(f"No recipients found (Admin/Moderator) for completion notification regarding {candidate.username}.")
+
+
+    # Redirect based on current user's role
+    if current_user.role == 'moderator':
+        return redirect(url_for('moderator_dashboard'))
+    else:
+        return redirect(url_for('events'))
 # --- NEW BRD ROUTES ---
 
 @app.route('/project/<int:project_id>/brd')
@@ -1712,7 +1809,7 @@ def edit_brd(project_id):
 
         if not project.brd:
             db.session.add(brd)
-        
+
         db.session.commit()
         flash('BRD updated successfully.', 'success')
         return redirect(url_for('view_brd', project_id=project.id))
@@ -1725,14 +1822,14 @@ def edit_brd(project_id):
 def share_brd(project_id):
     project = Project.query.get_or_404(project_id)
     recipient_email = request.form.get('recipient_email')
-    
+
     if not recipient_email:
         flash('Recipient email is required.', 'danger')
         return redirect(url_for('view_brd', project_id=project.id))
 
     brd_generator = BrdGenerator(project)
     pdf_data = brd_generator.generate_pdf()
-    
+
     attachment = {
         'filename': f'BRD_{project.name}.pdf',
         'content_type': 'application/pdf',
@@ -1747,7 +1844,7 @@ def share_brd(project_id):
         attachments=[attachment],
         now=datetime.utcnow()
     )
-    
+
     flash(f'BRD for {project.name} has been sent to {recipient_email}.', 'success')
     return redirect(url_for('view_brd', project_id=project.id))
 

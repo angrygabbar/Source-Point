@@ -32,10 +32,11 @@
                                             <p class="text-sm text-gray-400">{{ user.role.title() }}</p>
                                         </div>
                                     </div>
-                                    <div class="flex-shrink-0">
+                                    <div class="flex-shrink-0 flex space-x-2">
                                         <a href="{{ url_for('approve_user', user_id=user.id) }}" class="px-3 py-1 bg-green-500 text-white text-sm font-semibold rounded-md hover:bg-green-600">Approve</a>
+                                        <a href="{{ url_for('reject_user', user_id=user.id) }}" class="px-3 py-1 bg-red-500 text-white text-sm font-semibold rounded-md hover:bg-red-600" onclick="return confirm('Are you sure you want to reject and delete this user registration?');">Reject</a>
                                     </div>
-                                </li>
+                                    </li>
                             {% endfor %}
                         </ul>
                     {% else %}
@@ -174,7 +175,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div id="communication-tab" class="tab-content grid grid-cols-1 lg:grid-cols-2 gap-8 hidden">
             <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-6 backdrop-blur-sm border border-white/10">
                 <h2 class="text-2xl font-bold text-white mb-4">Broadcast Email to All Users</h2>
@@ -237,13 +238,13 @@
         tabs.forEach(tab => {
             tab.addEventListener('click', (e) => {
                 e.preventDefault();
-                
+
                 // Deactivate all tabs
                 tabs.forEach(t => {
                     t.classList.remove(...activeClasses);
                     t.classList.add(...inactiveClasses);
                 });
-                
+
                 // Activate clicked tab
                 tab.classList.add(...activeClasses);
                 tab.classList.remove(...inactiveClasses);
