@@ -398,10 +398,11 @@
                 tabContents.forEach(content => {
                     if (content.id === targetId) {
                         content.classList.remove('hidden');
-                        // Re-trigger animation
-                        content.classList.remove('animate-dynamic');
-                        void content.offsetWidth; // force reflow
-                        content.classList.add('animate-dynamic');
+                        // Fix for GSAP/Animation conflict: Reset opacity and transform
+                        // GSAP sets opacity: 0 on .animate-dynamic elements. 
+                        // When hidden tabs are revealed, they might retain this.
+                        content.style.opacity = '1';
+                        content.style.transform = 'none';
                     } else {
                         content.classList.add('hidden');
                     }
