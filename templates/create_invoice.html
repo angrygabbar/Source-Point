@@ -45,6 +45,7 @@
             <h2 class="text-xl font-semibold text-white mb-4">Invoice Items</h2>
             <div class="space-y-3" id="items-container">
                 <div class="hidden md:flex items-center space-x-2 text-sm text-gray-400 px-1">
+                    <div class="w-40">Product (Optional)</div>
                     <div class="flex-grow">Description</div>
                     <div class="w-24 text-center">Quantity</div>
                     <div class="w-32 text-center">Price</div>
@@ -52,6 +53,10 @@
                     <div class="w-10"></div>
                 </div>
                 <div class="item-row flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-2">
+                    <input type="hidden" name="item_product_id[]" class="item-product-id">
+                    <select class="product-select w-full md:w-40 px-2 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white text-sm">
+                        <option value="">-- Select --</option>
+                    </select>
                     <input type="text" name="item_description[]" placeholder="Item Description" required class="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">
                     <input type="number" name="item_quantity[]" placeholder="Qty" required value="1" class="w-full md:w-24 text-center px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">
                     <input type="number" step="0.01" name="item_price[]" placeholder="Price" required class="w-full md:w-32 text-center px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">
@@ -99,11 +104,13 @@
 </div>
 
 <script>
+    // Pass products from backend to JS
+    const availableProducts = {{ products | tojson | safe }};
+
     document.addEventListener('DOMContentLoaded', () => {
         const itemsContainer = document.getElementById('items-container');
         const invoiceForm = document.getElementById('invoice-form');
         const submitButton = document.getElementById('submit-invoice-btn');
-
 
         invoiceForm.addEventListener('submit', () => {
             submitButton.disabled = true;
@@ -134,10 +141,25 @@
             document.getElementById('grand-total').textContent = `₹${grandTotal.toFixed(2)}`;
         }
 
+        function populateProductSelect(selectElement) {
+            availableProducts.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.id;
+                option.textContent = `${p.code} - ${p.name}`;
+                option.dataset.price = p.price;
+                option.dataset.name = p.name;
+                selectElement.appendChild(option);
+            });
+        }
+
         function addItem() {
             const newItem = document.createElement('div');
             newItem.className = 'item-row flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-2';
             newItem.innerHTML = `
+                <input type="hidden" name="item_product_id[]" class="item-product-id">
+                <select class="product-select w-full md:w-40 px-2 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white text-sm">
+                    <option value="">-- Select --</option>
+                </select>
                 <input type="text" name="item_description[]" placeholder="Item Description" required class="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">
                 <input type="number" name="item_quantity[]" placeholder="Qty" required value="1" class="w-full md:w-24 text-center px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">
                 <input type="number" step="0.01" name="item_price[]" placeholder="Price" required class="w-full md:w-32 text-center px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">
@@ -145,12 +167,32 @@
                 <button type="button" class="remove-item-btn p-2 rounded-md text-white bg-red-600 hover:bg-red-700 flex-shrink-0 w-full md:w-auto"><i class="fas fa-trash"></i></button>
             `;
             itemsContainer.appendChild(newItem);
+            populateProductSelect(newItem.querySelector('.product-select'));
             attachRowListeners(newItem);
         }
 
         function attachRowListeners(row) {
              row.querySelectorAll('input').forEach(input => {
                 input.addEventListener('input', calculateTotals);
+            });
+            
+            const productSelect = row.querySelector('.product-select');
+            productSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const descInput = row.querySelector('input[name="item_description[]"]');
+                const priceInput = row.querySelector('input[name="item_price[]"]');
+                const productIdInput = row.querySelector('.item-product-id');
+
+                if (this.value) {
+                    descInput.value = selectedOption.dataset.name;
+                    priceInput.value = selectedOption.dataset.price;
+                    productIdInput.value = this.value;
+                } else {
+                    descInput.value = '';
+                    priceInput.value = '';
+                    productIdInput.value = '';
+                }
+                calculateTotals();
             });
         }
         
@@ -184,7 +226,12 @@
         sameAsBillingCheckbox.addEventListener('change', syncAddresses);
         billToTextarea.addEventListener('input', syncAddresses);
 
-        document.querySelectorAll('.item-row').forEach(attachRowListeners);
+        // Initialize first row
+        document.querySelectorAll('.item-row').forEach(row => {
+            populateProductSelect(row.querySelector('.product-select'));
+            attachRowListeners(row);
+        });
+        
         calculateTotals();
     });
 </script>

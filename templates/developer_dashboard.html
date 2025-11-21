@@ -1,50 +1,102 @@
 {% extends "layout.html" %}
 {% block title %}Developer Dashboard{% endblock %}
 {% block content %}
-<h1 class="text-3xl font-bold text-white mb-6 animate-dynamic">Developer Dashboard</h1>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-    <div class="space-y-8">
-        <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-6 animate-dynamic backdrop-blur-sm border border-white/10">
-            <h2 class="text-2xl font-bold text-white mb-4">Post a Project Update</h2>
-            <form method="POST" action="{{ url_for('developer_dashboard') }}" id="activity-form">
-                <textarea class="appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-700/50 text-white transition" name="activity_content" rows="3" placeholder="Share what you're working on..."></textarea>
-                <button type="submit" id="post-update-btn" class="mt-3 inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300 transform hover:scale-105">Post Update</button>
-            </form>
-        </div>
-        <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-6 animate-dynamic backdrop-blur-sm border border-white/10" style="animation-delay: 0.2s;">
-            <h2 class="text-2xl font-bold text-white mb-4">Team Activity Feed</h2>
-            <ul class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                {% for activity in activities %}
-                <li class="flex items-start space-x-4 p-3 bg-white/5 dark:bg-gray-700/20 rounded-lg animate-stagger">
-                    <img src="{{ activity.author.avatar_url }}" alt="Avatar" class="rounded-full w-12 h-12 flex-shrink-0">
-                    <div>
-                        <p class="font-semibold text-white">{{ activity.author.username }}</p>
-                        <p class="text-gray-300 mt-1">{{ activity.content }}</p>
-                        <p class="text-xs text-gray-500 mt-2">{{ activity.timestamp.strftime('%b %d, %Y at %I:%M %p') }}</p>
+<div class="mb-10 animate-dynamic">
+    <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mb-2">
+        Developer Workspace
+    </h1>
+    <p class="text-gray-400 text-lg">Collaborate, share code, and track team progress.</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    
+    <div class="lg:col-span-2 space-y-8">
+        
+        <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 backdrop-blur-md animate-dynamic">
+            <div class="p-6 border-b border-white/5">
+                <h2 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-pen-nib text-emerald-400 mr-3"></i> Post Update
+                </h2>
+            </div>
+            <div class="p-6">
+                <form method="POST" action="{{ url_for('developer_dashboard') }}" id="activity-form">
+                    <div class="relative">
+                        <textarea name="activity_content" rows="3" class="w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all custom-scrollbar resize-none" placeholder="What are you working on today?"></textarea>
+                        <div class="absolute bottom-2 right-2 text-xs text-gray-500">Markdown supported</div>
                     </div>
-                </li>
-                {% else %}
-                    <li class="text-gray-400">No activity updates yet.</li>
-                {% endfor %}
-            </ul>
+                    <div class="mt-4 flex justify-end">
+                        <button type="submit" id="post-update-btn" class="px-6 py-2 rounded-lg text-white bg-emerald-600 hover:bg-emerald-500 font-medium shadow-lg shadow-emerald-600/20 transition-all transform hover:scale-[1.02]">
+                            <i class="fas fa-paper-plane mr-2"></i> Post Update
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 backdrop-blur-md flex flex-col animate-dynamic" style="animation-delay: 0.1s;">
+            <div class="p-6 border-b border-white/5">
+                <h2 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-stream text-blue-400 mr-3"></i> Team Activity
+                </h2>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[600px] custom-scrollbar">
+                <ul class="space-y-8 relative border-l border-gray-700 ml-3 pl-8">
+                    {% for activity in activities %}
+                    <li class="relative group">
+                        <span class="absolute -left-[2.65rem] flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 border-2 border-gray-600 group-hover:border-emerald-500 transition-colors">
+                            <img src="{{ activity.author.avatar_url }}" alt="Avatar" class="h-full w-full rounded-full object-cover">
+                        </span>
+                        <div class="bg-white/5 rounded-lg p-4 border border-white/5 hover:border-white/10 transition-colors">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-bold text-white">{{ activity.author.username }}</span>
+                                <span class="text-xs text-gray-500 flex items-center">
+                                    <i class="far fa-clock mr-1"></i> {{ activity.timestamp.strftime('%b %d, %H:%M') }}
+                                </span>
+                            </div>
+                            <p class="text-gray-300 text-sm leading-relaxed">{{ activity.content }}</p>
+                        </div>
+                    </li>
+                    {% else %}
+                        <li class="text-gray-500 italic text-center py-4">No activity updates yet.</li>
+                    {% endfor %}
+                </ul>
+            </div>
         </div>
     </div>
 
-    <div class="space-y-8">
-        <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-6 animate-dynamic backdrop-blur-sm border border-white/10" style="animation-delay: 0.1s;">
-            <h2 class="text-2xl font-bold text-white mb-4">Received Code Snippets</h2>
-            <div class="space-y-6 max-h-[80vh] overflow-y-auto pr-2">
+    <div class="lg:col-span-1 animate-dynamic" style="animation-delay: 0.2s;">
+        <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 backdrop-blur-md flex flex-col h-full max-h-[calc(100vh-12rem)]">
+            <div class="p-6 border-b border-white/5">
+                <h2 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-code text-purple-400 mr-3"></i> Shared Snippets
+                </h2>
+            </div>
+            <div class="p-4 space-y-4 overflow-y-auto custom-scrollbar flex-1">
                 {% for snippet in received_snippets %}
-                    <div class="bg-white/5 dark:bg-gray-700/20 rounded-lg p-4 animate-stagger">
-                        <div class="flex justify-between items-start">
-                            <p class="text-sm text-gray-400 mb-2">From: <strong class="text-white">{{ snippet.snippet_sender.username }}</strong> on {{ snippet.timestamp.strftime('%b %d, %Y') }}</p>
-                            <a href="{{ url_for('delete_snippet', snippet_id=snippet.id) }}" class="px-3 py-1 text-xs rounded-md text-white bg-red-600 hover:bg-red-700">Delete</a>
+                    <div class="bg-gray-900/80 rounded-lg border border-gray-700 overflow-hidden group hover:border-purple-500/50 transition-all">
+                        <div class="px-4 py-2 bg-gray-800 border-b border-gray-700 flex justify-between items-center">
+                            <div class="flex items-center space-x-2">
+                                <div class="h-3 w-3 rounded-full bg-red-500"></div>
+                                <div class="h-3 w-3 rounded-full bg-yellow-500"></div>
+                                <div class="h-3 w-3 rounded-full bg-green-500"></div>
+                            </div>
+                            <div class="text-xs text-gray-400">
+                                <span class="font-bold text-purple-300">{{ snippet.snippet_sender.username }}</span> &bull; {{ snippet.timestamp.strftime('%b %d') }}
+                            </div>
                         </div>
-                        <pre><code class="language-{{ snippet.language }}">{{ snippet.code }}</code></pre>
+                        <div class="relative">
+                            <pre class="p-4 text-xs font-mono text-gray-300 overflow-x-auto custom-scrollbar"><code class="language-{{ snippet.language }}">{{ snippet.code }}</code></pre>
+                            <a href="{{ url_for('delete_snippet', snippet_id=snippet.id) }}" class="absolute top-2 right-2 p-1.5 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded transition-all opacity-0 group-hover:opacity-100" title="Delete Snippet">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+                        </div>
                     </div>
                 {% else %}
-                    <p class="text-gray-400">No code snippets have been shared with you.</p>
+                    <div class="text-center py-10 text-gray-500">
+                        <i class="fas fa-code-branch text-4xl mb-3 opacity-30"></i>
+                        <p class="text-sm">No code snippets shared yet.</p>
+                    </div>
                 {% endfor %}
             </div>
         </div>
@@ -59,15 +111,16 @@
         if(activityForm && postUpdateBtn) {
             activityForm.addEventListener('submit', () => {
                 postUpdateBtn.disabled = true;
-                postUpdateBtn.innerHTML = `
-                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Posting...
-                `;
+                postUpdateBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> Posting...`;
             });
         }
     });
 </script>
+
+<style>
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+</style>
 {% endblock %}

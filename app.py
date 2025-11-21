@@ -1,4 +1,4 @@
-# DecConnectHub/app.py
+# Source Point/app.py
 
 from dotenv import load_dotenv
 import os
@@ -9,7 +9,7 @@ load_dotenv()
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from models import db, User, Message, ActivityUpdate, CodeSnippet, JobOpening, JobApplication, CodeTestSubmission, ProblemStatement, AffiliateAd, Feedback, Invoice, InvoiceItem, LearningContent, ModeratorAssignmentHistory, Project, Transaction, BRD
+from models import db, User, Message, ActivityUpdate, CodeSnippet, JobOpening, JobApplication, CodeTestSubmission, ProblemStatement, AffiliateAd, Feedback, Invoice, InvoiceItem, LearningContent, ModeratorAssignmentHistory, Project, Transaction, BRD, Product
 from functools import wraps
 import requests
 import time
@@ -19,6 +19,7 @@ from werkzeug.utils import secure_filename
 from apscheduler.schedulers.background import BackgroundScheduler
 from invoice_service import InvoiceGenerator, BrdGenerator
 from bs4 import BeautifulSoup
+import json
 # --- BREVO (SIB) IMPORTS ---
 import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
@@ -733,15 +734,6 @@ def approve_user(user_id):
 def reject_user(user_id):
     user_to_reject = User.query.filter_by(id=user_id, is_approved=False).first_or_404() # Ensure we only target unapproved users
 
-    # Optional: Send a rejection email before deleting
-    # You might want to create a specific template for this (e.g., mail/account_rejected.html)
-    # send_email(
-    #     to=user_to_reject.email,
-    #     subject="Update on your DevConnect Hub Registration",
-    #     template="mail/account_rejected.html", # Create this template if needed
-    #     user=user_to_reject
-    # )
-
     db.session.delete(user_to_reject)
     db.session.commit()
     flash(f'User registration for {user_to_reject.username} has been rejected and deleted.', 'warning')
@@ -1267,21 +1259,58 @@ def broadcast_email():
     if request.method == 'POST':
         subject = request.form.get('subject')
         body = request.form.get('body')
+        file = request.files.get('attachment')
+
         if not subject or not body:
             flash('Subject and body are required.', 'danger')
             return redirect(url_for('broadcast_email'))
 
+        # Handle Attachment
+        attachments = []
+        if file and file.filename != '':
+            # Create the attachment dictionary expected by send_email
+            # Read file data into bytes
+            file_data = file.read()
+            attachments.append({
+                'filename': secure_filename(file.filename),
+                'content_type': file.content_type,
+                'data': file_data
+            })
+
+        # Append Default Signature
+        signature = """
+        <br><br>
+        <div style="border-top: 1px solid #ccc; padding-top: 10px; color: #555; font-family: Arial, sans-serif;">
+            <p>Best Regards,</p>
+            <p><strong>The Source Point Team</strong></p>
+            <p style="font-size: 12px;">
+                123 Tech Park, Innovation Drive, Pune<br>
+                <a href="mailto:admin@sourcepoint.in" style="color: #4f46e5;">admin@sourcepoint.in</a> | 
+                <a href="https://sourcepoint.in" style="color: #4f46e5;">www.sourcepoint.in</a>
+            </p>
+        </div>
+        """
+        final_body = body + signature
+
         users = User.query.all()
+        count = 0
+        
+        # Send email to each user
         for user in users:
-            send_email(
-                to=user.email,
-                subject=subject,
-                template="mail/broadcast.html",
-                user=user,
-                body=body
-            )
-        flash(f'Email has been sent to {len(users)} users.', 'success')
+            if user.email: # Ensure user has email
+                send_email(
+                    to=user.email,
+                    subject=subject,
+                    template="mail/broadcast.html",
+                    user=user,
+                    body=final_body,
+                    attachments=attachments
+                )
+                count += 1
+                
+        flash(f'Broadcast sent successfully to {count} users.', 'success')
         return redirect(url_for('admin_dashboard'))
+        
     return render_template('broadcast_email.html')
 
 @app.route('/send_specific_email', methods=['GET', 'POST'])
@@ -1292,6 +1321,7 @@ def send_specific_email():
         user_ids = request.form.getlist('user_ids')
         subject = request.form.get('subject')
         body = request.form.get('body')
+        file = request.files.get('attachment')
 
         if not user_ids:
             flash('Please select at least one user.', 'danger')
@@ -1301,16 +1331,46 @@ def send_specific_email():
             flash('Subject and body are required.', 'danger')
             return redirect(url_for('send_specific_email'))
 
+        # Handle Attachment
+        attachments = []
+        if file and file.filename != '':
+            file_data = file.read()
+            attachments.append({
+                'filename': secure_filename(file.filename),
+                'content_type': file.content_type,
+                'data': file_data
+            })
+
+        # Append Default Signature
+        signature = """
+        <br><br>
+        <div style="border-top: 1px solid #ccc; padding-top: 10px; color: #555; font-family: Arial, sans-serif;">
+            <p>Best Regards,</p>
+            <p><strong>The Source Point Team</strong></p>
+            <p style="font-size: 12px;">
+                123 Tech Park, Innovation Drive, Pune<br>
+                <a href="mailto:admin@sourcepoint.in" style="color: #4f46e5;">admin@sourcepoint.in</a> | 
+                <a href="https://sourcepoint.in" style="color: #4f46e5;">www.sourcepoint.in</a>
+            </p>
+        </div>
+        """
+        final_body = body + signature
+
         users = User.query.filter(User.id.in_(user_ids)).all()
+        count = 0
         for user in users:
-            send_email(
-                to=user.email,
-                subject=subject,
-                template="mail/broadcast.html",
-                user=user,
-                body=body
-            )
-        flash(f'Email has been sent to {len(users)} users.', 'success')
+            if user.email:
+                send_email(
+                    to=user.email,
+                    subject=subject,
+                    template="mail/broadcast.html",
+                    user=user,
+                    body=final_body,
+                    attachments=attachments
+                )
+                count += 1
+                
+        flash(f'Email has been sent to {count} users.', 'success')
         return redirect(url_for('admin_dashboard'))
 
     users = User.query.all()
@@ -1371,6 +1431,71 @@ def submit_feedback():
     flash('Feedback submitted successfully and admin has been notified.', 'success')
     return redirect(url_for('moderator_dashboard'))
 
+# --- NEW INVENTORY MANAGEMENT ROUTES ---
+@app.route('/admin/inventory', methods=['GET', 'POST'])
+@login_required
+@role_required('admin')
+def manage_inventory():
+    if request.method == 'POST':
+        product_code = request.form.get('product_code')
+        name = request.form.get('name')
+        stock = request.form.get('stock')
+        price = request.form.get('price')
+
+        if Product.query.filter_by(product_code=product_code).first():
+            flash(f'Product ID {product_code} already exists.', 'danger')
+        else:
+            new_product = Product(
+                product_code=product_code,
+                name=name,
+                stock=int(stock),
+                price=float(price)
+            )
+            db.session.add(new_product)
+            db.session.commit()
+            flash(f'Product "{name}" added successfully.', 'success')
+        return redirect(url_for('manage_inventory'))
+    
+    products = Product.query.order_by(Product.name).all()
+    
+    # --- NEW: Calculate Totals for the Dashboard ---
+    total_inventory_value = sum(int(p.stock) * float(p.price) for p in products)
+    total_products_count = len(products)
+    low_stock_count = sum(1 for p in products if int(p.stock) < 10)
+    # ------------------------------------------------
+
+    return render_template('manage_inventory.html', 
+                           products=products, 
+                           total_inventory_value=total_inventory_value,
+                           total_products_count=total_products_count,
+                           low_stock_count=low_stock_count)
+
+@app.route('/admin/inventory/update', methods=['POST'])
+@login_required
+@role_required('admin')
+def update_product():
+    product_id = request.form.get('product_id')
+    product = Product.query.get_or_404(product_id)
+    
+    product.name = request.form.get('name')
+    product.stock = int(request.form.get('stock'))
+    product.price = float(request.form.get('price'))
+    
+    db.session.commit()
+    flash(f'Product "{product.name}" updated.', 'success')
+    return redirect(url_for('manage_inventory'))
+
+@app.route('/admin/inventory/delete/<int:product_id>')
+@login_required
+@role_required('admin')
+def delete_product(product_id):
+    product = Product.query.get_or_404(product_id)
+    db.session.delete(product)
+    db.session.commit()
+    flash('Product deleted.', 'success')
+    return redirect(url_for('manage_inventory'))
+# --- END INVENTORY MANAGEMENT ROUTES ---
+
 @app.route('/admin/invoices', methods=['GET'])
 @login_required
 @role_required('admin')
@@ -1378,6 +1503,7 @@ def manage_invoices():
     invoices = Invoice.query.order_by(Invoice.created_at.desc()).all()
     return render_template('manage_invoices.html', invoices=invoices)
 
+# --- UPDATED INVOICE CREATION ROUTE ---
 @app.route('/admin/invoices/create', methods=['GET', 'POST'])
 @login_required
 @role_required('admin')
@@ -1401,21 +1527,32 @@ def create_invoice():
         item_descriptions = request.form.getlist('item_description[]')
         item_quantities = request.form.getlist('item_quantity[]')
         item_prices = request.form.getlist('item_price[]')
+        # Capture hidden product IDs to manage stock
+        item_product_ids = request.form.getlist('item_product_id[]')
 
         subtotal = 0
         invoice_items = []
+        
+        # Logic to process items and update stock
         for i in range(len(item_descriptions)):
             if item_descriptions[i] and item_quantities[i] and item_prices[i]:
                 quantity = int(item_quantities[i])
                 price = float(item_prices[i])
                 amount = quantity * price
                 subtotal += amount
+                
                 invoice_items.append(InvoiceItem(
                     description=item_descriptions[i],
                     quantity=quantity,
                     price=price
                 ))
 
+                # Update Stock if a product ID was linked
+                if i < len(item_product_ids) and item_product_ids[i]:
+                    product = Product.query.get(item_product_ids[i])
+                    if product:
+                        product.stock -= quantity
+        
         total_amount = subtotal * (1 + tax / 100)
 
         invoice = Invoice(
@@ -1438,6 +1575,7 @@ def create_invoice():
         db.session.add(invoice)
         db.session.commit()
 
+        # PDF Generation and Emailing (Existing Logic)
         invoice_generator = InvoiceGenerator(invoice)
         pdf_data = invoice_generator.generate_pdf()
 
@@ -1449,7 +1587,7 @@ def create_invoice():
 
         send_email(
             to=recipient_email,
-            subject=f'Your Invoice ({invoice.invoice_number}) from DecConnect Hub',
+            subject=f'Your Invoice ({invoice.invoice_number}) from Source Point',
             template='mail/professional_invoice_email.html',
             recipient_name=recipient_name,
             invoice_number=invoice.invoice_number,
@@ -1458,9 +1596,16 @@ def create_invoice():
             attachments=[attachment]
         )
 
-        flash('Invoice created and sent successfully!', 'success')
+        flash('Invoice created and sent successfully! Inventory updated.', 'success')
         return redirect(url_for('manage_invoices'))
-    return render_template('create_invoice.html')
+    
+    # GET request: Fetch products for the dropdown
+    products = Product.query.filter(Product.stock > 0).order_by(Product.name).all()
+    # Create a simple list of dicts for JS
+    products_js = [{'id': p.id, 'name': p.name, 'price': p.price, 'code': p.product_code} for p in products]
+    
+    return render_template('create_invoice.html', products=products_js)
+# --- END UPDATED INVOICE CREATION ROUTE ---
 
 @app.route('/admin/invoices/delete/<int:invoice_id>')
 @login_required
@@ -1518,6 +1663,41 @@ def resend_invoice():
     flash(f'Invoice {invoice.invoice_number} has been resent to the specified recipients!', 'success')
     return redirect(url_for('manage_invoices'))
 
+@app.route('/admin/invoices/remind/<int:invoice_id>', methods=['POST'])
+@login_required
+@role_required('admin')
+def send_invoice_reminder(invoice_id):
+    invoice = Invoice.query.get_or_404(invoice_id)
+    
+    # Generate PDF
+    invoice_generator = InvoiceGenerator(invoice)
+    pdf_data = invoice_generator.generate_pdf()
+
+    attachment = {
+        'filename': f'{invoice.invoice_number}.pdf',
+        'content_type': 'application/pdf',
+        'data': pdf_data
+    }
+
+    # Send Reminder Email
+    email_sent = send_email(
+        to=invoice.recipient_email,
+        subject=f'Payment Reminder: Invoice {invoice.invoice_number}',
+        template='mail/reminder_invoice_email.html',
+        recipient_name=invoice.recipient_name,
+        invoice_number=invoice.invoice_number,
+        created_at=invoice.created_at.strftime('%B %d, %Y'),
+        total_amount=invoice.total_amount,
+        due_date=invoice.due_date.strftime('%B %d, %Y') if invoice.due_date else "Immediate",
+        attachments=[attachment]
+    )
+
+    if email_sent:
+        flash(f'Reminder sent to {invoice.recipient_email} for Invoice {invoice.invoice_number}.', 'success')
+    else:
+        flash('Failed to send reminder email. Please check your email configuration.', 'danger')
+
+    return redirect(url_for('manage_invoices'))
 
 @app.route('/admin/records')
 @login_required

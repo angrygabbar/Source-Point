@@ -1,74 +1,133 @@
 {% extends "layout.html" %}
 {% block title %}Moderator Dashboard{% endblock %}
 {% block content %}
-<h1 class="text-3xl font-bold text-white mb-6 animate-dynamic">Moderator Dashboard</h1>
 
-<div class="space-y-8">
-    <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-6 animate-dynamic backdrop-blur-sm border border-white/10">
-        <h2 class="text-2xl font-bold text-white mb-4">Welcome, {{ current_user.username }}!</h2>
-        <p class="text-gray-300">You can manage and invigilate all scheduled coding events from the events page.</p>
-        <div class="mt-6">
-            <a href="{{ url_for('events') }}" class="inline-flex items-center justify-center px-5 py-2 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                Go to Events Page
+<div class="mb-10 animate-dynamic">
+    <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-pink-400 mb-2">
+        Moderator Console
+    </h1>
+    <p class="text-gray-400 text-lg">Invigilate tests, manage sessions, and provide candidate feedback.</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    
+    <div class="lg:col-span-1 space-y-8 animate-dynamic" style="animation-delay: 0.1s;">
+        
+        <div class="bg-gradient-to-br from-indigo-900/40 to-gray-800/40 rounded-xl p-6 border border-indigo-500/20 shadow-lg">
+            <h2 class="text-xl font-bold text-white mb-2">Welcome, {{ current_user.username }}!</h2>
+            <p class="text-gray-400 text-sm mb-4">You can view full schedules and event details on the Events page.</p>
+            <a href="{{ url_for('events') }}" class="inline-flex items-center text-sm text-indigo-400 hover:text-indigo-300 font-medium transition-colors">
+                Go to Events Page <i class="fas fa-arrow-right ml-2"></i>
             </a>
         </div>
-    </div>
 
-    <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-6 animate-dynamic backdrop-blur-sm border border-white/10">
-        <h2 class="text-2xl font-bold text-white mb-4">Assigned Candidates</h2>
-        <div class="space-y-4">
-            {% for candidate in moderated_candidates %}
-                <div class="bg-white/5 dark:bg-gray-700/20 p-4 rounded-lg animate-stagger">
-                    <p class="font-bold text-lg text-white">{{ candidate.username }}</p>
-                    {% if candidate.meeting_link %}
-                        <a href="{{ candidate.meeting_link }}" target="_blank" class="text-indigo-400 hover:underline">Join Meeting</a>
-                    {% else %}
-                        <p class="text-gray-400">No meeting link provided.</p>
-                    {% endif %}
-                </div>
-            {% else %}
-                <p class="text-gray-400">No candidates are currently assigned to you.</p>
-            {% endfor %}
+        <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 backdrop-blur-md flex flex-col max-h-[600px]">
+            <div class="p-6 border-b border-white/5">
+                <h2 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-users text-orange-400 mr-3"></i> Assigned Candidates
+                </h2>
+            </div>
+            <div class="p-4 space-y-4 overflow-y-auto custom-scrollbar flex-1">
+                {% for candidate in moderated_candidates %}
+                    <div class="bg-gray-900/40 border border-white/5 rounded-lg p-4 hover:border-orange-500/30 transition-all group">
+                        <div class="flex items-center mb-3">
+                            <div class="h-10 w-10 rounded-full bg-gray-700 flex items-center justify-center text-lg font-bold text-gray-300 mr-3 border border-gray-600">
+                                {{ candidate.username[0]|upper }}
+                            </div>
+                            <div>
+                                <p class="font-bold text-white">{{ candidate.username }}</p>
+                                <p class="text-xs text-gray-500">{{ candidate.email }}</p>
+                            </div>
+                        </div>
+                        
+                        {% if candidate.meeting_link %}
+                            <a href="{{ candidate.meeting_link }}" target="_blank" class="block w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium text-center rounded-lg transition-colors shadow-lg shadow-indigo-600/20">
+                                <i class="fas fa-video mr-2"></i> Join Meeting
+                            </a>
+                        {% else %}
+                            <div class="w-full py-2 px-4 bg-gray-800 text-gray-500 text-sm font-medium text-center rounded-lg border border-gray-700 border-dashed cursor-not-allowed">
+                                <i class="fas fa-video-slash mr-2"></i> No Link
+                            </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-10 text-gray-500">
+                        <i class="fas fa-user-slash text-4xl mb-3 opacity-30"></i>
+                        <p>No active assignments.</p>
+                    </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
 
-    <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-6 animate-dynamic backdrop-blur-sm border border-white/10">
-        <h2 class="text-2xl font-bold text-white mb-4">Submit Feedback for a Candidate</h2>
-        <form action="{{ url_for('submit_feedback') }}" method="POST" class="space-y-6">
-            <div>
-                <label for="candidate_id" class="block text-sm font-medium text-gray-300">Select Candidate</label>
-                <select name="candidate_id" id="candidate_id" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-gray-700/50 text-white transition">
-                    <option value="">-- Select a candidate --</option>
-                    {% for candidate in moderated_candidates %}
-                        <option value="{{ candidate.id }}">{{ candidate.username }}</option>
-                    {% endfor %}
-                </select>
+    <div class="lg:col-span-2 animate-dynamic" style="animation-delay: 0.2s;">
+        <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 backdrop-blur-md">
+            <div class="p-6 border-b border-white/5 bg-gradient-to-r from-pink-900/20 to-transparent">
+                <h2 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-star-half-alt text-pink-400 mr-3"></i> Submit Evaluation
+                </h2>
             </div>
+            <div class="p-6">
+                <form action="{{ url_for('submit_feedback') }}" method="POST" class="space-y-6">
+                    
+                    <div>
+                        <label for="candidate_id" class="block text-xs font-medium text-gray-400 uppercase mb-1">Select Candidate</label>
+                        <select name="candidate_id" id="candidate_id" required class="w-full px-4 py-2 rounded-lg bg-gray-900/50 border border-gray-600 text-white focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+                            <option value="">-- Choose Candidate --</option>
+                            {% for candidate in moderated_candidates %}
+                                <option value="{{ candidate.id }}">{{ candidate.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-            <div class="space-y-4">
-                {% set criteria = [('code_correctness', 'Code Correctness'), ('code_efficiency', 'Code Efficiency'), ('code_readability', 'Code Readability'), ('problem_solving', 'Problem Solving'), ('time_management', 'Time Management')] %}
-                {% for criterion, label in criteria %}
-                <div>
-                    <label class="block text-sm font-medium text-gray-300">{{ label }}</label>
-                    <div class="mt-2 flex space-x-4">
-                        {% for i in range(1, 6) %}
-                        <label class="flex items-center">
-                            <input type="radio" name="{{ criterion }}" value="{{ i }}" required class="form-radio h-4 w-4 text-indigo-600 bg-gray-700 border-gray-600 focus:ring-indigo-500">
-                            <span class="ml-2 text-white">{{ i }}</span>
-                        </label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {% set criteria = [
+                            ('code_correctness', 'Code Correctness'), 
+                            ('code_efficiency', 'Code Efficiency'), 
+                            ('code_readability', 'Code Readability'), 
+                            ('problem_solving', 'Problem Solving'), 
+                            ('time_management', 'Time Management')
+                        ] %}
+                        
+                        {% for criterion, label in criteria %}
+                        <div class="bg-gray-900/30 p-4 rounded-lg border border-white/5">
+                            <label class="block text-sm font-medium text-gray-300 mb-3">{{ label }}</label>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-gray-500">Poor</span>
+                                <div class="flex space-x-3">
+                                    {% for i in range(1, 6) %}
+                                    <label class="cursor-pointer group">
+                                        <input type="radio" name="{{ criterion }}" value="{{ i }}" required class="peer sr-only">
+                                        <div class="w-8 h-8 rounded-full border border-gray-600 flex items-center justify-center text-gray-400 peer-checked:bg-pink-600 peer-checked:text-white peer-checked:border-pink-500 group-hover:border-pink-400 transition-all">
+                                            {{ i }}
+                                        </div>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                                <span class="text-xs text-gray-500">Excellent</span>
+                            </div>
+                        </div>
                         {% endfor %}
                     </div>
-                </div>
-                {% endfor %}
-            </div>
 
-            <div>
-                <label for="remarks" class="block text-sm font-medium text-gray-300">Remarks</label>
-                <textarea name="remarks" id="remarks" rows="4" class="mt-1 appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-700/50 text-white transition"></textarea>
-            </div>
+                    <div>
+                        <label for="remarks" class="block text-xs font-medium text-gray-400 uppercase mb-1">Detailed Remarks</label>
+                        <textarea name="remarks" id="remarks" rows="4" class="w-full px-4 py-2 rounded-lg bg-gray-900/50 border border-gray-600 text-white placeholder-gray-500 focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all" placeholder="Enter specific observations, strengths, and areas for improvement..."></textarea>
+                    </div>
 
-            <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700">Submit Feedback</button>
-        </form>
+                    <button type="submit" class="w-full py-3 px-6 rounded-lg text-white bg-pink-600 hover:bg-pink-500 font-bold shadow-lg shadow-pink-600/20 transition-all transform hover:scale-[1.02]">
+                        <i class="fas fa-paper-plane mr-2"></i> Submit Feedback
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
+
+<style>
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+</style>
 {% endblock %}

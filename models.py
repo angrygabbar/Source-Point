@@ -1,4 +1,4 @@
-# DecConnectHub/models.py
+# Source Point/models.py
 
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
@@ -13,12 +13,10 @@ candidate_contacts = db.Table('candidate_contacts',
     db.Column('developer_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
 )
 
-# --- NEW MODEL FOR LEARNING CONTENT ---
 class LearningContent(db.Model):
     id = db.Column(db.String(50), primary_key=True) # e.g., 'java', 'cpp'
     content = db.Column(db.Text, nullable=False)
     last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-# --- END NEW MODEL ---
 
 class ProblemStatement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -141,6 +139,15 @@ class Feedback(db.Model):
     remarks = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+# --- NEW PRODUCT MODEL ---
+class Product(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    product_code = db.Column(db.String(50), unique=True, nullable=False) # Unique Product ID
+    name = db.Column(db.String(150), nullable=False)
+    stock = db.Column(db.Integer, default=0, nullable=False)
+    price = db.Column(db.Float, nullable=False, default=0.0)
+# --- END PRODUCT MODEL ---
+
 class Invoice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     invoice_number = db.Column(db.String(50), unique=True, nullable=False)
@@ -173,7 +180,6 @@ class ModeratorAssignmentHistory(db.Model):
     problem_statement_id = db.Column(db.Integer, db.ForeignKey('problem_statement.id'), nullable=False)
     assigned_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-# --- NEW BRD MODEL ---
 class BRD(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False, unique=True)
@@ -193,7 +199,7 @@ class Project(db.Model):
     start_date = db.Column(db.Date, nullable=True)
     end_date = db.Column(db.Date, nullable=True)
     budget = db.Column(db.Float, nullable=False, default=0.0)
-    status = db.Column(db.String(50), nullable=False, default='Planning')  # Add this line
+    status = db.Column(db.String(50), nullable=False, default='Planning')
     transactions = db.relationship('Transaction', backref='project', lazy=True, cascade="all, delete-orphan")
     brd = db.relationship('BRD', backref='project', uselist=False, cascade="all, delete-orphan")
 

@@ -1,24 +1,14 @@
 {% extends "layout.html" %}
-{% block title %}Send Email to Specific Users{% endblock %}
+{% block title %}Broadcast Email{% endblock %}
 {% block content %}
 <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-6 animate-dynamic backdrop-blur-sm border border-white/10">
-    <h1 class="text-3xl font-bold text-white mb-4">Send Email to Specific Users</h1>
-    <form action="{{ url_for('send_specific_email') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
-        <div>
-            <label for="user_ids" class="block text-sm font-medium text-gray-300">Select Users (multiple can be selected)</label>
-            <select name="user_ids" id="user_ids" multiple required class="mt-1 block w-full h-60 px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">
-                {% for user in users %}
-                    <option value="{{ user.id }}">{{ user.username }} ({{ user.email }})</option>
-                {% endfor %}
-            </select>
-            <p class="text-xs text-gray-400 mt-1">Hold Ctrl (Windows) or Cmd (Mac) to select multiple users.</p>
-        </div>
-        
+    <h1 class="text-3xl font-bold text-white mb-4">Broadcast Email to All Users</h1>
+    <form action="{{ url_for('broadcast_email') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
         <div>
             <label for="subject" class="block text-sm font-medium text-gray-300">Subject</label>
             <input type="text" name="subject" required class="mt-1 appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-700/50 text-white transition">
         </div>
-
+        
         <div>
             <label for="attachment" class="block text-sm font-medium text-gray-300">Attachment (Optional)</label>
             <input type="file" name="attachment" class="mt-1 block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700">
@@ -28,9 +18,9 @@
             <label for="body" class="block text-sm font-medium text-gray-300">Message Body</label>
             <textarea name="body" id="body" rows="10" class="rich-editor mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-700/50 text-white"></textarea>
         </div>
-
+        
         <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition-all duration-200 hover:scale-[1.02]">
-            <i class="fas fa-paper-plane mr-2 mt-1"></i> Send Email
+            <i class="fas fa-paper-plane mr-2 mt-1"></i> Send Broadcast
         </button>
     </form>
 </div>
@@ -45,9 +35,7 @@
             skin: 'oxide-dark',
             content_css: 'dark',
             menubar: false,
-            statusbar: false,
-            // This forces "Normal" spacing (single line) inside the editor
-            content_style: "body { font-family: Inter, sans-serif; font-size: 14px; line-height: 1.4; } p { margin: 0; padding: 0; }"
+            statusbar: false
         });
     });
 </script>

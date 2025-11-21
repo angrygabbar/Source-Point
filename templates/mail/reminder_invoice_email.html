@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Reminder: Invoice {{ invoice_number }}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { margin: 0; padding: 0; background-color: #f4f7f6; font-family: 'Inter', sans-serif; }
+        .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #eab308, #ca8a04); color: #ffffff; padding: 40px; text-align: center; }
+        .header h1 { margin: 0; font-size: 28px; }
+        .content { padding: 30px 40px; color: #333; line-height: 1.6; }
+        .content h2 { color: #a16207; font-size: 22px; }
+        .content p { margin: 0 0 15px; }
+        .details-box { background-color: #fefce8; border-left: 5px solid #eab308; padding: 20px; margin: 25px 0; border-radius: 8px; }
+        .footer { background-color: #eef2ff; text-align: center; padding: 20px; font-size: 12px; color: #6b7280; }
+        .amount { font-weight: bold; color: #b45309; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Payment Reminder</h1>
+        </div>
+        <div class="content">
+            <h2>Hello {{ recipient_name }},</h2>
+            <p>This is a friendly reminder regarding your invoice <strong>{{ invoice_number }}</strong> generated on {{ created_at }}.</p>
+            
+            <div class="details-box">
+                <p><strong>Amount Due:</strong> <span class="amount">INR {{ "%.2f"|format(total_amount) }}</span></p>
+                <p><strong>Due Date:</strong> {{ due_date }}</p>
+            </div>
+
+            <p>If you have already made the payment, please disregard this email. Otherwise, we would appreciate it if you could settle this at your earliest convenience.</p>
+            <p>A copy of the invoice is attached for your reference.</p>
+            
+            <p>Best regards,<br>The Source Point Team</p>
+        </div>
+        <div class="footer">
+            <p>&copy; 2025 Source Point. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
