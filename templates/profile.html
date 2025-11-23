@@ -2,13 +2,11 @@
 {% block title %}My Profile{% endblock %}
 {% block content %}
 <div class="max-w-4xl mx-auto space-y-8">
-    <!-- Profile Details Card -->
     <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-8 animate-dynamic backdrop-blur-sm border border-white/10">
         <h1 class="text-3xl font-bold text-white mb-6">My Profile</h1>
         
-        <form action="{{ url_for('update_profile') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+        <form action="{{ url_for('main.update_profile') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Basic Information -->
                 <div>
                     <label class="block text-sm font-medium text-gray-300">Username</label>
                     <input type="text" value="{{ current_user.username }}" readonly class="mt-1 w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800/50 text-gray-400">
@@ -23,7 +21,6 @@
                 </div>
             </div>
             <hr class="border-gray-700">
-            <!-- Professional Information -->
             <div>
                 <h2 class="text-xl font-semibold text-white mb-4">Professional Information</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -46,7 +43,6 @@
                 </div>
             </div>
 
-            <!-- CORRECTED: Resume Upload (Conditional) -->
             {% if current_user.role == 'candidate' %}
             <hr class="border-gray-700">
             <div>
@@ -66,10 +62,9 @@
         </form>
     </div>
 
-    <!-- Security Question Card -->
     <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-8 animate-dynamic backdrop-blur-sm border border-white/10">
         <h2 class="text-2xl font-bold text-white mb-6">Security Question for Password Reset</h2>
-        <form action="{{ url_for('update_security_question') }}" method="POST" class="space-y-4">
+        <form action="{{ url_for('main.update_security_question') }}" method="POST" class="space-y-4">
             <div>
                 <label for="secret_question" class="block text-sm font-medium text-gray-300">Select a Question</label>
                 <select name="secret_question" id="secret_question" required class="mt-1 w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">
@@ -92,10 +87,9 @@
         </form>
     </div>
 
-    <!-- Change Password Card -->
     <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-8 animate-dynamic backdrop-blur-sm border border-white/10">
         <h2 class="text-2xl font-bold text-white mb-6">Change Password</h2>
-        <form action="{{ url_for('change_password') }}" method="POST" class="space-y-4">
+        <form action="{{ url_for('main.change_password') }}" method="POST" class="space-y-4">
             <div>
                 <label for="old_password" class="block text-sm font-medium text-gray-300">Old Password</label>
                 <input type="password" name="old_password" id="old_password" required class="mt-1 w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">

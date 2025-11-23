@@ -2,13 +2,13 @@
 {% block title %}Manage Projects{% endblock %}
 {% block content %}
 <div class="space-y-8">
-    <a href="{{ url_for('projects') }}" class="text-indigo-400 hover:underline mb-4 inline-block">&larr; Back to Project Hub</a>
+    <a href="{{ url_for('admin.projects') }}" class="text-indigo-400 hover:underline mb-4 inline-block">&larr; Back to Project Hub</a>
     <h1 class="text-3xl font-bold text-white animate-dynamic">Manage Projects</h1>
 
     <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-6 animate-dynamic backdrop-blur-sm border border-white/10">
         <div class="space-y-4">
             {% for project in projects %}
-                <a href="{{ url_for('project_detail', project_id=project.id) }}" class="block p-4 bg-gray-700/20 rounded-lg hover:bg-gray-700/40 transition-colors duration-200">
+                <a href="{{ url_for('admin.project_detail', project_id=project.id) }}" class="block p-4 bg-gray-700/20 rounded-lg hover:bg-gray-700/40 transition-colors duration-200">
                     <div class="flex justify-between items-center">
                         <h3 class="font-bold text-lg text-white">{{ project.name }}</h3>
                         <span class="px-2 py-1 text-xs font-semibold rounded-full text-white bg-gray-500">{{ project.status }}</span>

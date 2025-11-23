@@ -1,20 +1,15 @@
-# Source Point/models.py
-
-from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from datetime import datetime
 import uuid
+from extensions import db
 
-db = SQLAlchemy()
-
-# Association table for the many-to-many relationship
 candidate_contacts = db.Table('candidate_contacts',
     db.Column('candidate_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
     db.Column('developer_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
 )
 
 class LearningContent(db.Model):
-    id = db.Column(db.String(50), primary_key=True) # e.g., 'java', 'cpp'
+    id = db.Column(db.String(50), primary_key=True)
     content = db.Column(db.Text, nullable=False)
     last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -25,7 +20,6 @@ class ProblemStatement(db.Model):
     created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     users = db.relationship('User', foreign_keys='User.problem_statement_id', backref='assigned_problem', lazy=True)
     assignment_history = db.relationship('ModeratorAssignmentHistory', backref='problem', lazy=True)
-
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -66,7 +60,7 @@ class User(UserMixin, db.Model):
     activity_updates = db.relationship('ActivityUpdate', backref='author', lazy=True)
     sent_snippets = db.relationship('CodeSnippet', foreign_keys='CodeSnippet.sender_id', backref='snippet_sender', lazy=True)
     received_snippets = db.relationship('CodeSnippet', foreign_keys='CodeSnippet.recipient_id', backref='snippet_recipient', lazy=True)
-    applications = db.relationship('JobApplication', backref='candidate', lazy=True)
+    applications = db.relationship('JobApplication', backref='candidate', lazy=True, cascade="all, delete-orphan")
     test_submissions = db.relationship('CodeTestSubmission', foreign_keys='CodeTestSubmission.candidate_id', backref='candidate_submitter', lazy='dynamic')
     received_tests = db.relationship('CodeTestSubmission', foreign_keys='CodeTestSubmission.recipient_id', backref='test_recipient', lazy=True)
     feedback_given = db.relationship('Feedback', foreign_keys='Feedback.moderator_id', backref='moderator', lazy=True)
@@ -74,7 +68,9 @@ class User(UserMixin, db.Model):
     invoices = db.relationship('Invoice', backref='admin', lazy=True)
     moderator_assignments = db.relationship('ModeratorAssignmentHistory', foreign_keys='ModeratorAssignmentHistory.moderator_id', backref='moderator', lazy=True)
     candidate_assignments = db.relationship('ModeratorAssignmentHistory', foreign_keys='ModeratorAssignmentHistory.candidate_id', backref='candidate', lazy=True)
-
+    orders = db.relationship('Order', backref='buyer', lazy=True)
+    
+    activity_logs = db.relationship('ActivityLog', backref='user', lazy=True)
 
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -139,14 +135,25 @@ class Feedback(db.Model):
     remarks = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-# --- NEW PRODUCT MODEL ---
+class ProductImage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    image_url = db.Column(db.String(500), nullable=False)
+
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    product_code = db.Column(db.String(50), unique=True, nullable=False) # Unique Product ID
+    product_code = db.Column(db.String(50), unique=True, nullable=False)
     name = db.Column(db.String(150), nullable=False)
     stock = db.Column(db.Integer, default=0, nullable=False)
     price = db.Column(db.Float, nullable=False, default=0.0)
-# --- END PRODUCT MODEL ---
+    description = db.Column(db.Text, nullable=True)
+    image_url = db.Column(db.String(500), nullable=True)
+    images = db.relationship('ProductImage', backref='product', lazy=True, cascade="all, delete-orphan")
+    category = db.Column(db.String(50), nullable=True)
+    brand = db.Column(db.String(100), nullable=True)
+    mrp = db.Column(db.Float, nullable=True) 
+    warranty = db.Column(db.String(200), nullable=True)
+    return_policy = db.Column(db.String(200), nullable=True)
 
 class Invoice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -191,7 +198,6 @@ class BRD(db.Model):
     project_constraints = db.Column(db.Text, nullable=True)
     cost_benefit_analysis = db.Column(db.Text, nullable=True)
 
-
 class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
@@ -203,11 +209,48 @@ class Project(db.Model):
     transactions = db.relationship('Transaction', backref='project', lazy=True, cascade="all, delete-orphan")
     brd = db.relationship('BRD', backref='project', uselist=False, cascade="all, delete-orphan")
 
-
 class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.String(200), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     date = db.Column(db.Date, nullable=False, default=datetime.utcnow)
-    category = db.Column(db.String(50), nullable=False)  # 'funding' or 'expense'
+    category = db.Column(db.String(50), nullable=False)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+
+class Cart(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    items = db.relationship('CartItem', backref='cart', lazy=True, cascade="all, delete-orphan")
+
+class CartItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    cart_id = db.Column(db.Integer, db.ForeignKey('cart.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+
+class Order(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    order_number = db.Column(db.String(50), unique=True, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    total_amount = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(20), default='Order Placed') 
+    shipping_address = db.Column(db.Text, nullable=False)
+    billing_address = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    items = db.relationship('OrderItem', backref='order', lazy=True, cascade="all, delete-orphan")
+
+class OrderItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
+    product_name = db.Column(db.String(150), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    price_at_purchase = db.Column(db.Float, nullable=False)
+
+class ActivityLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    action = db.Column(db.String(255), nullable=False)
+    details = db.Column(db.Text, nullable=True)
+    ip_address = db.Column(db.String(50), nullable=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)

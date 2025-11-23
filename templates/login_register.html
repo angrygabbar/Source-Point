@@ -25,7 +25,7 @@
                     <p class="text-sm text-gray-400 mt-2">Access your dashboard and manage your projects.</p>
                 </div>
 
-                <form method="POST" action="{{ url_for('login_register') }}" class="space-y-6">
+                <form method="POST" action="{{ url_for('auth.login_register') }}" class="space-y-6">
                     <input type="hidden" name="login" value="1">
                     
                     <div class="space-y-2">
@@ -53,7 +53,7 @@
                             <input type="checkbox" class="form-checkbox h-4 w-4 text-indigo-600 bg-gray-700 border-gray-600 rounded focus:ring-indigo-500 transition duration-150 ease-in-out">
                             <span class="ml-2">Remember me</span>
                         </label>
-                        <a href="{{ url_for('forgot_password') }}" class="text-indigo-400 hover:text-indigo-300 font-medium transition-colors hover:underline">Forgot Password?</a>
+                        <a href="{{ url_for('auth.forgot_password') }}" class="text-indigo-400 hover:text-indigo-300 font-medium transition-colors hover:underline">Forgot Password?</a>
                     </div>
 
                     <button type="submit" class="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow-lg shadow-indigo-600/20 transition-all transform hover:scale-[1.02] hover:shadow-indigo-600/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
@@ -68,7 +68,7 @@
                     <p class="text-sm text-gray-400 mt-1">Join our community of developers and creators.</p>
                 </div>
 
-                <form method="POST" action="{{ url_for('login_register') }}" class="space-y-4">
+                <form method="POST" action="{{ url_for('auth.login_register') }}" class="space-y-4">
                     <input type="hidden" name="register" value="1">
                     
                     <div class="grid grid-cols-2 gap-4">
@@ -99,6 +99,7 @@
                                 <option value="developer" class="bg-gray-800">Developer</option>
                                 <option value="candidate" class="bg-gray-800">Candidate</option>
                                 <option value="moderator" class="bg-gray-800">Moderator</option>
+                                <option value="buyer" class="bg-gray-800">Buyer</option> 
                             </select>
                             <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-400">
                                 <i class="fas fa-chevron-down text-xs"></i>

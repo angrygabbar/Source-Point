@@ -12,7 +12,6 @@
             <i class="fas fa-boxes text-indigo-400 text-xl"></i>
         </div>
     </div>
-
     <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl p-6 border border-white/10 shadow-lg backdrop-blur-sm flex items-center justify-between">
         <div>
             <p class="text-sm font-medium text-gray-400">Total Inventory Value</p>
@@ -22,7 +21,6 @@
             <i class="fas fa-rupee-sign text-green-400 text-xl"></i>
         </div>
     </div>
-
     <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl p-6 border border-white/10 shadow-lg backdrop-blur-sm flex items-center justify-between">
         <div>
             <p class="text-sm font-medium text-gray-400">Low Stock Items</p>
@@ -49,9 +47,9 @@
                     class="pl-10 pr-4 py-2 w-full md:w-64 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
             </div>
 
-            <button id="openAddModal" class="flex items-center justify-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-all transform hover:scale-105 shadow-lg shadow-indigo-500/30">
+            <a href="{{ url_for('admin.add_product_page') }}" class="flex items-center justify-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-all transform hover:scale-105 shadow-lg shadow-indigo-500/30">
                 <i class="fas fa-plus mr-2"></i> Add Product
-            </button>
+            </a>
         </div>
     </div>
 
@@ -60,6 +58,7 @@
             <thead class="text-xs uppercase bg-gray-900/50 text-gray-400 font-semibold tracking-wider">
                 <tr>
                     <th class="px-6 py-4 rounded-tl-lg">Product Code</th>
+                    <th class="px-6 py-4">Category</th>
                     <th class="px-6 py-4">Name</th>
                     <th class="px-6 py-4 text-center">Stock Status</th>
                     <th class="px-6 py-4 text-right">Price</th>
@@ -70,7 +69,13 @@
                 {% for product in products %}
                 <tr class="hover:bg-white/5 transition-colors product-row">
                     <td class="px-6 py-4 font-mono text-sm text-indigo-300">{{ product.product_code }}</td>
-                    <td class="px-6 py-4 font-medium text-white text-base product-name">{{ product.name }}</td>
+                    <td class="px-6 py-4 text-gray-400 text-sm">{{ product.category or '-' }}</td>
+                    <td class="px-6 py-4 font-medium text-white text-base product-name">
+                        {{ product.name }}
+                        {% if product.brand %}
+                            <span class="block text-xs text-indigo-400">{{ product.brand }}</span>
+                        {% endif %}
+                    </td>
                     <td class="px-6 py-4 text-center">
                         {% if product.stock == 0 %}
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-900/50 text-red-300 border border-red-700">
@@ -88,11 +93,23 @@
                     </td>
                     <td class="px-6 py-4 text-right font-mono text-gray-300">₹{{ "{:,.2f}".format(product.price) }}</td>
                     <td class="px-6 py-4 text-right space-x-3">
-                        <button onclick="openEditModal('{{ product.id }}', '{{ product.product_code }}', '{{ product.name }}', '{{ product.stock }}', '{{ product.price }}')" 
-                                class="text-gray-400 hover:text-blue-400 transition-colors" title="Edit">
+                        <button type="button"
+                                class="edit-product-btn text-gray-400 hover:text-blue-400 transition-colors" 
+                                data-id="{{ product.id }}"
+                                data-code="{{ product.product_code }}"
+                                data-name="{{ product.name }}"
+                                data-stock="{{ product.stock }}"
+                                data-price="{{ product.price }}"
+                                data-category="{{ product.category or '' }}"
+                                data-brand="{{ product.brand or '' }}"
+                                data-mrp="{{ product.mrp or '' }}"
+                                data-warranty="{{ product.warranty or '' }}"
+                                data-return="{{ product.return_policy or '' }}"
+                                title="Edit">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <a href="{{ url_for('delete_product', product_id=product.id) }}" 
+                        
+                        <a href="{{ url_for('admin.delete_product', product_id=product.id) }}" 
                            class="text-gray-400 hover:text-red-400 transition-colors" 
                            onclick="return confirm('Are you sure you want to permanently delete {{ product.name }}?')" title="Delete">
                             <i class="fas fa-trash-alt"></i>
@@ -101,67 +118,17 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                    <td colspan="6" class="px-6 py-12 text-center text-gray-500">
                         <div class="flex flex-col items-center">
                             <i class="fas fa-box-open text-4xl mb-3 opacity-50"></i>
                             <p>No products found in inventory.</p>
-                            <button onclick="document.getElementById('openAddModal').click()" class="mt-2 text-indigo-400 hover:underline text-sm">Add your first product</button>
+                            <a href="{{ url_for('admin.add_product_page') }}" class="mt-2 text-indigo-400 hover:underline text-sm">Add your first product</a>
                         </div>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-    </div>
-</div>
-
-<div id="addModal" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-center justify-center min-h-screen px-4 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-black/70 transition-opacity backdrop-blur-sm" id="addModalOverlay" aria-hidden="true"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        
-        <div class="inline-block align-middle bg-gray-800 rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-lg sm:w-full border border-white/10">
-            <div class="bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div class="sm:flex sm:items-start">
-                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-900/50 sm:mx-0 sm:h-10 sm:w-10">
-                        <i class="fas fa-plus text-indigo-400"></i>
-                    </div>
-                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                        <h3 class="text-lg leading-6 font-medium text-white" id="modal-title">Add New Product</h3>
-                        <div class="mt-4">
-                            <form id="addProductForm" action="{{ url_for('manage_inventory') }}" method="POST" class="space-y-4">
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Product Code</label>
-                                    <input type="text" name="product_code" required class="w-full px-3 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-600" placeholder="e.g., PROD-001">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Product Name</label>
-                                    <input type="text" name="name" required class="w-full px-3 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-600" placeholder="e.g., Wireless Mouse">
-                                </div>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Stock Quantity</label>
-                                        <input type="number" name="stock" required min="0" class="w-full px-3 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-600" placeholder="0">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Price (₹)</label>
-                                        <input type="number" step="0.01" name="price" required min="0" class="w-full px-3 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-600" placeholder="0.00">
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-gray-900/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-white/5">
-                <button type="submit" form="addProductForm" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
-                    Create Product
-                </button>
-                <button type="button" id="closeAddModal" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-600 shadow-sm px-4 py-2 bg-transparent text-base font-medium text-gray-300 hover:bg-gray-700 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                    Cancel
-                </button>
-            </div>
-        </div>
     </div>
 </div>
 
@@ -178,8 +145,8 @@
                     </div>
                     <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
                         <h3 class="text-lg leading-6 font-medium text-white" id="edit-modal-title">Edit Product</h3>
-                        <div class="mt-4">
-                            <form id="editProductForm" action="{{ url_for('update_product') }}" method="POST" class="space-y-4">
+                        <div class="mt-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                            <form id="editProductForm" action="{{ url_for('admin.update_product') }}" method="POST" class="space-y-4">
                                 <input type="hidden" name="product_id" id="edit_product_id">
                                 <div>
                                     <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Product Code</label>
@@ -191,13 +158,45 @@
                                 </div>
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Stock Quantity</label>
+                                        <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Category</label>
+                                        <select name="category" id="edit_category" class="w-full px-3 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                            <option value="">Select...</option>
+                                            <option value="Electronics">Electronics</option>
+                                            <option value="Apparel">Apparel</option>
+                                            <option value="Home & Office">Home & Office</option>
+                                            <option value="Books">Books</option>
+                                            <option value="Accessories">Accessories</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Brand</label>
+                                        <input type="text" name="brand" id="edit_brand" class="w-full px-3 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Stock</label>
                                         <input type="number" name="stock" id="edit_stock" required min="0" class="w-full px-3 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Price (₹)</label>
                                         <input type="number" step="0.01" name="price" id="edit_price" required min="0" class="w-full px-3 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                     </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">MRP (₹)</label>
+                                        <input type="number" step="0.01" name="mrp" id="edit_mrp" min="0" class="w-full px-3 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Warranty</label>
+                                        <input type="text" name="warranty" id="edit_warranty" class="w-full px-3 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Return Policy</label>
+                                    <input type="text" name="return_policy" id="edit_return_policy" class="w-full px-3 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 </div>
                             </form>
                         </div>
@@ -217,58 +216,75 @@
 </div>
 
 <script>
-    // --- Modal Logic ---
-    const addModal = document.getElementById('addModal');
-    const editModal = document.getElementById('editModal');
-    const openAddBtn = document.getElementById('openAddModal');
-    const closeAddBtn = document.getElementById('closeAddModal');
-    const closeEditBtn = document.getElementById('closeEditModal');
-    const addOverlay = document.getElementById('addModalOverlay');
-    const editOverlay = document.getElementById('editModalOverlay');
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- Modal Logic ---
+        const editModal = document.getElementById('editModal');
+        const closeEditBtn = document.getElementById('closeEditModal');
+        const editOverlay = document.getElementById('editModalOverlay');
 
-    function toggleModal(modal, show) {
-        if (show) {
-            modal.classList.remove('hidden');
-            // Small animation for entrance
-            modal.querySelector('div[class*="transform"]').classList.add('scale-100', 'opacity-100');
-            modal.querySelector('div[class*="transform"]').classList.remove('scale-95', 'opacity-0');
-        } else {
-            modal.classList.add('hidden');
-        }
-    }
-
-    openAddBtn.addEventListener('click', () => toggleModal(addModal, true));
-    closeAddBtn.addEventListener('click', () => toggleModal(addModal, false));
-    addOverlay.addEventListener('click', () => toggleModal(addModal, false));
-
-    closeEditBtn.addEventListener('click', () => toggleModal(editModal, false));
-    editOverlay.addEventListener('click', () => toggleModal(editModal, false));
-
-    // Function called by Edit button in table
-    window.openEditModal = function(id, code, name, stock, price) {
-        document.getElementById('edit_product_id').value = id;
-        document.getElementById('edit_product_code').value = code;
-        document.getElementById('edit_name').value = name;
-        document.getElementById('edit_stock').value = stock;
-        document.getElementById('edit_price').value = price;
-        toggleModal(editModal, true);
-    }
-
-    // --- Search Logic ---
-    document.getElementById('searchInput').addEventListener('keyup', function() {
-        const query = this.value.toLowerCase();
-        const rows = document.querySelectorAll('.product-row');
-
-        rows.forEach(row => {
-            const name = row.querySelector('.product-name').textContent.toLowerCase();
-            const code = row.querySelector('td:first-child').textContent.toLowerCase();
-            
-            if (name.includes(query) || code.includes(query)) {
-                row.style.display = '';
+        function toggleModal(modal, show) {
+            if (show) {
+                modal.classList.remove('hidden');
+                // Small animation for entrance
+                const panel = modal.querySelector('div[class*="transform"]');
+                if(panel) {
+                    panel.classList.add('scale-100', 'opacity-100');
+                    panel.classList.remove('scale-95', 'opacity-0');
+                }
             } else {
-                row.style.display = 'none';
+                modal.classList.add('hidden');
             }
+        }
+
+        // Close Modal Listeners
+        if(closeEditBtn) closeEditBtn.addEventListener('click', () => toggleModal(editModal, false));
+        if(editOverlay) editOverlay.addEventListener('click', () => toggleModal(editModal, false));
+
+        // Attach click event to all Edit buttons
+        const editButtons = document.querySelectorAll('.edit-product-btn');
+        editButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Retrieve data from data attributes
+                document.getElementById('edit_product_id').value = this.dataset.id;
+                document.getElementById('edit_product_code').value = this.dataset.code;
+                document.getElementById('edit_name').value = this.dataset.name;
+                document.getElementById('edit_stock').value = this.dataset.stock;
+                document.getElementById('edit_price').value = this.dataset.price;
+                document.getElementById('edit_category').value = this.dataset.category;
+                
+                // New Fields
+                document.getElementById('edit_brand').value = this.dataset.brand;
+                document.getElementById('edit_mrp').value = this.dataset.mrp;
+                document.getElementById('edit_warranty').value = this.dataset.warranty;
+                document.getElementById('edit_return_policy').value = this.dataset.return;
+
+                // Show Modal
+                toggleModal(editModal, true);
+            });
         });
+
+        // --- Search Logic ---
+        const searchInput = document.getElementById('searchInput');
+        if(searchInput) {
+            searchInput.addEventListener('keyup', function() {
+                const query = this.value.toLowerCase();
+                const rows = document.querySelectorAll('.product-row');
+
+                rows.forEach(row => {
+                    const nameEl = row.querySelector('.product-name');
+                    const codeEl = row.querySelector('td:first-child');
+                    
+                    const name = nameEl ? nameEl.textContent.toLowerCase() : '';
+                    const code = codeEl ? codeEl.textContent.toLowerCase() : '';
+                    
+                    if (name.includes(query) || code.includes(query)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        }
     });
 </script>
 {% endblock %}

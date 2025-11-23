@@ -20,7 +20,7 @@
                 </h2>
             </div>
             <div class="p-6">
-                <form method="POST" action="{{ url_for('developer_dashboard') }}" id="activity-form">
+                <form method="POST" action="{{ url_for('developer.developer_dashboard') }}" id="activity-form">
                     <div class="relative">
                         <textarea name="activity_content" rows="3" class="w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all custom-scrollbar resize-none" placeholder="What are you working on today?"></textarea>
                         <div class="absolute bottom-2 right-2 text-xs text-gray-500">Markdown supported</div>
@@ -87,7 +87,7 @@
                         </div>
                         <div class="relative">
                             <pre class="p-4 text-xs font-mono text-gray-300 overflow-x-auto custom-scrollbar"><code class="language-{{ snippet.language }}">{{ snippet.code }}</code></pre>
-                            <a href="{{ url_for('delete_snippet', snippet_id=snippet.id) }}" class="absolute top-2 right-2 p-1.5 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded transition-all opacity-0 group-hover:opacity-100" title="Delete Snippet">
+                            <a href="{{ url_for('candidate.delete_snippet', snippet_id=snippet.id) }}" class="absolute top-2 right-2 p-1.5 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded transition-all opacity-0 group-hover:opacity-100" title="Delete Snippet">
                                 <i class="fas fa-trash-alt"></i>
                             </a>
                         </div>

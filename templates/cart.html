@@ -1,0 +1,52 @@
+{% extends "layout.html" %}
+{% block title %}Shopping Cart{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto animate-dynamic">
+    <h1 class="text-3xl font-bold text-white mb-6">Shopping Cart</h1>
+
+    {% if cart_items %}
+    <div class="bg-white/5 border border-white/10 rounded-xl overflow-hidden mb-8">
+        <div class="p-6 space-y-6">
+            {% for item in cart_items %}
+            <div class="flex items-center justify-between border-b border-white/5 pb-6 last:border-0 last:pb-0">
+                <div class="flex items-center">
+                    <div class="h-16 w-16 bg-gray-800 rounded-lg flex items-center justify-center mr-4">
+                        <i class="fas fa-box text-gray-500"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white text-lg">{{ item.product.name }}</h3>
+                        <p class="text-sm text-gray-400">Unit Price: ₹{{ "{:,.2f}".format(item.product.price) }}</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-6">
+                    <div class="text-right">
+                        <p class="text-xs text-gray-500">Qty: {{ item.quantity }}</p>
+                        <p class="font-bold text-white">₹{{ "{:,.2f}".format(item.subtotal) }}</p>
+                    </div>
+                    <a href="{{ url_for('buyer.remove_from_cart', item_id=item.id) }}" class="text-red-400 hover:text-red-300">
+                        <i class="fas fa-trash"></i>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="bg-gray-900/50 p-6 flex justify-between items-center border-t border-white/10">
+            <span class="text-xl font-bold text-gray-300">Total</span>
+            <span class="text-2xl font-bold text-green-400">₹{{ "{:,.2f}".format(total) }}</span>
+        </div>
+    </div>
+
+    <div class="flex justify-end">
+        <a href="{{ url_for('buyer.checkout') }}" class="px-8 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-lg transform transition hover:scale-105">
+            Proceed to Checkout
+        </a>
+    </div>
+    {% else %}
+    <div class="text-center py-20 bg-white/5 rounded-xl border border-white/10">
+        <i class="fas fa-shopping-cart text-5xl text-gray-600 mb-4"></i>
+        <p class="text-xl text-gray-300">Your cart is empty.</p>
+        <a href="{{ url_for('buyer.buyer_dashboard') }}" class="inline-block mt-4 text-indigo-400 hover:underline">Continue Shopping</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

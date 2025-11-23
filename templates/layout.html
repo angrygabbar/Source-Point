@@ -13,48 +13,64 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/ScrollTrigger.min.js"></script>
     <script src="https://cdn.tiny.cloud/1/z53vyzj5hcwj6nlffpeu227p3t1sya9zs5w66nd3qshdjniq/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    
+    <style>
+        /* Visual style for disabled buttons */
+        button:disabled, input[type="submit"]:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+    </style>
 </head>
-<body class="bg-black">
+<body class="bg-black text-white">
     <canvas id="bg-canvas" class="fixed top-0 left-0 w-full h-full z-[-1]"></canvas>
 
     <nav class="bg-black/30 shadow-md sticky top-0 z-40 backdrop-blur-sm border-b border-white/10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
-                <a class="flex items-center cursor-pointer" href="{{ url_for('home') }}">
+                <a class="flex items-center cursor-pointer" href="{{ url_for('main.home') }}">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-indigo-400"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
                     <h1 class="ml-3 text-2xl font-bold text-white">Vision For The Future</h1>
                 </a>
                 <div class="hidden md:flex items-center space-x-1">
                     {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('dashboard') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Dashboard</a>
-                        <a href="{{ url_for('profile') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Profile</a>
-                        <a href="{{ url_for('messages') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Messages</a>
+                        <a href="{{ url_for('main.dashboard') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Dashboard</a>
+                        <a href="{{ url_for('main.profile') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Profile</a>
+                        <a href="{{ url_for('main.messages') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Messages</a>
+                        
+                        {% if current_user.role == 'buyer' %}
+                            <a href="{{ url_for('buyer.buyer_dashboard') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Catalog</a>
+                            <a href="{{ url_for('buyer.view_cart') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Cart</a>
+                            <a href="{{ url_for('buyer.my_orders') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Orders</a>
+                        {% endif %}
+
                         {% if current_user.role == 'candidate' %}
-                            <a href="{{ url_for('learning') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Learning</a>
-                            <a href="{{ url_for('code_test') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Code Test</a>
+                            <a href="{{ url_for('main.learning') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Learning</a>
+                            <a href="{{ url_for('candidate.code_test') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Code Test</a>
                         {% endif %}
                         
                         {% if current_user.role in ['admin', 'developer', 'moderator'] %}
-                            <a href="{{ url_for('learning') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Learning</a>
-                            <a href="{{ url_for('events') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Events</a>
+                            <a href="{{ url_for('main.learning') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Learning</a>
+                            <a href="{{ url_for('events.events') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Events</a>
                         {% endif %}
                         
                         {% if current_user.role == 'admin' %}
-                            <a href="{{ url_for('manage_users') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Manage Users</a>
-                            <a href="{{ url_for('manage_records') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Manage Records</a>
-                            <a href="{{ url_for('projects') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Projects</a>
+                            <a href="{{ url_for('admin.manage_users') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Manage Users</a>
+                            <a href="{{ url_for('admin.manage_records') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Manage Records</a>
+                            <a href="{{ url_for('admin.projects') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Projects</a>
                         {% endif %}
                     {% else %}
-                        <a href="{{ url_for('home') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Home</a>
-                        <a href="{{ url_for('offers') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Offers</a>
-                        <a href="{{ url_for('contact') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Contact Us</a>
+                        <a href="{{ url_for('main.home') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Home</a>
+                        <a href="{{ url_for('main.offers') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Offers</a>
+                        <a href="{{ url_for('main.contact') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Contact Us</a>
                     {% endif %}
                 </div>
                 <div class="hidden md:flex items-center">
                     {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('logout') }}" class="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-transform duration-200 hover:scale-105">Logout</a>
+                        <a href="{{ url_for('auth.logout') }}" class="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-transform duration-200 hover:scale-105">Logout</a>
                     {% else %}
-                        <a href="{{ url_for('login_register') }}" class="bg-indigo-600 text-white px-5 py-2 rounded-md hover:bg-indigo-700 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/50 transform hover:scale-105">Login / Register</a>
+                        <a href="{{ url_for('auth.login_register') }}" class="bg-indigo-600 text-white px-5 py-2 rounded-md hover:bg-indigo-700 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/50 transform hover:scale-105">Login / Register</a>
                     {% endif %}
                 </div>
                 <div class="md:hidden flex items-center">
@@ -69,29 +85,37 @@
         <div id="mobile-menu" class="md:hidden hidden">
             <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
                 {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('dashboard') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Dashboard</a>
-                    <a href="{{ url_for('profile') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Profile</a>
-                    <a href="{{ url_for('messages') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Messages</a>
+                    <a href="{{ url_for('main.dashboard') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Dashboard</a>
+                    <a href="{{ url_for('main.profile') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Profile</a>
+                    <a href="{{ url_for('main.messages') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Messages</a>
+                    
+                    {% if current_user.role == 'buyer' %}
+                        <a href="{{ url_for('buyer.buyer_dashboard') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Catalog</a>
+                        <a href="{{ url_for('buyer.view_cart') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Cart</a>
+                        <a href="{{ url_for('buyer.my_orders') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Orders</a>
+                    {% endif %}
+
                     {% if current_user.role == 'candidate' %}
-                        <a href="{{ url_for('learning') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Learning</a>
-                        <a href="{{ url_for('code_test') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Code Test</a>
+                        <a href="{{ url_for('main.learning') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Learning</a>
+                        <a href="{{ url_for('candidate.code_test') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Code Test</a>
                     {% endif %}
                     
                     {% if current_user.role in ['admin', 'developer', 'moderator'] %}
-                        <a href="{{ url_for('learning') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Learning</a>
-                        <a href="{{ url_for('events') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Events</a>
+                        <a href="{{ url_for('main.learning') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Learning</a>
+                        <a href="{{ url_for('events.events') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Events</a>
                     {% endif %}
                     
                     {% if current_user.role == 'admin' %}
-                        <a href="{{ url_for('manage_users') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Manage Users</a>
-                        <a href="{{ url_for('manage_records') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Manage Records</a>
+                        <a href="{{ url_for('admin.manage_users') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Manage Users</a>
+                        <a href="{{ url_for('admin.manage_records') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Manage Records</a>
+                        <a href="{{ url_for('admin.projects') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Projects</a>
                     {% endif %}
-                    <a href="{{ url_for('logout') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Logout</a>
+                    <a href="{{ url_for('auth.logout') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Logout</a>
                 {% else %}
-                    <a href="{{ url_for('home') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Home</a>
-                    <a href="{{ url_for('offers') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Offers</a>
-                    <a href="{{ url_for('contact') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Contact Us</a>
-                    <a href="{{ url_for('login_register') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Login / Register</a>
+                    <a href="{{ url_for('main.home') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Home</a>
+                    <a href="{{ url_for('main.offers') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Offers</a>
+                    <a href="{{ url_for('main.contact') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Contact Us</a>
+                    <a href="{{ url_for('auth.login_register') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Login / Register</a>
                 {% endif %}
             </div>
         </div>
@@ -248,11 +272,42 @@
                 }, 5000);
             });
 
+            // --- GLOBAL FORM SUBMIT PROTECTION (PREVENTS DOUBLE CLICK) ---
+            document.addEventListener('submit', (e) => {
+                const form = e.target;
+                // Only proceed if it's a form and matches validity constraints
+                if (form.tagName === 'FORM' && form.checkValidity()) {
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    
+                    // Check if button exists, isn't already disabled, and isn't marked to ignore
+                    if (submitBtn && !submitBtn.disabled && !submitBtn.classList.contains('no-global-disable')) {
+                        // Small timeout allows other listeners (like AJAX preventDefault) to run first
+                        setTimeout(() => {
+                            if (!e.defaultPrevented) {
+                                submitBtn.disabled = true;
+                                // Preserve width to prevent layout jump
+                                const width = submitBtn.offsetWidth;
+                                submitBtn.style.width = `${width}px`;
+                                // Show loading spinner
+                                submitBtn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i>`;
+                                
+                                // Safety fallback: Re-enable after 15s (in case of network error without reload)
+                                setTimeout(() => {
+                                    submitBtn.disabled = false;
+                                    submitBtn.innerHTML = 'Retry';
+                                    submitBtn.style.width = 'auto';
+                                }, 15000);
+                            }
+                        }, 0);
+                    }
+                }
+            });
+
             // --- Inactivity Logout Logic ---
             {% if current_user.is_authenticated %}
             let inactivityTimer;
             const logoutUser = () => {
-                window.location.href = "{{ url_for('logout') }}";
+                window.location.href = "{{ url_for('auth.logout') }}";
             };
             const resetTimer = () => {
                 clearTimeout(inactivityTimer);

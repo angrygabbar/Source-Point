@@ -21,7 +21,7 @@
         <div class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
         <div class="inline-block align-bottom bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
-            <form action="{{ url_for('update_learning_content') }}" method="POST">
+            <form action="{{ url_for('admin.update_learning_content') }}" method="POST">
                 <div class="bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <h3 class="text-lg leading-6 font-medium text-white" id="modal-title">Editing: {{ language|title }}</h3>
                     <div class="mt-4">
@@ -48,31 +48,32 @@
         const cancelBtn = document.getElementById('cancel-edit-btn');
         const modal = document.getElementById('edit-modal');
 
-        editBtn.addEventListener('click', () => {
-            modal.classList.remove('hidden');
-            tinymce.init({
-                selector: '#editor',
-                plugins: 'code table lists image link media autoresize',
-                toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | indent outdent | bullist numlist | code | table | image link media',
-                height: '60vh',
-                skin: 'oxide-dark',
-                content_css: 'dark',
-                // --- NEW CODE BLOCK TO EXPAND DETAILS ---
-                setup: function (editor) {
-                    editor.on('init', function () {
-                        // Find all 'details' elements in the editor and set them to 'open'
-                        const detailsElements = editor.dom.select('details');
-                        editor.dom.setAttrib(detailsElements, 'open', true);
-                    });
-                }
-                // --- END NEW CODE BLOCK ---
+        if (editBtn) {
+            editBtn.addEventListener('click', () => {
+                modal.classList.remove('hidden');
+                tinymce.init({
+                    selector: '#editor',
+                    plugins: 'code table lists image link media autoresize',
+                    toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | indent outdent | bullist numlist | code | table | image link media',
+                    height: '60vh',
+                    skin: 'oxide-dark',
+                    content_css: 'dark',
+                    setup: function (editor) {
+                        editor.on('init', function () {
+                            const detailsElements = editor.dom.select('details');
+                            editor.dom.setAttrib(detailsElements, 'open', true);
+                        });
+                    }
+                });
             });
-        });
+        }
 
-        cancelBtn.addEventListener('click', () => {
-            tinymce.remove('#editor');
-            modal.classList.add('hidden');
-        });
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                tinymce.remove('#editor');
+                modal.classList.add('hidden');
+            });
+        }
     });
 </script>
 {% endif %}

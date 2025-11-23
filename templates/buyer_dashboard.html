@@ -1,0 +1,92 @@
+{% extends "layout.html" %}
+{% block title %}Shop Products{% endblock %}
+{% block content %}
+
+<div class="flex flex-col md:flex-row justify-between items-center mb-8 animate-dynamic">
+    <div>
+        <h1 class="text-3xl font-extrabold text-white">Product Catalog</h1>
+        <p class="text-gray-400">Browse top-tier products across various categories.</p>
+    </div>
+    <div class="flex space-x-4 mt-4 md:mt-0">
+        <a href="{{ url_for('buyer.my_orders') }}" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition">My Orders</a>
+        <a href="{{ url_for('buyer.view_cart') }}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition flex items-center">
+            <i class="fas fa-shopping-cart mr-2"></i> Cart
+        </a>
+    </div>
+</div>
+
+<div class="flex flex-col md:flex-row gap-8 animate-dynamic" style="animation-delay: 0.1s;">
+    
+    <div class="w-full md:w-1/4 space-y-2">
+        <div class="bg-white/5 border border-white/10 rounded-xl p-4">
+            <h3 class="text-lg font-bold text-white mb-4 border-b border-white/10 pb-2">Categories</h3>
+            <ul class="space-y-2">
+                <li>
+                    <a href="{{ url_for('buyer.buyer_dashboard') }}" class="block px-3 py-2 rounded-lg transition-colors {{ 'bg-indigo-600 text-white' if not current_category else 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
+                        All Products
+                    </a>
+                </li>
+                {% for cat in categories %}
+                <li>
+                    <a href="{{ url_for('buyer.buyer_dashboard', category=cat) }}" class="block px-3 py-2 rounded-lg transition-colors {{ 'bg-indigo-600 text-white' if current_category == cat else 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
+                        {{ cat }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="w-full md:w-3/4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for product in products %}
+            <div class="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-indigo-500/50 transition-all group flex flex-col">
+                
+                <a href="{{ url_for('buyer.product_detail_page', product_id=product.id) }}" class="block h-48 bg-gray-800/50 flex items-center justify-center group-hover:bg-gray-800 transition-colors relative overflow-hidden">
+                    {% if product.image_url %}
+                        <img src="{{ product.image_url }}" alt="{{ product.name }}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                    {% else %}
+                        <i class="fas fa-box-open text-4xl text-gray-600"></i>
+                    {% endif %}
+                    
+                    {% if product.category %}
+                        <span class="absolute top-2 left-2 bg-black/60 backdrop-blur-md text-gray-200 text-[10px] uppercase tracking-wide font-bold px-2 py-1 rounded border border-white/10">
+                            {{ product.category }}
+                        </span>
+                    {% endif %}
+
+                    {% if product.stock < 5 %}
+                        <span class="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded z-10">Low Stock</span>
+                    {% endif %}
+                </a>
+                
+                <div class="p-5 flex-1 flex flex-col">
+                    <a href="{{ url_for('buyer.product_detail_page', product_id=product.id) }}">
+                        <h3 class="text-lg font-bold text-white mb-1 hover:text-indigo-400 transition-colors">{{ product.name }}</h3>
+                    </a>
+                    <p class="text-xs text-gray-400 mb-2 font-mono">{{ product.product_code }}</p>
+                    {% if product.description %}
+                        <p class="text-sm text-gray-300 mb-3 line-clamp-2" title="{{ product.description }}">{{ product.description }}</p>
+                    {% endif %}
+                    
+                    <div class="mt-auto flex items-center justify-between">
+                        <span class="text-xl font-bold text-green-400">₹{{ "{:,.2f}".format(product.price) }}</span>
+                        <form action="{{ url_for('buyer.add_to_cart', product_id=product.id) }}" method="POST">
+                            <button type="submit" class="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition shadow-lg">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-span-full text-center py-12 text-gray-500 bg-white/5 rounded-xl border border-white/10">
+                <i class="fas fa-search text-4xl mb-3 opacity-50"></i>
+                <p>No products found in this category.</p>
+                <a href="{{ url_for('buyer.buyer_dashboard') }}" class="text-indigo-400 hover:underline mt-2 inline-block">View all products</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

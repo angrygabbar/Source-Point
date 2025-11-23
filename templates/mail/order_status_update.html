@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Status Update</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { margin: 0; padding: 0; background-color: #f4f7f6; font-family: 'Inter', sans-serif; }
+        .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .header { padding: 40px; text-align: center; color: #ffffff; }
+        
+        /* Dynamic Header Colors based on status */
+        .header-placed { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .header-accepted { background: linear-gradient(135deg, #10b981, #059669); }
+        .header-dispatched { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .header-delivered { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .header-rejected { background: linear-gradient(135deg, #ef4444, #dc2626); }
+
+        .header h1 { margin: 0; font-size: 24px; }
+        .content { padding: 30px 40px; color: #333; line-height: 1.6; }
+        .content h2 { color: #1f2937; font-size: 20px; margin-top: 0; }
+        .status-badge { 
+            display: inline-block; 
+            padding: 8px 16px; 
+            border-radius: 20px; 
+            font-weight: bold; 
+            font-size: 14px;
+            margin: 15px 0;
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+        .order-details { background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-top: 20px; }
+        .order-details p { margin: 5px 0; font-size: 14px; color: #4b5563; }
+        .footer { background-color: #eff6ff; text-align: center; padding: 20px; font-size: 12px; color: #6b7280; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Conditional Header Styling -->
+        <div class="header 
+            {% if status == 'Order Placed' %}header-placed
+            {% elif status == 'Order Accepted' %}header-accepted
+            {% elif status == 'Order Dispatched' %}header-dispatched
+            {% elif status == 'Order Delivered' %}header-delivered
+            {% elif status == 'Order Rejected' %}header-rejected
+            {% endif %}">
+            <h1>Order Update</h1>
+        </div>
+        
+        <div class="content">
+            <h2>Hello {{ buyer_name }},</h2>
+            <p>The status of your order <strong>#{{ order_number }}</strong> has been updated.</p>
+            
+            <div style="text-align: center;">
+                <span class="status-badge">Current Status: {{ status }}</span>
+            </div>
+
+            <p>
+                {% if status == 'Order Accepted' %}
+                Great news! We've accepted your order and are preparing it now. An invoice has been generated for your records.
+                {% elif status == 'Order Dispatched' %}
+                Your package is on its way! It has been dispatched from our warehouse.
+                {% elif status == 'Order Delivered' %}
+                Your order has been delivered. We hope you enjoy your purchase!
+                {% elif status == 'Order Rejected' %}
+                We regret to inform you that your order could not be processed at this time. Please contact support for more details.
+                {% else %}
+                Your order is currently being processed.
+                {% endif %}
+            </p>
+
+            <div class="order-details">
+                <p><strong>Order Date:</strong> {{ order_date }}</p>
+                <p><strong>Total Amount:</strong> ₹{{ "%.2f"|format(total_amount) }}</p>
+                <p><strong>Shipping Address:</strong><br>{{ shipping_address }}</p>
+            </div>
+            
+            <p style="margin-top: 20px;">You can view full details in your dashboard.</p>
+        </div>
+        <div class="footer">
+            <p>&copy; {{ now.year }} Source Point. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

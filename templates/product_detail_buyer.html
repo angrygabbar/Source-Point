@@ -1,0 +1,163 @@
+{% extends "layout.html" %}
+{% block title %}{{ product.name }}{% endblock %}
+{% block content %}
+
+<div class="animate-dynamic max-w-5xl mx-auto">
+    
+    <nav class="flex mb-6 text-sm text-gray-400" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+            <li class="inline-flex items-center">
+                <a href="{{ url_for('buyer.buyer_dashboard') }}" class="inline-flex items-center hover:text-white">
+                    <i class="fas fa-store mr-2"></i> Shop
+                </a>
+            </li>
+            {% if product.category %}
+            <li>
+                <div class="flex items-center">
+                    <i class="fas fa-chevron-right mx-2 text-gray-600"></i>
+                    <a href="{{ url_for('buyer.buyer_dashboard', category=product.category) }}" class="hover:text-white">{{ product.category }}</a>
+                </div>
+            </li>
+            {% endif %}
+            <li aria-current="page">
+                <div class="flex items-center">
+                    <i class="fas fa-chevron-right mx-2 text-gray-600"></i>
+                    <span class="text-indigo-400">{{ product.name }}</span>
+                </div>
+            </li>
+        </ol>
+    </nav>
+
+    <div class="bg-white/5 border border-white/10 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-sm">
+        <div class="grid grid-cols-1 md:grid-cols-2">
+            
+            <div class="bg-gray-800/50 p-8 flex flex-col items-center justify-between min-h-[500px]">
+                
+                <div class="flex-1 flex items-center justify-center w-full mb-6 relative">
+                    {% if product.image_url %}
+                        <img id="main-product-image" src="{{ product.image_url }}" alt="{{ product.name }}" class="max-w-full max-h-[400px] object-contain rounded-lg shadow-lg transition-opacity duration-300">
+                    {% else %}
+                        <div class="text-center text-gray-600">
+                            <i class="fas fa-box-open text-9xl opacity-50"></i>
+                            <p class="mt-4">No image available</p>
+                        </div>
+                    {% endif %}
+                    
+                    {% if product.stock < 5 and product.stock > 0 %}
+                        <span class="absolute top-0 left-0 bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg animate-pulse">
+                            Only {{ product.stock }} left!
+                        </span>
+                    {% elif product.stock == 0 %}
+                        <span class="absolute top-0 left-0 bg-gray-600 text-white text-xs font-bold px-3 py-1.5 rounded-full">
+                            Out of Stock
+                        </span>
+                    {% endif %}
+                </div>
+
+                {% if product.images|length > 1 %}
+                <div class="flex space-x-3 overflow-x-auto w-full justify-center py-2 custom-scrollbar">
+                    {% for img in product.images %}
+                    <button onclick="updateMainImage('{{ img.image_url }}')" class="border-2 border-transparent hover:border-indigo-500 rounded-md overflow-hidden w-16 h-16 flex-shrink-0 transition-all focus:outline-none focus:border-indigo-500">
+                        <img src="{{ img.image_url }}" class="w-full h-full object-cover">
+                    </button>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="p-8 flex flex-col h-full">
+                <div class="mb-auto">
+                    <div class="mb-4">
+                        {% if product.brand %}
+                            <span class="text-indigo-400 text-sm font-bold tracking-wider uppercase mb-1 block">{{ product.brand }}</span>
+                        {% endif %}
+                        <h1 class="text-3xl md:text-4xl font-extrabold text-white leading-tight">{{ product.name }}</h1>
+                    </div>
+                    
+                    <div class="flex items-end mb-6">
+                        <span class="text-4xl font-bold text-green-400 mr-3">₹{{ "{:,.2f}".format(product.price) }}</span>
+                        
+                        {% if product.mrp and product.mrp > product.price %}
+                            <div class="flex flex-col items-start">
+                                <span class="text-gray-500 text-sm line-through">M.R.P.: ₹{{ "{:,.2f}".format(product.mrp) }}</span>
+                                <span class="text-red-400 text-xs font-bold">
+                                    Save {{ ((product.mrp - product.price) / product.mrp * 100) | round | int }}%
+                                </span>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <p class="text-sm text-gray-500 font-mono mb-6">SKU: {{ product.product_code }}</p>
+
+                    <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
+                        {% if product.warranty %}
+                        <div class="flex items-start">
+                            <i class="fas fa-shield-alt text-indigo-400 mt-1 mr-2"></i>
+                            <div>
+                                <span class="block text-gray-400 text-xs uppercase">Warranty</span>
+                                <span class="text-gray-200">{{ product.warranty }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if product.return_policy %}
+                        <div class="flex items-start">
+                            <i class="fas fa-undo text-indigo-400 mt-1 mr-2"></i>
+                            <div>
+                                <span class="block text-gray-400 text-xs uppercase">Return Policy</span>
+                                <span class="text-gray-200">{{ product.return_policy }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="flex items-start">
+                            <i class="fas fa-truck text-indigo-400 mt-1 mr-2"></i>
+                            <div>
+                                <span class="block text-gray-400 text-xs uppercase">Delivery</span>
+                                <span class="text-gray-200">Standard Shipping</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="border-white/10 mb-6">
+
+                    <div class="prose prose-invert max-w-none text-gray-300 mb-8">
+                        <h3 class="text-lg font-semibold text-white mb-2">About this item</h3>
+                        <p class="whitespace-pre-line leading-relaxed">{{ product.description or 'No detailed description available for this product.' }}</p>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-6 border-t border-white/10">
+                    <form action="{{ url_for('buyer.add_to_cart', product_id=product.id) }}" method="POST" class="flex flex-col sm:flex-row gap-4">
+                        {% if product.stock > 0 %}
+                            <button type="submit" class="flex-1 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg transition-all transform hover:scale-[1.02] flex items-center justify-center text-lg">
+                                <i class="fas fa-cart-plus mr-3"></i> Add to Cart
+                            </button>
+                        {% else %}
+                            <button type="button" disabled class="flex-1 py-4 bg-gray-700 text-gray-400 font-bold rounded-xl cursor-not-allowed flex items-center justify-center text-lg">
+                                <i class="fas fa-ban mr-3"></i> Currently Unavailable
+                            </button>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('buyer.buyer_dashboard') }}" class="px-6 py-4 bg-white/5 hover:bg-white/10 text-white font-semibold rounded-xl transition-colors border border-white/10 flex items-center justify-center">
+                            Continue Shopping
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function updateMainImage(src) {
+        const mainImage = document.getElementById('main-product-image');
+        // Simple fade effect
+        mainImage.style.opacity = '0.5';
+        setTimeout(() => {
+            mainImage.src = src;
+            mainImage.style.opacity = '1';
+        }, 150);
+    }
+</script>
+{% endblock %}

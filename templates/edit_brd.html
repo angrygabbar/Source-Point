@@ -2,10 +2,10 @@
 {% block title %}Edit BRD for {{ project.name }}{% endblock %}
 {% block content %}
 <div class="max-w-4xl mx-auto">
-    <a href="{{ url_for('view_brd', project_id=project.id) }}" class="text-indigo-400 hover:underline mb-4 inline-block">&larr; Back to BRD</a>
+    <a href="{{ url_for('admin.view_brd', project_id=project.id) }}" class="text-indigo-400 hover:underline mb-4 inline-block">&larr; Back to BRD</a>
     <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-6 animate-dynamic backdrop-blur-sm border border-white/10">
         <h1 class="text-3xl font-bold text-white mb-6">Edit BRD: {{ project.name }}</h1>
-        <form action="{{ url_for('edit_brd', project_id=project.id) }}" method="POST" class="space-y-6">
+        <form action="{{ url_for('admin.edit_brd', project_id=project.id) }}" method="POST" class="space-y-6">
             <div>
                 <label for="executive_summary" class="block text-sm font-medium text-gray-300">Executive Summary</label>
                 <textarea name="executive_summary" class="brd-editor mt-1 w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">{{ brd.executive_summary or '' }}</textarea>

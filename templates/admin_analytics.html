@@ -1,0 +1,174 @@
+{% extends "layout.html" %}
+{% block title %}Analytics Console{% endblock %}
+{% block content %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="animate-dynamic">
+    <div class="flex justify-between items-start mb-6">
+        <div>
+            <a href="{{ url_for('admin.admin_dashboard') }}" class="text-indigo-400 hover:underline mb-2 inline-block text-sm">&larr; Back to Dashboard</a>
+            <h1 class="text-3xl font-bold text-white">Analytics Console</h1>
+            <p class="text-gray-400 text-sm">Visualizing platform performance metrics.</p>
+        </div>
+        
+        <form method="GET" action="{{ url_for('admin.admin_analytics') }}" class="bg-white/5 p-3 rounded-xl border border-white/10 flex flex-col md:flex-row items-end gap-3 shadow-lg">
+            <div>
+                <label class="block text-xs text-gray-400 uppercase mb-1">Start Date</label>
+                <input type="date" name="start_date" id="startDate" value="{{ start_date }}" class="bg-gray-900/50 border border-gray-600 rounded px-3 py-1.5 text-sm text-white focus:ring-1 focus:ring-indigo-500">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-400 uppercase mb-1">End Date</label>
+                <input type="date" name="end_date" id="endDate" value="{{ end_date }}" class="bg-gray-900/50 border border-gray-600 rounded px-3 py-1.5 text-sm text-white focus:ring-1 focus:ring-indigo-500">
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded transition-colors">
+                    Apply Filter
+                </button>
+                <button type="button" onclick="setPreset(30)" class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs rounded transition-colors">
+                    Last 30 Days
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-gradient-to-br from-green-900/40 to-gray-800/40 rounded-xl p-6 border border-green-500/20 shadow-lg">
+            <p class="text-gray-400 text-sm font-medium uppercase">Net Revenue</p>
+            <h2 class="text-3xl font-bold text-white mt-1">₹{{ "{:,.0f}".format(total_funding - total_expense) }}</h2>
+            <p class="text-xs text-green-400 mt-2"><i class="fas fa-arrow-up"></i> Funding: ₹{{ "{:,.0f}".format(total_funding) }}</p>
+        </div>
+        <div class="bg-gradient-to-br from-blue-900/40 to-gray-800/40 rounded-xl p-6 border border-blue-500/20 shadow-lg">
+            <p class="text-gray-400 text-sm font-medium uppercase">Total Applications</p>
+            <h2 class="text-3xl font-bold text-white mt-1">{{ pending_apps + accepted_apps + rejected_apps }}</h2>
+            <p class="text-xs text-blue-400 mt-2"><i class="fas fa-clock"></i> Pending: {{ pending_apps }}</p>
+        </div>
+        <div class="bg-gradient-to-br from-purple-900/40 to-gray-800/40 rounded-xl p-6 border border-purple-500/20 shadow-lg">
+            <p class="text-gray-400 text-sm font-medium uppercase">Active Projects</p>
+            <h2 class="text-3xl font-bold text-white mt-1">{{ proj_counts|sum }}</h2>
+            <p class="text-xs text-purple-400 mt-2">Across {{ proj_statuses|length }} stages</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 p-6 backdrop-blur-md">
+            <h3 class="text-lg font-bold text-white mb-4">Financial Performance</h3>
+            <div class="relative h-64 w-full">
+                <canvas id="financialChart"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 p-6 backdrop-blur-md">
+            <h3 class="text-lg font-bold text-white mb-4">Recruitment Pipeline</h3>
+            <div class="relative h-64 w-full flex justify-center">
+                <canvas id="recruitmentChart"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 p-6 backdrop-blur-md lg:col-span-2">
+            <h3 class="text-lg font-bold text-white mb-4">Project Status Distribution</h3>
+            <div class="relative h-80 w-full">
+                <canvas id="projectStatusChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function setPreset(days) {
+        const end = new Date();
+        const start = new Date();
+        start.setDate(end.getDate() - days);
+        document.getElementById('endDate').valueAsDate = end;
+        document.getElementById('startDate').valueAsDate = start;
+        document.querySelector('form').submit();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        Chart.defaults.color = '#9ca3af';
+        Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
+
+        const ctxFinance = document.getElementById('financialChart').getContext('2d');
+        const gradientGreen = ctxFinance.createLinearGradient(0, 0, 0, 400);
+        gradientGreen.addColorStop(0, 'rgba(34, 197, 94, 0.8)');
+        gradientGreen.addColorStop(1, 'rgba(34, 197, 94, 0.1)');
+
+        const gradientRed = ctxFinance.createLinearGradient(0, 0, 0, 400);
+        gradientRed.addColorStop(0, 'rgba(239, 68, 68, 0.8)');
+        gradientRed.addColorStop(1, 'rgba(239, 68, 68, 0.1)');
+
+        new Chart(ctxFinance, {
+            type: 'bar',
+            data: {
+                labels: ['Funding', 'Expenses'],
+                datasets: [{
+                    label: 'Amount (₹)',
+                    data: [{{ total_funding|default(0) }}, {{ total_expense|default(0) }}],
+                    backgroundColor: [gradientGreen, gradientRed],
+                    borderColor: ['#22c55e', '#ef4444'],
+                    borderWidth: 1,
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        const ctxRecruit = document.getElementById('recruitmentChart').getContext('2d');
+        new Chart(ctxRecruit, {
+            type: 'doughnut',
+            data: {
+                labels: ['Pending', 'Accepted', 'Rejected'],
+                datasets: [{
+                    data: [{{ pending_apps|default(0) }}, {{ accepted_apps|default(0) }}, {{ rejected_apps|default(0) }}],
+                    backgroundColor: ['#eab308', '#22c55e', '#ef4444'],
+                    borderWidth: 0,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: { position: 'right', labels: { boxWidth: 12 } }
+                }
+            }
+        });
+
+        const ctxProject = document.getElementById('projectStatusChart').getContext('2d');
+        const gradientPurple = ctxProject.createLinearGradient(0, 0, 0, 400);
+        gradientPurple.addColorStop(0, 'rgba(99, 102, 241, 0.5)');
+        gradientPurple.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
+
+        new Chart(ctxProject, {
+            type: 'line',
+            data: {
+                labels: {{ proj_statuses|tojson|safe }},
+                datasets: [{
+                    label: 'Projects',
+                    data: {{ proj_counts|tojson|safe }},
+                    backgroundColor: gradientPurple,
+                    borderColor: '#6366f1',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#6366f1',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+    });
+</script>
+{% endblock %}

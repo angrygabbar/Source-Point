@@ -13,13 +13,11 @@
     </p>
 {% endif %}
 
-<form action="{{ url_for('submit_code_test') }}" method="POST" id="code-test-form">
+<form action="{{ url_for('candidate.submit_code_test') }}" method="POST" id="code-test-form">
     <input type="hidden" name="language" value="java">
     
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Left Column -->
         <div class="space-y-8">
-            <!-- Code Editor -->
             <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-6 animate-dynamic backdrop-blur-sm border border-white/10" style="animation-delay: 0.2s;">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-2xl font-bold text-white">Code Editor</h2>
@@ -36,14 +34,12 @@
                 <input type="hidden" name="output" id="outputInput">
             </div>
             
-            <!-- Standard Input -->
             <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-6 animate-dynamic backdrop-blur-sm border border-white/10" style="animation-delay: 0.3s;">
                 <h2 class="text-2xl font-bold text-white mb-4">Standard Input (stdin)</h2>
                 <textarea id="stdinInput" rows="5" class="w-full font-mono text-sm p-2 border border-gray-600 rounded-md shadow-sm bg-gray-900/50 text-gray-300" placeholder="Enter input for your program here..."></textarea>
             </div>
         </div>
 
-        <!-- Right Column: Output Console -->
         <div class="bg-gray-900 text-white rounded-lg shadow-xl p-6 font-mono text-sm animate-dynamic h-full" style="animation-delay: 0.4s;">
             <h2 class="text-2xl font-bold mb-4">Console Output</h2>
             <pre id="outputConsole" class="whitespace-pre-wrap h-full overflow-y-auto"></pre>
@@ -66,7 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const codeTestForm = document.getElementById('code-test-form');
     const submitTestBtn = document.getElementById('submit-test-btn');
     
-    // Set default Java code
     codeInput.value = `public class Main {
     public static void main(String[] args) {
         // Your code here.
@@ -89,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         try {
-            const response = await fetch("{{ url_for('run_code') }}", {
+            const response = await fetch("{{ url_for('events.run_code') }}", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ code: code, stdin: stdin }),
@@ -101,7 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const result = await response.json();
             
-            // Handle JDoodle's response format
             let finalOutput = result.output || "Execution finished with no output.";
             if(result.statusCode >= 400){
                 finalOutput = `Error:\n${result.error}`;
