@@ -1,129 +1,183 @@
 {% extends "layout.html" %}
 {% block title %}Java Code Test{% endblock %}
 {% block content %}
-<h1 class="text-3xl font-bold text-white mb-6 animate-dynamic">Java Coding Test</h1>
-{% if current_user.assigned_problem %}
-    <div class="mb-8 bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-6 animate-dynamic backdrop-blur-sm border border-white/10">
-        <h2 class="text-2xl font-bold text-white">{{ current_user.assigned_problem.title }}</h2>
-        <p class="mt-2 text-gray-300 whitespace-pre-wrap">{{ current_user.assigned_problem.description }}</p>
-    </div>
-{% else %}
-    <p class="text-lg text-gray-300 mb-6 animate-dynamic" style="animation-delay: 0.1s;">
-        No problem has been assigned to you yet. You can use this editor for practice.
-    </p>
-{% endif %}
 
-<form action="{{ url_for('candidate.submit_code_test') }}" method="POST" id="code-test-form">
-    <input type="hidden" name="language" value="java">
+<div class="space-y-6 animate-dynamic h-[calc(100vh-8rem)] flex flex-col">
     
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div class="space-y-8">
-            <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-6 animate-dynamic backdrop-blur-sm border border-white/10" style="animation-delay: 0.2s;">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-bold text-white">Code Editor</h2>
-                    <div class="flex items-center space-x-2">
-                        <label for="recipient" class="text-sm font-medium text-gray-300">Submit to:</label>
-                        <select name="recipient_id" id="recipient" class="block pl-3 pr-8 py-1 text-base border-gray-600 rounded-md bg-gray-700/50 text-white">
-                            {% for user in messageable_users %}
-                                <option class="bg-gray-800" value="{{ user.id }}">{{ user.username }} ({{ user.role.title() }})</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <textarea name="code" id="codeInput" rows="15" class="w-full font-mono text-sm p-2 border border-gray-600 rounded-md shadow-sm bg-gray-900/50 text-gray-300" placeholder="public class Main..."></textarea>
-                <input type="hidden" name="output" id="outputInput">
+    <div class="flex flex-col md:flex-row justify-between items-end gap-4 flex-shrink-0">
+        <div>
+            <h1 class="text-3xl font-bold text-white tracking-tight">Live Coding Environment</h1>
+            <p class="text-gray-400 text-sm mt-1">
+                {% if current_user.assigned_problem %}
+                    Solving: <span class="text-indigo-400 font-semibold">{{ current_user.assigned_problem.title }}</span>
+                {% else %}
+                    Sandbox Mode (No active test assigned)
+                {% endif %}
+            </p>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <div class="glass-panel px-3 py-1.5 rounded-lg flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+                <span class="text-xs text-gray-300 font-mono">Java SE 17</span>
             </div>
+            <button type="button" id="runCodeBtn" class="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center">
+                <i class="fas fa-play mr-2"></i> Run Code
+            </button>
+            <button type="button" id="submit-test-trigger" class="px-5 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white text-sm font-bold shadow-lg shadow-green-500/20 transition-all flex items-center">
+                <i class="fas fa-paper-plane mr-2"></i> Submit
+            </button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
+        
+        <div class="lg:col-span-2 flex flex-col gap-4 h-full min-h-[500px]">
             
-            <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-6 animate-dynamic backdrop-blur-sm border border-white/10" style="animation-delay: 0.3s;">
-                <h2 class="text-2xl font-bold text-white mb-4">Standard Input (stdin)</h2>
-                <textarea id="stdinInput" rows="5" class="w-full font-mono text-sm p-2 border border-gray-600 rounded-md shadow-sm bg-gray-900/50 text-gray-300" placeholder="Enter input for your program here..."></textarea>
+            {% if current_user.assigned_problem %}
+            <div x-data="{ expanded: true }" class="glass-panel rounded-xl overflow-hidden flex-shrink-0 border border-white/5">
+                <div @click="expanded = !expanded" class="px-4 py-2 bg-white/5 flex justify-between items-center cursor-pointer hover:bg-white/10 transition-colors">
+                    <h3 class="text-xs font-bold text-gray-300 uppercase tracking-wide"><i class="fas fa-file-alt mr-2"></i> Problem Statement</h3>
+                    <i :class="expanded ? 'fa-chevron-up' : 'fa-chevron-down'" class="fas text-xs text-gray-500"></i>
+                </div>
+                <div x-show="expanded" class="p-4 text-sm text-gray-300 leading-relaxed border-t border-white/5 max-h-32 overflow-y-auto custom-scrollbar">
+                    {{ current_user.assigned_problem.description }}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="glass-panel rounded-xl overflow-hidden flex-1 border border-white/5 flex flex-col relative group">
+                <div class="absolute top-0 right-0 p-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span class="text-[10px] text-gray-500 bg-black/50 px-2 py-1 rounded">Editor Active</span>
+                </div>
+                <div id="monaco-editor-container" class="w-full h-full"></div>
             </div>
         </div>
 
-        <div class="bg-gray-900 text-white rounded-lg shadow-xl p-6 font-mono text-sm animate-dynamic h-full" style="animation-delay: 0.4s;">
-            <h2 class="text-2xl font-bold mb-4">Console Output</h2>
-            <pre id="outputConsole" class="whitespace-pre-wrap h-full overflow-y-auto"></pre>
+        <div class="lg:col-span-1 flex flex-col gap-4 h-full min-h-[500px]">
+            
+            <div class="glass-panel rounded-xl p-4 border border-white/5">
+                <label class="block text-xs font-medium text-gray-400 uppercase mb-2">Submit To</label>
+                <select id="recipient-select" class="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-indigo-500">
+                    {% for user in messageable_users %}
+                        <option value="{{ user.id }}">{{ user.username }} ({{ user.role.title() }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="glass-panel rounded-xl flex-1 overflow-hidden flex flex-col border border-white/5">
+                <div class="px-4 py-2 bg-white/5 border-b border-white/5 flex justify-between items-center">
+                    <span class="text-xs font-bold text-gray-300 uppercase">Console Output</span>
+                    <button onclick="document.getElementById('outputConsole').textContent = ''" class="text-[10px] text-gray-500 hover:text-white transition-colors">Clear</button>
+                </div>
+                <pre id="outputConsole" class="flex-1 p-4 font-mono text-xs text-green-400 bg-[#0d1117] overflow-x-auto custom-scrollbar whitespace-pre-wrap">Ready...</pre>
+            </div>
+
+            <div class="glass-panel rounded-xl overflow-hidden flex-shrink-0 h-1/4 border border-white/5 flex flex-col">
+                <div class="px-4 py-2 bg-white/5 border-b border-white/5">
+                    <span class="text-xs font-bold text-gray-300 uppercase">Standard Input (Stdin)</span>
+                </div>
+                <textarea id="stdinInput" class="flex-1 w-full bg-[#0d1117] text-gray-300 p-4 font-mono text-xs resize-none focus:outline-none" placeholder="Input for your program..."></textarea>
+            </div>
+
         </div>
     </div>
-    
-    <div class="mt-6 flex justify-end space-x-4">
-        <button type="button" id="runCodeBtn" class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">Run Code</button>
-        <button type="submit" id="submit-test-btn" class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700">Submit Test</button>
-    </div>
-</form>
+
+    <form action="{{ url_for('candidate.submit_code_test') }}" method="POST" id="real-submission-form" class="hidden">
+        <input type="hidden" name="recipient_id" id="form-recipient">
+        <input type="hidden" name="code" id="form-code">
+        <input type="hidden" name="output" id="form-output">
+        <input type="hidden" name="language" value="java">
+    </form>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/loader.min.js"></script>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const codeInput = document.getElementById('codeInput');
-    const stdinInput = document.getElementById('stdinInput');
-    const outputConsole = document.getElementById('outputConsole');
-    const outputInput = document.getElementById('outputInput');
-    const runBtn = document.getElementById('runCodeBtn');
-    const codeTestForm = document.getElementById('code-test-form');
-    const submitTestBtn = document.getElementById('submit-test-btn');
-    
-    codeInput.value = `public class Main {
+    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs' }});
+
+    require(['vs/editor/editor.main'], function() {
+        // 1. Initialize Editor
+        window.editor = monaco.editor.create(document.getElementById('monaco-editor-container'), {
+            value: `public class Main {
     public static void main(String[] args) {
-        // Your code here.
-        System.out.println("Hello, Java!");
+        System.out.println("Hello from SourcePoint IDE!");
+        // Write your solution here
     }
-}`;
-
-    runBtn.addEventListener('click', async () => {
-        const code = codeInput.value;
-        const stdin = stdinInput.value;
-
-        outputConsole.textContent = "Running code...";
-        runBtn.disabled = true;
-        runBtn.innerHTML = `
-            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Running...
-        `;
-
-        try {
-            const response = await fetch("{{ url_for('events.run_code') }}", {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code: code, stdin: stdin }),
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-
-            const result = await response.json();
-            
-            let finalOutput = result.output || "Execution finished with no output.";
-            if(result.statusCode >= 400){
-                finalOutput = `Error:\n${result.error}`;
-            }
-
-            outputConsole.textContent = finalOutput;
-            outputInput.value = finalOutput;
-
-        } catch (error) {
-            outputConsole.textContent = "An error occurred while running the code: " + error.message;
-        } finally {
-            runBtn.disabled = false;
-            runBtn.textContent = "Run Code";
-        }
-    });
-    
-    if (codeTestForm) {
-        codeTestForm.addEventListener('submit', () => {
-            submitTestBtn.disabled = true;
-            submitTestBtn.innerHTML = `
-                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Submitting...
-            `;
+}`,
+            language: 'java',
+            theme: 'vs-dark',
+            automaticLayout: true,
+            minimap: { enabled: false },
+            fontSize: 13,
+            fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
+            scrollBeyondLastLine: false,
+            padding: { top: 16, bottom: 16 }
         });
-    }
-});
+
+        // 2. Run Code Handler
+        const runBtn = document.getElementById('runCodeBtn');
+        const outputConsole = document.getElementById('outputConsole');
+        const stdinInput = document.getElementById('stdinInput');
+
+        runBtn.addEventListener('click', async () => {
+            const code = window.editor.getValue();
+            const stdin = stdinInput.value;
+
+            outputConsole.textContent = "> Compiling & Running...";
+            runBtn.disabled = true;
+            runBtn.classList.add('opacity-70', 'cursor-wait');
+
+            try {
+                const response = await fetch("{{ url_for('events.run_code') }}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: code, stdin: stdin }),
+                });
+
+                if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+
+                const result = await response.json();
+                
+                let finalOutput = result.output || "Execution finished with no output.";
+                if(result.statusCode >= 400){
+                    finalOutput = `Error:\n${result.error || result.output}`;
+                    outputConsole.classList.add('text-red-400');
+                    outputConsole.classList.remove('text-green-400');
+                } else {
+                    outputConsole.classList.add('text-green-400');
+                    outputConsole.classList.remove('text-red-400');
+                }
+
+                outputConsole.textContent = finalOutput;
+
+            } catch (error) {
+                outputConsole.textContent = "System Error: " + error.message;
+                outputConsole.classList.add('text-red-400');
+            } finally {
+                runBtn.disabled = false;
+                runBtn.classList.remove('opacity-70', 'cursor-wait');
+            }
+        });
+
+        // 3. Submit Handler
+        const submitTrigger = document.getElementById('submit-test-trigger');
+        const realForm = document.getElementById('real-submission-form');
+
+        submitTrigger.addEventListener('click', () => {
+            // Sync Data
+            document.getElementById('form-recipient').value = document.getElementById('recipient-select').value;
+            document.getElementById('form-code').value = window.editor.getValue();
+            document.getElementById('form-output').value = outputConsole.textContent;
+
+            // Submit
+            if(confirm("Are you sure you want to submit your final solution?")) {
+                submitTrigger.disabled = true;
+                submitTrigger.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Submitting...';
+                realForm.submit();
+            }
+        });
+    });
 </script>
 {% endblock %}

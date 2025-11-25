@@ -1,84 +1,113 @@
 {% extends "layout.html" %}
-{% block title %}Manage Records{% endblock %}
+{% block title %}System Records{% endblock %}
 {% block content %}
-<div class="animate-dynamic">
-    <div class="mb-8">
-        <h1 class="text-3xl font-extrabold text-white tracking-tight">System Records</h1>
-        <p class="text-gray-400 mt-1 text-sm">View and manage historical data logs.</p>
+
+<div class="animate-dynamic space-y-8" x-data="{ activeTab: 'jobs', expandedRow: null }">
+    
+    <div class="flex flex-col md:flex-row justify-between items-end gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-white tracking-tight">System Archives</h1>
+            <p class="text-gray-400 text-sm mt-1">Historical data, logs, and performance records.</p>
+        </div>
+        <div class="glass-panel px-4 py-2 rounded-lg flex items-center gap-4 border border-white/5">
+            <div class="text-center">
+                <span class="block text-xs text-gray-500 uppercase font-bold">Jobs</span>
+                <span class="text-white font-bold">{{ jobs|length }}</span>
+            </div>
+            <div class="w-px h-8 bg-white/10"></div>
+            <div class="text-center">
+                <span class="block text-xs text-gray-500 uppercase font-bold">Feedbacks</span>
+                <span class="text-white font-bold">{{ feedback|length }}</span>
+            </div>
+            <div class="w-px h-8 bg-white/10"></div>
+            <div class="text-center">
+                <span class="block text-xs text-gray-500 uppercase font-bold">Tests</span>
+                <span class="text-white font-bold">{{ submissions|length }}</span>
+            </div>
+        </div>
     </div>
 
-    <div class="border-b border-gray-700/50 mb-6">
-        <nav class="-mb-px flex space-x-8 overflow-x-auto custom-scrollbar" aria-label="Tabs">
-            <button class="tab-link active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-indigo-400 border-indigo-500 focus:outline-none transition-colors" data-target="jobs-panel">
-                Job Openings
+    <div class="border-b border-white/10">
+        <nav class="-mb-px flex space-x-6 overflow-x-auto custom-scrollbar pb-1">
+            <button @click="activeTab = 'jobs'" :class="activeTab === 'jobs' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'" class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center">
+                <i class="fas fa-briefcase mr-2"></i> Job Openings
             </button>
-            <button class="tab-link whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-200 hover:border-gray-600 focus:outline-none transition-colors" data-target="feedback-panel">
-                Candidate Feedback
+            <button @click="activeTab = 'feedback'" :class="activeTab === 'feedback' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'" class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center">
+                <i class="fas fa-star-half-alt mr-2"></i> Candidate Feedback
             </button>
-            <button class="tab-link whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-200 hover:border-gray-600 focus:outline-none transition-colors" data-target="submissions-panel">
-                Code Submissions
+            <button @click="activeTab = 'submissions'" :class="activeTab === 'submissions' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'" class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center">
+                <i class="fas fa-code mr-2"></i> Code Submissions
             </button>
-            <button class="tab-link whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-200 hover:border-gray-600 focus:outline-none transition-colors" data-target="history-panel">
-                Assignment Logs
+            <button @click="activeTab = 'history'" :class="activeTab === 'history' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'" class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center">
+                <i class="fas fa-history mr-2"></i> Assignment Logs
             </button>
-            <button class="tab-link whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-400 border-transparent hover:text-gray-200 hover:border-gray-600 focus:outline-none transition-colors" data-target="events-panel">
-                Coding Events
+            <button @click="activeTab = 'events'" :class="activeTab === 'events' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'" class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center">
+                <i class="fas fa-calendar-check mr-2"></i> Completed Events
             </button>
         </nav>
     </div>
 
-    <div id="tab-content" class="bg-white/5 dark:bg-gray-800/20 rounded-xl shadow-xl border border-white/10 backdrop-blur-md overflow-hidden min-h-[400px]">
+    <div class="glass-panel rounded-xl overflow-hidden border border-white/5 min-h-[500px]">
         
-        <div id="jobs-panel" class="tab-panel p-6">
+        <div x-show="activeTab === 'jobs'" x-transition.opacity class="p-0">
             <div class="overflow-x-auto">
-                <table class="min-w-full text-left text-sm">
-                    <thead class="bg-gray-900/50 text-gray-400 uppercase text-xs font-semibold border-b border-white/10">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-white/5 text-gray-400 text-xs uppercase border-b border-white/5">
                         <tr>
-                            <th class="px-4 py-3">Title</th>
-                            <th class="px-4 py-3 text-center">Status</th>
-                            <th class="px-4 py-3">Created On</th>
-                            <th class="px-4 py-3 text-right">Actions</th>
+                            <th class="px-6 py-4 font-medium">Title</th>
+                            <th class="px-6 py-4 font-medium text-center">Status</th>
+                            <th class="px-6 py-4 font-medium">Created On</th>
+                            <th class="px-6 py-4 font-medium text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-white/5">
                         {% for job in jobs %}
-                        <tr class="hover:bg-white/5 transition-colors cursor-pointer group" onclick="toggleDetails('job-details-{{ job.id }}')">
-                            <td class="px-4 py-4 font-medium text-white">{{ job.title }}</td>
-                            <td class="px-4 py-4 text-center">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if job.is_open %}bg-green-500/10 text-green-400 border border-green-500/20{% else %}bg-red-500/10 text-red-400 border border-red-500/20{% endif %}">
+                        <tr @click="expandedRow = expandedRow === 'job-{{ job.id }}' ? null : 'job-{{ job.id }}'" class="hover:bg-white/5 transition-colors cursor-pointer group">
+                            <td class="px-6 py-4 font-medium text-white">
+                                {{ job.title }}
+                                <i :class="expandedRow === 'job-{{ job.id }}' ? 'rotate-180' : ''" class="fas fa-chevron-down ml-2 text-xs text-gray-600 transition-transform"></i>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border 
+                                    {% if job.is_open %}bg-green-500/10 text-green-400 border-green-500/20
+                                    {% else %}bg-red-500/10 text-red-400 border-red-500/20{% endif %}">
                                     {{ 'Open' if job.is_open else 'Closed' }}
                                 </span>
                             </td>
-                            <td class="px-4 py-4 text-gray-400">{{ job.created_at.strftime('%b %d, %Y') }}</td>
-                            <td class="px-4 py-4 text-right">
+                            <td class="px-6 py-4 text-gray-400 font-mono text-xs">{{ job.created_at.strftime('%b %d, %Y') }}</td>
+                            <td class="px-6 py-4 text-right">
                                 <a href="{{ url_for('admin.delete_job_opening', job_id=job.id) }}" class="text-gray-500 hover:text-red-400 transition-colors p-2" title="Delete" onclick="event.stopPropagation(); return confirm('Are you sure? This will delete the job and all associated applications.');">
                                     <i class="fas fa-trash-alt"></i>
                                 </a>
                             </td>
                         </tr>
-                        <tr id="job-details-{{ job.id }}" class="hidden bg-gray-900/30 border-b border-white/5">
-                            <td colspan="4" class="px-6 py-4 text-gray-300">
-                                <div class="mb-4">
-                                    <strong class="block text-xs uppercase text-gray-500 mb-1">Description</strong>
-                                    <p class="text-sm">{{ job.description }}</p>
-                                </div>
-                                <div>
-                                    <strong class="block text-xs uppercase text-gray-500 mb-2">Applicants ({{ job.applications|length }})</strong>
-                                    {% if job.applications %}
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                            {% for app in job.applications %}
-                                                <div class="flex justify-between items-center bg-black/20 p-2 rounded text-xs">
-                                                    <span>{{ app.candidate.username }}</span>
-                                                    <span class="uppercase text-[10px] font-bold 
-                                                        {% if app.status == 'accepted' %}text-green-400{% elif app.status == 'rejected' %}text-red-400{% else %}text-yellow-400{% endif %}">
-                                                        {{ app.status }}
-                                                    </span>
-                                                </div>
-                                            {% endfor %}
-                                        </div>
-                                    {% else %}
-                                        <p class="text-xs text-gray-500 italic">No applications received yet.</p>
-                                    {% endif %}
+                        <tr x-show="expandedRow === 'job-{{ job.id }}'" x-transition class="bg-black/20 border-b border-white/5">
+                            <td colspan="4" class="px-6 py-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <h4 class="text-xs font-bold text-gray-500 uppercase mb-2">Description</h4>
+                                        <p class="text-gray-300 text-sm leading-relaxed">{{ job.description }}</p>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xs font-bold text-gray-500 uppercase mb-2">Applicants ({{ job.applications|length }})</h4>
+                                        {% if job.applications %}
+                                            <div class="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
+                                                {% for app in job.applications %}
+                                                    <div class="flex justify-between items-center bg-white/5 p-2 rounded text-xs border border-white/5">
+                                                        <span class="text-white">{{ app.candidate.username }}</span>
+                                                        <span class="uppercase font-bold 
+                                                            {% if app.status == 'accepted' %}text-green-400
+                                                            {% elif app.status == 'rejected' %}text-red-400
+                                                            {% else %}text-yellow-400{% endif %}">
+                                                            {{ app.status }}
+                                                        </span>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <p class="text-xs text-gray-500 italic">No applications received yet.</p>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -90,56 +119,45 @@
             </div>
         </div>
 
-        <div id="feedback-panel" class="tab-panel hidden p-6">
+        <div x-show="activeTab === 'feedback'" x-transition.opacity class="p-0">
             <div class="overflow-x-auto">
-                <table class="min-w-full text-left text-sm">
-                    <thead class="bg-gray-900/50 text-gray-400 uppercase text-xs font-semibold border-b border-white/10">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-white/5 text-gray-400 text-xs uppercase border-b border-white/5">
                         <tr>
-                            <th class="px-4 py-3">Candidate</th>
-                            <th class="px-4 py-3">Moderator</th>
-                            <th class="px-4 py-3">Date</th>
-                            <th class="px-4 py-3 text-right">Actions</th>
+                            <th class="px-6 py-4">Candidate</th>
+                            <th class="px-6 py-4">Moderator</th>
+                            <th class="px-6 py-4">Date</th>
+                            <th class="px-6 py-4 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-white/5">
                         {% for f in feedback %}
-                        <tr class="hover:bg-white/5 transition-colors cursor-pointer group" onclick="toggleDetails('feedback-details-{{ f.id }}')">
-                            <td class="px-4 py-4 font-medium text-white">{{ f.candidate.username }}</td>
-                            <td class="px-4 py-4 text-gray-300">{{ f.moderator.username }}</td>
-                            <td class="px-4 py-4 text-gray-400">{{ f.created_at.strftime('%b %d, %Y') }}</td>
-                            <td class="px-4 py-4 text-right">
-                                <a href="{{ url_for('admin.delete_feedback', feedback_id=f.id) }}" class="text-gray-500 hover:text-red-400 transition-colors p-2" title="Delete" onclick="event.stopPropagation(); return confirm('Are you sure?');">
+                        <tr @click="expandedRow = expandedRow === 'feed-{{ f.id }}' ? null : 'feed-{{ f.id }}'" class="hover:bg-white/5 transition-colors cursor-pointer">
+                            <td class="px-6 py-4 font-medium text-white">
+                                {{ f.candidate.username }}
+                                <i :class="expandedRow === 'feed-{{ f.id }}' ? 'rotate-180' : ''" class="fas fa-chevron-down ml-2 text-xs text-gray-600 transition-transform"></i>
+                            </td>
+                            <td class="px-6 py-4 text-indigo-300">{{ f.moderator.username }}</td>
+                            <td class="px-6 py-4 text-gray-400 font-mono text-xs">{{ f.created_at.strftime('%b %d, %Y') }}</td>
+                            <td class="px-6 py-4 text-right">
+                                <a href="{{ url_for('admin.delete_feedback', feedback_id=f.id) }}" class="text-gray-500 hover:text-red-400 transition-colors" onclick="event.stopPropagation(); return confirm('Are you sure?');">
                                     <i class="fas fa-trash-alt"></i>
                                 </a>
                             </td>
                         </tr>
-                        <tr id="feedback-details-{{ f.id }}" class="hidden bg-gray-900/30 border-b border-white/5">
-                            <td colspan="4" class="px-6 py-4 text-gray-300">
-                                <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4 text-xs text-center">
-                                    <div class="bg-black/20 p-2 rounded">
-                                        <span class="block text-gray-500">Correctness</span>
-                                        <span class="font-bold text-lg text-indigo-400">{{ f.code_correctness }}/5</span>
+                        <tr x-show="expandedRow === 'feed-{{ f.id }}'" x-transition class="bg-black/20 border-b border-white/5">
+                            <td colspan="4" class="px-6 py-6">
+                                <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                                    {% for label, score in [('Correctness', f.code_correctness), ('Efficiency', f.code_efficiency), ('Readability', f.code_readability), ('Problem Solving', f.problem_solving), ('Time Mgmt', f.time_management)] %}
+                                    <div class="bg-white/5 p-3 rounded-lg text-center border border-white/5">
+                                        <span class="block text-[10px] text-gray-500 uppercase">{{ label }}</span>
+                                        <span class="font-bold text-lg {{ 'text-green-400' if score >= 4 else ('text-yellow-400' if score == 3 else 'text-red-400') }}">{{ score }}/5</span>
                                     </div>
-                                    <div class="bg-black/20 p-2 rounded">
-                                        <span class="block text-gray-500">Efficiency</span>
-                                        <span class="font-bold text-lg text-indigo-400">{{ f.code_efficiency }}/5</span>
-                                    </div>
-                                    <div class="bg-black/20 p-2 rounded">
-                                        <span class="block text-gray-500">Readability</span>
-                                        <span class="font-bold text-lg text-indigo-400">{{ f.code_readability }}/5</span>
-                                    </div>
-                                    <div class="bg-black/20 p-2 rounded">
-                                        <span class="block text-gray-500">Problem Solving</span>
-                                        <span class="font-bold text-lg text-indigo-400">{{ f.problem_solving }}/5</span>
-                                    </div>
-                                    <div class="bg-black/20 p-2 rounded">
-                                        <span class="block text-gray-500">Time Mgmt</span>
-                                        <span class="font-bold text-lg text-indigo-400">{{ f.time_management }}/5</span>
-                                    </div>
+                                    {% endfor %}
                                 </div>
                                 <div>
-                                    <strong class="block text-xs uppercase text-gray-500 mb-1">Remarks</strong>
-                                    <p class="text-sm bg-black/20 p-3 rounded text-gray-300">{{ f.remarks or 'No additional remarks.' }}</p>
+                                    <h4 class="text-xs font-bold text-gray-500 uppercase mb-2">Moderator Remarks</h4>
+                                    <p class="text-gray-300 text-sm bg-white/5 p-4 rounded-lg border border-white/5">{{ f.remarks or 'No additional remarks.' }}</p>
                                 </div>
                             </td>
                         </tr>
@@ -151,40 +169,44 @@
             </div>
         </div>
 
-        <div id="submissions-panel" class="tab-panel hidden p-6">
-             <div class="overflow-x-auto">
-                <table class="min-w-full text-left text-sm">
-                    <thead class="bg-gray-900/50 text-gray-400 uppercase text-xs font-semibold border-b border-white/10">
+        <div x-show="activeTab === 'submissions'" x-transition.opacity class="p-0">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-white/5 text-gray-400 text-xs uppercase border-b border-white/5">
                         <tr>
-                            <th class="px-4 py-3">Candidate</th>
-                            <th class="px-4 py-3">Language</th>
-                            <th class="px-4 py-3">Submitted To</th>
-                            <th class="px-4 py-3">Date</th>
-                            <th class="px-4 py-3 text-right">Actions</th>
+                            <th class="px-6 py-4">Candidate</th>
+                            <th class="px-6 py-4">Language</th>
+                            <th class="px-6 py-4">Submitted To</th>
+                            <th class="px-6 py-4">Date</th>
+                            <th class="px-6 py-4 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-white/5">
                         {% for sub in submissions %}
-                        <tr class="hover:bg-white/5 transition-colors cursor-pointer group" onclick="toggleDetails('sub-details-{{ sub.id }}')">
-                            <td class="px-4 py-4 font-medium text-white">{{ sub.candidate_submitter.username }}</td>
-                            <td class="px-4 py-4 text-gray-300">{{ sub.language|title }}</td>
-                            <td class="px-4 py-4 text-gray-400">{{ sub.test_recipient.username }}</td>
-                            <td class="px-4 py-4 text-gray-400">{{ sub.submitted_at.strftime('%b %d, %Y') }}</td>
-                            <td class="px-4 py-4 text-right">
-                                <a href="{{ url_for('admin.delete_submission_record', submission_id=sub.id) }}" class="text-gray-500 hover:text-red-400 transition-colors p-2" title="Delete" onclick="event.stopPropagation(); return confirm('Are you sure?');">
+                        <tr @click="expandedRow = expandedRow === 'sub-{{ sub.id }}' ? null : 'sub-{{ sub.id }}'" class="hover:bg-white/5 transition-colors cursor-pointer">
+                            <td class="px-6 py-4 font-medium text-white">{{ sub.candidate_submitter.username }}</td>
+                            <td class="px-6 py-4 text-gray-300">
+                                <span class="px-2 py-1 bg-white/10 rounded text-xs">{{ sub.language|title }}</span>
+                            </td>
+                            <td class="px-6 py-4 text-indigo-300">{{ sub.test_recipient.username }}</td>
+                            <td class="px-6 py-4 text-gray-400 font-mono text-xs">{{ sub.submitted_at.strftime('%b %d, %H:%M') }}</td>
+                            <td class="px-6 py-4 text-right">
+                                <a href="{{ url_for('admin.delete_submission_record', submission_id=sub.id) }}" class="text-gray-500 hover:text-red-400 transition-colors" onclick="event.stopPropagation(); return confirm('Are you sure?');">
                                     <i class="fas fa-trash-alt"></i>
                                 </a>
                             </td>
                         </tr>
-                        <tr id="sub-details-{{ sub.id }}" class="hidden bg-gray-900/30 border-b border-white/5">
-                            <td colspan="5" class="px-6 py-4">
-                                <div class="mb-3">
-                                    <strong class="block text-xs uppercase text-gray-500 mb-1">Source Code</strong>
-                                    <pre class="bg-black/40 p-3 rounded text-xs font-mono text-gray-300 overflow-x-auto custom-scrollbar max-h-40">{{ sub.code }}</pre>
-                                </div>
-                                <div>
-                                    <strong class="block text-xs uppercase text-gray-500 mb-1">Output</strong>
-                                    <pre class="bg-black/40 p-3 rounded text-xs font-mono text-green-400 overflow-x-auto custom-scrollbar max-h-24">{{ sub.output or 'No output recorded.' }}</pre>
+                        <tr x-show="expandedRow === 'sub-{{ sub.id }}'" x-transition class="bg-black/20 border-b border-white/5">
+                            <td colspan="5" class="px-0 py-0">
+                                <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/10">
+                                    <div class="p-4">
+                                        <p class="text-xs text-gray-500 uppercase font-bold mb-2">Source Code</p>
+                                        <pre class="bg-[#0d1117] p-3 rounded text-xs font-mono text-gray-300 overflow-x-auto custom-scrollbar max-h-60 border border-white/5">{{ sub.code }}</pre>
+                                    </div>
+                                    <div class="p-4">
+                                        <p class="text-xs text-gray-500 uppercase font-bold mb-2">Output</p>
+                                        <pre class="bg-[#0d1117] p-3 rounded text-xs font-mono text-green-400 overflow-x-auto custom-scrollbar max-h-60 border border-white/5">{{ sub.output or 'No output recorded.' }}</pre>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -196,27 +218,27 @@
             </div>
         </div>
 
-        <div id="history-panel" class="tab-panel hidden p-6">
-             <div class="overflow-x-auto">
-                <table class="min-w-full text-left text-sm">
-                    <thead class="bg-gray-900/50 text-gray-400 uppercase text-xs font-semibold border-b border-white/10">
+        <div x-show="activeTab === 'history'" x-transition.opacity class="p-0">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-white/5 text-gray-400 text-xs uppercase border-b border-white/5">
                         <tr>
-                            <th class="px-4 py-3">Candidate</th>
-                            <th class="px-4 py-3">Moderator</th>
-                            <th class="px-4 py-3">Problem</th>
-                            <th class="px-4 py-3">Assigned Date</th>
-                            <th class="px-4 py-3 text-right">Actions</th>
+                            <th class="px-6 py-4">Candidate</th>
+                            <th class="px-6 py-4">Moderator</th>
+                            <th class="px-6 py-4">Problem</th>
+                            <th class="px-6 py-4">Assigned Date</th>
+                            <th class="px-6 py-4 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-white/5">
                         {% for record in history %}
                         <tr class="hover:bg-white/5 transition-colors">
-                            <td class="px-4 py-4 font-medium text-white">{{ record.candidate.username }}</td>
-                            <td class="px-4 py-4 text-gray-300">{{ record.moderator.username }}</td>
-                            <td class="px-4 py-4 text-gray-400">{{ record.problem.title }}</td>
-                            <td class="px-4 py-4 text-gray-400">{{ record.assigned_at.strftime('%b %d, %Y') }}</td>
-                            <td class="px-4 py-4 text-right">
-                                <a href="{{ url_for('admin.delete_assignment_history', history_id=record.id) }}" class="text-gray-500 hover:text-red-400 transition-colors p-2" title="Delete" onclick="return confirm('Are you sure?');">
+                            <td class="px-6 py-4 font-medium text-white">{{ record.candidate.username }}</td>
+                            <td class="px-6 py-4 text-indigo-300">{{ record.moderator.username }}</td>
+                            <td class="px-6 py-4 text-gray-300">{{ record.problem.title }}</td>
+                            <td class="px-6 py-4 text-gray-400 font-mono text-xs">{{ record.assigned_at.strftime('%b %d, %Y') }}</td>
+                            <td class="px-6 py-4 text-right">
+                                <a href="{{ url_for('admin.delete_assignment_history', history_id=record.id) }}" class="text-gray-500 hover:text-red-400 transition-colors" onclick="return confirm('Are you sure?');">
                                     <i class="fas fa-trash-alt"></i>
                                 </a>
                             </td>
@@ -229,46 +251,42 @@
             </div>
         </div>
 
-        <div id="events-panel" class="tab-panel hidden p-6">
-             <div class="overflow-x-auto">
-                <table class="min-w-full text-left text-sm">
-                    <thead class="bg-gray-900/50 text-gray-400 uppercase text-xs font-semibold border-b border-white/10">
+        <div x-show="activeTab === 'events'" x-transition.opacity class="p-0">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-white/5 text-gray-400 text-xs uppercase border-b border-white/5">
                         <tr>
-                            <th class="px-4 py-3">Candidate</th>
-                            <th class="px-4 py-3">Problem</th>
-                            <th class="px-4 py-3">Moderator</th>
-                            <th class="px-4 py-3">Completion Date</th>
-                            <th class="px-4 py-3 text-right">Actions</th>
+                            <th class="px-6 py-4">Candidate</th>
+                            <th class="px-6 py-4">Problem</th>
+                            <th class="px-6 py-4">Moderator</th>
+                            <th class="px-6 py-4">Completion Date</th>
+                            <th class="px-6 py-4 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-white/5">
                         {% for event in events %}
-                            <tr class="hover:bg-white/5 transition-colors cursor-pointer group" onclick="toggleDetails('event-details-{{ event.id }}')">
-                                <td class="px-4 py-4 font-medium text-white">{{ event.username }}</td>
-                                <td class="px-4 py-4 text-gray-300">{{ event.assigned_problem.title }}</td>
-                                <td class="px-4 py-4 text-gray-400">
-                                    {% if event.moderator_id and moderators_map.get(event.moderator_id) %}
-                                        {{ moderators_map.get(event.moderator_id).username }}
-                                    {% else %}
-                                        <span class="text-gray-600">None</span>
-                                    {% endif %}
+                            <tr @click="expandedRow = expandedRow === 'evt-{{ event.id }}' ? null : 'evt-{{ event.id }}'" class="hover:bg-white/5 transition-colors cursor-pointer">
+                                <td class="px-6 py-4 font-medium text-white">{{ event.username }}</td>
+                                <td class="px-6 py-4 text-gray-300">{{ event.assigned_problem.title }}</td>
+                                <td class="px-6 py-4 text-indigo-300">
+                                    {{ moderators_map.get(event.moderator_id).username if event.moderator_id else 'None' }}
                                 </td>
-                                <td class="px-4 py-4 text-gray-400">{{ event.test_end_time.strftime('%b %d, %Y') if event.test_end_time else 'N/A' }}</td>
-                                <td class="px-4 py-4 text-right">
-                                    <a href="{{ url_for('admin.delete_coding_event', user_id=event.id) }}" class="text-gray-500 hover:text-red-400 transition-colors p-2" title="Clear Event History" onclick="event.stopPropagation(); return confirm('Are you sure? This clears the event history for this user.');">
+                                <td class="px-6 py-4 text-gray-400 font-mono text-xs">{{ event.test_end_time.strftime('%b %d, %Y') if event.test_end_time else 'N/A' }}</td>
+                                <td class="px-6 py-4 text-right">
+                                    <a href="{{ url_for('admin.delete_coding_event', user_id=event.id) }}" class="text-gray-500 hover:text-red-400 transition-colors" title="Clear History" onclick="event.stopPropagation(); return confirm('Are you sure?');">
                                         <i class="fas fa-trash-alt"></i>
                                     </a>
                                 </td>
                             </tr>
-                            <tr id="event-details-{{ event.id }}" class="hidden bg-gray-900/30 border-b border-white/5">
-                                <td colspan="5" class="px-6 py-4">
-                                    <strong class="block text-xs uppercase text-gray-500 mb-1">Submitted Code (Preview)</strong>
+                            <tr x-show="expandedRow === 'evt-{{ event.id }}'" x-transition class="bg-black/20 border-b border-white/5">
+                                <td colspan="5" class="px-6 py-6">
+                                    <strong class="block text-xs uppercase text-gray-500 mb-2">Latest Code Submission</strong>
                                     {% set submissions_list = event.test_submissions.all() %}
                                     {% if submissions_list %}
                                         {% set submission = submissions_list | sort(attribute='submitted_at', reverse=True) | first %}
-                                        <pre class="bg-black/40 p-3 rounded text-xs font-mono text-gray-300 overflow-x-auto custom-scrollbar max-h-40">{{ submission.code }}</pre>
+                                        <pre class="bg-[#0d1117] p-3 rounded text-xs font-mono text-gray-300 overflow-x-auto custom-scrollbar max-h-40 border border-white/5">{{ submission.code }}</pre>
                                     {% else %}
-                                        <p class="text-xs text-gray-500 italic">No code submission recorded for this event.</p>
+                                        <p class="text-xs text-gray-500 italic">No code submission recorded.</p>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -282,37 +300,4 @@
 
     </div>
 </div>
-
-<script>
-    function toggleDetails(rowId) {
-        const row = document.getElementById(rowId);
-        if(row) {
-            row.classList.toggle('hidden');
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        // (Tab Logic remains same)
-        const tabs = document.querySelectorAll('.tab-link');
-        const panels = document.querySelectorAll('.tab-panel');
-
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                tabs.forEach(t => {
-                    t.classList.remove('text-indigo-400', 'border-indigo-500', 'active');
-                    t.classList.add('text-gray-400', 'border-transparent');
-                });
-                tab.classList.add('text-indigo-400', 'border-indigo-500', 'active');
-                tab.classList.remove('text-gray-400', 'border-transparent');
-                panels.forEach(panel => panel.classList.add('hidden'));
-                const targetId = tab.getAttribute('data-target');
-                const targetPanel = document.getElementById(targetId);
-                if(targetPanel) {
-                    targetPanel.classList.remove('hidden');
-                    gsap.fromTo(targetPanel, {opacity: 0, y: 10}, {opacity: 1, y: 0, duration: 0.3});
-                }
-            });
-        });
-    });
-</script>
 {% endblock %}

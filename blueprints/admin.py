@@ -703,24 +703,35 @@ def create_invoice():
         db.session.add(invoice)
         db.session.commit()
 
-        invoice_generator = InvoiceGenerator(invoice)
-        pdf_data = invoice_generator.generate_pdf()
+        try:
+            invoice_generator = InvoiceGenerator(invoice)
+            pdf_data = invoice_generator.generate_pdf()
+            attachment = {'filename': f'{invoice.invoice_number}.pdf', 'content_type': 'application/pdf', 'data': pdf_data}
 
-        attachment = {'filename': f'{invoice.invoice_number}.pdf', 'content_type': 'application/pdf', 'data': pdf_data}
-
-        send_email(
-            to=recipient_email, subject=f'Your Invoice ({invoice.invoice_number}) from Source Point',
-            template='mail/professional_invoice_email.html', recipient_name=recipient_name,
-            invoice_number=invoice.invoice_number, total_amount=invoice.total_amount,
-            due_date=invoice.due_date.strftime('%B %d, %Y'), attachments=[attachment]
-        )
+            send_email(
+                to=recipient_email, subject=f'Your Invoice ({invoice.invoice_number}) from Source Point',
+                template='mail/professional_invoice_email.html', recipient_name=recipient_name,
+                invoice_number=invoice.invoice_number, total_amount=invoice.total_amount,
+                due_date=invoice.due_date.strftime('%B %d, %Y'), attachments=[attachment]
+            )
+        except Exception as e:
+            print(f"Error generating/sending invoice: {e}")
 
         log_user_action("Create Invoice", f"Created invoice {invoice.invoice_number} for {recipient_name}")
         flash('Invoice created and sent successfully! Inventory updated.', 'success')
         return redirect(url_for('admin.manage_invoices'))
     
     products = Product.query.filter(Product.stock > 0).order_by(Product.name).all()
-    products_js = [{'id': p.id, 'name': p.name, 'price': p.price, 'code': p.product_code} for p in products]
+    
+    # Serialize for JSON compatibility
+    products_js = [
+        {
+            'id': p.id, 
+            'name': p.name, 
+            'price': p.price, 
+            'code': p.product_code
+        } for p in products
+    ]
     return render_template('create_invoice.html', products=products_js)
 
 @admin_bp.route('/invoices/delete/<int:invoice_id>')

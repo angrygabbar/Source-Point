@@ -1,126 +1,126 @@
 {% extends "layout.html" %}
-{% block title %}Developer Dashboard{% endblock %}
+{% block title %}Developer Workspace{% endblock %}
 {% block content %}
 
-<div class="mb-10 animate-dynamic">
-    <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mb-2">
-        Developer Workspace
-    </h1>
-    <p class="text-gray-400 text-lg">Collaborate, share code, and track team progress.</p>
-</div>
-
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<div class="space-y-6 animate-dynamic">
     
-    <div class="lg:col-span-2 space-y-8">
+    <div class="flex flex-col md:flex-row justify-between items-end gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-white tracking-tight">DevOps Console</h1>
+            <p class="text-gray-400 text-sm mt-1">Coordinate with the team and manage code snippets.</p>
+        </div>
+        <div class="flex space-x-2">
+            <span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20 flex items-center">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span> Systems Online
+            </span>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-12rem)]">
         
-        <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 backdrop-blur-md animate-dynamic">
-            <div class="p-6 border-b border-white/5">
-                <h2 class="text-xl font-bold text-white flex items-center">
-                    <i class="fas fa-pen-nib text-emerald-400 mr-3"></i> Post Update
-                </h2>
-            </div>
-            <div class="p-6">
-                <form method="POST" action="{{ url_for('developer.developer_dashboard') }}" id="activity-form">
-                    <div class="relative">
-                        <textarea name="activity_content" rows="3" class="w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all custom-scrollbar resize-none" placeholder="What are you working on today?"></textarea>
-                        <div class="absolute bottom-2 right-2 text-xs text-gray-500">Markdown supported</div>
+        <div class="lg:col-span-2 flex flex-col space-y-6 h-full">
+            
+            <div class="glass-panel p-4 rounded-xl">
+                <form method="POST" action="{{ url_for('developer.developer_dashboard') }}" id="activity-form" class="flex gap-4">
+                    <div class="flex-shrink-0 hidden sm:block">
+                        <img src="{{ current_user.avatar_url }}" class="w-10 h-10 rounded-lg border border-gray-600">
                     </div>
-                    <div class="mt-4 flex justify-end">
-                        <button type="submit" id="post-update-btn" class="px-6 py-2 rounded-lg text-white bg-emerald-600 hover:bg-emerald-500 font-medium shadow-lg shadow-emerald-600/20 transition-all transform hover:scale-[1.02]">
-                            <i class="fas fa-paper-plane mr-2"></i> Post Update
+                    <div class="flex-1 relative">
+                        <input type="text" name="activity_content" required 
+                               class="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" 
+                               placeholder="Log a status update or commit message...">
+                        <button type="submit" id="post-update-btn" class="absolute right-2 top-2 p-1.5 text-indigo-400 hover:text-white hover:bg-indigo-600 rounded-md transition-all">
+                            <i class="fas fa-paper-plane"></i>
                         </button>
                     </div>
                 </form>
             </div>
-        </div>
 
-        <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 backdrop-blur-md flex flex-col animate-dynamic" style="animation-delay: 0.1s;">
-            <div class="p-6 border-b border-white/5">
-                <h2 class="text-xl font-bold text-white flex items-center">
-                    <i class="fas fa-stream text-blue-400 mr-3"></i> Team Activity
-                </h2>
-            </div>
-            <div class="p-6 overflow-y-auto max-h-[600px] custom-scrollbar">
-                <ul class="space-y-8 relative border-l border-gray-700 ml-3 pl-8">
+            <div class="glass-panel rounded-xl flex-1 overflow-hidden flex flex-col">
+                <div class="p-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
+                    <h3 class="font-bold text-white text-sm uppercase tracking-wide flex items-center">
+                        <i class="fas fa-stream text-blue-400 mr-2"></i> Engineering Log
+                    </h3>
+                </div>
+                <div class="p-4 overflow-y-auto custom-scrollbar space-y-6 flex-1">
                     {% for activity in activities %}
-                    <li class="relative group">
-                        <span class="absolute -left-[2.65rem] flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 border-2 border-gray-600 group-hover:border-emerald-500 transition-colors">
-                            <img src="{{ activity.author.avatar_url }}" alt="Avatar" class="h-full w-full rounded-full object-cover">
-                        </span>
-                        <div class="bg-white/5 rounded-lg p-4 border border-white/5 hover:border-white/10 transition-colors">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-sm font-bold text-white">{{ activity.author.username }}</span>
-                                <span class="text-xs text-gray-500 flex items-center">
-                                    <i class="far fa-clock mr-1"></i> {{ activity.timestamp.strftime('%b %d, %H:%M') }}
-                                </span>
-                            </div>
-                            <p class="text-gray-300 text-sm leading-relaxed">{{ activity.content }}</p>
+                    <div class="flex gap-4 group">
+                        <div class="flex-col items-center hidden sm:flex">
+                            <img src="{{ activity.author.avatar_url }}" class="w-10 h-10 rounded-full border border-gray-700 group-hover:border-indigo-500 transition-colors">
+                            <div class="w-0.5 h-full bg-white/5 my-2 group-last:hidden"></div>
                         </div>
-                    </li>
+                        <div class="flex-1">
+                            <div class="flex items-baseline justify-between">
+                                <span class="text-sm font-bold text-white">{{ activity.author.username }}</span>
+                                <span class="text-[10px] text-gray-500 font-mono">{{ activity.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
+                            </div>
+                            <div class="mt-1 p-3 rounded-lg bg-white/5 border border-white/5 text-gray-300 text-sm leading-relaxed group-hover:bg-white/10 transition-colors">
+                                {{ activity.content }}
+                            </div>
+                        </div>
+                    </div>
                     {% else %}
-                        <li class="text-gray-500 italic text-center py-4">No activity updates yet.</li>
+                    <div class="text-center py-12 text-gray-500">
+                        <i class="fas fa-terminal text-3xl mb-3 opacity-30"></i>
+                        <p class="text-sm">No logs found. Initialize the feed.</p>
+                    </div>
                     {% endfor %}
-                </ul>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="lg:col-span-1 animate-dynamic" style="animation-delay: 0.2s;">
-        <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 backdrop-blur-md flex flex-col h-full max-h-[calc(100vh-12rem)]">
-            <div class="p-6 border-b border-white/5">
-                <h2 class="text-xl font-bold text-white flex items-center">
-                    <i class="fas fa-code text-purple-400 mr-3"></i> Shared Snippets
-                </h2>
+        <div class="glass-panel rounded-xl overflow-hidden flex flex-col h-full border-l-4 border-l-purple-500/50">
+            <div class="p-4 border-b border-white/5 bg-gradient-to-r from-purple-900/20 to-transparent flex justify-between items-center">
+                <h3 class="font-bold text-white text-sm uppercase tracking-wide flex items-center">
+                    <i class="fas fa-code-branch text-purple-400 mr-2"></i> Snippets
+                </h3>
+                <span class="text-xs bg-white/10 px-2 py-0.5 rounded text-gray-300">{{ received_snippets|length }}</span>
             </div>
-            <div class="p-4 space-y-4 overflow-y-auto custom-scrollbar flex-1">
+            
+            <div class="p-3 space-y-3 overflow-y-auto custom-scrollbar flex-1 bg-[#0d1117]">
                 {% for snippet in received_snippets %}
-                    <div class="bg-gray-900/80 rounded-lg border border-gray-700 overflow-hidden group hover:border-purple-500/50 transition-all">
-                        <div class="px-4 py-2 bg-gray-800 border-b border-gray-700 flex justify-between items-center">
-                            <div class="flex items-center space-x-2">
-                                <div class="h-3 w-3 rounded-full bg-red-500"></div>
-                                <div class="h-3 w-3 rounded-full bg-yellow-500"></div>
-                                <div class="h-3 w-3 rounded-full bg-green-500"></div>
-                            </div>
-                            <div class="text-xs text-gray-400">
-                                <span class="font-bold text-purple-300">{{ snippet.snippet_sender.username }}</span> &bull; {{ snippet.timestamp.strftime('%b %d') }}
-                            </div>
+                <div class="group rounded-lg border border-gray-800 bg-[#161b22] hover:border-purple-500/30 transition-all overflow-hidden flex flex-col">
+                    <div class="px-3 py-2 border-b border-gray-800 flex justify-between items-center bg-[#21262d]">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-mono text-purple-300">@{{ snippet.snippet_sender.username }}</span>
                         </div>
-                        <div class="relative">
-                            <pre class="p-4 text-xs font-mono text-gray-300 overflow-x-auto custom-scrollbar"><code class="language-{{ snippet.language }}">{{ snippet.code }}</code></pre>
-                            <a href="{{ url_for('candidate.delete_snippet', snippet_id=snippet.id) }}" class="absolute top-2 right-2 p-1.5 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded transition-all opacity-0 group-hover:opacity-100" title="Delete Snippet">
-                                <i class="fas fa-trash-alt"></i>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] text-gray-500">{{ snippet.timestamp.strftime('%b %d') }}</span>
+                            <a href="{{ url_for('candidate.delete_snippet', snippet_id=snippet.id) }}" class="text-gray-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
+                                <i class="fas fa-trash-alt text-xs"></i>
                             </a>
                         </div>
                     </div>
-                {% else %}
-                    <div class="text-center py-10 text-gray-500">
-                        <i class="fas fa-code-branch text-4xl mb-3 opacity-30"></i>
-                        <p class="text-sm">No code snippets shared yet.</p>
+                    <div class="relative group-hover:bg-[#0d1117] transition-colors">
+                        <pre class="p-3 text-[10px] font-mono text-gray-300 overflow-x-auto custom-scrollbar max-h-32"><code class="language-{{ snippet.language }}">{{ snippet.code }}</code></pre>
+                        <button class="absolute top-2 right-2 bg-white/10 hover:bg-white/20 p-1 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity" onclick="navigator.clipboard.writeText(this.parentElement.innerText)" title="Copy">
+                            <i class="far fa-copy"></i>
+                        </button>
                     </div>
+                </div>
+                {% else %}
+                <div class="flex flex-col items-center justify-center h-full text-gray-600">
+                    <i class="fas fa-code text-2xl mb-2 opacity-50"></i>
+                    <p class="text-xs">Repository empty.</p>
+                </div>
                 {% endfor %}
             </div>
         </div>
+
     </div>
 </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const activityForm = document.getElementById('activity-form');
-        const postUpdateBtn = document.getElementById('post-update-btn');
-
-        if(activityForm && postUpdateBtn) {
-            activityForm.addEventListener('submit', () => {
-                postUpdateBtn.disabled = true;
-                postUpdateBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> Posting...`;
+        const form = document.getElementById('activity-form');
+        const btn = document.getElementById('post-update-btn');
+        
+        if(form) {
+            form.addEventListener('submit', () => {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             });
         }
     });
 </script>
-
-<style>
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 4px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
-</style>
 {% endblock %}

@@ -1,463 +1,347 @@
 {% extends "layout.html" %}
-{% block title %}Admin Dashboard{% endblock %}
+{% block title %}Admin Command Center{% endblock %}
 {% block content %}
 
-<div class="mb-10 animate-dynamic">
-    <div class="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+<div x-data="{ currentTab: 'users' }" class="space-y-8 animate-dynamic">
+    
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-            <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 mb-2">
-                Admin Dashboard
-            </h1>
-            <p class="text-gray-400 text-lg">Overview of system activity, user management, and financials.</p>
+            <h1 class="text-3xl font-bold text-white tracking-tight">Command Center</h1>
+            <p class="text-gray-400 text-sm mt-1">System overview and pending actions.</p>
         </div>
-        <a href="{{ url_for('admin.admin_analytics') }}" class="px-5 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/20 transition-all transform hover:scale-105 flex items-center justify-center">
-            <i class="fas fa-chart-pie mr-2"></i> Open Analytics Console
+        <a href="{{ url_for('admin.admin_analytics') }}" class="glass-panel px-5 py-2.5 rounded-lg text-indigo-300 hover:text-white hover:bg-white/5 transition-all flex items-center text-sm font-medium group">
+            <i class="fas fa-chart-pie mr-2 group-hover:text-indigo-400 transition-colors"></i> Analytics Console
         </a>
     </div>
-</div>
 
-<div class="mb-8 animate-dynamic" style="animation-delay: 0.1s;">
-    <div class="border-b border-gray-700/50">
-        <nav id="dashboard-tabs" class="-mb-px flex space-x-4 overflow-x-auto pb-1" aria-label="Tabs">
-            <a href="#" class="tab-link group flex items-center px-4 py-3 text-sm font-medium rounded-t-lg border-b-2 border-indigo-500 text-indigo-400 bg-white/5" data-tab="users">
-                <i class="fas fa-users mr-2 group-hover:text-indigo-300"></i> Users & Activity
-            </a>
-            <a href="#" class="tab-link group flex items-center px-4 py-3 text-sm font-medium rounded-t-lg border-b-2 border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500 transition-all" data-tab="recruitment">
-                <i class="fas fa-briefcase mr-2 group-hover:text-gray-200"></i> Recruitment
-            </a>
-            <a href="#" class="tab-link group flex items-center px-4 py-3 text-sm font-medium rounded-t-lg border-b-2 border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500 transition-all" data-tab="communication">
-                <i class="fas fa-envelope mr-2 group-hover:text-gray-200"></i> Communication
-            </a>
-            <a href="#" class="tab-link group flex items-center px-4 py-3 text-sm font-medium rounded-t-lg border-b-2 border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500 transition-all" data-tab="content">
-                <i class="fas fa-file-alt mr-2 group-hover:text-gray-200"></i> Content & Records
-            </a>
-            <a href="#" class="tab-link group flex items-center px-4 py-3 text-sm font-medium rounded-t-lg border-b-2 border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500 transition-all" data-tab="finance">
-                <i class="fas fa-wallet mr-2 group-hover:text-gray-200"></i> Finance
-                {% if pending_orders_count > 0 %}
-                <span class="ml-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ pending_orders_count }}</span>
-                {% endif %}
-            </a>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="glass-panel p-5 rounded-xl border-l-4 {{ 'border-yellow-500' if pending_users else 'border-gray-600' }}">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Pending Users</p>
+                    <h3 class="text-2xl font-bold text-white mt-1">{{ pending_users|length }}</h3>
+                </div>
+                <div class="p-2 bg-white/5 rounded-lg text-yellow-500">
+                    <i class="fas fa-user-clock"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-panel p-5 rounded-xl border-l-4 {{ 'border-blue-500' if applications|selectattr('status', 'equalto', 'pending')|list else 'border-gray-600' }}">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Job Apps</p>
+                    <h3 class="text-2xl font-bold text-white mt-1">{{ applications|selectattr('status', 'equalto', 'pending')|list|length }}</h3>
+                </div>
+                <div class="p-2 bg-white/5 rounded-lg text-blue-500">
+                    <i class="fas fa-file-contract"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-panel p-5 rounded-xl border-l-4 {{ 'border-red-500' if pending_orders_count > 0 else 'border-gray-600' }}">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">New Orders</p>
+                    <h3 class="text-2xl font-bold text-white mt-1">{{ pending_orders_count }}</h3>
+                </div>
+                <div class="p-2 bg-white/5 rounded-lg text-red-500">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-panel p-5 rounded-xl border-l-4 border-emerald-500">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Recruitment</p>
+                    <h3 class="text-2xl font-bold text-white mt-1">Active</h3>
+                </div>
+                <div class="p-2 bg-white/5 rounded-lg text-emerald-500">
+                    <i class="fas fa-briefcase"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="border-b border-white/10">
+        <nav class="-mb-px flex space-x-6 overflow-x-auto">
+            <button @click="currentTab = 'users'" :class="currentTab === 'users' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'" class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center">
+                <i class="fas fa-users mr-2"></i> Users & Activity
+            </button>
+            <button @click="currentTab = 'recruitment'" :class="currentTab === 'recruitment' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'" class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center">
+                <i class="fas fa-briefcase mr-2"></i> Recruitment
+            </button>
+            <button @click="currentTab = 'communication'" :class="currentTab === 'communication' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'" class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center">
+                <i class="fas fa-envelope mr-2"></i> Communication
+            </button>
+            <button @click="currentTab = 'finance'" :class="currentTab === 'finance' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'" class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center">
+                <i class="fas fa-wallet mr-2"></i> Finance
+            </button>
+            <button @click="currentTab = 'content'" :class="currentTab === 'content' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'" class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center">
+                <i class="fas fa-layer-group mr-2"></i> Content & Logs
+            </button>
         </nav>
     </div>
-</div>
 
-<div id="dashboard-content" class="min-h-[60vh]">
-    
-    <div id="users-tab" class="tab-content grid grid-cols-1 lg:grid-cols-3 gap-8 animate-dynamic">
-        <div class="lg:col-span-2 space-y-8">
-             <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 backdrop-blur-md overflow-hidden">
-                <div class="p-6 border-b border-white/5 flex justify-between items-center">
-                    <h2 class="text-xl font-bold text-white flex items-center"><i class="fas fa-user-check text-yellow-400 mr-3"></i> Pending Approvals</h2>
-                    {% if pending_users %}
-                        <span class="bg-yellow-500/20 text-yellow-300 text-xs font-bold px-2 py-1 rounded-full">{{ pending_users|length }} Pending</span>
-                    {% endif %}
+    <div x-show="currentTab === 'users'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <div class="lg:col-span-2 space-y-6">
+            <div class="glass-panel rounded-xl overflow-hidden">
+                <div class="p-5 border-b border-white/5 bg-white/5 flex justify-between items-center">
+                    <h3 class="font-bold text-white flex items-center"><i class="fas fa-user-check text-yellow-500 mr-2"></i> Pending Approvals</h3>
                 </div>
-                <div class="p-6">
+                <div class="p-5">
                     {% if pending_users %}
-                        <ul class="divide-y divide-white/5">
+                        <div class="grid gap-4">
                             {% for user in pending_users %}
-                                <li class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/5 rounded-lg px-2 transition-colors">
-                                    <div class="flex items-center">
-                                        <img src="{{ user.avatar_url }}" alt="Avatar" class="rounded-full w-12 h-12 border-2 border-gray-600 mr-4">
+                                <div class="bg-white/5 rounded-lg p-4 border border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4">
+                                    <div class="flex items-center w-full sm:w-auto">
+                                        <img src="{{ user.avatar_url }}" class="w-10 h-10 rounded-full border border-gray-600 mr-3">
                                         <div>
-                                            <p class="font-bold text-white text-lg">{{ user.username }}</p>
-                                            <div class="flex items-center text-sm text-gray-400 space-x-3">
-                                                <span><i class="fas fa-envelope mr-1"></i> {{ user.email }}</span>
-                                                <span class="px-2 py-0.5 rounded bg-gray-700 text-xs uppercase tracking-wide">{{ user.role }}</span>
+                                            <p class="font-bold text-white">{{ user.username }}</p>
+                                            <div class="flex gap-2 text-xs text-gray-400">
+                                                <span>{{ user.email }}</span>
+                                                <span class="text-gray-600">&bull;</span>
+                                                <span class="uppercase text-indigo-400">{{ user.role }}</span>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="flex space-x-3">
-                                        <a href="{{ url_for('admin.approve_user', user_id=user.id) }}" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-sm font-semibold rounded-lg shadow transition-all transform hover:scale-105">
-                                            <i class="fas fa-check mr-1"></i> Approve
-                                        </a>
-                                        <a href="{{ url_for('admin.reject_user', user_id=user.id) }}" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-semibold rounded-lg shadow transition-all transform hover:scale-105" onclick="return confirm('Reject and delete this registration?');">
-                                            <i class="fas fa-times mr-1"></i> Reject
-                                        </a>
+                                    <div class="flex gap-2 w-full sm:w-auto">
+                                        <a href="{{ url_for('admin.approve_user', user_id=user.id) }}" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30 rounded text-sm transition-colors">Approve</a>
+                                        <a href="{{ url_for('admin.reject_user', user_id=user.id) }}" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded text-sm transition-colors" onclick="return confirm('Reject registration?')">Reject</a>
                                     </div>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <div class="text-center py-8 text-gray-500">
-                            <i class="fas fa-check-circle text-4xl mb-3 opacity-50"></i>
-                            <p>No pending user approvals.</p>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 backdrop-blur-md">
-                <div class="p-6 border-b border-white/5">
-                    <h2 class="text-xl font-bold text-white flex items-center"><i class="fas fa-address-book text-blue-400 mr-3"></i> Link Contacts</h2>
-                </div>
-                <div class="p-6">
-                    <form action="{{ url_for('admin.add_contact_for_candidate') }}" method="POST" class="flex flex-col md:flex-row gap-4">
-                        <div class="flex-1">
-                            <label class="block text-xs font-medium text-gray-400 uppercase mb-1">Candidate</label>
-                            <select name="candidate_id" required class="w-full px-4 py-2.5 rounded-lg bg-gray-900/50 border border-gray-600 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="">Select Candidate...</option>
-                                {% for candidate in candidates %}
-                                    <option value="{{ candidate.id }}">{{ candidate.username }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="flex-1">
-                            <label class="block text-xs font-medium text-gray-400 uppercase mb-1">Developer</label>
-                            <select name="developer_id" required class="w-full px-4 py-2.5 rounded-lg bg-gray-900/50 border border-gray-600 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="">Select Developer...</option>
-                                {% for dev in developers %}
-                                    <option value="{{ dev.id }}">{{ dev.username }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="flex items-end">
-                            <button type="submit" class="w-full md:w-auto px-6 py-2.5 rounded-lg text-white bg-blue-600 hover:bg-blue-500 font-medium shadow-lg shadow-blue-500/30 transition-all">
-                                <i class="fas fa-link mr-2"></i> Link
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-        
-        <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 backdrop-blur-md flex flex-col h-full">
-            <div class="p-6 border-b border-white/5">
-                <h2 class="text-xl font-bold text-white flex items-center"><i class="fas fa-stream text-purple-400 mr-3"></i> Activity Feed</h2>
-            </div>
-            <div class="p-4 overflow-y-auto max-h-[80vh] custom-scrollbar flex-1">
-                <ul class="space-y-6 relative border-l border-gray-700 ml-3 pl-6">
-                    {% for activity in activities %}
-                    <li class="relative">
-                        <span class="absolute -left-[2.4rem] flex h-8 w-8 items-center justify-center rounded-full bg-gray-800 border-2 border-gray-600">
-                            <img src="{{ activity.author.avatar_url }}" alt="" class="h-full w-full rounded-full">
-                        </span>
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <p class="text-sm font-bold text-white">{{ activity.author.username }}</p>
-                                <span class="text-xs text-gray-500">{{ activity.timestamp.strftime('%b %d, %H:%M') }}</span>
-                            </div>
-                            <div class="bg-gray-900/50 p-3 rounded-lg border border-white/5">
-                                <p class="text-sm text-gray-300">{{ activity.content }}</p>
-                            </div>
-                        </div>
-                    </li>
-                    {% else %}
-                        <li class="text-gray-500 italic text-center py-4">No recent activity.</li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <div id="recruitment-tab" class="tab-content hidden grid grid-cols-1 lg:grid-cols-2 gap-8 animate-dynamic">
-         <div class="space-y-8">
-            <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 backdrop-blur-md">
-                <div class="p-6 border-b border-white/5 flex justify-between items-center">
-                    <h2 class="text-xl font-bold text-white flex items-center"><i class="fas fa-file-contract text-green-400 mr-3"></i> Job Applications</h2>
-                </div>
-                <div class="p-2 overflow-y-auto max-h-96 custom-scrollbar">
-                    {% if applications %}
-                        <div class="space-y-2">
-                            {% for app in applications %}
-                                <div class="p-4 bg-white/5 hover:bg-white/10 rounded-lg transition-colors border border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                                   <div>
-                                        <p class="font-bold text-white text-lg">{{ app.job.title }}</p>
-                                        <p class="text-sm text-gray-400"><i class="fas fa-user mr-2"></i> {{ app.candidate.username }}</p>
-                                        <p class="text-xs text-gray-500 mt-1">{{ app.applied_at.strftime('%b %d, %Y') }}</p>
-                                   </div>
-                                   
-                                   {% if app.status == 'pending' %}
-                                        <div class="flex space-x-2">
-                                            <a href="{{ url_for('admin.accept_application', app_id=app.id) }}" class="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded shadow transition-transform hover:-translate-y-0.5">Accept</a>
-                                            <a href="{{ url_for('admin.reject_application', app_id=app.id) }}" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded shadow transition-transform hover:-translate-y-0.5">Reject</a>
-                                        </div>
-                                    {% else %}
-                                         <span class="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full {% if app.status == 'accepted' %}bg-green-500/20 text-green-400 border border-green-500/50{% else %}bg-red-500/20 text-red-400 border border-red-500/50{% endif %}">
-                                            {{ app.status }}
-                                         </span>
-                                    {% endif %}
                                 </div>
                             {% endfor %}
                         </div>
                     {% else %}
-                        <div class="text-center py-10 text-gray-500">
-                            <p>No new job applications.</p>
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-check-circle text-3xl mb-2 opacity-30"></i>
+                            <p class="text-sm">All caught up!</p>
                         </div>
                     {% endif %}
                 </div>
             </div>
 
-            <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 backdrop-blur-md">
-                <div class="p-6 border-b border-white/5">
-                    <h2 class="text-xl font-bold text-white flex items-center"><i class="fas fa-user-shield text-indigo-400 mr-3"></i> Assign Moderator</h2>
-                </div>
-                <div class="p-6">
-                    {% if scheduled_candidates %}
-                    <form action="{{ url_for('admin.assign_moderator') }}" method="POST" class="space-y-4">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-medium text-gray-400 uppercase mb-1">Candidate (Scheduled)</label>
-                                <select name="candidate_id" required class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border border-gray-600 text-white focus:ring-2 focus:ring-indigo-500">
-                                    <option value="">Select Candidate</option>
-                                    {% for candidate in scheduled_candidates %}
-                                        <option value="{{ candidate.id }}">{{ candidate.username }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-400 uppercase mb-1">Moderator</label>
-                                <select name="moderator_id" required class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border border-gray-600 text-white focus:ring-2 focus:ring-indigo-500">
-                                    <option value="">Select Moderator</option>
-                                    {% for moderator in moderators %}
-                                        <option value="{{ moderator.id }}">{{ moderator.username }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-                        <button type="submit" class="w-full py-2 px-4 rounded-lg text-white bg-indigo-600 hover:bg-indigo-500 font-medium shadow-lg shadow-indigo-500/30 transition-all">
-                            Assign & Notify
-                        </button>
-                    </form>
-                    {% else %}
-                    <div class="text-center text-gray-400 p-4 bg-gray-900/30 rounded-lg border border-gray-700 border-dashed">
-                        <p class="text-sm">No candidates currently require a moderator.</p>
-                        <a href="{{ url_for('events.events') }}" class="text-indigo-400 text-xs hover:underline mt-1 inline-block">Schedule a test first &rarr;</a>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <div class="space-y-8">
-            <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 backdrop-blur-md">
-                <div class="p-6 border-b border-white/5">
-                    <h2 class="text-xl font-bold text-white flex items-center"><i class="fas fa-plus-circle text-blue-400 mr-3"></i> Post New Job</h2>
-                </div>
-                <div class="p-6">
-                    <form action="{{ url_for('admin.post_job') }}" method="POST" class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-400 uppercase mb-1">Job Title</label>
-                            <input type="text" name="job_title" required class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border border-gray-600 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g. Senior Java Developer">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-400 uppercase mb-1">Description</label>
-                            <textarea name="job_description" rows="4" required class="w-full px-3 py-2 rounded-lg bg-gray-900/50 border border-gray-600 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
-                        </div>
-                        <button type="submit" class="w-full py-2 px-4 rounded-lg text-white bg-blue-600 hover:bg-blue-500 font-medium shadow-lg shadow-blue-500/30 transition-all">
-                            Publish Job Opening
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 backdrop-blur-md">
-                <div class="p-6 border-b border-white/5">
-                    <h2 class="text-xl font-bold text-white flex items-center"><i class="fas fa-chalkboard-teacher text-orange-400 mr-3"></i> Active Assignments</h2>
-                </div>
-                <div class="p-4 overflow-y-auto max-h-48 custom-scrollbar">
-                    {% if assigned_candidates_with_moderators %}
-                        <ul class="space-y-2">
-                            {% for candidate in assigned_candidates_with_moderators %}
-                                {% set moderator = moderators_map.get(candidate.moderator_id) %}
-                                {% if moderator %}
-                                    <li class="p-3 bg-white/5 rounded-lg flex items-center justify-between border border-white/5">
-                                       <div class="flex items-center">
-                                            <div class="h-8 w-8 rounded-full bg-gray-700 flex items-center justify-center mr-3 text-xs font-bold text-gray-300">C</div>
-                                            <p class="font-semibold text-white text-sm">{{ candidate.username }}</p>
-                                       </div>
-                                       <div class="text-gray-400 text-sm">
-                                            <i class="fas fa-arrow-right mx-2 text-gray-600"></i>
-                                            <span class="text-indigo-300">{{ moderator.username }}</span>
-                                       </div>
-                                    </li>
-                                {% endif %}
+            <div class="glass-panel rounded-xl p-6">
+                <h3 class="font-bold text-white mb-4 flex items-center"><i class="fas fa-link text-indigo-400 mr-2"></i> Link Developer to Candidate</h3>
+                <form action="{{ url_for('admin.add_contact_for_candidate') }}" method="POST" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 uppercase mb-1">Candidate</label>
+                        <select name="candidate_id" required class="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-indigo-500">
+                            <option value="">Select...</option>
+                            {% for candidate in candidates %}
+                                <option value="{{ candidate.id }}">{{ candidate.username }}</option>
                             {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p class="text-gray-500 text-center italic text-sm">No active moderator assignments.</p>
-                    {% endif %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 uppercase mb-1">Developer</label>
+                        <select name="developer_id" required class="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-indigo-500">
+                            <option value="">Select...</option>
+                            {% for dev in developers %}
+                                <option value="{{ dev.id }}">{{ dev.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors shadow-lg shadow-indigo-500/20">
+                        Link Users
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="glass-panel rounded-xl p-5 h-full flex flex-col max-h-[600px]">
+            <h3 class="font-bold text-white mb-4 flex items-center"><i class="fas fa-stream text-gray-400 mr-2"></i> Live Activity</h3>
+            <div class="overflow-y-auto custom-scrollbar pr-2 space-y-6 relative border-l border-white/10 ml-2 pl-6 flex-1">
+                {% for activity in activities %}
+                <div class="relative">
+                    <span class="absolute -left-[1.95rem] top-1 h-3 w-3 rounded-full bg-indigo-500 border-2 border-[#0f172a]"></span>
+                    <div class="flex justify-between items-baseline mb-1">
+                        <span class="text-xs font-bold text-indigo-300">{{ activity.author.username }}</span>
+                        <span class="text-[10px] text-gray-500">{{ activity.timestamp.strftime('%H:%M') }}</span>
+                    </div>
+                    <p class="text-sm text-gray-300 bg-white/5 p-2 rounded border border-white/5">{{ activity.content }}</p>
                 </div>
+                {% else %}
+                    <p class="text-gray-500 text-sm italic">No recent activity.</p>
+                {% endfor %}
             </div>
         </div>
     </div>
 
-    <div id="communication-tab" class="tab-content hidden grid grid-cols-1 md:grid-cols-2 gap-8 animate-dynamic">
-        <div class="bg-gradient-to-br from-orange-900/40 to-gray-800/40 rounded-xl shadow-lg border border-orange-500/20 p-8 text-center hover:border-orange-500/40 transition-all group">
-            <div class="h-16 w-16 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-                <i class="fas fa-bullhorn text-3xl text-orange-400"></i>
+    <div x-show="currentTab === 'recruitment'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <div class="glass-panel rounded-xl overflow-hidden">
+            <div class="p-5 border-b border-white/5 bg-white/5">
+                <h3 class="font-bold text-white flex items-center"><i class="fas fa-file-signature text-blue-400 mr-2"></i> Applications</h3>
             </div>
-            <h2 class="text-2xl font-bold text-white mb-3">Broadcast to All</h2>
-            <p class="text-gray-400 mb-8">Send system-wide announcements, maintenance updates, or newsletters to every registered user.</p>
-            <a href="{{ url_for('admin.broadcast_email') }}" class="inline-block w-full py-3 px-6 rounded-lg text-white bg-orange-600 hover:bg-orange-500 font-bold shadow-lg shadow-orange-600/20 transition-all">
-                Compose Broadcast
-            </a>
+            <div class="p-2 max-h-96 overflow-y-auto custom-scrollbar">
+                {% if applications %}
+                    <div class="space-y-1">
+                        {% for app in applications %}
+                            <div class="p-3 hover:bg-white/5 rounded-lg transition-colors flex justify-between items-center group">
+                                <div>
+                                    <p class="text-sm font-semibold text-white">{{ app.job.title }}</p>
+                                    <div class="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
+                                        <i class="fas fa-user"></i> {{ app.candidate.username }}
+                                        <span class="text-gray-600">|</span>
+                                        <span>{{ app.applied_at.strftime('%b %d') }}</span>
+                                    </div>
+                                </div>
+                                {% if app.status == 'pending' %}
+                                    <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <a href="{{ url_for('admin.accept_application', app_id=app.id) }}" class="w-8 h-8 flex items-center justify-center rounded bg-green-500/20 text-green-400 hover:bg-green-500 hover:text-white transition-colors" title="Accept"><i class="fas fa-check"></i></a>
+                                        <a href="{{ url_for('admin.reject_application', app_id=app.id) }}" class="w-8 h-8 flex items-center justify-center rounded bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-colors" title="Reject"><i class="fas fa-times"></i></a>
+                                    </div>
+                                {% else %}
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide 
+                                        {% if app.status == 'accepted' %}bg-green-500/10 text-green-400
+                                        {% else %}bg-red-500/10 text-red-400{% endif %}">
+                                        {{ app.status }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="p-8 text-center text-gray-500 text-sm">No applications yet.</div>
+                {% endif %}
+            </div>
         </div>
 
-        <div class="bg-gradient-to-br from-cyan-900/40 to-gray-800/40 rounded-xl shadow-lg border border-cyan-500/20 p-8 text-center hover:border-cyan-500/40 transition-all group">
-            <div class="h-16 w-16 bg-cyan-500/20 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-                <i class="fas fa-paper-plane text-3xl text-cyan-400"></i>
+        <div class="space-y-6">
+            <div class="glass-panel rounded-xl p-6">
+                <h3 class="font-bold text-white mb-4 text-sm uppercase tracking-wide">Assign Moderator</h3>
+                {% if scheduled_candidates %}
+                <form action="{{ url_for('admin.assign_moderator') }}" method="POST" class="space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <select name="candidate_id" class="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-indigo-500 w-full">
+                            <option value="">Candidate...</option>
+                            {% for c in scheduled_candidates %}
+                                <option value="{{ c.id }}">{{ c.username }}</option>
+                            {% endfor %}
+                        </select>
+                        <select name="moderator_id" class="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-indigo-500 w-full">
+                            <option value="">Moderator...</option>
+                            {% for m in moderators %}
+                                <option value="{{ m.id }}">{{ m.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors">
+                        Assign
+                    </button>
+                </form>
+                {% else %}
+                    <p class="text-xs text-gray-500">No candidates currently scheduled for tests.</p>
+                {% endif %}
             </div>
-            <h2 class="text-2xl font-bold text-white mb-3">Targeted Email</h2>
-            <p class="text-gray-400 mb-8">Select specific users or groups to send personalized updates, reminders, or private information.</p>
-            <a href="{{ url_for('admin.send_specific_email') }}" class="inline-block w-full py-3 px-6 rounded-lg text-white bg-cyan-600 hover:bg-cyan-500 font-bold shadow-lg shadow-cyan-600/20 transition-all">
-                Select Recipients
-            </a>
+
+            <div class="glass-panel rounded-xl p-6">
+                <h3 class="font-bold text-white mb-4 text-sm uppercase tracking-wide">Fast Job Post</h3>
+                <form action="{{ url_for('admin.post_job') }}" method="POST" class="space-y-3">
+                    <input type="text" name="job_title" placeholder="Job Title" required class="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:ring-1 focus:ring-blue-500">
+                    <textarea name="job_description" rows="2" placeholder="Short Description..." required class="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:ring-1 focus:ring-blue-500 resize-none"></textarea>
+                    <button type="submit" class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors">
+                        Publish
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 
-    <div id="content-tab" class="tab-content hidden grid grid-cols-1 md:grid-cols-2 gap-8 animate-dynamic">
-        <a href="{{ url_for('admin.admin_activity_logs') }}" class="group bg-white/5 dark:bg-gray-800/40 p-8 rounded-xl border border-white/10 hover:bg-white/10 transition-all flex items-center">
-            <div class="h-14 w-14 bg-red-500/20 rounded-lg flex items-center justify-center mr-6 group-hover:bg-red-500/30 transition-colors">
-                <i class="fas fa-shield-alt text-2xl text-red-400"></i>
+    <div x-show="currentTab === 'communication'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <a href="{{ url_for('admin.broadcast_email') }}" class="glass-panel p-8 rounded-xl text-center hover:bg-white/5 transition-all group cursor-pointer">
+            <div class="w-16 h-16 rounded-full bg-orange-500/10 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                <i class="fas fa-bullhorn text-2xl text-orange-500"></i>
             </div>
-            <div>
-                <h3 class="text-xl font-bold text-white mb-1">Activity Logs</h3>
-                <p class="text-gray-400 text-sm">View security audit trails and system actions.</p>
-            </div>
-            <i class="fas fa-chevron-right ml-auto text-gray-600 group-hover:text-white transition-colors"></i>
-        </a>
-        
-        <a href="{{ url_for('admin.manage_ads') }}" class="group bg-white/5 dark:bg-gray-800/40 p-8 rounded-xl border border-white/10 hover:bg-white/10 transition-all flex items-center">
-            <div class="h-14 w-14 bg-indigo-500/20 rounded-lg flex items-center justify-center mr-6 group-hover:bg-indigo-500/30 transition-colors">
-                <i class="fas fa-ad text-2xl text-indigo-400"></i>
-            </div>
-            <div>
-                <h3 class="text-xl font-bold text-white mb-1">Manage Affiliate Ads</h3>
-                <p class="text-gray-400 text-sm">Update promotional content visible on the offers page.</p>
-            </div>
-            <i class="fas fa-chevron-right ml-auto text-gray-600 group-hover:text-white transition-colors"></i>
+            <h3 class="text-lg font-bold text-white">Broadcast Email</h3>
+            <p class="text-sm text-gray-400 mt-2">Send announcements to all registered users at once.</p>
         </a>
 
-        <a href="{{ url_for('admin.manage_records') }}" class="group bg-white/5 dark:bg-gray-800/40 p-8 rounded-xl border border-white/10 hover:bg-white/10 transition-all flex items-center">
-            <div class="h-14 w-14 bg-purple-500/20 rounded-lg flex items-center justify-center mr-6 group-hover:bg-purple-500/30 transition-colors">
-                <i class="fas fa-history text-2xl text-purple-400"></i>
+        <a href="{{ url_for('admin.send_specific_email') }}" class="glass-panel p-8 rounded-xl text-center hover:bg-white/5 transition-all group cursor-pointer">
+            <div class="w-16 h-16 rounded-full bg-cyan-500/10 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                <i class="fas fa-paper-plane text-2xl text-cyan-500"></i>
             </div>
-            <div>
-                <h3 class="text-xl font-bold text-white mb-1">Manage Records</h3>
-                <p class="text-gray-400 text-sm">View history, delete old logs, feedback, and submissions.</p>
-            </div>
-            <i class="fas fa-chevron-right ml-auto text-gray-600 group-hover:text-white transition-colors"></i>
-        </a>
-        
-        <a href="{{ url_for('admin.projects') }}" class="col-span-1 md:col-span-2 group bg-white/5 dark:bg-gray-800/40 p-8 rounded-xl border border-white/10 hover:bg-white/10 transition-all flex items-center">
-            <div class="h-14 w-14 bg-emerald-500/20 rounded-lg flex items-center justify-center mr-6 group-hover:bg-emerald-500/30 transition-colors">
-                <i class="fas fa-project-diagram text-2xl text-emerald-400"></i>
-            </div>
-            <div>
-                <h3 class="text-xl font-bold text-white mb-1">Project Management Hub</h3>
-                <p class="text-gray-400 text-sm">Create projects, track budgets, generate BRDs, and manage transactions.</p>
-            </div>
-            <i class="fas fa-chevron-right ml-auto text-gray-600 group-hover:text-white transition-colors"></i>
+            <h3 class="text-lg font-bold text-white">Targeted Message</h3>
+            <p class="text-sm text-gray-400 mt-2">Select specific users or groups for private communication.</p>
         </a>
     </div>
 
-    <div id="finance-tab" class="tab-content hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-dynamic">
+    <div x-show="currentTab === 'finance'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         
-        <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl p-6 border border-white/10 shadow-lg hover:border-purple-500/30 transition-all group h-full flex flex-col justify-between">
-            <div>
-                <div class="flex justify-between items-start mb-4">
-                     <div class="p-3 bg-purple-500/10 rounded-lg group-hover:bg-purple-500/20 transition-colors">
-                        <i class="fas fa-boxes text-2xl text-purple-400"></i>
-                    </div>
-                </div>
-                <h3 class="text-lg font-bold text-white mb-2">Product Inventory</h3>
-                <p class="text-sm text-gray-400">Track stock levels, manage product codes, and update pricing.</p>
+        <a href="{{ url_for('admin.manage_orders') }}" class="glass-panel p-6 rounded-xl hover:bg-white/5 transition-all relative overflow-hidden group">
+            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <i class="fas fa-shopping-cart text-6xl text-white"></i>
             </div>
-            <a href="{{ url_for('admin.manage_inventory') }}" class="mt-4 block text-center text-sm text-white bg-purple-600 hover:bg-purple-500 py-2 rounded-lg transition-colors">Manage Inventory</a>
-        </div>
+            <div class="relative z-10">
+                <h3 class="text-lg font-bold text-white">Orders</h3>
+                <p class="text-sm text-gray-400 mt-1 mb-4">Manage incoming orders</p>
+                {% if pending_orders_count > 0 %}
+                    <span class="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full">{{ pending_orders_count }} New</span>
+                {% else %}
+                    <span class="text-xs text-green-400">All clear</span>
+                {% endif %}
+            </div>
+        </a>
 
-        <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl p-6 border border-white/10 shadow-lg hover:border-green-500/30 transition-all group h-full flex flex-col justify-between">
-            <div>
-                <div class="flex justify-between items-start mb-4">
-                    <div class="p-3 bg-green-500/10 rounded-lg group-hover:bg-green-500/20 transition-colors">
-                        <i class="fas fa-file-invoice-dollar text-2xl text-green-400"></i>
-                    </div>
-                </div>
-                <h3 class="text-lg font-bold text-white mb-2">Create Invoice</h3>
-                <p class="text-sm text-gray-400">Generate professional PDF invoices and email them instantly.</p>
+        <a href="{{ url_for('admin.create_invoice') }}" class="glass-panel p-6 rounded-xl hover:bg-white/5 transition-all group">
+            <div class="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center mb-3 text-green-400">
+                <i class="fas fa-file-invoice-dollar"></i>
             </div>
-            <a href="{{ url_for('admin.create_invoice') }}" class="mt-4 block text-center text-sm text-white bg-green-600 hover:bg-green-500 py-2 rounded-lg transition-colors">Create New</a>
-        </div>
+            <h3 class="font-bold text-white">Create Invoice</h3>
+            <p class="text-xs text-gray-400 mt-1">Generate & send PDF</p>
+        </a>
 
-        <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl p-6 border border-white/10 shadow-lg hover:border-blue-500/30 transition-all group h-full flex flex-col justify-between">
-            <div>
-                <div class="flex justify-between items-start mb-4">
-                    <div class="p-3 bg-blue-500/10 rounded-lg group-hover:bg-blue-500/20 transition-colors">
-                        <i class="fas fa-list-alt text-2xl text-blue-400"></i>
-                    </div>
-                </div>
-                <h3 class="text-lg font-bold text-white mb-2">Invoice History</h3>
-                <p class="text-sm text-gray-400">Track sent invoices, resend copies, and send payment reminders.</p>
+        <a href="{{ url_for('admin.manage_invoices') }}" class="glass-panel p-6 rounded-xl hover:bg-white/5 transition-all group">
+            <div class="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center mb-3 text-blue-400">
+                <i class="fas fa-history"></i>
             </div>
-            <a href="{{ url_for('admin.manage_invoices') }}" class="mt-4 block text-center text-sm text-white bg-blue-600 hover:bg-blue-500 py-2 rounded-lg transition-colors">View History</a>
-        </div>
+            <h3 class="font-bold text-white">Invoice History</h3>
+            <p class="text-xs text-gray-400 mt-1">Track payments</p>
+        </a>
 
-        <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl p-6 border border-white/10 shadow-lg hover:border-yellow-500/30 transition-all group h-full flex flex-col justify-between relative">
-            {% if pending_orders_count > 0 %}
-            <span class="absolute top-4 right-4 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse">{{ pending_orders_count }} New</span>
-            {% endif %}
-            <div>
-                <div class="flex justify-between items-start mb-4">
-                    <div class="p-3 bg-yellow-500/10 rounded-lg group-hover:bg-yellow-500/20 transition-colors">
-                        <i class="fas fa-shopping-cart text-2xl text-yellow-400"></i>
-                    </div>
-                </div>
-                <h3 class="text-lg font-bold text-white mb-2">Manage Orders</h3>
-                <p class="text-sm text-gray-400">Review incoming orders, update status, and handle fulfillment.</p>
+        <a href="{{ url_for('admin.manage_inventory') }}" class="glass-panel p-6 rounded-xl hover:bg-white/5 transition-all group">
+            <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center mb-3 text-purple-400">
+                <i class="fas fa-boxes"></i>
             </div>
-            <a href="{{ url_for('admin.manage_orders') }}" class="mt-4 block text-center text-sm text-white bg-yellow-600 hover:bg-yellow-500 py-2 rounded-lg transition-colors">View Orders</a>
-        </div>
+            <h3 class="font-bold text-white">Inventory</h3>
+            <p class="text-xs text-gray-400 mt-1">Stock & Pricing</p>
+        </a>
+    </div>
+
+    <div x-show="currentTab === 'content'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <a href="{{ url_for('admin.admin_activity_logs') }}" class="glass-panel p-6 rounded-xl hover:bg-white/5 transition-all flex items-center gap-4">
+            <div class="w-12 h-12 rounded-lg bg-gray-700 flex items-center justify-center text-gray-300">
+                <i class="fas fa-shield-alt text-xl"></i>
+            </div>
+            <div>
+                <h4 class="font-bold text-white">Security Logs</h4>
+                <p class="text-xs text-gray-400">Audit user actions</p>
+            </div>
+        </a>
+
+        <a href="{{ url_for('admin.manage_records') }}" class="glass-panel p-6 rounded-xl hover:bg-white/5 transition-all flex items-center gap-4">
+            <div class="w-12 h-12 rounded-lg bg-gray-700 flex items-center justify-center text-gray-300">
+                <i class="fas fa-database text-xl"></i>
+            </div>
+            <div>
+                <h4 class="font-bold text-white">System Records</h4>
+                <p class="text-xs text-gray-400">Cleanup & History</p>
+            </div>
+        </a>
+
+        <a href="{{ url_for('admin.manage_ads') }}" class="glass-panel p-6 rounded-xl hover:bg-white/5 transition-all flex items-center gap-4">
+            <div class="w-12 h-12 rounded-lg bg-gray-700 flex items-center justify-center text-gray-300">
+                <i class="fas fa-ad text-xl"></i>
+            </div>
+            <div>
+                <h4 class="font-bold text-white">Affiliate Ads</h4>
+                <p class="text-xs text-gray-400">Manage offers page</p>
+            </div>
+        </a>
     </div>
 
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const tabs = document.querySelectorAll('.tab-link');
-        const tabContents = document.querySelectorAll('.tab-content');
-        
-        const activeClasses = ['border-indigo-500', 'text-indigo-400', 'bg-white/5'];
-        const inactiveClasses = ['border-transparent', 'text-gray-400', 'hover:text-gray-200', 'hover:border-gray-500'];
-
-        tabs.forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                e.preventDefault();
-                tabs.forEach(t => {
-                    t.classList.remove(...activeClasses);
-                    t.classList.add(...inactiveClasses);
-                });
-                tab.classList.remove(...inactiveClasses);
-                tab.classList.add(...activeClasses);
-                const targetId = tab.getAttribute('data-tab') + '-tab';
-                tabContents.forEach(content => {
-                    if (content.id === targetId) {
-                        content.classList.remove('hidden');
-                        content.style.opacity = '1';
-                        content.style.transform = 'none';
-                    } else {
-                        content.classList.add('hidden');
-                    }
-                });
-            });
-        });
-    });
-</script>
-
-<style>
-    .custom-scrollbar::-webkit-scrollbar {
-        width: 6px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.05); 
-        border-radius: 4px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.2); 
-        border-radius: 4px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 255, 255, 0.3); 
-    }
-</style>
 {% endblock %}

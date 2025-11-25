@@ -1,32 +1,60 @@
 {% extends "layout.html" %}
 {% block title %}Project Management{% endblock %}
 {% block content %}
-<div class="animate-dynamic text-center">
-    <h1 class="text-4xl font-extrabold text-white sm:text-5xl tracking-tight">Project Management Hub</h1>
-    <p class="mt-4 max-w-2xl mx-auto text-xl text-gray-300">
-        From here, you can create a new project or manage existing ones.
-    </p>
-</div>
 
-<div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
-    <a href="{{ url_for('admin.create_project') }}" class="interactive-card bg-white/5 dark:bg-gray-800/20 p-6 rounded-lg shadow-lg backdrop-blur-sm border border-white/10 animate-dynamic flex flex-col items-center justify-center text-center transition-transform transform hover:-translate-y-2">
-        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-green-500 text-white mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
+<div class="space-y-8 animate-dynamic">
+    
+    <div class="flex flex-col md:flex-row justify-between items-end gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-white tracking-tight">Project Hub</h1>
+            <p class="text-gray-400 text-sm mt-1">Lifecycle management, budgeting, and requirements planning.</p>
         </div>
-        <h4 class="text-2xl font-semibold text-white">Create a New Project</h4>
-        <p class="mt-2 text-base text-gray-300">Start a new project from scratch.</p>
-    </a>
+    </div>
 
-    <a href="{{ url_for('admin.manage_projects') }}" class="interactive-card bg-white/5 dark:bg-gray-800/20 p-6 rounded-lg shadow-lg backdrop-blur-sm border border-white/10 animate-dynamic flex flex-col items-center justify-center text-center transition-transform transform hover:-translate-y-2" style="animation-delay: 0.1s;">
-        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-indigo-500 text-white mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-        </div>
-        <h4 class="text-2xl font-semibold text-white">Manage Existing Projects</h4>
-        <p class="mt-2 text-base text-gray-300">View, edit, and track all your current projects.</p>
-    </a>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 h-[calc(100vh-16rem)]">
+        
+        <a href="{{ url_for('admin.create_project') }}" class="glass-panel p-10 rounded-2xl hover:bg-white/5 transition-all group relative overflow-hidden flex flex-col justify-center border border-white/5 hover:border-emerald-500/30">
+            <div class="absolute -right-6 -bottom-6 text-emerald-500/5 transform rotate-12 group-hover:scale-125 transition-transform duration-700">
+                <i class="fas fa-plus-circle text-[12rem]"></i>
+            </div>
+            
+            <div class="relative z-10">
+                <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-900/20 border border-emerald-500/30 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-lg shadow-emerald-500/10">
+                    <i class="fas fa-magic text-4xl text-emerald-400"></i>
+                </div>
+                
+                <h2 class="text-3xl font-bold text-white mb-4 group-hover:text-emerald-300 transition-colors">Initialize Project</h2>
+                <p class="text-gray-400 text-lg mb-8 leading-relaxed max-w-md">
+                    Launch a new initiative. Define scope, allocate initial budget, and set timeline parameters for tracking.
+                </p>
+                
+                <div class="flex items-center text-emerald-400 font-bold tracking-wide uppercase text-sm group-hover:translate-x-2 transition-transform">
+                    Start New <i class="fas fa-arrow-right ml-3"></i>
+                </div>
+            </div>
+        </a>
+
+        <a href="{{ url_for('admin.manage_projects') }}" class="glass-panel p-10 rounded-2xl hover:bg-white/5 transition-all group relative overflow-hidden flex flex-col justify-center border border-white/5 hover:border-indigo-500/30">
+            <div class="absolute -right-6 -bottom-6 text-indigo-500/5 transform -rotate-12 group-hover:scale-125 transition-transform duration-700">
+                <i class="fas fa-layer-group text-[12rem]"></i>
+            </div>
+
+            <div class="relative z-10">
+                <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-indigo-900/20 border border-indigo-500/30 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300 shadow-lg shadow-indigo-500/10">
+                    <i class="fas fa-tasks text-4xl text-indigo-400"></i>
+                </div>
+                
+                <h2 class="text-3xl font-bold text-white mb-4 group-hover:text-indigo-300 transition-colors">Project Portfolio</h2>
+                <p class="text-gray-400 text-lg mb-8 leading-relaxed max-w-md">
+                    Monitor active developments. Track financial burn rates, update statuses, and generate BRD documentation.
+                </p>
+                
+                <div class="flex items-center text-indigo-400 font-bold tracking-wide uppercase text-sm group-hover:translate-x-2 transition-transform">
+                    View Dashboard <i class="fas fa-arrow-right ml-3"></i>
+                </div>
+            </div>
+        </a>
+
+    </div>
 </div>
 {% endblock %}

@@ -1,164 +1,212 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Vision For The Future{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/ScrollTrigger.min.js"></script>
     <script src="https://cdn.tiny.cloud/1/z53vyzj5hcwj6nlffpeu227p3t1sya9zs5w66nd3qshdjniq/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
-    
+
     <style>
-        /* Visual style for disabled buttons */
-        button:disabled, input[type="submit"]:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            pointer-events: none;
+        body { font-family: 'Inter', sans-serif; }
+        /* Glassmorphism Utilities */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
+        .glass-sidebar {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+        
+        [x-cloak] { display: none !important; }
     </style>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-black text-white">
+<body class="bg-[#00000a] text-gray-100 h-full overflow-hidden selection:bg-indigo-500 selection:text-white">
+    
     <canvas id="bg-canvas" class="fixed top-0 left-0 w-full h-full z-[-1]"></canvas>
 
-    <nav class="bg-black/30 shadow-md sticky top-0 z-40 backdrop-blur-sm border-b border-white/10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <a class="flex items-center cursor-pointer" href="{{ url_for('main.home') }}">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-indigo-400"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
-                    <h1 class="ml-3 text-2xl font-bold text-white">Vision For The Future</h1>
-                </a>
-                <div class="hidden md:flex items-center space-x-1">
-                    {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('main.dashboard') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Dashboard</a>
-                        <a href="{{ url_for('main.profile') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Profile</a>
-                        <a href="{{ url_for('main.messages') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Messages</a>
-                        
-                        {% if current_user.role == 'buyer' %}
-                            <a href="{{ url_for('buyer.buyer_dashboard') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Catalog</a>
-                            <a href="{{ url_for('buyer.view_cart') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Cart</a>
-                            <a href="{{ url_for('buyer.my_orders') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Orders</a>
-                        {% endif %}
-
-                        {% if current_user.role == 'candidate' %}
-                            <a href="{{ url_for('main.learning') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Learning</a>
-                            <a href="{{ url_for('candidate.code_test') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Code Test</a>
-                        {% endif %}
-                        
-                        {% if current_user.role in ['admin', 'developer', 'moderator'] %}
-                            <a href="{{ url_for('main.learning') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Learning</a>
-                            <a href="{{ url_for('events.events') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Events</a>
-                        {% endif %}
-                        
-                        {% if current_user.role == 'admin' %}
-                            <a href="{{ url_for('admin.manage_users') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Manage Users</a>
-                            <a href="{{ url_for('admin.manage_records') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Manage Records</a>
-                            <a href="{{ url_for('admin.projects') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Projects</a>
-                        {% endif %}
-                    {% else %}
-                        <a href="{{ url_for('main.home') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Home</a>
-                        <a href="{{ url_for('main.offers') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Offers</a>
-                        <a href="{{ url_for('main.contact') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-indigo-400">Contact Us</a>
-                    {% endif %}
-                </div>
-                <div class="hidden md:flex items-center">
-                    {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('auth.logout') }}" class="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-transform duration-200 hover:scale-105">Logout</a>
-                    {% else %}
-                        <a href="{{ url_for('auth.login_register') }}" class="bg-indigo-600 text-white px-5 py-2 rounded-md hover:bg-indigo-700 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/50 transform hover:scale-105">Login / Register</a>
-                    {% endif %}
-                </div>
-                <div class="md:hidden flex items-center">
-                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none">
-                        <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </div>
-        <div id="mobile-menu" class="md:hidden hidden">
-            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-                {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('main.dashboard') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Dashboard</a>
-                    <a href="{{ url_for('main.profile') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Profile</a>
-                    <a href="{{ url_for('main.messages') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Messages</a>
-                    
-                    {% if current_user.role == 'buyer' %}
-                        <a href="{{ url_for('buyer.buyer_dashboard') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Catalog</a>
-                        <a href="{{ url_for('buyer.view_cart') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Cart</a>
-                        <a href="{{ url_for('buyer.my_orders') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Orders</a>
-                    {% endif %}
-
-                    {% if current_user.role == 'candidate' %}
-                        <a href="{{ url_for('main.learning') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Learning</a>
-                        <a href="{{ url_for('candidate.code_test') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Code Test</a>
-                    {% endif %}
-                    
-                    {% if current_user.role in ['admin', 'developer', 'moderator'] %}
-                        <a href="{{ url_for('main.learning') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Learning</a>
-                        <a href="{{ url_for('events.events') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Events</a>
-                    {% endif %}
-                    
-                    {% if current_user.role == 'admin' %}
-                        <a href="{{ url_for('admin.manage_users') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Manage Users</a>
-                        <a href="{{ url_for('admin.manage_records') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Manage Records</a>
-                        <a href="{{ url_for('admin.projects') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Projects</a>
-                    {% endif %}
-                    <a href="{{ url_for('auth.logout') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Logout</a>
-                {% else %}
-                    <a href="{{ url_for('main.home') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Home</a>
-                    <a href="{{ url_for('main.offers') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Offers</a>
-                    <a href="{{ url_for('main.contact') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Contact Us</a>
-                    <a href="{{ url_for('auth.login_register') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Login / Register</a>
-                {% endif %}
-            </div>
-        </div>
-    </nav>
-    
-    <main class="p-4 sm:p-6 lg:p-8 relative z-10">
-        <div id="flash-container" class="fixed top-20 right-5 z-50 space-y-2">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="flash-message bg-{{ 'green' if category == 'success' else ('yellow' if category == 'info' else 'red') }}-500 text-white p-4 rounded-lg shadow-lg animate__animated animate__fadeInRight">
-                            <p>{{ message }}</p>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-        </div>
+    <div x-data="{ sidebarOpen: false }" class="flex h-full">
         
-        <div class="max-w-7xl mx-auto">
-            {% block content %}{% endblock %}
-        </div>
-    </main>
+        {% if current_user.is_authenticated %}
+        <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="glass-sidebar fixed inset-y-0 left-0 z-50 w-64 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 flex flex-col">
+            <div class="flex items-center justify-center h-16 border-b border-white/10">
+                <a href="{{ url_for('main.dashboard') }}" class="flex items-center gap-2 font-bold text-xl tracking-tight">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                        <i class="fas fa-code text-white text-sm"></i>
+                    </div>
+                    <span class="bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">SourcePoint</span>
+                </a>
+            </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
-    
+            <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+                <a href="{{ url_for('main.dashboard') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 {{ 'bg-white/10 text-white shadow-md' if request.endpoint and 'dashboard' in request.endpoint else 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
+                    <i class="fas fa-home w-6 text-center mr-2 {{ 'text-indigo-400' if request.endpoint and 'dashboard' in request.endpoint }}"></i> Dashboard
+                </a>
+                <a href="{{ url_for('main.messages') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 {{ 'bg-white/10 text-white shadow-md' if request.endpoint == 'main.messages' else 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
+                    <i class="fas fa-comment-alt w-6 text-center mr-2 {{ 'text-indigo-400' if request.endpoint == 'main.messages' }}"></i> Messages
+                </a>
+
+                {% if current_user.role == 'admin' %}
+                <div class="pt-4 pb-2">
+                    <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Administration</p>
+                </div>
+                <a href="{{ url_for('admin.manage_users') }}" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+                    <i class="fas fa-users w-6 text-center mr-2"></i> Users
+                </a>
+                <a href="{{ url_for('admin.projects') }}" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+                    <i class="fas fa-project-diagram w-6 text-center mr-2"></i> Projects
+                </a>
+                <a href="{{ url_for('events.events') }}" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+                    <i class="fas fa-calendar-alt w-6 text-center mr-2"></i> Events
+                </a>
+                <a href="{{ url_for('admin.manage_records') }}" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+                    <i class="fas fa-database w-6 text-center mr-2"></i> Records
+                </a>
+                {% endif %}
+
+                {% if current_user.role == 'developer' %}
+                <div class="pt-4 pb-2">
+                    <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">DevOps</p>
+                </div>
+                <a href="{{ url_for('events.events') }}" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+                    <i class="fas fa-calendar-day w-6 text-center mr-2"></i> Events
+                </a>
+                <a href="{{ url_for('main.learning') }}" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+                    <i class="fas fa-book w-6 text-center mr-2"></i> Learning Hub
+                </a>
+                {% endif %}
+
+                {% if current_user.role == 'moderator' %}
+                <div class="pt-4 pb-2">
+                    <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Assessment</p>
+                </div>
+                <a href="{{ url_for('events.events') }}" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+                    <i class="fas fa-calendar-check w-6 text-center mr-2"></i> Events Schedule
+                </a>
+                <a href="{{ url_for('main.learning') }}" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+                    <i class="fas fa-book w-6 text-center mr-2"></i> Learning Hub
+                </a>
+                {% endif %}
+
+                {% if current_user.role == 'candidate' %}
+                <div class="pt-4 pb-2">
+                    <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Preparation</p>
+                </div>
+                <a href="{{ url_for('main.learning') }}" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+                    <i class="fas fa-book w-6 text-center mr-2"></i> Learning Hub
+                </a>
+                <a href="{{ url_for('candidate.code_test') }}" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+                    <i class="fas fa-code w-6 text-center mr-2"></i> Code Test
+                </a>
+                {% endif %}
+
+                {% if current_user.role == 'buyer' %}
+                <div class="pt-4 pb-2">
+                    <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Marketplace</p>
+                </div>
+                <a href="{{ url_for('buyer.buyer_dashboard') }}" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+                    <i class="fas fa-store w-6 text-center mr-2"></i> Catalog
+                </a>
+                <a href="{{ url_for('buyer.my_orders') }}" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+                    <i class="fas fa-box w-6 text-center mr-2"></i> My Orders
+                </a>
+                {% endif %}
+            </nav>
+
+            <div class="p-4 border-t border-white/10">
+                <a href="{{ url_for('main.profile') }}" class="flex items-center w-full p-2 rounded-xl hover:bg-white/5 transition-colors group">
+                    <img src="{{ current_user.avatar_url }}" alt="" class="w-9 h-9 rounded-full border border-gray-600 group-hover:border-indigo-400 transition-colors">
+                    <div class="ml-3 overflow-hidden">
+                        <p class="text-sm font-medium text-white truncate">{{ current_user.username }}</p>
+                        <p class="text-xs text-gray-500 truncate">{{ current_user.role|title }}</p>
+                    </div>
+                </a>
+            </div>
+        </aside>
+        {% endif %}
+
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+            
+            <header class="h-16 glass-panel border-b-0 border-white/5 flex items-center justify-between px-4 sm:px-6 z-20 relative">
+                <div class="flex items-center">
+                    {% if current_user.is_authenticated %}
+                    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden text-gray-400 hover:text-white focus:outline-none mr-4">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    {% else %}
+                    <a href="{{ url_for('main.home') }}" class="flex items-center gap-2 font-bold text-lg tracking-tight">
+                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                            <i class="fas fa-code text-white text-sm"></i>
+                        </div>
+                        <span class="bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">SourcePoint</span>
+                    </a>
+                    {% endif %}
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    {% if not current_user.is_authenticated %}
+                        <a href="{{ url_for('main.home') }}" class="text-sm font-medium text-gray-300 hover:text-white hidden sm:block">Home</a>
+                        <a href="{{ url_for('main.offers') }}" class="text-sm font-medium text-gray-300 hover:text-white hidden sm:block">Offers</a>
+                        <a href="{{ url_for('auth.login_register') }}" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all">Login</a>
+                    {% else %}
+                        <a href="{{ url_for('auth.logout') }}" class="text-gray-400 hover:text-red-400 transition-colors" title="Logout">
+                            <i class="fas fa-power-off"></i>
+                        </a>
+                    {% endif %}
+                </div>
+            </header>
+
+            <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative scroll-smooth">
+                <div id="flash-container" class="fixed top-5 right-5 z-50 space-y-2 pointer-events-none">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="pointer-events-auto flex items-center w-full max-w-xs p-4 mb-4 text-gray-200 bg-gray-800/90 rounded-lg shadow-xl border border-white/10 backdrop-blur-md animate__animated animate__fadeInRight" role="alert">
+                                    <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg {{ 'bg-green-500/20 text-green-400' if category == 'success' else 'bg-red-500/20 text-red-400' }}">
+                                        <i class="fas {{ 'fa-check' if category == 'success' else 'fa-exclamation' }}"></i>
+                                    </div>
+                                    <div class="ml-3 text-sm font-normal">{{ message }}</div>
+                                    <button type="button" class="ml-auto -mx-1.5 -my-1.5 text-gray-400 hover:text-white rounded-lg p-1.5 inline-flex h-8 w-8" onclick="this.parentElement.remove()">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- Mobile Menu Toggle ---
-            const menuButton = document.getElementById('mobile-menu-button');
-            const mobileMenu = document.getElementById('mobile-menu');
-            if (menuButton) {
-                menuButton.addEventListener('click', () => {
-                    mobileMenu.classList.toggle('hidden');
-                });
-            }
-
-            // --- 3D Starfield Background ---
             const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+            // Increased far plane for depth
+            const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 2000);
             const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setClearColor(0x00000a, 1);
+
+            // Texture Helpers
             function createStarTexture() {
                 const canvas = document.createElement('canvas');
                 canvas.width = 32;
@@ -173,6 +221,7 @@
                 context.fillRect(0, 0, 32, 32);
                 return new THREE.CanvasTexture(canvas);
             }
+
             function createNebulaTexture() {
                 const canvas = document.createElement('canvas');
                 canvas.width = 128;
@@ -185,16 +234,18 @@
                 context.fillRect(0, 0, 128, 128);
                 return new THREE.CanvasTexture(canvas);
             }
+
             const starTexture = createStarTexture();
             const nebulaTexture = createNebulaTexture();
+
             function createParticleSystem(count, size, colors, opacity, texture) {
                 const geometry = new THREE.BufferGeometry();
                 const positions = new Float32Array(count * 3);
                 const colorsAttribute = new Float32Array(count * 3);
                 for (let i = 0; i < count; i++) {
-                    const x = (Math.random() - 0.5) * 2000;
-                    const y = (Math.random() - 0.5) * 2000;
-                    const z = (Math.random() - 0.5) * 2000;
+                    const x = (Math.random() - 0.5) * 3000; // Wider spread
+                    const y = (Math.random() - 0.5) * 3000;
+                    const z = (Math.random() - 0.5) * 3000;
                     positions.set([x, y, z], i * 3);
                     const color = colors[Math.floor(Math.random() * colors.length)];
                     colorsAttribute.set([color.r, color.g, color.b], i * 3);
@@ -212,112 +263,46 @@
                 });
                 return new THREE.Points(geometry, material);
             }
-            const brightStars = createParticleSystem(10000, 2.5, [new THREE.Color(0.8, 0.8, 1), new THREE.Color(1, 1, 0.8)], 1.0, starTexture);
-            const mediumStars = createParticleSystem(20000, 1.5, [new THREE.Color(0.5, 0.5, 1)], 0.8, starTexture);
-            const nebulae = createParticleSystem(500, 150, [new THREE.Color(0.8, 0.2, 0.8), new THREE.Color(0.2, 0.2, 0.8)], 0.1, nebulaTexture);
+
+            const brightStars = createParticleSystem(12000, 3, [new THREE.Color(0.8, 0.8, 1), new THREE.Color(1, 1, 0.8)], 0.9, starTexture);
+            const mediumStars = createParticleSystem(25000, 2, [new THREE.Color(0.5, 0.5, 1)], 0.6, starTexture);
+            const nebulae = createParticleSystem(600, 200, [new THREE.Color(0.3, 0.1, 0.4), new THREE.Color(0.1, 0.1, 0.3)], 0.15, nebulaTexture);
+
             scene.add(brightStars);
             scene.add(mediumStars);
             scene.add(nebulae);
-            camera.position.z = 1;
-            let mouseX = 0, mouseY = 0;
-            document.addEventListener('mousemove', (event) => {
-                mouseX = event.clientX;
-                mouseY = event.clientY;
-            });
+            
+            // Start camera further back
+            camera.position.z = 1500; 
+
             function animate() {
                 requestAnimationFrame(animate);
-                brightStars.rotation.y += 0.00005;
-                mediumStars.rotation.y += 0.00003;
+                
+                // Automatic Rotation (Much Slower)
+                brightStars.rotation.y += 0.00008;
+                mediumStars.rotation.y += 0.00005;
                 nebulae.rotation.y += 0.0001;
-                if (mouseX > 0) {
-                    camera.position.x += (mouseX - window.innerWidth / 2 - camera.position.x) * 0.0001;
-                    camera.position.y += (-(mouseY - window.innerHeight / 2) - camera.position.y) * 0.0001;
-                    camera.lookAt(scene.position);
+                
+                // Very Slow Forward "Drift" Movement
+                camera.position.z -= 0.05;
+                
+                // Reset loop logic (Infinite starfield)
+                if (camera.position.z < -500) {
+                    camera.position.z = 1500;
                 }
+
                 renderer.render(scene, camera);
             }
             animate();
+            
             window.addEventListener('resize', () => {
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
             });
-
-            // --- Dynamic Entrance Animations ---
-            gsap.registerPlugin(ScrollTrigger);
-            const elementsToAnimate = document.querySelectorAll('.animate-dynamic');
-            elementsToAnimate.forEach(el => {
-                gsap.from(el, {
-                    scrollTrigger: {
-                        trigger: el,
-                        start: "top 90%",
-                        toggleActions: "play none none none",
-                    },
-                    opacity: 0,
-                    y: 50,
-                    duration: 0.8,
-                    ease: "power3.out"
-                });
-            });
-
-            // --- Auto-hide flash messages ---
-            const flashMessages = document.querySelectorAll('.flash-message');
-            flashMessages.forEach(flashMessage => {
-                setTimeout(() => {
-                    flashMessage.classList.remove('animate__fadeInRight');
-                    flashMessage.classList.add('animate__fadeOutRight');
-                    setTimeout(() => {
-                        flashMessage.remove();
-                    }, 500);
-                }, 5000);
-            });
-
-            // --- GLOBAL FORM SUBMIT PROTECTION (PREVENTS DOUBLE CLICK) ---
-            document.addEventListener('submit', (e) => {
-                const form = e.target;
-                // Only proceed if it's a form and matches validity constraints
-                if (form.tagName === 'FORM' && form.checkValidity()) {
-                    const submitBtn = form.querySelector('button[type="submit"]');
-                    
-                    // Check if button exists, isn't already disabled, and isn't marked to ignore
-                    if (submitBtn && !submitBtn.disabled && !submitBtn.classList.contains('no-global-disable')) {
-                        // Small timeout allows other listeners (like AJAX preventDefault) to run first
-                        setTimeout(() => {
-                            if (!e.defaultPrevented) {
-                                submitBtn.disabled = true;
-                                // Preserve width to prevent layout jump
-                                const width = submitBtn.offsetWidth;
-                                submitBtn.style.width = `${width}px`;
-                                // Show loading spinner
-                                submitBtn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i>`;
-                                
-                                // Safety fallback: Re-enable after 15s (in case of network error without reload)
-                                setTimeout(() => {
-                                    submitBtn.disabled = false;
-                                    submitBtn.innerHTML = 'Retry';
-                                    submitBtn.style.width = 'auto';
-                                }, 15000);
-                            }
-                        }, 0);
-                    }
-                }
-            });
-
-            // --- Inactivity Logout Logic ---
-            {% if current_user.is_authenticated %}
-            let inactivityTimer;
-            const logoutUser = () => {
-                window.location.href = "{{ url_for('auth.logout') }}";
-            };
-            const resetTimer = () => {
-                clearTimeout(inactivityTimer);
-                inactivityTimer = setTimeout(logoutUser, 300000); 
-            };
-            window.onload = resetTimer;
-            document.onmousemove = resetTimer;
-            document.onkeypress = resetTimer;
-            document.onclick = resetTimer;
-            {% endif %}
+            
+            // GSAP Entry for Main Content
+            gsap.from("main > div", { opacity: 0, y: 20, duration: 0.6, ease: "power2.out", delay: 0.1 });
         });
     </script>
 </body>

@@ -1,118 +1,179 @@
 {% extends "layout.html" %}
-{% block title %}Create Invoice{% endblock %}
+{% block title %}Invoice Builder{% endblock %}
 {% block content %}
-<div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-8 animate-dynamic backdrop-blur-sm border border-white/10">
-    <h1 class="text-3xl font-bold text-white mb-6">Create New Invoice</h1>
-    <form action="{{ url_for('admin.create_invoice') }}" method="POST" class="space-y-6" id="invoice-form">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <label for="recipient_name" class="block text-sm font-medium text-gray-300">Recipient Name</label>
-                <input type="text" name="recipient_name" required class="mt-1 appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-700/50 text-white transition">
-            </div>
-            <div>
-                <label for="recipient_email" class="block text-sm font-medium text-gray-300">Recipient Email</label>
-                <input type="email" name="recipient_email" required class="mt-1 appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-700/50 text-white transition">
-            </div>
-        </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <label for="bill_to_address" class="block text-sm font-medium text-gray-300">Bill To Address</label>
-                <textarea name="bill_to_address" rows="4" required class="mt-1 appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 bg-gray-700/50 text-white" placeholder="123 Main St&#10;Anytown, USA 12345"></textarea>
-            </div>
-            <div>
-                <label for="ship_to_address" class="block text-sm font-medium text-gray-300">Ship To Address</label>
-                 <div class="flex items-center mt-1 mb-2">
-                    <input type="checkbox" id="same_as_billing" class="h-4 w-4 text-indigo-600 bg-gray-700 border-gray-600 rounded focus:ring-indigo-500">
-                    <label for="same_as_billing" class="ml-2 block text-sm text-gray-300">Same as billing address</label>
-                </div>
-                <textarea name="ship_to_address" id="ship_to_address" rows="3" required class="appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 bg-gray-700/50 text-white"></textarea>
-            </div>
+<div class="animate-dynamic pb-20">
+    
+    <div class="flex flex-col md:flex-row justify-between items-end gap-4 mb-8 max-w-[210mm] mx-auto">
+        <div>
+            <a href="{{ url_for('admin.manage_invoices') }}" class="text-gray-400 hover:text-white text-xs uppercase tracking-wide font-bold mb-2 inline-block transition-colors">
+                <i class="fas fa-arrow-left mr-1"></i> Back to History
+            </a>
+            <h1 class="text-3xl font-bold text-white tracking-tight">Invoice Generator</h1>
+            <p class="text-gray-400 text-sm mt-1">Drafting new document.</p>
         </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <label for="order_id" class="block text-sm font-medium text-gray-300">Order ID (Optional)</label>
-                <input type="text" name="order_id" class="mt-1 appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 bg-gray-700/50 text-white">
-            </div>
-            <div>
-                <label for="due_date" class="block text-sm font-medium text-gray-300">Due Date</label>
-                <input type="date" name="due_date" required class="mt-1 appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm bg-gray-700/50 text-white">
-            </div>
-        </div>
-        
-        <div id="invoice-items" class="border-t border-b border-gray-700 py-6">
-            <h2 class="text-xl font-semibold text-white mb-4">Invoice Items</h2>
-            <div class="space-y-3" id="items-container">
-                <div class="hidden md:flex items-center space-x-2 text-sm text-gray-400 px-1">
-                    <div class="w-40">Product (Optional)</div>
-                    <div class="flex-grow">Description</div>
-                    <div class="w-24 text-center">Quantity</div>
-                    <div class="w-32 text-center">Price</div>
-                    <div class="w-32 text-right">Total</div>
-                    <div class="w-10"></div>
-                </div>
-                <div class="item-row flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-2">
-                    <input type="hidden" name="item_product_id[]" class="item-product-id">
-                    <select class="product-select w-full md:w-40 px-2 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white text-sm">
-                        <option value="">-- Select --</option>
-                    </select>
-                    <input type="text" name="item_description[]" placeholder="Item Description" required class="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">
-                    <input type="number" name="item_quantity[]" placeholder="Qty" required value="1" class="w-full md:w-24 text-center px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">
-                    <input type="number" step="0.01" name="item_price[]" placeholder="Price" required class="w-full md:w-32 text-center px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">
-                    <div class="w-full md:w-32 text-right text-white px-3 py-2 bg-gray-800/50 rounded-md item-total">₹0.00</div>
-                    <button type="button" class="remove-item-btn p-2 rounded-md text-white bg-red-600 hover:bg-red-700 flex-shrink-0 w-full md:w-auto"><i class="fas fa-trash"></i></button>
-                </div>
-            </div>
-             <button type="button" id="add-item-btn" class="mt-4 w-full flex justify-center py-2 px-4 border border-dashed border-gray-500 rounded-md shadow-sm text-sm font-medium text-gray-300 hover:bg-gray-700/50 hover:text-white">
-                <i class="fas fa-plus mr-2"></i> Add Item
-            </button>
-        </div>
-
-        <div class="flex justify-end">
-            <div class="w-full md:w-1/3 space-y-3">
-                 <div class="flex justify-between items-center">
-                    <label for="subtotal" class="text-sm font-medium text-gray-300">Subtotal</label>
-                    <div id="subtotal" class="text-white font-semibold">₹0.00</div>
-                </div>
-                <div class="flex justify-between items-center">
-                    <label for="tax" class="text-sm font-medium text-gray-300">Tax (%)</label>
-                    <input type="number" step="0.01" name="tax" id="tax" value="0" class="w-24 text-center px-3 py-1 border border-gray-600 rounded-md bg-gray-700/50 text-white">
-                </div>
-                 <div class="flex justify-between items-center text-xl font-bold">
-                    <label for="grand-total" class="text-white">Total</label>
-                    <div id="grand-total" class="text-indigo-400">₹0.00</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <label for="notes" class="block text-sm font-medium text-gray-300">Notes / Terms (Optional)</label>
-                <textarea name="notes" rows="4" class="mt-1 appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 bg-gray-700/50 text-white"></textarea>
-            </div>
-             <div>
-                <label for="payment_details" class="block text-sm font-medium text-gray-300">Payment Details (Optional)</label>
-                <textarea name="payment_details" rows="4" class="mt-1 appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 bg-gray-700/50 text-white" placeholder="Bank: Example Bank&#10;Account #: 1234567890"></textarea>
-            </div>
-        </div>
-
-        <button type="submit" id="submit-invoice-btn" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-green-600 hover:bg-green-700">
-            Create and Send Invoice
+        <button type="submit" form="invoice-form" id="submit-btn" class="px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl shadow-lg shadow-green-500/20 transition-all transform hover:scale-105 flex items-center">
+            <i class="fas fa-paper-plane mr-2"></i> Generate & Send
         </button>
-    </form>
+    </div>
+
+    <div class="max-w-[210mm] mx-auto bg-white text-gray-800 rounded-sm shadow-2xl overflow-hidden relative min-h-[297mm] flex flex-col">
+        
+        <form action="{{ url_for('admin.create_invoice') }}" method="POST" id="invoice-form" class="flex-1 flex flex-col p-12">
+            
+            <div class="flex justify-between items-start mb-12 border-b-2 border-gray-100 pb-8">
+                <div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-md">
+                            <i class="fas fa-code"></i>
+                        </div>
+                        <span class="text-2xl font-bold text-gray-900 tracking-tight">Source Point</span>
+                    </div>
+                    <div class="text-sm text-gray-500 leading-relaxed">
+                        123 Tech Park, Innovation Drive<br>
+                        Pune, Maharashtra 411001<br>
+                        India
+                    </div>
+                </div>
+                <div class="text-right">
+                    <h2 class="text-4xl font-extrabold text-gray-200 uppercase tracking-widest mb-2">Invoice</h2>
+                    <div class="space-y-1">
+                        <div class="flex items-center justify-end gap-3">
+                            <label class="text-xs font-bold text-gray-400 uppercase">Date</label>
+                            <input type="date" name="due_date" required class="text-sm text-right font-medium text-gray-700 bg-gray-50 border-0 rounded p-1 focus:ring-1 focus:ring-indigo-500 w-32 cursor-pointer hover:bg-gray-100 transition-colors">
+                        </div>
+                        <div class="flex items-center justify-end gap-3">
+                            <label class="text-xs font-bold text-gray-400 uppercase">Order ID</label>
+                            <input type="text" name="order_id" placeholder="Optional" class="text-sm text-right font-medium text-gray-700 bg-gray-50 border-0 rounded p-1 focus:ring-1 focus:ring-indigo-500 w-32 placeholder-gray-300 hover:bg-gray-100 transition-colors">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-12 mb-12">
+                <div class="space-y-3">
+                    <label class="block text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1">Bill To</label>
+                    <input type="text" name="recipient_name" required placeholder="Client Name" class="block w-full text-lg font-bold text-gray-900 placeholder-gray-300 border-0 border-b border-gray-200 focus:border-indigo-500 focus:ring-0 px-0 py-1 transition-colors bg-transparent">
+                    <input type="email" name="recipient_email" required placeholder="client@email.com" class="block w-full text-sm text-gray-600 placeholder-gray-300 border-0 border-b border-gray-200 focus:border-indigo-500 focus:ring-0 px-0 py-1 transition-colors bg-transparent">
+                    <textarea name="bill_to_address" rows="3" required placeholder="Billing Address..." class="block w-full text-sm text-gray-600 placeholder-gray-300 border-0 bg-gray-50 rounded p-3 focus:ring-1 focus:ring-indigo-500 resize-none transition-colors"></textarea>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <label class="block text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1">Ship To</label>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="same_as_billing" class="w-3 h-3 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                            <label for="same_as_billing" class="ml-1.5 text-xs text-gray-400 cursor-pointer select-none">Same as Billing</label>
+                        </div>
+                    </div>
+                    <div class="h-[68px] flex items-end pb-1">
+                        <span class="text-xs text-gray-300 italic">Shipping details below</span>
+                    </div>
+                    <textarea name="ship_to_address" id="ship_to_address" rows="3" required placeholder="Shipping Address..." class="block w-full text-sm text-gray-600 placeholder-gray-300 border-0 bg-gray-50 rounded p-3 focus:ring-1 focus:ring-indigo-500 resize-none transition-colors"></textarea>
+                </div>
+            </div>
+
+            <div class="mb-8 flex-1">
+                <table class="w-full">
+                    <thead class="bg-gray-900 text-white">
+                        <tr>
+                            <th class="py-3 px-4 text-left text-xs font-bold uppercase tracking-wider rounded-l-lg w-1/2">Item Description</th>
+                            <th class="py-3 px-4 text-center text-xs font-bold uppercase tracking-wider w-24">Qty</th>
+                            <th class="py-3 px-4 text-right text-xs font-bold uppercase tracking-wider w-32">Price</th>
+                            <th class="py-3 px-4 text-right text-xs font-bold uppercase tracking-wider rounded-r-lg w-32">Amount</th>
+                            <th class="w-10"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="items-container" class="divide-y divide-gray-100">
+                        <tr class="item-row group">
+                            <td class="py-2 pr-2">
+                                <input type="hidden" name="item_product_id[]" class="item-product-id">
+                                <div class="flex flex-col gap-1">
+                                    <select class="product-select text-xs text-gray-500 bg-transparent border-0 p-0 focus:ring-0 cursor-pointer hover:text-indigo-600 transition-colors w-full">
+                                        <option value="">Select Product (Auto-fill)</option>
+                                    </select>
+                                    <input type="text" name="item_description[]" placeholder="Description" required class="w-full font-medium text-gray-800 placeholder-gray-300 border-0 border-b border-gray-200 focus:border-indigo-500 focus:ring-0 px-0 py-1 bg-transparent">
+                                </div>
+                            </td>
+                            <td class="py-2 px-2 align-top pt-4">
+                                <input type="number" name="item_quantity[]" required value="1" min="1" class="w-full text-center text-sm text-gray-800 bg-gray-50 border-0 rounded p-1 focus:ring-1 focus:ring-indigo-500">
+                            </td>
+                            <td class="py-2 px-2 align-top pt-4">
+                                <input type="number" step="0.01" name="item_price[]" required placeholder="0.00" class="w-full text-right text-sm text-gray-800 bg-gray-50 border-0 rounded p-1 focus:ring-1 focus:ring-indigo-500">
+                            </td>
+                            <td class="py-2 pl-2 text-right align-top pt-5">
+                                <span class="text-sm font-bold text-gray-900 item-total">₹0.00</span>
+                            </td>
+                            <td class="py-2 text-center align-top pt-4">
+                                <button type="button" class="text-gray-300 hover:text-red-500 transition-colors remove-item-btn">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <button type="button" id="add-item-btn" class="mt-4 flex items-center text-xs font-bold text-indigo-600 hover:text-indigo-800 uppercase tracking-wide transition-colors">
+                    <i class="fas fa-plus-circle mr-1.5 text-sm"></i> Add Line Item
+                </button>
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-12 border-t-2 border-gray-100 pt-8 mt-auto">
+                
+                <div class="flex-1 space-y-6">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Notes / Terms</label>
+                        <textarea name="notes" rows="3" class="w-full text-sm text-gray-600 bg-gray-50 border-0 rounded-lg p-3 focus:ring-1 focus:ring-indigo-500 resize-none" placeholder="Add payment terms or thank you note..."></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Payment Details</label>
+                        <textarea name="payment_details" rows="2" class="w-full text-sm text-gray-600 bg-gray-50 border-0 rounded-lg p-3 focus:ring-1 focus:ring-indigo-500 resize-none" placeholder="Bank Name, Account No, IFSC..."></textarea>
+                    </div>
+                </div>
+
+                <div class="w-full md:w-72 bg-gray-50 rounded-lg p-6">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-sm text-gray-500 font-medium">Subtotal</span>
+                        <span id="subtotal" class="text-sm font-bold text-gray-800">₹0.00</span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-200">
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm text-gray-500 font-medium">Tax Rate</span>
+                            <div class="relative">
+                                <input type="number" step="0.01" name="tax" id="tax" value="0" class="w-12 text-right text-xs font-bold bg-white border border-gray-300 rounded px-1 py-0.5 focus:ring-indigo-500 focus:border-indigo-500">
+                                <span class="absolute right-[-12px] top-0.5 text-xs text-gray-400">%</span>
+                            </div>
+                        </div>
+                        <span id="tax-amount" class="text-sm text-gray-500">+ ₹0.00</span>
+                    </div>
+
+                    <div class="flex justify-between items-end">
+                        <span class="text-base font-extrabold text-gray-900 uppercase tracking-tight">Total</span>
+                        <span id="grand-total" class="text-2xl font-extrabold text-indigo-600">₹0.00</span>
+                    </div>
+                </div>
+            </div>
+
+        </form>
+        
+        <div class="h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 w-full"></div>
+    </div>
 </div>
 
 <script>
     const availableProducts = {{ products | tojson | safe }};
+    
     document.addEventListener('DOMContentLoaded', () => {
         const itemsContainer = document.getElementById('items-container');
         const invoiceForm = document.getElementById('invoice-form');
-        const submitButton = document.getElementById('submit-invoice-btn');
+        const submitButton = document.getElementById('submit-btn');
 
+        // Prevent double submission styling
         invoiceForm.addEventListener('submit', () => {
             submitButton.disabled = true;
-            submitButton.innerHTML = `Creating...`;
+            submitButton.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> Generating...`;
+            submitButton.classList.add('opacity-75', 'cursor-not-allowed');
         });
 
         function calculateTotals() {
@@ -121,6 +182,8 @@
                 const quantity = parseFloat(row.querySelector('input[name="item_quantity[]"]').value) || 0;
                 const price = parseFloat(row.querySelector('input[name="item_price[]"]').value) || 0;
                 const total = quantity * price;
+                
+                // Update row total
                 row.querySelector('.item-total').textContent = `₹${total.toFixed(2)}`;
                 subtotal += total;
             });
@@ -129,11 +192,18 @@
             const taxAmount = subtotal * (taxRate / 100);
             const grandTotal = subtotal + taxAmount;
 
+            // Update Summary
             document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+            document.getElementById('tax-amount').textContent = `+ ₹${taxAmount.toFixed(2)}`;
             document.getElementById('grand-total').textContent = `₹${grandTotal.toFixed(2)}`;
         }
 
         function populateProductSelect(selectElement) {
+            // Clear existing except default
+            while (selectElement.options.length > 1) {
+                selectElement.remove(1);
+            }
+            
             availableProducts.forEach(p => {
                 const option = document.createElement('option');
                 option.value = p.id;
@@ -144,85 +214,96 @@
             });
         }
 
-        function addItem() {
-            const newItem = document.createElement('div');
-            newItem.className = 'item-row flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-2';
-            newItem.innerHTML = `
-                <input type="hidden" name="item_product_id[]" class="item-product-id">
-                <select class="product-select w-full md:w-40 px-2 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white text-sm">
-                    <option value="">-- Select --</option>
-                </select>
-                <input type="text" name="item_description[]" placeholder="Item Description" required class="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">
-                <input type="number" name="item_quantity[]" placeholder="Qty" required value="1" class="w-full md:w-24 text-center px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">
-                <input type="number" step="0.01" name="item_price[]" placeholder="Price" required class="w-full md:w-32 text-center px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">
-                <div class="w-full md:w-32 text-right text-white px-3 py-2 bg-gray-800/50 rounded-md item-total">₹0.00</div>
-                <button type="button" class="remove-item-btn p-2 rounded-md text-white bg-red-600 hover:bg-red-700 flex-shrink-0 w-full md:w-auto"><i class="fas fa-trash"></i></button>
-            `;
-            itemsContainer.appendChild(newItem);
-            populateProductSelect(newItem.querySelector('.product-select'));
-            attachRowListeners(newItem);
-        }
-
         function attachRowListeners(row) {
-             row.querySelectorAll('input').forEach(input => {
-                input.addEventListener('input', calculateTotals);
-            });
+            const inputs = row.querySelectorAll('input');
+            inputs.forEach(input => input.addEventListener('input', calculateTotals));
             
             const productSelect = row.querySelector('.product-select');
+            const descInput = row.querySelector('input[name="item_description[]"]');
+            const priceInput = row.querySelector('input[name="item_price[]"]');
+            const productIdInput = row.querySelector('.item-product-id');
+
             productSelect.addEventListener('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
-                const descInput = row.querySelector('input[name="item_description[]"]');
-                const priceInput = row.querySelector('input[name="item_price[]"]');
-                const productIdInput = row.querySelector('.item-product-id');
-
                 if (this.value) {
                     descInput.value = selectedOption.dataset.name;
                     priceInput.value = selectedOption.dataset.price;
                     productIdInput.value = this.value;
+                    // Flash effect to indicate auto-fill
+                    descInput.classList.add('bg-indigo-50');
+                    priceInput.classList.add('bg-indigo-50');
+                    setTimeout(() => {
+                        descInput.classList.remove('bg-indigo-50');
+                        priceInput.classList.remove('bg-indigo-50');
+                    }, 500);
                 } else {
-                    descInput.value = '';
-                    priceInput.value = '';
+                    // Optional: Clear fields if deselected? usually better to leave them
                     productIdInput.value = '';
                 }
                 calculateTotals();
             });
         }
-        
-        document.getElementById('add-item-btn').addEventListener('click', addItem);
-        document.getElementById('tax').addEventListener('input', calculateTotals);
 
+        // Add Item Logic
+        document.getElementById('add-item-btn').addEventListener('click', () => {
+            const firstRow = document.querySelector('.item-row');
+            const newRow = firstRow.cloneNode(true);
+            
+            // Clear values
+            newRow.querySelectorAll('input').forEach(input => {
+                if(input.type === 'number' && input.name.includes('quantity')) input.value = 1;
+                else input.value = '';
+            });
+            newRow.querySelector('select').selectedIndex = 0;
+            newRow.querySelector('.item-total').textContent = '₹0.00';
+            
+            itemsContainer.appendChild(newRow);
+            attachRowListeners(newRow);
+        });
+
+        // Remove Item Logic
         itemsContainer.addEventListener('click', (e) => {
             if (e.target.closest('.remove-item-btn')) {
-                if (itemsContainer.querySelectorAll('.item-row').length > 1) {
+                const rows = itemsContainer.querySelectorAll('.item-row');
+                if (rows.length > 1) {
                     e.target.closest('.item-row').remove();
                     calculateTotals();
                 } else {
-                    alert("You must have at least one item in the invoice.");
+                    // Shake animation for error visual
+                    const btn = e.target.closest('.remove-item-btn');
+                    btn.classList.add('text-red-600', 'scale-110');
+                    setTimeout(() => btn.classList.remove('text-red-600', 'scale-110'), 200);
                 }
             }
         });
 
+        // Address Sync
         const sameAsBillingCheckbox = document.getElementById('same_as_billing');
         const billToTextarea = document.querySelector('textarea[name="bill_to_address"]');
         const shipToTextarea = document.getElementById('ship_to_address');
 
-        const syncAddresses = () => {
+        function syncAddresses() {
             if (sameAsBillingCheckbox.checked) {
                 shipToTextarea.value = billToTextarea.value;
                 shipToTextarea.readOnly = true;
+                shipToTextarea.classList.add('bg-gray-100', 'text-gray-400');
+                shipToTextarea.classList.remove('bg-gray-50');
             } else {
                 shipToTextarea.readOnly = false;
+                shipToTextarea.classList.remove('bg-gray-100', 'text-gray-400');
+                shipToTextarea.classList.add('bg-gray-50');
             }
-        };
+        }
 
         sameAsBillingCheckbox.addEventListener('change', syncAddresses);
         billToTextarea.addEventListener('input', syncAddresses);
+        document.getElementById('tax').addEventListener('input', calculateTotals);
 
+        // Initialize
         document.querySelectorAll('.item-row').forEach(row => {
             populateProductSelect(row.querySelector('.product-select'));
             attachRowListeners(row);
         });
-        calculateTotals();
     });
 </script>
 {% endblock %}

@@ -2,26 +2,30 @@
 {% block title %}Welcome to Source Point{% endblock %}
 {% block content %}
 
-<div class="relative h-[80vh] flex flex-col justify-center items-center text-center overflow-hidden">
-    <div id="hero-3d-container" class="absolute inset-0 z-0 opacity-60"></div>
+<div class="relative min-h-[80vh] flex flex-col justify-center items-center text-center overflow-hidden animate-dynamic">
     
-    <div class="relative z-10 max-w-4xl px-4 animate-dynamic">
-        <div class="inline-block mb-4 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-sm font-medium backdrop-blur-sm">
-            🚀 The Ultimate Developer Ecosystem
+    <div class="relative z-10 max-w-5xl px-4">
+        <div class="inline-flex items-center px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-sm font-medium backdrop-blur-md mb-8">
+            <span class="relative flex h-2 w-2 mr-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+            </span>
+            The Ultimate Developer Ecosystem
         </div>
         
-        <h1 class="text-5xl md:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-200 to-indigo-400 tracking-tight mb-6 leading-tight">
-            Forge the Future, <br>Together.
+        <h1 class="text-5xl md:text-7xl font-extrabold text-white tracking-tight mb-6 leading-tight">
+            Forge the Future, <br>
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">Together.</span>
         </h1>
         
-        <p class="mt-4 text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
+        <p class="mt-6 text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
             The central hub for development teams. Streamline updates, manage projects, and onboard top talent in one unified workspace.
         </p>
         
         <div class="mt-10 flex flex-col sm:flex-row justify-center gap-4">
             <a href="{{ url_for('auth.login_register') }}"
-                class="px-8 py-4 rounded-xl text-white bg-indigo-600 hover:bg-indigo-500 font-bold text-lg shadow-lg shadow-indigo-600/30 transition-all transform hover:scale-105 flex items-center justify-center">
-                Get Started <i class="fas fa-arrow-right ml-2"></i>
+                class="px-8 py-4 rounded-xl text-white bg-indigo-600 hover:bg-indigo-500 font-bold text-lg shadow-lg shadow-indigo-600/30 transition-all transform hover:scale-105 flex items-center justify-center group">
+                Get Started <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
             </a>
             <a href="#features"
                 class="px-8 py-4 rounded-xl text-gray-300 bg-white/5 hover:bg-white/10 border border-white/10 font-bold text-lg backdrop-blur-md transition-all flex items-center justify-center">
@@ -29,90 +33,38 @@
             </a>
         </div>
     </div>
-    
-    <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce text-gray-500">
-        <i class="fas fa-chevron-down"></i>
-    </div>
 </div>
 
-<div id="features" class="py-20 relative z-10">
+<div id="features" class="py-24 relative z-10">
     <div class="text-center mb-16 animate-dynamic">
-        <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Built for Developers, by Developers</h2>
-        <p class="text-gray-400 max-w-2xl mx-auto">Everything you need to manage your team and projects effectively, without the clutter.</p>
+        <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Built for Developers</h2>
+        <p class="text-gray-400 max-w-2xl mx-auto">Everything you need to manage your team and projects effectively.</p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div class="interactive-card bg-white/5 dark:bg-gray-800/40 p-8 rounded-2xl shadow-xl border border-white/10 backdrop-blur-md animate-dynamic group hover:border-indigo-500/30 transition-all">
-            <div class="h-14 w-14 bg-indigo-500/20 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                <i class="fas fa-bolt text-2xl text-indigo-400"></i>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 px-4">
+        <div class="glass-panel p-8 rounded-2xl hover:bg-white/5 transition-all duration-300 group border border-white/5 hover:border-indigo-500/30">
+            <div class="h-14 w-14 bg-indigo-500/20 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 text-indigo-400">
+                <i class="fas fa-bolt text-2xl"></i>
             </div>
-            <h3 class="text-xl font-bold text-white mb-3 group-hover:text-indigo-300 transition-colors">Streamlined Workflow</h3>
-            <p class="text-gray-400 leading-relaxed">Post daily updates in seconds. Keep the team in sync without the meeting fatigue. Focus on what you do best: coding.</p>
+            <h3 class="text-xl font-bold text-white mb-3">Streamlined Workflow</h3>
+            <p class="text-gray-400 leading-relaxed">Post daily updates in seconds. Keep the team in sync without the meeting fatigue.</p>
         </div>
 
-        <div class="interactive-card bg-white/5 dark:bg-gray-800/40 p-8 rounded-2xl shadow-xl border border-white/10 backdrop-blur-md animate-dynamic group hover:border-purple-500/30 transition-all" style="animation-delay: 0.2s;">
-            <div class="h-14 w-14 bg-purple-500/20 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                <i class="fas fa-chart-line text-2xl text-purple-400"></i>
+        <div class="glass-panel p-8 rounded-2xl hover:bg-white/5 transition-all duration-300 group border border-white/5 hover:border-purple-500/30">
+            <div class="h-14 w-14 bg-purple-500/20 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 text-purple-400">
+                <i class="fas fa-chart-line text-2xl"></i>
             </div>
-            <h3 class="text-xl font-bold text-white mb-3 group-hover:text-purple-300 transition-colors">Transparent Progress</h3>
-            <p class="text-gray-400 leading-relaxed">Get a real-time view of the entire team's activity. Understand dependencies and celebrate collective achievements.</p>
+            <h3 class="text-xl font-bold text-white mb-3">Transparent Progress</h3>
+            <p class="text-gray-400 leading-relaxed">Get a real-time view of the entire team's activity. Understand dependencies instantly.</p>
         </div>
 
-        <div class="interactive-card bg-white/5 dark:bg-gray-800/40 p-8 rounded-2xl shadow-xl border border-white/10 backdrop-blur-md animate-dynamic group hover:border-emerald-500/30 transition-all" style="animation-delay: 0.4s;">
-            <div class="h-14 w-14 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                <i class="fas fa-user-plus text-2xl text-emerald-400"></i>
+        <div class="glass-panel p-8 rounded-2xl hover:bg-white/5 transition-all duration-300 group border border-white/5 hover:border-emerald-500/30">
+            <div class="h-14 w-14 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 text-emerald-400">
+                <i class="fas fa-user-plus text-2xl"></i>
             </div>
-            <h3 class="text-xl font-bold text-white mb-3 group-hover:text-emerald-300 transition-colors">Seamless Onboarding</h3>
-            <p class="text-gray-400 leading-relaxed">A simple, clear path for new candidates to join the team. Admins can review, interview, and approve applications in one place.</p>
+            <h3 class="text-xl font-bold text-white mb-3">Seamless Onboarding</h3>
+            <p class="text-gray-400 leading-relaxed">A simple, clear path for new candidates to join the team. Review and approve in one place.</p>
         </div>
     </div>
 </div>
-
-<script>
-    // Script for interactive 3D hero object
-    const heroContainer = document.getElementById('hero-3d-container');
-    const heroScene = new THREE.Scene();
-    const heroCamera = new THREE.PerspectiveCamera(75, heroContainer.clientWidth / heroContainer.clientHeight, 0.1, 1000);
-    const heroRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    heroRenderer.setSize(heroContainer.clientWidth, heroContainer.clientHeight);
-    heroContainer.appendChild(heroRenderer.domElement);
-
-    const geometry = new THREE.IcosahedronGeometry(1, 0);
-    const material = new THREE.MeshStandardMaterial({ color: 0x6366F1, wireframe: true });
-    const sphere = new THREE.Mesh(geometry, material);
-    heroScene.add(sphere);
-
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    heroScene.add(ambientLight);
-    const pointLight = new THREE.PointLight(0xffffff, 0.5);
-    pointLight.position.set(2, 3, 4);
-    heroScene.add(pointLight);
-
-    heroCamera.position.z = 3;
-
-    function heroAnimate() {
-        requestAnimationFrame(heroAnimate);
-        sphere.rotation.x += 0.001;
-        sphere.rotation.y += 0.001;
-        heroRenderer.render(heroScene, heroCamera);
-    }
-    heroAnimate();
-
-    // Script for interactive card tilt effect
-    document.querySelectorAll('.interactive-card').forEach(card => {
-        card.addEventListener('mousemove', (e) => {
-            const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            const rotateY = -1/10 * (x - rect.width/2);
-            const rotateX = 1/10 * (y - rect.height/2);
-            card.style.setProperty('--rotateX', `${rotateX}deg`);
-            card.style.setProperty('--rotateY', `${rotateY}deg`);
-        });
-        card.addEventListener('mouseleave', () => {
-            card.style.setProperty('--rotateX', '0deg');
-            card.style.setProperty('--rotateY', '0deg');
-        });
-    });
-</script>
 {% endblock %}
