@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, jsonify
 from flask_login import login_required, current_user
 from extensions import db, bcrypt
 from models import User, JobApplication, ActivityUpdate, CodeSnippet, Project, Transaction, Order, AffiliateAd, ActivityLog, JobOpening, Feedback, CodeTestSubmission, ModeratorAssignmentHistory, Product, ProductImage, Invoice, InvoiceItem, BRD, LearningContent
@@ -8,8 +8,19 @@ from sqlalchemy import func, or_
 from werkzeug.utils import secure_filename
 from invoice_service import InvoiceGenerator, BrdGenerator
 import os
+import cloudinary.uploader
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
+
+# --- TAX CONFIGURATION ---
+GST_RATES = {
+    'Electronics': 18.0,
+    'Apparel': 12.0,
+    'Home & Office': 12.0,
+    'Books': 5.0,
+    'Accessories': 12.0,
+    'Other': 18.0 # Default
+}
 
 @admin_bp.route('/')
 @login_required
@@ -178,7 +189,16 @@ def toggle_user_status(user_id):
     user_to_toggle.is_active = not user_to_toggle.is_active
     db.session.commit()
     status = "activated" if user_to_toggle.is_active else "deactivated"
+    
     log_user_action("Toggle User Status", f"{status.title()} user {user_to_toggle.username}")
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({
+            'success': True,
+            'message': f'User {user_to_toggle.username} has been {status}.',
+            'is_active': user_to_toggle.is_active
+        })
+
     flash(f'User {user_to_toggle.username} has been {status}.', 'success')
     return redirect(url_for('admin.manage_users'))
 
@@ -247,9 +267,17 @@ def update_user_profile(user_id):
         file = request.files['resume']
         if file.filename != '':
             if file and file.filename.endswith('.pdf'):
-                filename = secure_filename(f"{user_to_update.id}_{file.filename}")
-                file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
-                user_to_update.resume_filename = filename
+                try:
+                    upload_result = cloudinary.uploader.upload(
+                        file, 
+                        resource_type="raw", 
+                        folder="resumes",
+                        public_id=f"resume_{user_to_update.id}"
+                    )
+                    user_to_update.resume_filename = upload_result['secure_url']
+                except Exception as e:
+                    flash(f'Upload failed: {str(e)}', 'danger')
+                    return redirect(url_for('admin.edit_user_profile', user_id=user_id))
             else:
                 flash('Only PDF files are allowed for resumes.', 'danger')
                 return redirect(url_for('admin.edit_user_profile', user_id=user_id))
@@ -309,7 +337,12 @@ def delete_ad(ad_id):
     ad_name = ad_to_delete.ad_name
     db.session.delete(ad_to_delete)
     db.session.commit()
+    
     log_user_action("Delete Ad", f"Deleted ad {ad_name}")
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': True, 'message': f'Ad "{ad_name}" deleted.', 'remove_row_id': f'ad-{ad_id}'})
+
     flash(f'Ad "{ad_name}" has been deleted.', 'success')
     return redirect(url_for('admin.manage_ads'))
 
@@ -637,6 +670,10 @@ def delete_product(product_id):
     db.session.delete(product)
     db.session.commit()
     log_user_action("Delete Product", f"Deleted product {name}")
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': True, 'message': 'Product deleted.', 'remove_row_id': f'product-{product_id}'})
+
     flash('Product deleted.', 'success')
     return redirect(url_for('admin.manage_inventory'))
 
@@ -743,6 +780,10 @@ def delete_invoice(invoice_id):
     db.session.delete(invoice)
     db.session.commit()
     log_user_action("Delete Invoice", f"Deleted invoice {invoice_number}")
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': True, 'message': 'Invoice deleted.', 'remove_row_id': f'invoice-{invoice_id}'})
+
     flash(f'Invoice {invoice_number} has been deleted.', 'success')
     return redirect(url_for('admin.manage_invoices'))
 
@@ -791,6 +832,12 @@ def send_invoice_reminder(invoice_id):
         attachments=[attachment]
     )
 
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        if email_sent:
+            return jsonify({'success': True, 'message': f'Reminder sent to {invoice.recipient_email}.'})
+        else:
+            return jsonify({'success': False, 'message': 'Failed to send reminder.'})
+
     if email_sent: flash(f'Reminder sent to {invoice.recipient_email}.', 'success')
     else: flash('Failed to send reminder email.', 'danger')
     return redirect(url_for('admin.manage_invoices'))
@@ -838,22 +885,58 @@ def update_order_status(order_id):
                 last_invoice = Invoice.query.order_by(Invoice.id.desc()).first()
                 next_id = (last_invoice.id + 1) if last_invoice else 1
                 inv_num = f"INV{datetime.utcnow().year}{next_id:03d}"
-                subtotal = order.total_amount
-                tax_rate = 18.0
-                tax_amount = subtotal * (tax_rate / 100)
-                final_total = subtotal + tax_amount
+                
+                # --- REVISED TAX LOGIC: INCLUSIVE & CATEGORY-BASED ---
+                calculated_subtotal = 0.0
+                calculated_tax_amt = 0.0
+                invoice_items_to_add = []
+
+                for order_item in order.items:
+                    # Find product to determine tax rate
+                    product = Product.query.filter_by(name=order_item.product_name).first()
+                    category = product.category if product and product.category else 'Other'
+                    tax_rate_percent = GST_RATES.get(category, 18.0) # Default to 18%
+
+                    # Logic: Price is Inclusive.
+                    # Base Price = Total / (1 + TaxRate/100)
+                    inclusive_total_item = order_item.price_at_purchase * order_item.quantity
+                    base_total_item = inclusive_total_item / (1 + (tax_rate_percent / 100.0))
+                    tax_amt_item = inclusive_total_item - base_total_item
+                    
+                    # Base Unit Price
+                    base_unit_price = order_item.price_at_purchase / (1 + (tax_rate_percent / 100.0))
+
+                    calculated_subtotal += base_total_item
+                    calculated_tax_amt += tax_amt_item
+                    
+                    # Create Invoice Item with BASE unit price so sum(items) == Subtotal
+                    inv_item = InvoiceItem(
+                        description=order_item.product_name, 
+                        quantity=order_item.quantity, 
+                        price=base_unit_price, 
+                        invoice_id=None # Assigned after invoice creation
+                    )
+                    invoice_items_to_add.append(inv_item)
+
+                # Final total should match order total exactly (or within floating point tolerance)
+                # We use order.total_amount to ensure buyer isn't charged 0.01 diff
+                final_total = order.total_amount
+                
+                # Calculate "Effective Tax Rate" for the DB field (since it only stores one rate)
+                # Rate = (Total Tax / Subtotal) * 100
+                effective_tax_rate = (calculated_tax_amt / calculated_subtotal * 100) if calculated_subtotal > 0 else 0.0
 
                 new_invoice = Invoice(
                     invoice_number=inv_num, recipient_name=order.buyer.username, recipient_email=order.buyer.email,
                     bill_to_address=order.billing_address or order.shipping_address, ship_to_address=order.shipping_address,
-                    order_id=order.order_number, subtotal=subtotal, tax=tax_rate, total_amount=final_total,
-                    due_date=datetime.utcnow().date(), notes="Auto-generated invoice for accepted order.", admin_id=current_user.id
+                    order_id=order.order_number, subtotal=calculated_subtotal, tax=effective_tax_rate, total_amount=final_total,
+                    due_date=datetime.utcnow().date(), notes="Auto-generated invoice. Prices include applicable GST.", admin_id=current_user.id
                 )
                 db.session.add(new_invoice)
-                db.session.commit()
+                db.session.commit() # Commit to get ID
 
-                for order_item in order.items:
-                    inv_item = InvoiceItem(description=order_item.product_name, quantity=order_item.quantity, price=order_item.price_at_purchase, invoice_id=new_invoice.id)
+                for inv_item in invoice_items_to_add:
+                    inv_item.invoice_id = new_invoice.id
                     db.session.add(inv_item)
                 db.session.commit()
 
@@ -898,6 +981,10 @@ def delete_job_opening(job_id):
     db.session.delete(job)
     db.session.commit()
     log_user_action("Delete Job", f"Deleted job opening {job.title}")
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': True, 'message': 'Job deleted.', 'remove_row_id': f'job-{job_id}'})
+
     flash(f'Job opening "{job.title}" deleted.', 'success')
     return redirect(url_for('admin.manage_records'))
 
@@ -909,6 +996,10 @@ def delete_feedback(feedback_id):
     db.session.delete(feedback)
     db.session.commit()
     log_user_action("Delete Feedback", f"Deleted feedback ID {feedback_id}")
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': True, 'message': 'Feedback deleted.', 'remove_row_id': f'feed-{feedback_id}'})
+
     flash('Feedback record deleted.', 'success')
     return redirect(url_for('admin.manage_records'))
 
@@ -920,6 +1011,10 @@ def delete_submission_record(submission_id):
     db.session.delete(submission)
     db.session.commit()
     log_user_action("Delete Submission", f"Deleted submission ID {submission_id}")
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': True, 'message': 'Submission deleted.', 'remove_row_id': f'sub-{submission_id}'})
+
     flash('Code submission record deleted.', 'success')
     return redirect(url_for('admin.manage_records'))
 
@@ -930,6 +1025,10 @@ def delete_assignment_history(history_id):
     history_record = ModeratorAssignmentHistory.query.get_or_404(history_id)
     db.session.delete(history_record)
     db.session.commit()
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': True, 'message': 'History deleted.', 'remove_row_id': f'hist-{history_id}'})
+
     flash('Assignment history record deleted.', 'success')
     return redirect(url_for('admin.manage_records'))
 
@@ -946,6 +1045,10 @@ def delete_coding_event(user_id):
     CodeTestSubmission.query.filter_by(candidate_id=user_id).delete()
     db.session.commit()
     log_user_action("Clear Event", f"Cleared event history for {candidate.username}")
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': True, 'message': 'Event cleared.', 'remove_row_id': f'evt-{user_id}'})
+
     flash(f'Coding event history for {candidate.username} has been cleared.', 'success')
     return redirect(url_for('admin.manage_records'))
 

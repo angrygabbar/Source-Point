@@ -7,6 +7,7 @@ from sqlalchemy import or_
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime
+import cloudinary.uploader
 
 main_bp = Blueprint('main', __name__)
 
@@ -159,16 +160,29 @@ def update_profile():
     current_user.primary_skill_experience = request.form.get('primary_skill_experience')
     current_user.secondary_skill = request.form.get('secondary_skill')
     current_user.secondary_skill_experience = request.form.get('secondary_skill_experience')
+    
     if 'resume' in request.files:
         file = request.files['resume']
         if file.filename != '':
             if file and file.filename.endswith('.pdf'):
-                filename = secure_filename(f"{current_user.id}_{file.filename}")
-                file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
-                current_user.resume_filename = filename
+                try:
+                    # --- CLOUDINARY LOGIC START ---
+                    upload_result = cloudinary.uploader.upload(
+                        file, 
+                        resource_type="raw",  # 'raw' is better for non-image files like PDFs
+                        folder="resumes",      # Optional: Keep resumes organized
+                        public_id=f"resume_{current_user.id}" # Overwrite old resume with same ID
+                    )
+                    # Store the secure URL in the database instead of the filename
+                    current_user.resume_filename = upload_result['secure_url']
+                    # --- CLOUDINARY LOGIC END ---
+                except Exception as e:
+                    flash(f'Upload failed: {str(e)}', 'danger')
+                    return redirect(url_for('main.profile'))
             else:
                 flash('Only PDF files are allowed for resumes.', 'danger')
                 return redirect(url_for('main.profile'))
+                
     db.session.commit()
     log_user_action("Update Profile", "User updated their profile details")
     flash('Your profile has been updated successfully!', 'success')

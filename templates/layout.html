@@ -198,15 +198,145 @@
     </div>
 
     <script>
+        // --- GLOBAL NOTIFICATION FUNCTION ---
+        window.showToast = function(message, category = 'success') {
+            const container = document.getElementById('flash-container');
+            const div = document.createElement('div');
+            div.className = 'pointer-events-auto flex items-center w-full max-w-xs p-4 mb-4 text-gray-200 bg-gray-800/90 rounded-lg shadow-xl border border-white/10 backdrop-blur-md animate__animated animate__fadeInRight';
+            div.setAttribute('role', 'alert');
+            
+            const iconClass = category === 'success' ? 'fa-check' : 'fa-exclamation';
+            const iconColorClass = category === 'success' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400';
+            
+            div.innerHTML = `
+                <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg ${iconColorClass}">
+                    <i class="fas ${iconClass}"></i>
+                </div>
+                <div class="ml-3 text-sm font-normal">${message}</div>
+                <button type="button" class="ml-auto -mx-1.5 -my-1.5 text-gray-400 hover:text-white rounded-lg p-1.5 inline-flex h-8 w-8" onclick="this.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            container.appendChild(div);
+            
+            // Auto-dismiss
+            setTimeout(() => {
+                div.style.transition = 'all 0.5s ease-out';
+                div.style.opacity = '0';
+                div.style.transform = 'translateX(100%)';
+                setTimeout(() => div.remove(), 500);
+            }, 4000);
+        };
+
+        // --- GENERIC AJAX HANDLER FOR LINKS (GET) ---
+        window.handleAjaxUrl = async function(event, url, confirmMsg = null) {
+            event.preventDefault();
+            if (confirmMsg && !confirm(confirmMsg)) return;
+
+            const btn = event.currentTarget;
+            // Store original content but check if it's an icon or text
+            const originalContent = btn.innerHTML;
+            
+            // Add spinning state
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.style.pointerEvents = 'none'; // Prevent double click
+
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (window.showToast) window.showToast(data.message, 'success');
+                    
+                    // If response has a row ID to remove
+                    if (data.remove_row_id) {
+                        const row = document.getElementById(data.remove_row_id);
+                        if (row) {
+                            row.style.transition = 'all 0.5s ease';
+                            row.style.opacity = '0';
+                            row.style.transform = 'translateX(10px)';
+                            setTimeout(() => row.remove(), 500);
+                        }
+                    } else {
+                        // Restore button if not removing (e.g. just an action)
+                        btn.innerHTML = originalContent;
+                        btn.style.pointerEvents = 'auto';
+                    }
+                } else {
+                    if (window.showToast) window.showToast(data.message || 'Action failed', 'error');
+                    btn.innerHTML = originalContent;
+                    btn.style.pointerEvents = 'auto';
+                }
+            } catch (e) {
+                console.error(e);
+                if (window.showToast) window.showToast('Network error', 'error');
+                btn.innerHTML = originalContent;
+                btn.style.pointerEvents = 'auto';
+            }
+        };
+
+        // --- GENERIC AJAX HANDLER FOR FORMS (POST) ---
+        window.handleAjaxForm = async function(event, confirmMsg = null) {
+            event.preventDefault();
+            if (confirmMsg && !confirm(confirmMsg)) return;
+
+            const form = event.target;
+            const btn = form.querySelector('button[type="submit"]');
+            const originalContent = btn.innerHTML;
+            
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+
+            try {
+                const formData = new FormData(form);
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    if (window.showToast) window.showToast(data.message, 'success');
+                    // Restore button
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
+                } else {
+                    if (window.showToast) window.showToast(data.message || 'Action failed', 'error');
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
+                }
+            } catch (e) {
+                console.error(e);
+                if (window.showToast) window.showToast('Network error', 'error');
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            }
+        };
+
         document.addEventListener('DOMContentLoaded', () => {
+            // --- AUTO-DISMISS SERVER NOTIFICATIONS ---
+            const alerts = document.querySelectorAll('#flash-container [role="alert"]');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    alert.style.transition = 'all 0.5s ease-out';
+                    alert.style.opacity = '0';
+                    alert.style.transform = 'translateX(100%)';
+                    setTimeout(() => alert.remove(), 500);
+                }, 4000);
+            });
+
+            // --- BACKGROUND ANIMATION (Three.js) ---
             const scene = new THREE.Scene();
-            // Increased far plane for depth
             const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 2000);
             const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setClearColor(0x00000a, 1);
 
-            // Texture Helpers
             function createStarTexture() {
                 const canvas = document.createElement('canvas');
                 canvas.width = 32;
@@ -243,7 +373,7 @@
                 const positions = new Float32Array(count * 3);
                 const colorsAttribute = new Float32Array(count * 3);
                 for (let i = 0; i < count; i++) {
-                    const x = (Math.random() - 0.5) * 3000; // Wider spread
+                    const x = (Math.random() - 0.5) * 3000; 
                     const y = (Math.random() - 0.5) * 3000;
                     const z = (Math.random() - 0.5) * 3000;
                     positions.set([x, y, z], i * 3);
@@ -272,25 +402,17 @@
             scene.add(mediumStars);
             scene.add(nebulae);
             
-            // Start camera further back
             camera.position.z = 1500; 
 
             function animate() {
                 requestAnimationFrame(animate);
-                
-                // Automatic Rotation (Much Slower)
                 brightStars.rotation.y += 0.00008;
                 mediumStars.rotation.y += 0.00005;
                 nebulae.rotation.y += 0.0001;
-                
-                // Very Slow Forward "Drift" Movement
                 camera.position.z -= 0.05;
-                
-                // Reset loop logic (Infinite starfield)
                 if (camera.position.z < -500) {
                     camera.position.z = 1500;
                 }
-
                 renderer.render(scene, camera);
             }
             animate();
@@ -301,7 +423,6 @@
                 renderer.setSize(window.innerWidth, window.innerHeight);
             });
             
-            // GSAP Entry for Main Content
             gsap.from("main > div", { opacity: 0, y: 20, duration: 0.6, ease: "power2.out", delay: 0.1 });
         });
     </script>

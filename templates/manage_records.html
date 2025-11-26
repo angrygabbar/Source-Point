@@ -62,10 +62,10 @@
                     </thead>
                     <tbody class="divide-y divide-white/5">
                         {% for job in jobs %}
-                        <tr @click="expandedRow = expandedRow === 'job-{{ job.id }}' ? null : 'job-{{ job.id }}'" class="hover:bg-white/5 transition-colors cursor-pointer group">
+                        <tr id="job-{{ job.id }}" @click="expandedRow = expandedRow === 'job-details-{{ job.id }}' ? null : 'job-details-{{ job.id }}'" class="hover:bg-white/5 transition-colors cursor-pointer group">
                             <td class="px-6 py-4 font-medium text-white">
                                 {{ job.title }}
-                                <i :class="expandedRow === 'job-{{ job.id }}' ? 'rotate-180' : ''" class="fas fa-chevron-down ml-2 text-xs text-gray-600 transition-transform"></i>
+                                <i :class="expandedRow === 'job-details-{{ job.id }}' ? 'rotate-180' : ''" class="fas fa-chevron-down ml-2 text-xs text-gray-600 transition-transform"></i>
                             </td>
                             <td class="px-6 py-4 text-center">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border 
@@ -76,12 +76,16 @@
                             </td>
                             <td class="px-6 py-4 text-gray-400 font-mono text-xs">{{ job.created_at.strftime('%b %d, %Y') }}</td>
                             <td class="px-6 py-4 text-right">
-                                <a href="{{ url_for('admin.delete_job_opening', job_id=job.id) }}" class="text-gray-500 hover:text-red-400 transition-colors p-2" title="Delete" onclick="event.stopPropagation(); return confirm('Are you sure? This will delete the job and all associated applications.');">
+                                <a href="#" 
+                                   class="text-gray-500 hover:text-red-400 transition-colors p-2" 
+                                   title="Delete" 
+                                   data-url="{{ url_for('admin.delete_job_opening', job_id=job.id) }}"
+                                   onclick="event.stopPropagation(); handleAjaxUrl(event, this.dataset.url, 'Are you sure? This will delete the job and all associated applications.');">
                                     <i class="fas fa-trash-alt"></i>
                                 </a>
                             </td>
                         </tr>
-                        <tr x-show="expandedRow === 'job-{{ job.id }}'" x-transition class="bg-black/20 border-b border-white/5">
+                        <tr x-show="expandedRow === 'job-details-{{ job.id }}'" x-transition class="bg-black/20 border-b border-white/5">
                             <td colspan="4" class="px-6 py-6">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
@@ -132,20 +136,23 @@
                     </thead>
                     <tbody class="divide-y divide-white/5">
                         {% for f in feedback %}
-                        <tr @click="expandedRow = expandedRow === 'feed-{{ f.id }}' ? null : 'feed-{{ f.id }}'" class="hover:bg-white/5 transition-colors cursor-pointer">
+                        <tr id="feed-{{ f.id }}" @click="expandedRow = expandedRow === 'feed-details-{{ f.id }}' ? null : 'feed-details-{{ f.id }}'" class="hover:bg-white/5 transition-colors cursor-pointer">
                             <td class="px-6 py-4 font-medium text-white">
                                 {{ f.candidate.username }}
-                                <i :class="expandedRow === 'feed-{{ f.id }}' ? 'rotate-180' : ''" class="fas fa-chevron-down ml-2 text-xs text-gray-600 transition-transform"></i>
+                                <i :class="expandedRow === 'feed-details-{{ f.id }}' ? 'rotate-180' : ''" class="fas fa-chevron-down ml-2 text-xs text-gray-600 transition-transform"></i>
                             </td>
                             <td class="px-6 py-4 text-indigo-300">{{ f.moderator.username }}</td>
                             <td class="px-6 py-4 text-gray-400 font-mono text-xs">{{ f.created_at.strftime('%b %d, %Y') }}</td>
                             <td class="px-6 py-4 text-right">
-                                <a href="{{ url_for('admin.delete_feedback', feedback_id=f.id) }}" class="text-gray-500 hover:text-red-400 transition-colors" onclick="event.stopPropagation(); return confirm('Are you sure?');">
+                                <a href="#" 
+                                   class="text-gray-500 hover:text-red-400 transition-colors" 
+                                   data-url="{{ url_for('admin.delete_feedback', feedback_id=f.id) }}"
+                                   onclick="event.stopPropagation(); handleAjaxUrl(event, this.dataset.url, 'Are you sure?');">
                                     <i class="fas fa-trash-alt"></i>
                                 </a>
                             </td>
                         </tr>
-                        <tr x-show="expandedRow === 'feed-{{ f.id }}'" x-transition class="bg-black/20 border-b border-white/5">
+                        <tr x-show="expandedRow === 'feed-details-{{ f.id }}'" x-transition class="bg-black/20 border-b border-white/5">
                             <td colspan="4" class="px-6 py-6">
                                 <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
                                     {% for label, score in [('Correctness', f.code_correctness), ('Efficiency', f.code_efficiency), ('Readability', f.code_readability), ('Problem Solving', f.problem_solving), ('Time Mgmt', f.time_management)] %}
@@ -183,7 +190,7 @@
                     </thead>
                     <tbody class="divide-y divide-white/5">
                         {% for sub in submissions %}
-                        <tr @click="expandedRow = expandedRow === 'sub-{{ sub.id }}' ? null : 'sub-{{ sub.id }}'" class="hover:bg-white/5 transition-colors cursor-pointer">
+                        <tr id="sub-{{ sub.id }}" @click="expandedRow = expandedRow === 'sub-details-{{ sub.id }}' ? null : 'sub-details-{{ sub.id }}'" class="hover:bg-white/5 transition-colors cursor-pointer">
                             <td class="px-6 py-4 font-medium text-white">{{ sub.candidate_submitter.username }}</td>
                             <td class="px-6 py-4 text-gray-300">
                                 <span class="px-2 py-1 bg-white/10 rounded text-xs">{{ sub.language|title }}</span>
@@ -191,12 +198,15 @@
                             <td class="px-6 py-4 text-indigo-300">{{ sub.test_recipient.username }}</td>
                             <td class="px-6 py-4 text-gray-400 font-mono text-xs">{{ sub.submitted_at.strftime('%b %d, %H:%M') }}</td>
                             <td class="px-6 py-4 text-right">
-                                <a href="{{ url_for('admin.delete_submission_record', submission_id=sub.id) }}" class="text-gray-500 hover:text-red-400 transition-colors" onclick="event.stopPropagation(); return confirm('Are you sure?');">
+                                <a href="#" 
+                                   class="text-gray-500 hover:text-red-400 transition-colors" 
+                                   data-url="{{ url_for('admin.delete_submission_record', submission_id=sub.id) }}"
+                                   onclick="event.stopPropagation(); handleAjaxUrl(event, this.dataset.url, 'Are you sure?');">
                                     <i class="fas fa-trash-alt"></i>
                                 </a>
                             </td>
                         </tr>
-                        <tr x-show="expandedRow === 'sub-{{ sub.id }}'" x-transition class="bg-black/20 border-b border-white/5">
+                        <tr x-show="expandedRow === 'sub-details-{{ sub.id }}'" x-transition class="bg-black/20 border-b border-white/5">
                             <td colspan="5" class="px-0 py-0">
                                 <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/10">
                                     <div class="p-4">
@@ -232,13 +242,16 @@
                     </thead>
                     <tbody class="divide-y divide-white/5">
                         {% for record in history %}
-                        <tr class="hover:bg-white/5 transition-colors">
+                        <tr id="hist-{{ record.id }}" class="hover:bg-white/5 transition-colors">
                             <td class="px-6 py-4 font-medium text-white">{{ record.candidate.username }}</td>
                             <td class="px-6 py-4 text-indigo-300">{{ record.moderator.username }}</td>
                             <td class="px-6 py-4 text-gray-300">{{ record.problem.title }}</td>
                             <td class="px-6 py-4 text-gray-400 font-mono text-xs">{{ record.assigned_at.strftime('%b %d, %Y') }}</td>
                             <td class="px-6 py-4 text-right">
-                                <a href="{{ url_for('admin.delete_assignment_history', history_id=record.id) }}" class="text-gray-500 hover:text-red-400 transition-colors" onclick="return confirm('Are you sure?');">
+                                <a href="#" 
+                                   class="text-gray-500 hover:text-red-400 transition-colors" 
+                                   data-url="{{ url_for('admin.delete_assignment_history', history_id=record.id) }}"
+                                   onclick="handleAjaxUrl(event, this.dataset.url, 'Are you sure?');">
                                     <i class="fas fa-trash-alt"></i>
                                 </a>
                             </td>
@@ -265,7 +278,7 @@
                     </thead>
                     <tbody class="divide-y divide-white/5">
                         {% for event in events %}
-                            <tr @click="expandedRow = expandedRow === 'evt-{{ event.id }}' ? null : 'evt-{{ event.id }}'" class="hover:bg-white/5 transition-colors cursor-pointer">
+                            <tr id="evt-{{ event.id }}" @click="expandedRow = expandedRow === 'evt-details-{{ event.id }}' ? null : 'evt-details-{{ event.id }}'" class="hover:bg-white/5 transition-colors cursor-pointer">
                                 <td class="px-6 py-4 font-medium text-white">{{ event.username }}</td>
                                 <td class="px-6 py-4 text-gray-300">{{ event.assigned_problem.title }}</td>
                                 <td class="px-6 py-4 text-indigo-300">
@@ -273,12 +286,16 @@
                                 </td>
                                 <td class="px-6 py-4 text-gray-400 font-mono text-xs">{{ event.test_end_time.strftime('%b %d, %Y') if event.test_end_time else 'N/A' }}</td>
                                 <td class="px-6 py-4 text-right">
-                                    <a href="{{ url_for('admin.delete_coding_event', user_id=event.id) }}" class="text-gray-500 hover:text-red-400 transition-colors" title="Clear History" onclick="event.stopPropagation(); return confirm('Are you sure?');">
+                                    <a href="#" 
+                                       class="text-gray-500 hover:text-red-400 transition-colors" 
+                                       title="Clear History" 
+                                       data-url="{{ url_for('admin.delete_coding_event', user_id=event.id) }}"
+                                       onclick="event.stopPropagation(); handleAjaxUrl(event, this.dataset.url, 'Are you sure?');">
                                         <i class="fas fa-trash-alt"></i>
                                     </a>
                                 </td>
                             </tr>
-                            <tr x-show="expandedRow === 'evt-{{ event.id }}'" x-transition class="bg-black/20 border-b border-white/5">
+                            <tr x-show="expandedRow === 'evt-details-{{ event.id }}'" x-transition class="bg-black/20 border-b border-white/5">
                                 <td colspan="5" class="px-6 py-6">
                                     <strong class="block text-xs uppercase text-gray-500 mb-2">Latest Code Submission</strong>
                                     {% set submissions_list = event.test_submissions.all() %}
