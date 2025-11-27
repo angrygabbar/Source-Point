@@ -20,3 +20,5 @@ python-dotenv
 beautifulsoup4==4.12.3
 sib-api-v3-sdk
 cloudinary
+Flask-Caching
+Flask-Limiter

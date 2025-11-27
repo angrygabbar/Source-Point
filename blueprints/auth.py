@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
-from extensions import db, bcrypt
+from extensions import db, bcrypt, limiter
 from models import User
 from utils import log_user_action, send_email
 from datetime import datetime
@@ -8,6 +8,7 @@ from datetime import datetime
 auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/login-register', methods=['GET', 'POST'])
+@limiter.limit("10 per minute") # Limit login attempts to 10 per minute per IP
 def login_register():
     if current_user.is_authenticated: return redirect(url_for('main.dashboard'))
     if request.method == 'POST':
@@ -83,6 +84,7 @@ def forgot_password():
     return render_template('forgot_password.html')
 
 @auth_bp.route('/reset_with_question/<int:user_id>', methods=['GET', 'POST'])
+@limiter.limit("5 per minute") # Limit password reset attempts
 def reset_with_question(user_id):
     if current_user.is_authenticated:
         return redirect(url_for('main.home'))

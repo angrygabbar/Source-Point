@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, current_app
 from flask_login import login_required, current_user
-from extensions import db, bcrypt
+from extensions import db, bcrypt, cache
 from models import User, Message, AffiliateAd, LearningContent, JobOpening, JobApplication
 from utils import role_required, log_user_action, send_email
 from sqlalchemy import or_
@@ -20,9 +20,11 @@ SECRET_QUESTIONS = [
 ]
 
 @main_bp.route('/')
+@cache.cached(timeout=600) # Cache home page for 10 minutes
 def home(): return render_template('home.html')
 
 @main_bp.route('/offers')
+@cache.cached(timeout=300) # Cache offers for 5 minutes
 def offers():
     ads = AffiliateAd.query.all()
     return render_template('offers.html', ads=ads)
@@ -49,15 +51,10 @@ def submit_contact():
     <p>{query}</p>
     """
     
-    # Send to support/admin email
     admin_email = "admin@sourcepoint.in"
-    
-    # Find an admin user to address the email to (for template variable {{ user.username }})
     admin_user = User.query.filter_by(role='admin').first()
     
-    # If no admin exists, fallback to a dummy object or current user if available
     if not admin_user:
-        # Simple class to mimic user object for template rendering
         class DummyUser:
             username = "Admin"
             email = admin_email
@@ -166,16 +163,13 @@ def update_profile():
         if file.filename != '':
             if file and file.filename.endswith('.pdf'):
                 try:
-                    # --- CLOUDINARY LOGIC START ---
                     upload_result = cloudinary.uploader.upload(
                         file, 
-                        resource_type="raw",  # 'raw' is better for non-image files like PDFs
-                        folder="resumes",      # Optional: Keep resumes organized
-                        public_id=f"resume_{current_user.id}" # Overwrite old resume with same ID
+                        resource_type="raw",  
+                        folder="resumes",      
+                        public_id=f"resume_{current_user.id}" 
                     )
-                    # Store the secure URL in the database instead of the filename
                     current_user.resume_filename = upload_result['secure_url']
-                    # --- CLOUDINARY LOGIC END ---
                 except Exception as e:
                     flash(f'Upload failed: {str(e)}', 'danger')
                     return redirect(url_for('main.profile'))
@@ -228,12 +222,14 @@ def change_password():
 @main_bp.route('/learning')
 @login_required
 @role_required(['candidate', 'admin', 'developer'])
+@cache.cached(timeout=600) # Cache learning hub for 10 minutes
 def learning():
     return render_template('learning.html')
 
 @main_bp.route('/learn/<language>')
 @login_required
 @role_required(['candidate', 'admin', 'developer'])
+@cache.cached(timeout=300) # Cache individual tutorials
 def learn_language(language):
     supported_languages = ['java', 'cpp', 'c', 'sql', 'dbms', 'plsql', 'mysql']
     if language in supported_languages:

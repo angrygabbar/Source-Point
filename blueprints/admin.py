@@ -140,8 +140,37 @@ def admin_activity_logs():
 @login_required
 @role_required('admin')
 def manage_users():
-    users = User.query.order_by(User.id).all()
-    return render_template('manage_users.html', users=users)
+    # --- Server-Side Pagination & Filtering Logic ---
+    page = request.args.get('page', 1, type=int)
+    search_query = request.args.get('search', '').strip()
+    role_filter = request.args.get('role', 'all')
+    status_filter = request.args.get('status', 'all')
+
+    query = User.query
+
+    # Apply Search
+    if search_query:
+        query = query.filter(or_(
+            User.username.ilike(f"%{search_query}%"),
+            User.email.ilike(f"%{search_query}%")
+        ))
+
+    # Apply Filters
+    if role_filter != 'all':
+        query = query.filter_by(role=role_filter)
+    
+    if status_filter != 'all':
+        is_active = True if status_filter == 'active' else False
+        query = query.filter_by(is_active=is_active)
+
+    # Apply Pagination (12 items per page for a nice grid layout)
+    users_pagination = query.order_by(User.id).paginate(page=page, per_page=12, error_out=False)
+
+    return render_template('manage_users.html', 
+                           users=users_pagination, 
+                           current_search=search_query,
+                           current_role=role_filter,
+                           current_status=status_filter)
 
 @admin_bp.route('/create_user', methods=['POST'])
 @login_required
@@ -192,6 +221,7 @@ def toggle_user_status(user_id):
     
     log_user_action("Toggle User Status", f"{status.title()} user {user_to_toggle.username}")
 
+    # Check if the request is an AJAX request
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({
             'success': True,
@@ -268,6 +298,7 @@ def update_user_profile(user_id):
         if file.filename != '':
             if file and file.filename.endswith('.pdf'):
                 try:
+                    # --- CLOUDINARY LOGIC ---
                     upload_result = cloudinary.uploader.upload(
                         file, 
                         resource_type="raw", 
@@ -337,9 +368,8 @@ def delete_ad(ad_id):
     ad_name = ad_to_delete.ad_name
     db.session.delete(ad_to_delete)
     db.session.commit()
-    
     log_user_action("Delete Ad", f"Deleted ad {ad_name}")
-
+    
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'success': True, 'message': f'Ad "{ad_name}" deleted.', 'remove_row_id': f'ad-{ad_id}'})
 

@@ -14,31 +14,35 @@
         </button>
     </div>
 
-    <div class="glass-panel p-2 rounded-xl flex flex-col md:flex-row gap-2">
+    <!-- Server-Side Filter Form -->
+    <form method="GET" action="{{ url_for('admin.manage_users') }}" class="glass-panel p-2 rounded-xl flex flex-col md:flex-row gap-2">
         <div class="relative flex-1">
             <i class="fas fa-search absolute left-4 top-3.5 text-gray-500"></i>
-            <input type="text" id="searchInput" placeholder="Search by name or email..." 
+            <input type="text" name="search" value="{{ current_search }}" placeholder="Search by name or email..." 
                    class="w-full bg-black/20 border border-white/5 rounded-lg pl-10 pr-4 py-3 text-sm text-white placeholder-gray-500 focus:ring-1 focus:ring-indigo-500 focus:border-white/10 transition-all">
         </div>
         <div class="flex gap-2">
-            <select id="filter-role" class="bg-black/20 border border-white/5 rounded-lg px-4 py-3 text-sm text-gray-300 focus:ring-1 focus:ring-indigo-500 focus:bg-black/40 transition-all cursor-pointer min-w-[140px]">
-                <option value="all">All Roles</option>
-                <option value="admin">Admin</option>
-                <option value="developer">Developer</option>
-                <option value="moderator">Moderator</option>
-                <option value="candidate">Candidate</option>
-                <option value="buyer">Buyer</option>
+            <select name="role" onchange="this.form.submit()" class="bg-black/20 border border-white/5 rounded-lg px-4 py-3 text-sm text-gray-300 focus:ring-1 focus:ring-indigo-500 focus:bg-black/40 transition-all cursor-pointer min-w-[140px]">
+                <option value="all" {% if current_role == 'all' %}selected{% endif %}>All Roles</option>
+                <option value="admin" {% if current_role == 'admin' %}selected{% endif %}>Admin</option>
+                <option value="developer" {% if current_role == 'developer' %}selected{% endif %}>Developer</option>
+                <option value="moderator" {% if current_role == 'moderator' %}selected{% endif %}>Moderator</option>
+                <option value="candidate" {% if current_role == 'candidate' %}selected{% endif %}>Candidate</option>
+                <option value="buyer" {% if current_role == 'buyer' %}selected{% endif %}>Buyer</option>
             </select>
-            <select id="filter-status" class="bg-black/20 border border-white/5 rounded-lg px-4 py-3 text-sm text-gray-300 focus:ring-1 focus:ring-indigo-500 focus:bg-black/40 transition-all cursor-pointer min-w-[140px]">
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+            <select name="status" onchange="this.form.submit()" class="bg-black/20 border border-white/5 rounded-lg px-4 py-3 text-sm text-gray-300 focus:ring-1 focus:ring-indigo-500 focus:bg-black/40 transition-all cursor-pointer min-w-[140px]">
+                <option value="all" {% if current_status == 'all' %}selected{% endif %}>All Status</option>
+                <option value="active" {% if current_status == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if current_status == 'inactive' %}selected{% endif %}>Inactive</option>
             </select>
+            <!-- Hidden submit for 'Enter' key on search input -->
+            <button type="submit" class="hidden"></button>
         </div>
-    </div>
+    </form>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="user-grid">
-        {% for user in users %}
+        <!-- Iterate over users.items for pagination -->
+        {% for user in users.items %}
         <div class="group glass-panel rounded-xl p-5 border border-white/5 hover:border-indigo-500/30 transition-all duration-300 hover:-translate-y-1 user-card" 
              data-role="{{ user.role }}" 
              data-status="{% if user.is_active %}active{% else %}inactive{% endif %}"
@@ -59,6 +63,7 @@
                         <i class="fas fa-pen"></i>
                     </a>
                     {% if user.id != current_user.id %}
+                        <!-- AJAX Toggle Status Link -->
                         <a href="#" 
                            class="p-1.5 rounded-md transition-colors toggle-status-btn {% if user.is_active %}text-red-400 hover:text-red-300 hover:bg-red-500/10{% else %}text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10{% endif %}"
                            title="{% if user.is_active %}Deactivate{% else %}Activate{% endif %}"
@@ -87,19 +92,53 @@
                 </div>
             </div>
         </div>
+        {% else %}
+        <!-- Empty State inside loop else block -->
+        <div class="col-span-full py-20 text-center glass-panel rounded-xl border-dashed border-2 border-gray-700">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-800 mb-4">
+                <i class="fas fa-search text-2xl text-gray-600"></i>
+            </div>
+            <h3 class="text-lg font-medium text-white">No users found</h3>
+            <p class="text-gray-400 text-sm mt-1">Try adjusting your filters.</p>
+        </div>
         {% endfor %}
     </div>
 
-    <div id="no-results" class="hidden py-20 text-center glass-panel rounded-xl border-dashed border-2 border-gray-700">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-800 mb-4">
-            <i class="fas fa-search text-2xl text-gray-600"></i>
-        </div>
-        <h3 class="text-lg font-medium text-white">No users found</h3>
-        <p class="text-gray-400 text-sm mt-1">Adjust filters to see results.</p>
+    <!-- Pagination Controls -->
+    {% if users.pages > 1 %}
+    <div class="flex justify-center mt-8">
+        <nav class="glass-panel inline-flex rounded-lg shadow-sm isolate">
+            <!-- Previous Page -->
+            <a href="{{ url_for('admin.manage_users', page=users.prev_num, search=current_search, role=current_role, status=current_status) if users.has_prev else '#' }}" 
+               class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-400 hover:text-white border-r border-white/5 {{ 'opacity-50 cursor-not-allowed pointer-events-none' if not users.has_prev else '' }}">
+                <i class="fas fa-chevron-left mr-2"></i> Prev
+            </a>
+
+            <!-- Page Numbers -->
+            {% for page_num in users.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
+                {% if page_num %}
+                    <a href="{{ url_for('admin.manage_users', page=page_num, search=current_search, role=current_role, status=current_status) }}" 
+                       class="relative inline-flex items-center px-4 py-2 text-sm font-medium border-r border-white/5 last:border-0
+                       {{ 'bg-indigo-600 text-white z-10' if page_num == users.page else 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
+                        {{ page_num }}
+                    </a>
+                {% else %}
+                    <span class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-500 border-r border-white/5">...</span>
+                {% endif %}
+            {% endfor %}
+
+            <!-- Next Page -->
+            <a href="{{ url_for('admin.manage_users', page=users.next_num, search=current_search, role=current_role, status=current_status) if users.has_next else '#' }}" 
+               class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-400 hover:text-white {{ 'opacity-50 cursor-not-allowed pointer-events-none' if not users.has_next else '' }}">
+                Next <i class="fas fa-chevron-right ml-2"></i>
+            </a>
+        </nav>
     </div>
+    {% endif %}
 
 </div>
 
+<!-- Create User Modal (Same as before) -->
 <div id="createUserModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" id="modalOverlay"></div>
 
@@ -216,48 +255,6 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        // Filter Logic
-        const searchInput = document.getElementById('searchInput');
-        const roleFilter = document.getElementById('filter-role');
-        const statusFilter = document.getElementById('filter-status');
-        const userCards = document.querySelectorAll('.user-card');
-        const noResults = document.getElementById('no-results');
-
-        function filterUsers() {
-            const query = searchInput.value.toLowerCase();
-            const selectedRole = roleFilter.value;
-            const selectedStatus = statusFilter.value;
-            let visibleCount = 0;
-
-            userCards.forEach(card => {
-                const name = card.dataset.name;
-                const email = card.dataset.email;
-                const role = card.dataset.role;
-                const status = card.dataset.status;
-
-                const matchesSearch = name.includes(query) || email.includes(query);
-                const matchesRole = selectedRole === 'all' || role === selectedRole;
-                const matchesStatus = selectedStatus === 'all' || status === selectedStatus;
-
-                if (matchesSearch && matchesRole && matchesStatus) {
-                    card.style.display = '';
-                    visibleCount++;
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-
-            if (visibleCount === 0) {
-                noResults.classList.remove('hidden');
-            } else {
-                noResults.classList.add('hidden');
-            }
-        }
-
-        if(searchInput) searchInput.addEventListener('input', filterUsers);
-        if(roleFilter) roleFilter.addEventListener('change', filterUsers);
-        if(statusFilter) statusFilter.addEventListener('change', filterUsers);
-
         // Modal Logic
         const modal = document.getElementById('createUserModal');
         const btnOpen = document.getElementById('createUserBtn');
