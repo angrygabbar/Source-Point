@@ -20,8 +20,9 @@ SECRET_QUESTIONS = [
 ]
 
 @main_bp.route('/')
-@cache.cached(timeout=600) # Cache home page for 10 minutes
-def home(): return render_template('home.html')
+# @cache.cached(timeout=600) # <-- FIXED: Caching removed so the page updates immediately on logout
+def home(): 
+    return render_template('home.html')
 
 @main_bp.route('/offers')
 @cache.cached(timeout=300) # Cache offers for 5 minutes
