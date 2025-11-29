@@ -640,7 +640,8 @@ def add_product_page():
             flash(f'Product ID {product_code} already exists.', 'danger')
             return redirect(url_for('admin.add_product_page'))
         
-        primary_image = image_urls[0] if image_urls and image_urls[0].strip() else None
+        # Primary Image (use first one, or None)
+        primary_image = image_urls[0].strip() if image_urls and image_urls[0].strip() else None
         
         new_product = Product(
             product_code=product_code,
@@ -658,6 +659,7 @@ def add_product_page():
         db.session.add(new_product)
         db.session.commit()
         
+        # Add all images to ProductImage table
         for url in image_urls:
             if url.strip():
                 img = ProductImage(product_id=new_product.id, image_url=url.strip())
@@ -686,6 +688,23 @@ def update_product():
     product.warranty = request.form.get('warranty')
     product.return_policy = request.form.get('return_policy')
     
+    # --- UPDATED IMAGE LOGIC ---
+    image_urls = request.form.getlist('image_urls[]')
+    
+    # 1. Update Primary Image (use first valid one)
+    primary_image = image_urls[0].strip() if image_urls and image_urls[0].strip() else None
+    product.image_url = primary_image
+
+    # 2. Reset ProductImage table for this product
+    # Clear existing images
+    ProductImage.query.filter_by(product_id=product.id).delete()
+    
+    # Add new list
+    for url in image_urls:
+        if url.strip():
+            img = ProductImage(product_id=product.id, image_url=url.strip())
+            db.session.add(img)
+
     db.session.commit()
     log_user_action("Update Product", f"Updated product {product.name}")
     flash(f'Product "{product.name}" updated.', 'success')

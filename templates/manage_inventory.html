@@ -105,6 +105,8 @@
                                 data-mrp="{{ product.mrp or '' }}"
                                 data-warranty="{{ product.warranty or '' }}"
                                 data-return="{{ product.return_policy or '' }}"
+                                {# Dump list of images to JSON. If empty, try fallback to single image_url column #}
+                                data-images='{{ (product.images | map(attribute="image_url") | list) | tojson | safe if product.images else ([product.image_url] if product.image_url else []) | tojson | safe }}'
                                 title="Edit">
                             <i class="fas fa-edit"></i>
                         </button>
@@ -158,6 +160,16 @@
                                     <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Product Name</label>
                                     <input type="text" name="name" id="edit_name" required class="w-full px-3 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 </div>
+                                
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Product Images</label>
+                                    <div id="edit-images-container" class="space-y-2">
+                                        </div>
+                                    <button type="button" id="edit-add-image-btn" class="mt-2 text-xs text-indigo-400 hover:text-indigo-300 flex items-center">
+                                        <i class="fas fa-plus-circle mr-1"></i> Add another image URL
+                                    </button>
+                                </div>
+
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Category</label>
@@ -223,11 +235,12 @@
         const editModal = document.getElementById('editModal');
         const closeEditBtn = document.getElementById('closeEditModal');
         const editOverlay = document.getElementById('editModalOverlay');
+        const imageContainer = document.getElementById('edit-images-container');
+        const addImageBtn = document.getElementById('edit-add-image-btn');
 
         function toggleModal(modal, show) {
             if (show) {
                 modal.classList.remove('hidden');
-                // Small animation for entrance
                 const panel = modal.querySelector('div[class*="transform"]');
                 if(panel) {
                     panel.classList.add('scale-100', 'opacity-100');
@@ -238,6 +251,35 @@
             }
         }
 
+        // --- Dynamic Image Fields Helper ---
+        function createImageInput(url = '') {
+            const div = document.createElement('div');
+            div.className = 'flex animate-fade-in gap-2';
+            div.innerHTML = `
+                <input type="url" name="image_urls[]" value="${url}"
+                       class="flex-1 px-3 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500" 
+                       placeholder="https://example.com/image.jpg">
+                <button type="button" class="text-red-400 hover:text-red-300 remove-edit-img-btn px-1">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            imageContainer.appendChild(div);
+        }
+
+        if(addImageBtn) {
+            addImageBtn.addEventListener('click', () => createImageInput());
+        }
+
+        // Remove button delegate
+        imageContainer.addEventListener('click', (e) => {
+            if (e.target.closest('.remove-edit-img-btn')) {
+                // Ensure at least one field remains or allow empty? 
+                // Let's allow empty, but maybe UX prefers at least one. 
+                // We'll just remove the row.
+                e.target.closest('.flex').remove();
+            }
+        });
+
         // Close Modal Listeners
         if(closeEditBtn) closeEditBtn.addEventListener('click', () => toggleModal(editModal, false));
         if(editOverlay) editOverlay.addEventListener('click', () => toggleModal(editModal, false));
@@ -246,21 +288,31 @@
         const editButtons = document.querySelectorAll('.edit-product-btn');
         editButtons.forEach(button => {
             button.addEventListener('click', function() {
-                // Retrieve data from data attributes
+                // Retrieve data
                 document.getElementById('edit_product_id').value = this.dataset.id;
                 document.getElementById('edit_product_code').value = this.dataset.code;
                 document.getElementById('edit_name').value = this.dataset.name;
                 document.getElementById('edit_stock').value = this.dataset.stock;
                 document.getElementById('edit_price').value = this.dataset.price;
                 document.getElementById('edit_category').value = this.dataset.category;
-                
-                // New Fields
                 document.getElementById('edit_brand').value = this.dataset.brand;
                 document.getElementById('edit_mrp').value = this.dataset.mrp;
                 document.getElementById('edit_warranty').value = this.dataset.warranty;
                 document.getElementById('edit_return_policy').value = this.dataset.return;
 
-                // Show Modal
+                // Populate Images
+                imageContainer.innerHTML = ''; // Clear previous
+                let images = [];
+                try {
+                    images = JSON.parse(this.dataset.images || '[]');
+                } catch(e) { console.error('Error parsing images', e); }
+
+                if (images.length > 0) {
+                    images.forEach(url => createImageInput(url));
+                } else {
+                    createImageInput(''); // Add one empty field if none exist
+                }
+
                 toggleModal(editModal, true);
             });
         });
