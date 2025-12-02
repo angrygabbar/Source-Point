@@ -1,394 +1,373 @@
+# Source Point/invoice_service.py
+
 from fpdf import FPDF
 from bs4 import BeautifulSoup
 from datetime import datetime
 import re
 
 class PDF(FPDF):
-    def __init__(self, title="Document", confidentiality_text="CONFIDENTIAL", *args, **kwargs):
+    def __init__(self, title="Document", *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.doc_title = title
-        self.confidentiality_text = confidentiality_text
-        self.set_auto_page_break(auto=True, margin=25)
-        
-        # Corporate Color Palette
-        self.c_primary = (30, 58, 138)    # Deep Navy Blue
-        self.c_secondary = (71, 85, 105)  # Slate Gray
-        self.c_accent = (241, 245, 249)   # Light Gray Background
-        self.c_text = (51, 65, 85)        # Dark Gray Text
+        self.set_auto_page_break(auto=True, margin=20)
 
     def header(self):
-        # Skip header on cover page (Page 1)
+        # Skip header on the cover page (page 1)
         if self.page_no() > 1:
-            self.set_font('helvetica', 'B', 9)
-            self.set_text_color(*self.c_secondary)
-            
-            # Left: Company/Platform
-            self.cell(0, 10, "Source Point Platform", 0, 0, 'L')
-            
-            # Right: Document Title
+            self.set_font('helvetica', 'I', 8)
+            self.set_text_color(128, 128, 128)
             self.cell(0, 10, self.doc_title, 0, 0, 'R')
-            
-            # Divider Line
-            self.ln(12)
-            self.set_draw_color(200, 200, 200)
-            self.line(10, 18, 200, 18)
-            self.ln(5)
+            self.ln(15)
 
     def footer(self):
-        self.set_y(-20)
+        self.set_y(-15)
         self.set_font('helvetica', 'I', 8)
-        self.set_text_color(150, 150, 150)
-        
-        # Left: Confidentiality
-        self.cell(60, 10, self.confidentiality_text, 0, 0, 'L')
-        
-        # Center: Page Number
-        self.cell(70, 10, f'Page {self.page_no()} of {{nb}}', 0, 0, 'C')
-        
-        # Right: Date
-        self.cell(60, 10, datetime.utcnow().strftime('%Y-%m-%d'), 0, 0, 'R')
+        self.set_text_color(128, 128, 128)
+        self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
 
 class InvoiceGenerator:
     def __init__(self, invoice):
         self.invoice = invoice
         self.pdf = PDF(title=f"Invoice #{invoice.invoice_number}")
-        self.pdf.alias_nb_pages()
         self.pdf.add_page()
         
-        # Invoice Specific Colors
-        self.c_dark_blue = (20, 40, 100)
-        self.c_light_blue = (230, 240, 255)
-        self.c_gray = (100, 100, 100)
+        # --- Color Palette ---
+        self.c_dark_blue = (20, 40, 100)    # Dark Navy for Headers
+        self.c_blue = (30, 60, 160)         # Standard Blue
+        self.c_light_blue = (200, 225, 255) # Light Blue background for totals
+        self.c_teal = (50, 180, 200)        # Teal for accents
+        self.c_gray_text = (80, 80, 80)
+        self.c_border = (0, 0, 0)           # Black borders
 
     def generate_pdf(self):
-        self._draw_header()
-        self._add_invoice_info()
+        self._draw_graphics_top_right()
+        self._add_company_header()
+        self._add_invoice_details_grid()
+        self._add_address_grid()
         self._add_items_table()
-        self._add_totals()
+        self._add_totals_and_notes()
+        self._draw_graphics_bottom_left()
+        
         return bytes(self.pdf.output())
 
-    def _draw_header(self):
-        self.pdf.set_font('helvetica', 'B', 20)
-        self.pdf.set_text_color(*self.c_dark_blue)
-        self.pdf.cell(0, 10, "INVOICE", 0, 1, 'R')
+    def _draw_graphics_top_right(self):
+        """Draws the geometric triangles in the top right corner."""
+        x_start = 170
+        y_start = 0
         
-        self.pdf.set_font('helvetica', '', 10)
-        self.pdf.set_text_color(*self.c_gray)
-        self.pdf.cell(0, 5, "Source Point Platform", 0, 1, 'L')
-        self.pdf.cell(0, 5, "123 Tech Park, Innovation Drive", 0, 1, 'L')
-        self.pdf.cell(0, 5, "Pune, Maharashtra, India", 0, 1, 'L')
+        self.pdf.set_fill_color(*self.c_teal)
+        self.pdf.polygon([(x_start + 10, y_start), (x_start + 30, y_start), (x_start + 20, y_start + 10)], 'F')
+        
+        self.pdf.set_fill_color(*self.c_light_blue)
+        self.pdf.polygon([(x_start + 20, y_start + 10), (x_start + 40, y_start + 10), (x_start + 30, y_start + 20)], 'F')
+        
+        self.pdf.set_fill_color(*self.c_dark_blue)
+        self.pdf.polygon([(x_start + 30, y_start), (210, y_start), (210, y_start + 15)], 'F')
+
+    def _draw_graphics_bottom_left(self):
+        """Draws the geometric triangles in the bottom left corner."""
+        x_start = 0
+        y_start = 285 # Near bottom of A4
+        
+        self.pdf.set_fill_color(*self.c_teal)
+        self.pdf.polygon([(x_start, y_start), (x_start + 15, y_start + 12), (x_start, y_start + 12)], 'F')
+        
+        self.pdf.set_fill_color(*self.c_light_blue)
+        self.pdf.polygon([(x_start + 15, y_start + 12), (x_start + 30, y_start + 12), (x_start + 10, y_start)], 'F')
+
+    def _add_company_header(self):
+        self.pdf.set_y(15)
+        
+        self.pdf.set_font('helvetica', 'B', 16)
+        self.pdf.set_text_color(0, 0, 0)
+        self.pdf.cell(100, 8, "Source Point", 0, 0, 'L')
+        
+        self.pdf.set_font('helvetica', '', 28)
+        self.pdf.set_text_color(*self.c_dark_blue)
+        self.pdf.cell(0, 8, "INVOICE", 0, 1, 'R')
+        
+        self.pdf.set_font('helvetica', '', 9)
+        self.pdf.set_text_color(*self.c_gray_text)
+        self.pdf.set_y(24)
+        self.pdf.cell(100, 4, "123 Tech Park, Innovation Drive", 0, 1, 'L')
+        self.pdf.cell(100, 4, "Pune, Maharashtra 411001", 0, 1, 'L')
+        self.pdf.cell(100, 4, "India", 0, 1, 'L')
+        
         self.pdf.ln(10)
 
-    def _add_invoice_info(self):
-        self.pdf.set_draw_color(220, 220, 220)
-        self.pdf.line(10, self.pdf.get_y(), 200, self.pdf.get_y())
-        self.pdf.ln(5)
+    def _add_invoice_details_grid(self):
+        self.pdf.set_draw_color(*self.c_border)
+        self.pdf.set_line_width(0.2)
         
-        # Two columns: Bill To vs Invoice Details
-        y_start = self.pdf.get_y()
+        start_y = self.pdf.get_y()
         
-        # Left Column
-        self.pdf.set_font('helvetica', 'B', 10)
+        self.pdf.rect(10, start_y, 190, 32)
+        self.pdf.line(105, start_y, 105, start_y + 32)
+        
+        self.pdf.set_xy(12, start_y + 2)
+        
+        def add_row(label, value):
+            x = self.pdf.get_x()
+            y = self.pdf.get_y()
+            self.pdf.set_font('helvetica', '', 9)
+            self.pdf.set_text_color(*self.c_gray_text)
+            self.pdf.cell(30, 6, label, 0, 0, 'L')
+            
+            self.pdf.set_font('helvetica', 'B', 9)
+            self.pdf.set_text_color(0, 0, 0)
+            self.pdf.cell(60, 6, str(value), 0, 1, 'L')
+            self.pdf.set_x(x)
+
+        add_row("Invoice#", self.invoice.invoice_number)
+        add_row("Invoice Date", self.invoice.created_at.strftime('%d %b %Y'))
+        add_row("Terms", "Due on Receipt")
+        add_row("Due Date", self.invoice.due_date.strftime('%d %b %Y') if self.invoice.due_date else "Immediate")
+
+        self.pdf.set_y(start_y + 32)
+
+    def _add_address_grid(self):
+        start_y = self.pdf.get_y()
+        
+        self.pdf.set_font('helvetica', '', 10)
         self.pdf.set_text_color(0, 0, 0)
-        self.pdf.cell(90, 5, "Bill To:", 0, 1)
-        self.pdf.set_font('helvetica', '', 10)
-        self.pdf.set_text_color(50, 50, 50)
-        self.pdf.cell(90, 5, self.invoice.recipient_name, 0, 1)
-        self.pdf.multi_cell(90, 5, self.invoice.bill_to_address or "", 0, 'L')
         
-        # Right Column (Reset Y, Move X)
-        self.pdf.set_xy(110, y_start)
+        self.pdf.rect(10, start_y, 190, 8)
+        self.pdf.rect(10, start_y + 8, 190, 30)
+        self.pdf.line(105, start_y, 105, start_y + 38)
+        
+        self.pdf.set_xy(12, start_y + 1)
+        self.pdf.cell(93, 6, "Bill To", 0, 0, 'L')
+        self.pdf.set_xy(107, start_y + 1)
+        self.pdf.cell(93, 6, "Ship To", 0, 1, 'L')
+        
+        content_y = start_y + 10
+        
+        self.pdf.set_xy(12, content_y)
         self.pdf.set_font('helvetica', 'B', 10)
+        self.pdf.cell(90, 5, self.invoice.recipient_name, 0, 1, 'L')
+        self.pdf.set_font('helvetica', '', 9)
+        self.pdf.set_text_color(*self.c_gray_text)
+        self.pdf.set_x(12)
+        self.pdf.multi_cell(90, 4, self.invoice.bill_to_address or '', 0, 'L')
+        
+        self.pdf.set_xy(107, content_y)
         self.pdf.set_text_color(0, 0, 0)
-        self.pdf.cell(40, 5, "Invoice #:", 0, 0)
-        self.pdf.set_font('helvetica', '', 10)
-        self.pdf.cell(50, 5, self.invoice.invoice_number, 0, 1, 'R')
+        self.pdf.set_font('helvetica', '', 9)
+        self.pdf.set_text_color(*self.c_gray_text)
+        self.pdf.multi_cell(90, 4, self.invoice.ship_to_address or '', 0, 'L')
         
-        self.pdf.set_x(110)
-        self.pdf.set_font('helvetica', 'B', 10)
-        self.pdf.cell(40, 5, "Date:", 0, 0)
-        self.pdf.set_font('helvetica', '', 10)
-        self.pdf.cell(50, 5, self.invoice.created_at.strftime('%Y-%m-%d'), 0, 1, 'R')
-        
-        self.pdf.set_x(110)
-        self.pdf.set_font('helvetica', 'B', 10)
-        self.pdf.cell(40, 5, "Due Date:", 0, 0)
-        self.pdf.set_font('helvetica', '', 10)
-        due_date = self.invoice.due_date.strftime('%Y-%m-%d') if self.invoice.due_date else "Immediate"
-        self.pdf.cell(50, 5, due_date, 0, 1, 'R')
-        
-        self.pdf.ln(15)
+        self.pdf.set_y(start_y + 40)
 
     def _add_items_table(self):
-        # Header
         self.pdf.set_fill_color(*self.c_dark_blue)
         self.pdf.set_text_color(255, 255, 255)
-        self.pdf.set_font('helvetica', 'B', 10)
-        self.pdf.cell(10, 8, "#", 0, 0, 'C', 1)
-        self.pdf.cell(100, 8, "Description", 0, 0, 'L', 1)
-        self.pdf.cell(20, 8, "Qty", 0, 0, 'C', 1)
-        self.pdf.cell(30, 8, "Price", 0, 0, 'R', 1)
-        self.pdf.cell(30, 8, "Total", 0, 1, 'R', 1)
-        
-        # Rows
-        self.pdf.set_text_color(0, 0, 0)
         self.pdf.set_font('helvetica', '', 10)
-        self.pdf.set_fill_color(245, 247, 250)
+        self.pdf.set_draw_color(*self.c_dark_blue)
         
-        fill = False
+        self.pdf.cell(10, 10, "#", 1, 0, 'C', 1)
+        self.pdf.cell(110, 10, "Item & Description", 1, 0, 'L', 1)
+        self.pdf.cell(20, 10, "Qty", 1, 0, 'R', 1)
+        self.pdf.cell(25, 10, "Rate", 1, 0, 'R', 1)
+        self.pdf.cell(25, 10, "Amount", 1, 1, 'R', 1)
+        
+        self.pdf.set_text_color(0, 0, 0)
+        self.pdf.set_draw_color(0, 0, 0)
+        self.pdf.set_font('helvetica', '', 9)
+        
         count = 1
         for item in self.invoice.items:
-            self.pdf.cell(10, 8, str(count), 0, 0, 'C', fill)
-            self.pdf.cell(100, 8, item.description, 0, 0, 'L', fill)
-            self.pdf.cell(20, 8, str(item.quantity), 0, 0, 'C', fill)
-            self.pdf.cell(30, 8, f"{item.price:,.2f}", 0, 0, 'R', fill)
-            self.pdf.cell(30, 8, f"{item.quantity * item.price:,.2f}", 0, 1, 'R', fill)
-            fill = not fill
+            y_start = self.pdf.get_y()
+            
+            self.pdf.set_x(20)
+            self.pdf.multi_cell(110, 6, item.description, 0, 'L')
+            
+            # Calculate actual height used by multi_cell
+            y_end = self.pdf.get_y()
+            row_height = max(12, y_end - y_start) 
+            
+            self.pdf.set_y(y_start)
+            self.pdf.set_x(10)
+            
+            self.pdf.cell(10, row_height, str(count), 1, 0, 'C')
+            self.pdf.cell(110, row_height, "", 1, 0, 'L')
+            self.pdf.cell(20, row_height, str(item.quantity), 1, 0, 'R')
+            self.pdf.cell(25, row_height, f"{item.price:,.2f}", 1, 0, 'R')
+            self.pdf.cell(25, row_height, f"{(item.quantity * item.price):,.2f}", 1, 1, 'R')
             count += 1
+            
+            self.pdf.set_y(y_start + row_height)
+
+    def _add_totals_and_notes(self):
+        self.pdf.set_font('helvetica', 'B', 9)
+        self.pdf.cell(165, 8, "Sub Total", 1, 0, 'R')
+        self.pdf.cell(25, 8, f"{self.invoice.subtotal:,.2f}", 1, 1, 'R')
         
         self.pdf.ln(5)
-
-    def _add_totals(self):
-        # Totals box on the right
-        x_start = 110
-        self.pdf.set_x(x_start)
-        self.pdf.set_font('helvetica', '', 10)
-        self.pdf.cell(50, 8, "Subtotal:", 0, 0, 'R')
-        self.pdf.cell(30, 8, f"{self.invoice.subtotal:,.2f}", 0, 1, 'R')
         
-        self.pdf.set_x(x_start)
-        self.pdf.cell(50, 8, f"Tax ({self.invoice.tax}%):", 0, 0, 'R')
-        self.pdf.cell(30, 8, f"{(self.invoice.total_amount - self.invoice.subtotal):,.2f}", 0, 1, 'R')
+        y_start = self.pdf.get_y()
         
-        self.pdf.set_x(x_start)
-        self.pdf.set_font('helvetica', 'B', 12)
+        self.pdf.set_font('helvetica', 'B', 10)
+        self.pdf.set_text_color(0, 0, 0)
+        self.pdf.cell(100, 5, "Terms & Conditions", 0, 1, 'L')
+        
+        self.pdf.set_font('helvetica', '', 8)
+        self.pdf.set_text_color(*self.c_gray_text)
+        terms = "Full payment is due upon receipt of this invoice.\nLate payments may incur additional charges."
+        if self.invoice.notes:
+            terms = self.invoice.notes
+        self.pdf.multi_cell(100, 4, terms, 0, 'L')
+        
+        self.pdf.set_xy(125, y_start)
+        
         self.pdf.set_fill_color(*self.c_light_blue)
-        self.pdf.cell(50, 10, "Total:", 0, 0, 'R', 1)
-        self.pdf.cell(30, 10, f"INR {self.invoice.total_amount:,.2f}", 0, 1, 'R', 1)
+        self.pdf.set_draw_color(0, 0, 0)
+        self.pdf.rect(125, y_start, 75, 24, 'FD')
+        
+        self.pdf.set_xy(125, y_start + 2)
+        self.pdf.set_font('helvetica', 'B', 9)
+        self.pdf.set_text_color(0, 0, 0)
+        self.pdf.cell(40, 6, f"Tax Rate", 0, 0, 'L')
+        self.pdf.cell(30, 6, f"{self.invoice.tax}%", 0, 1, 'R')
+        
+        self.pdf.set_x(125)
+        self.pdf.cell(40, 6, "Total", 0, 0, 'L')
+        self.pdf.cell(30, 6, f"INR {self.invoice.total_amount:,.2f}", 0, 1, 'R')
+        
+        self.pdf.set_x(125)
+        self.pdf.cell(40, 6, "Balance Due", 0, 0, 'L')
+        self.pdf.cell(30, 6, f"INR {self.invoice.total_amount:,.2f}", 0, 1, 'R')
+        
+        self.pdf.set_y(self.pdf.get_y() + 25)
+        self.pdf.set_font('helvetica', 'I', 10)
+        self.pdf.set_text_color(*self.c_gray_text)
+        self.pdf.cell(0, 10, "Thanks for shopping with us.", 0, 1, 'C')
 
 
 class BrdGenerator:
     def __init__(self, project):
         self.project = project
-        self.pdf = PDF(title=f"BRD: {project.name}", confidentiality_text="INTERNAL & CONFIDENTIAL")
-        self.pdf.alias_nb_pages()
-        
-        # Professional Styles
-        self.font_header = 'helvetica'
-        self.font_body = 'helvetica'
-        self.c_primary = (30, 58, 138)    # #1e3a8a (Navy)
-        self.c_secondary = (51, 65, 85)   # #334155 (Slate)
-        self.c_bg_header = (241, 245, 249) # #f1f5f9 (Light Gray)
+        self.pdf = PDF(title=f"BRD: {project.name}")
+        self.pdf.add_page()
+        self.pdf.set_font("helvetica", size=12)
+        # Professional Colors
+        self.primary_color = (67, 56, 202)   # Indigo-700
+        self.header_bg = (238, 242, 255)     # Indigo-50
+        self.text_color = (55, 65, 81)       # Gray-700
 
     def generate_pdf(self):
-        self.pdf.add_page()
         self._add_cover_page()
-        
-        self.pdf.add_page()
-        self._add_document_control()
-        
-        self.pdf.add_page()
-        self._add_toc()
-        
-        self.pdf.add_page()
-        self._add_content()
-        
+        self.pdf.add_page() # Start content on new page
+        self._add_brd_content()
         return bytes(self.pdf.output())
 
-    def _add_cover_page(self):
-        """Generates a professional cover page."""
-        # Top Accent Bar
-        self.pdf.set_fill_color(*self.c_primary)
-        self.pdf.rect(0, 0, 210, 15, 'F')
-        
-        self.pdf.set_y(60)
-        
-        # Document Type Label
-        self.pdf.set_font(self.font_header, 'B', 14)
-        self.pdf.set_text_color(100, 116, 139) # Light Slate
-        self.pdf.cell(0, 10, "BUSINESS REQUIREMENT DOCUMENT", 0, 1, 'C')
-        
-        # Project Title (Big)
-        self.pdf.ln(5)
-        self.pdf.set_font(self.font_header, 'B', 32)
-        self.pdf.set_text_color(*self.c_primary)
-        self.pdf.multi_cell(0, 15, self.project.name.upper(), 0, 'C')
-        
-        # Divider
-        self.pdf.ln(20)
-        self.pdf.set_draw_color(200, 200, 200)
-        self.pdf.line(50, self.pdf.get_y(), 160, self.pdf.get_y())
-        self.pdf.ln(20)
-        
-        # Project Meta Data Box
-        self.pdf.set_fill_color(248, 250, 252) # Very light gray
-        self.pdf.rect(55, self.pdf.get_y(), 100, 45, 'F')
-        
-        self.pdf.set_font(self.font_body, '', 11)
-        self.pdf.set_text_color(*self.c_secondary)
-        
-        self.pdf.ln(5)
-        self.pdf.cell(0, 8, f"Project ID: #{self.project.id}", 0, 1, 'C')
-        self.pdf.cell(0, 8, f"Date: {datetime.utcnow().strftime('%B %d, %Y')}", 0, 1, 'C')
-        self.pdf.cell(0, 8, f"Status: {self.project.status}", 0, 1, 'C')
-        self.pdf.cell(0, 8, f"Version: 1.0", 0, 1, 'C')
-
-        # Bottom Graphic
-        self.pdf.set_fill_color(*self.c_primary)
-        self.pdf.rect(0, 280, 210, 17, 'F')
-
-    def _add_document_control(self):
-        """Standard version control table."""
-        self._section_header("0.0 Document Control")
-        
-        self.pdf.set_font(self.font_body, '', 10)
-        self.pdf.set_text_color(*self.c_secondary)
-        self.pdf.ln(5)
-        
-        # Table Header
-        self.pdf.set_fill_color(*self.c_bg_header)
-        self.pdf.set_font(self.font_header, 'B', 10)
-        self.pdf.cell(25, 10, "Version", 1, 0, 'C', 1)
-        self.pdf.cell(35, 10, "Date", 1, 0, 'C', 1)
-        self.pdf.cell(50, 10, "Author", 1, 0, 'L', 1)
-        self.pdf.cell(80, 10, "Change Description", 1, 1, 'L', 1)
-        
-        # Table Row
-        self.pdf.set_font(self.font_body, '', 10)
-        self.pdf.cell(25, 10, "1.0", 1, 0, 'C')
-        self.pdf.cell(35, 10, datetime.utcnow().strftime('%Y-%m-%d'), 1, 0, 'C')
-        self.pdf.cell(50, 10, "Source Point Admin", 1, 0, 'L')
-        self.pdf.cell(80, 10, "Initial Draft", 1, 1, 'L')
-        
-        self.pdf.ln(15)
-        
-        # Approvals
-        self.pdf.set_font(self.font_header, 'B', 12)
-        self.pdf.cell(0, 10, "Approvals", 0, 1, 'L')
-        self.pdf.set_font(self.font_body, '', 10)
-        self.pdf.cell(0, 6, "The following stakeholders must review and approve this document:", 0, 1)
-        self.pdf.ln(5)
-        
-        roles = ["Project Manager", "Lead Developer", "Client Representative", "QA Lead"]
-        for role in roles:
-            self.pdf.cell(70, 10, role, 0, 0)
-            self.pdf.cell(70, 10, "__________________________", 0, 0)
-            self.pdf.cell(30, 10, "Date: ________", 0, 1)
-
-    def _add_toc(self):
-        """Static Table of Contents."""
-        self.pdf.set_font(self.font_header, 'B', 16)
-        self.pdf.set_text_color(*self.c_primary)
-        self.pdf.cell(0, 10, "Table of Contents", 0, 1, 'L')
-        self.pdf.ln(10)
-        
-        sections = [
-            "1. Executive Summary",
-            "2. Project Objectives",
-            "3. Project Scope",
-            "4. Business Requirements",
-            "5. Key Stakeholders",
-            "6. Project Constraints",
-            "7. Cost-Benefit Analysis"
-        ]
-        
-        self.pdf.set_font(self.font_body, '', 12)
-        self.pdf.set_text_color(*self.c_secondary)
-        
-        for sec in sections:
-            self.pdf.cell(10) # Indent
-            self.pdf.cell(0, 10, sec, 0, 1)
-            self.pdf.set_draw_color(240, 240, 240)
-            self.pdf.line(20, self.pdf.get_y(), 190, self.pdf.get_y())
-
-    def _add_content(self):
-        """Renders the BRD dynamic content."""
-        brd = self.project.brd
-        
-        content_map = [
-            ("1.0 Executive Summary", brd.executive_summary),
-            ("2.0 Project Objectives", brd.project_objectives),
-            ("3.0 Project Scope", brd.project_scope),
-            ("4.0 Business Requirements", brd.business_requirements),
-            ("5.0 Key Stakeholders", brd.key_stakeholders),
-            ("6.0 Project Constraints", brd.project_constraints),
-            ("7.0 Cost-Benefit Analysis", brd.cost_benefit_analysis),
-        ]
-        
-        for title, html_text in content_map:
-            # Check for page break before starting a new section
-            if self.pdf.get_y() > 240:
-                self.pdf.add_page()
-            
-            self._section_header(title)
-            
-            if html_text:
-                self._render_html_body(html_text)
-            else:
-                self.pdf.set_font(self.font_body, 'I', 11)
-                self.pdf.set_text_color(150, 150, 150)
-                self.pdf.cell(0, 10, "No information provided for this section.", 0, 1)
-            
-            self.pdf.ln(10) # Extra spacing after section
-
-    def _section_header(self, title):
-        """Styled header with background block."""
-        self.pdf.set_font(self.font_header, 'B', 14)
-        self.pdf.set_text_color(*self.c_primary)
-        self.pdf.set_fill_color(*self.c_bg_header)
-        # Full width block
-        self.pdf.cell(0, 12, f"  {title}", 0, 1, 'L', 1)
-        self.pdf.ln(3)
-
-    def _render_html_body(self, html_content):
-        """Cleans and renders HTML content using FPDF's built-in HTML parser."""
-        self.pdf.set_font(self.font_body, '', 11)
-        self.pdf.set_text_color(*self.c_secondary)
-        
-        # 1. Clean HTML: Allow tables and lists
-        clean_html = self._sanitize_html(html_content)
-        
-        try:
-            # Using basic HTML writing which supports simple tables
-            self.pdf.write_html(clean_html)
-        except Exception as e:
-            # Fallback for errors: Strip tags and just print text
-            soup = BeautifulSoup(html_content, 'html.parser')
-            text = soup.get_text()
-            self.pdf.multi_cell(0, 6, text)
-
     def _sanitize_html(self, html_content):
-        """Prepares HTML for FPDF write_html method, PRESERVING TABLES."""
-        if not html_content: return ""
+        """Prepares HTML for FPDF write_html method with better spacing handling."""
+        if not html_content:
+            return ""
         
+        # 1. Pre-processing: Standardize Characters
+        replacements = {
+            '“': '"', '”': '"', '‘': "'", '’': "'",
+            '–': '-', '—': '-', '…': '...', '•': '-', '&nbsp;': ' '
+        }
+        for char, replacement in replacements.items():
+            html_content = html_content.replace(char, replacement)
+
         soup = BeautifulSoup(html_content, "html.parser")
         
-        # 1. Whitelist Tags: NOW INCLUDES TABLE TAGS
-        allowed_tags = ['b', 'i', 'u', 'strong', 'em', 'p', 'br', 'ul', 'li', 'h1', 'h2', 'h3', 
-                        'table', 'thead', 'tbody', 'tr', 'th', 'td']
-
-        for tag in soup.find_all(True):
-            if tag.name not in allowed_tags:
-                tag.unwrap()
-        
-        # 2. Fix Tables: Force borders and width so they show up
-        for table in soup.find_all('table'):
-            table.attrs = {} # Clear existing styles
+        # 2. Table Fixes: Force borders and width
+        for table in soup.find_all("table"):
             table['border'] = '1'
             table['width'] = '100%'
             table['cellpadding'] = '5'
-            
-        for cell in soup.find_all(['td', 'th']):
-            cell.attrs = {} # Clear styles on cells
-            
-        # 3. Fix Lists: Clean attributes
-        for ul in soup.find_all('ul'):
-            ul.attrs = {} 
+            if table.has_attr('style'): del table['style']
+
+        # 3. Paragraph Formatting (Fixing spacing)
+        # Instead of blindly unwrapping, we ensure distinct paragraphs
+        for p in soup.find_all("p"):
+            if p.get_text(strip=True) or p.find('img'):
+                # Add explicit break tags to control spacing
+                p.insert_after(soup.new_tag("br"))
+                p.insert_after(soup.new_tag("br"))
+                p.unwrap()
+            else:
+                p.decompose() # Remove empty paragraphs
+
+        # 4. Final Cleanup
+        html_str = str(soup)
+        # Reduce excessive newlines created by BR tags to a maximum of 2
+        html_str = re.sub(r'(<br\s*/?>){3,}', '<br><br>', html_str)
         
-        # 4. Text Normalization
-        text = str(soup)
-        # Replace Paragraph tags with double line breaks for cleaner PDF spacing
-        text = text.replace('<p>', '').replace('</p>', '<br><br>')
-        text = text.replace('&nbsp;', ' ')
+        return html_str
+
+    def _add_cover_page(self):
+        """Creates a professional cover page."""
+        self.pdf.set_fill_color(*self.primary_color)
+        self.pdf.rect(0, 0, 210, 60, 'F') # Top banner
         
-        return text
+        self.pdf.set_y(25)
+        self.pdf.set_font('helvetica', 'B', 32)
+        self.pdf.set_text_color(255, 255, 255)
+        self.pdf.cell(0, 10, "Business Requirement", 0, 1, 'C')
+        self.pdf.cell(0, 15, "Document", 0, 1, 'C')
+        
+        self.pdf.set_y(100)
+        self.pdf.set_font('helvetica', '', 14)
+        self.pdf.set_text_color(100, 100, 100)
+        self.pdf.cell(0, 10, "PROJECT NAME:", 0, 1, 'C')
+        
+        self.pdf.set_font('helvetica', 'B', 24)
+        self.pdf.set_text_color(*self.primary_color)
+        self.pdf.cell(0, 15, self.project.name, 0, 1, 'C')
+        
+        self.pdf.set_y(150)
+        self.pdf.set_font('helvetica', '', 12)
+        self.pdf.set_text_color(0, 0, 0)
+        self.pdf.cell(0, 10, f"Date Generated: {datetime.utcnow().strftime('%B %d, %Y')}", 0, 1, 'C')
+        self.pdf.cell(0, 10, f"Status: {self.project.status}", 0, 1, 'C')
+        
+        self.pdf.set_y(260)
+        self.pdf.set_font('helvetica', 'I', 10)
+        self.pdf.set_text_color(150, 150, 150)
+        self.pdf.cell(0, 10, "Generated by Source Point Platform", 0, 1, 'C')
+
+    def _add_brd_content(self):
+        """Adds the content sections using write_html."""
+        brd_sections = {
+            "1. Executive Summary": self.project.brd.executive_summary,
+            "2. Project Objectives": self.project.brd.project_objectives,
+            "3. Project Scope": self.project.brd.project_scope,
+            "4. Business Requirements": self.project.brd.business_requirements,
+            "5. Key Stakeholders": self.project.brd.key_stakeholders,
+            "6. Project Constraints": self.project.brd.project_constraints,
+            "7. Cost-Benefit Analysis": self.project.brd.cost_benefit_analysis
+        }
+
+        for title, content in brd_sections.items():
+            # Section Header
+            self.pdf.set_font('helvetica', 'B', 14)
+            self.pdf.set_text_color(*self.primary_color)
+            self.pdf.set_fill_color(*self.header_bg)
+            self.pdf.cell(0, 10, title, 0, 1, 'L', 1)
+            self.pdf.ln(2) 
+            
+            if content:
+                self.pdf.set_font('helvetica', '', 11)
+                self.pdf.set_text_color(*self.text_color)
+                
+                html_data = self._sanitize_html(content)
+                
+                try:
+                    self.pdf.write_html(html_data)
+                except Exception as e:
+                    # Fallback for safety
+                    clean_text = BeautifulSoup(content, "html.parser").get_text()
+                    clean_text = clean_text.replace('•', '-').replace('“', '"').replace('”', '"')
+                    self.pdf.multi_cell(0, 6, clean_text)
+                
+                self.pdf.ln(5) 
+            else:
+                self.pdf.set_font('helvetica', 'I', 11)
+                self.pdf.set_text_color(150, 150, 150)
+                self.pdf.cell(0, 8, "Not provided", 0, 1)
+                self.pdf.ln(5)
