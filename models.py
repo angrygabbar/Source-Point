@@ -138,7 +138,7 @@ class Feedback(db.Model):
 class ProductImage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
-    image_url = db.Column(db.String(500), nullable=False)
+    image_url = db.Column(db.Text, nullable=False)  # CHANGED to Text
 
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -147,7 +147,7 @@ class Product(db.Model):
     stock = db.Column(db.Integer, default=0, nullable=False)
     price = db.Column(db.Float, nullable=False, default=0.0)
     description = db.Column(db.Text, nullable=True)
-    image_url = db.Column(db.String(500), nullable=True)
+    image_url = db.Column(db.Text, nullable=True) # CHANGED to Text
     images = db.relationship('ProductImage', backref='product', lazy=True, cascade="all, delete-orphan")
     category = db.Column(db.String(50), nullable=True)
     brand = db.Column(db.String(100), nullable=True)
@@ -166,7 +166,7 @@ class Invoice(db.Model):
     subtotal = db.Column(db.Float, nullable=False)
     tax = db.Column(db.Float, nullable=False, default=0.0)
     total_amount = db.Column(db.Float, nullable=False)
-    status = db.Column(db.String(20), default='Unpaid', nullable=False)
+    status = db.Column(db.String(20), default='Unpaid', nullable=False) # Added for payment tracking
     due_date = db.Column(db.Date, nullable=True)
     notes = db.Column(db.Text, nullable=True)
     payment_details = db.Column(db.Text, nullable=True)

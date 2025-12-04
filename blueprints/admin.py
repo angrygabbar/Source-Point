@@ -844,6 +844,8 @@ def resend_invoice():
     recipient_emails_str = request.form.get('recipient_emails')
 
     if not invoice_id or not recipient_emails_str:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': 'Invalid request parameters.'})
         flash('Invalid request.', 'danger')
         return redirect(url_for('admin.manage_invoices'))
 
@@ -854,14 +856,23 @@ def resend_invoice():
     pdf_data = invoice_generator.generate_pdf()
     attachment = {'filename': f'{invoice.invoice_number}.pdf', 'content_type': 'application/pdf', 'data': pdf_data}
 
-    send_email(
-        to=recipient_list, subject=f'Invoice ({invoice.invoice_number}) from Source Point',
-        template='mail/professional_invoice_email.html', recipient_name=invoice.recipient_name,
-        invoice_number=invoice.invoice_number, total_amount=invoice.total_amount,
-        due_date=invoice.due_date.strftime('%B %d, %Y'), attachments=[attachment]
-    )
+    try:
+        send_email(
+            to=recipient_list, subject=f'Invoice ({invoice.invoice_number}) from Source Point',
+            template='mail/professional_invoice_email.html', recipient_name=invoice.recipient_name,
+            invoice_number=invoice.invoice_number, total_amount=invoice.total_amount,
+            due_date=invoice.due_date.strftime('%B %d, %Y'), attachments=[attachment]
+        )
+        message = f'Invoice {invoice.invoice_number} has been resent!'
+        success = True
+    except Exception as e:
+        message = f'Failed to resend invoice: {str(e)}'
+        success = False
 
-    flash(f'Invoice {invoice.invoice_number} has been resent!', 'success')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': success, 'message': message})
+
+    flash(message, 'success' if success else 'danger')
     return redirect(url_for('admin.manage_invoices'))
 
 @admin_bp.route('/invoices/remind/<int:invoice_id>', methods=['POST'])

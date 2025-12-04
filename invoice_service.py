@@ -39,6 +39,29 @@ class InvoiceGenerator:
         self.c_gray_text = (80, 80, 80)
         self.c_border = (0, 0, 0)           # Black borders
 
+    def _clean_text(self, text):
+        """Sanitizes text to be compatible with Helvetica (Latin-1) font."""
+        if text is None:
+            return ""
+        text = str(text)
+        # Replacement map for common incompatible characters
+        replacements = {
+            '\u200b': '',  # Zero-width space
+            '\xa0': ' ',   # Non-breaking space
+            '’': "'",      # Smart quotes
+            '‘': "'",
+            '“': '"',
+            '”': '"',
+            '–': '-',      # En-dash
+            '—': '-',      # Em-dash
+            '₹': 'Rs. ',   # Rupee symbol (often problematic in standard fonts)
+        }
+        for char, replacement in replacements.items():
+            text = text.replace(char, replacement)
+            
+        # Encode to Latin-1, replacing unmappable characters to prevent crashes
+        return text.encode('latin-1', 'replace').decode('latin-1')
+
     def generate_pdf(self):
         self._draw_graphics_top_right()
         self._add_company_header()
@@ -115,7 +138,7 @@ class InvoiceGenerator:
             
             self.pdf.set_font('helvetica', 'B', 9)
             self.pdf.set_text_color(0, 0, 0)
-            self.pdf.cell(60, 6, str(value), 0, 1, 'L')
+            self.pdf.cell(60, 6, self._clean_text(str(value)), 0, 1, 'L') # Cleaned
             self.pdf.set_x(x)
 
         add_row("Invoice#", self.invoice.invoice_number)
@@ -144,17 +167,17 @@ class InvoiceGenerator:
         
         self.pdf.set_xy(12, content_y)
         self.pdf.set_font('helvetica', 'B', 10)
-        self.pdf.cell(90, 5, self.invoice.recipient_name, 0, 1, 'L')
+        self.pdf.cell(90, 5, self._clean_text(self.invoice.recipient_name), 0, 1, 'L') # Cleaned
         self.pdf.set_font('helvetica', '', 9)
         self.pdf.set_text_color(*self.c_gray_text)
         self.pdf.set_x(12)
-        self.pdf.multi_cell(90, 4, self.invoice.bill_to_address or '', 0, 'L')
+        self.pdf.multi_cell(90, 4, self._clean_text(self.invoice.bill_to_address or ''), 0, 'L') # Cleaned
         
         self.pdf.set_xy(107, content_y)
         self.pdf.set_text_color(0, 0, 0)
         self.pdf.set_font('helvetica', '', 9)
         self.pdf.set_text_color(*self.c_gray_text)
-        self.pdf.multi_cell(90, 4, self.invoice.ship_to_address or '', 0, 'L')
+        self.pdf.multi_cell(90, 4, self._clean_text(self.invoice.ship_to_address or ''), 0, 'L') # Cleaned
         
         self.pdf.set_y(start_y + 40)
 
@@ -179,7 +202,7 @@ class InvoiceGenerator:
             y_start = self.pdf.get_y()
             
             self.pdf.set_x(20)
-            self.pdf.multi_cell(110, 6, item.description, 0, 'L')
+            self.pdf.multi_cell(110, 6, self._clean_text(item.description), 0, 'L') # Cleaned
             
             # Calculate actual height used by multi_cell
             y_end = self.pdf.get_y()
@@ -215,7 +238,7 @@ class InvoiceGenerator:
         terms = "Full payment is due upon receipt of this invoice.\nLate payments may incur additional charges."
         if self.invoice.notes:
             terms = self.invoice.notes
-        self.pdf.multi_cell(100, 4, terms, 0, 'L')
+        self.pdf.multi_cell(100, 4, self._clean_text(terms), 0, 'L') # Cleaned
         
         self.pdf.set_xy(125, y_start)
         
@@ -268,7 +291,8 @@ class BrdGenerator:
         # 1. Pre-processing: Standardize Characters
         replacements = {
             '“': '"', '”': '"', '‘': "'", '’': "'",
-            '–': '-', '—': '-', '…': '...', '•': '-', '&nbsp;': ' '
+            '–': '-', '—': '-', '…': '...', '•': '-', '&nbsp;': ' ',
+            '\u200b': '', '\ufeff': '', # Zero-width spaces
         }
         for char, replacement in replacements.items():
             html_content = html_content.replace(char, replacement)
