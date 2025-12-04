@@ -22,3 +22,4 @@ sib-api-v3-sdk
 cloudinary
 Flask-Caching
 Flask-Limiter
+rich
