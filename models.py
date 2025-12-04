@@ -166,6 +166,7 @@ class Invoice(db.Model):
     subtotal = db.Column(db.Float, nullable=False)
     tax = db.Column(db.Float, nullable=False, default=0.0)
     total_amount = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(20), default='Unpaid', nullable=False)
     due_date = db.Column(db.Date, nullable=True)
     notes = db.Column(db.Text, nullable=True)
     payment_details = db.Column(db.Text, nullable=True)

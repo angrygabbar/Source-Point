@@ -891,6 +891,45 @@ def send_invoice_reminder(invoice_id):
     else: flash('Failed to send reminder email.', 'danger')
     return redirect(url_for('admin.manage_invoices'))
 
+@admin_bp.route('/invoices/mark_paid/<int:invoice_id>', methods=['POST'])
+@login_required
+@role_required('admin')
+def mark_invoice_paid(invoice_id):
+    invoice = Invoice.query.get_or_404(invoice_id)
+    
+    if invoice.status == 'Paid':
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+             return jsonify({'success': False, 'message': 'Invoice is already paid.'})
+        flash('This invoice is already paid.', 'warning')
+        return redirect(url_for('admin.manage_invoices'))
+
+    # Update Status
+    invoice.status = 'Paid'
+    db.session.commit()
+
+    # Send Receipt Email
+    email_status = "and receipt email sent"
+    try:
+        send_email(
+            to=invoice.recipient_email,
+            subject=f"Payment Receipt: Invoice {invoice.invoice_number}",
+            template="mail/payment_received.html",
+            invoice=invoice,
+            recipient_name=invoice.recipient_name,
+            total_amount=invoice.total_amount
+        )
+    except Exception as e:
+        print(f"Email error: {e}")
+        email_status = "but failed to send email"
+
+    log_user_action("Mark Invoice Paid", f"Marked invoice {invoice.invoice_number} as paid")
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': True, 'message': f'Invoice marked as Paid {email_status}.'})
+
+    flash(f'Invoice marked as Paid {email_status}.', 'success')
+    return redirect(url_for('admin.manage_invoices'))
+
 @admin_bp.route('/orders')
 @login_required
 @role_required('admin')
