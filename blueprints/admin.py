@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, jsonify
 from flask_login import login_required, current_user
 from extensions import db, bcrypt
-from models import User, JobApplication, ActivityUpdate, CodeSnippet, Project, Transaction, Order, AffiliateAd, ActivityLog, JobOpening, Feedback, CodeTestSubmission, ModeratorAssignmentHistory, Product, ProductImage, Invoice, InvoiceItem, BRD, LearningContent
+from models import User, JobApplication, ActivityUpdate, CodeSnippet, Project, Transaction, Order, AffiliateAd, ActivityLog, JobOpening, Feedback, CodeTestSubmission, ModeratorAssignmentHistory, Product, ProductImage, Invoice, InvoiceItem, BRD, LearningContent, EMIPlan, EMIPayment
 from utils import role_required, log_user_action, send_email
 from datetime import datetime, timedelta
 from sqlalchemy import func, or_
@@ -9,6 +9,10 @@ from werkzeug.utils import secure_filename
 from invoice_service import InvoiceGenerator, BrdGenerator
 import os
 import cloudinary.uploader
+import csv
+from io import TextIOWrapper
+import pypdf
+import re
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -1250,7 +1254,7 @@ def update_project_status(project_id):
         project.status = new_status
         db.session.commit()
         flash(f'Project status updated to "{new_status}".', 'success')
-    return redirect(url_for('admin.project_detail', project_id=project_id))
+    return redirect(url_for('admin.project_detail', project_id=project.id))
 
 @admin_bp.route('/project/<int:project_id>/brd')
 @login_required
@@ -1325,3 +1329,305 @@ def update_learning_content():
         flash(f'Could not find the learning page for {language_id.upper()}.', 'danger')
 
     return redirect(url_for('main.learn_language', language=language_id))
+
+# --- EMI MANAGER ---
+@admin_bp.route('/emi_manager')
+@login_required
+@role_required('admin')
+def emi_manager():
+    plans = EMIPlan.query.order_by(EMIPlan.created_at.desc()).all()
+    # Fetch all users to populate both dropdowns
+    users = User.query.filter(User.role != 'admin').order_by(User.username).all()
+    return render_template('emi_manager.html', plans=plans, users=users)
+
+@admin_bp.route('/emi_manager/import', methods=['POST'])
+@login_required
+@role_required('admin')
+def import_emi_schedule():
+    borrower_id = request.form.get('borrower_id')
+    lender_id = request.form.get('lender_id')
+    title = request.form.get('title')
+    reminder_days = int(request.form.get('reminder_days', 3))
+    file = request.files.get('schedule_file')
+
+    if not borrower_id or not lender_id or not title or not file:
+        flash('All fields are required.', 'danger')
+        return redirect(url_for('admin.emi_manager'))
+
+    if borrower_id == lender_id:
+        flash('Borrower and Lender cannot be the same user.', 'danger')
+        return redirect(url_for('admin.emi_manager'))
+
+    filename = secure_filename(file.filename)
+    payments_to_add = []
+    total_amount = 0.0
+    processing_fee = 0.0  # Initialize processing fee
+
+    try:
+        if filename.endswith('.csv'):
+            # Handle CSV files
+            csv_file = TextIOWrapper(file, encoding='utf-8')
+            csv_reader = csv.DictReader(csv_file)
+            for row in csv_reader:
+                try:
+                    amount = float(row.get('Amount', 0).replace(',', ''))
+                    # Check for Processing Fee in CSV
+                    description = row.get('Description', f'Installment for {title}')
+                    if 'processing fee' in description.lower():
+                        processing_fee += amount
+                        continue  # Skip adding as separate row
+
+                    date_str = row.get('Date', '')
+                    try:
+                        due_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                    except ValueError:
+                        due_date = datetime.strptime(date_str, '%d/%m/%Y').date()
+                    
+                    if amount > 0 and due_date:
+                        total_amount += amount
+                        payments_to_add.append({
+                            'due_date': due_date, 
+                            'amount': amount, 
+                            'description': description
+                        })
+                except Exception as e:
+                    print(f"Skipping CSV row error: {e}")
+                    continue
+        
+        elif filename.endswith('.pdf'):
+            # Handle PDF files (Supports ICICI, SBI, and generic formats)
+            try:
+                pdf_reader = pypdf.PdfReader(file)
+                text = ""
+                for page in pdf_reader.pages: 
+                    text += page.extract_text() + "\n"
+                
+                lines = text.split('\n')
+                
+                # Regex 1: Matches numeric dates (e.g., 20/01/2024, 20-01-2024)
+                date_pattern_num = re.compile(r'\b(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})\b')
+                
+                # Regex 2: Matches text dates (e.g., 20-Jan-2024, 20Apr--2024)
+                # Handles separators like spaces, dashes, slashes, or double hyphens/typos
+                date_pattern_text = re.compile(r'\b(\d{1,2})[\s/-]*([A-Za-z]{3})[\s/-]*(\d{4})\b')
+                
+                # Regex to capture Processing Fee (e.g., Processing Fee: 199.00)
+                fee_pattern = re.compile(r'Processing\s*Fee\s*[:\-]?\s*(\d{1,3}(?:,\d{3})*\.?\d*)', re.IGNORECASE)
+
+                for line in lines:
+                    line = line.strip()
+                    if not line: continue
+                    
+                    # Exclude lines that are clearly headers containing dates but not installments
+                    if 'txn date' in line.lower() or 'transaction date' in line.lower():
+                        continue
+
+                    # 1. Extract Processing Fee
+                    fee_match = fee_pattern.search(line)
+                    if fee_match:
+                        try:
+                            fee_val = float(fee_match.group(1).replace(',', ''))
+                            processing_fee += fee_val
+                        except ValueError: pass
+                        continue # Skip line to avoid treating fee as installment
+
+                    due_date = None
+                    end_of_date_index = 0
+
+                    # Attempt 1: Check for Text Month Format (ICICI style: 20-Jan-2024)
+                    text_match = date_pattern_text.search(line)
+                    if text_match:
+                        try:
+                            day, month, year = text_match.groups()
+                            # Standardize to a format datetime can parse
+                            date_str = f"{day}-{month}-{year}"
+                            due_date = datetime.strptime(date_str, '%d-%b-%Y').date()
+                            end_of_date_index = text_match.end()
+                        except ValueError:
+                            pass # Invalid date string
+                    
+                    # Attempt 2: Check for Numeric Date Format (SBI style: 20/01/2024)
+                    if not due_date:
+                        num_match = date_pattern_num.search(line)
+                        if num_match:
+                            try:
+                                day, month, year = num_match.groups()
+                                if len(year) == 2: year = "20" + year # Handle 2-digit year
+                                due_date = datetime(int(year), int(month), int(day)).date()
+                                end_of_date_index = num_match.end()
+                            except ValueError:
+                                pass
+
+                    # If a valid date is found, look for the EMI amount in the rest of the line
+                    if due_date:
+                        remaining_text = line[end_of_date_index:]
+                        
+                        # Regex to find currency amounts (e.g., 2,172.26 or 1000.00)
+                        # Matches numbers with optional commas and a decimal point
+                        amount_matches = re.findall(r'(\d{1,3}(?:,\d{3})*\.\d{2})', remaining_text)
+                        
+                        if amount_matches:
+                            # Usually the first monetary value after the date is the EMI/Debit amount
+                            amount_str = amount_matches[0].replace(',', '')
+                            try:
+                                amount = float(amount_str)
+                                if amount > 0:
+                                    payments_to_add.append({
+                                        'due_date': due_date, 
+                                        'amount': amount, 
+                                        'description': f'Installment for {title}'
+                                    })
+                                    total_amount += amount
+                            except ValueError: 
+                                continue
+
+            except Exception as e:
+                print(f"PDF Parsing Error: {e}")
+                flash('Error reading PDF file. Ensure the file contains text data.', 'danger')
+                return redirect(url_for('admin.emi_manager'))
+
+        if not payments_to_add:
+            flash('No valid payment records found. Please check the file format.', 'warning')
+            return redirect(url_for('admin.emi_manager'))
+
+        # Sort by date to ensure correct installment numbering
+        payments_to_add.sort(key=lambda x: x['due_date'])
+
+        # --- Merge Processing Fee into First Installment ---
+        if processing_fee > 0 and payments_to_add:
+            payments_to_add[0]['amount'] += processing_fee
+            payments_to_add[0]['description'] += f" + Proc. Fee ({processing_fee})"
+            total_amount += processing_fee
+        # ---------------------------------------------------
+
+        # Create the EMI Plan
+        new_plan = EMIPlan(
+            borrower_id=borrower_id, 
+            lender_id=lender_id, 
+            title=title, 
+            total_principal=total_amount
+        )
+        db.session.add(new_plan)
+        db.session.commit()
+
+        # Add Payments
+        for index, pay in enumerate(payments_to_add, start=1):
+            payment = EMIPayment(
+                plan_id=new_plan.id,
+                installment_number=index,
+                due_date=pay['due_date'],
+                amount=pay['amount'],
+                description=pay['description'],
+                reminder_days_before=reminder_days
+            )
+            db.session.add(payment)
+        
+        db.session.commit()
+        log_user_action("Create EMI Plan", f"Created plan '{title}' for Borrower {borrower_id}")
+        flash(f'EMI Schedule imported successfully ({len(payments_to_add)} installments).', 'success')
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Import Error: {e}")
+        flash(f'Failed to process file: {str(e)}', 'danger')
+
+    return redirect(url_for('admin.emi_manager'))
+
+@admin_bp.route('/emi_manager/update_payment', methods=['POST'])
+@login_required
+@role_required('admin')
+def update_emi_payment():
+    payment_id = request.form.get('payment_id')
+    amount = request.form.get('amount')
+    due_date_str = request.form.get('due_date')
+    description = request.form.get('description')
+    status = request.form.get('status')
+
+    payment = EMIPayment.query.get_or_404(payment_id)
+    
+    if amount:
+        payment.amount = float(amount)
+    if due_date_str:
+        payment.due_date = datetime.strptime(due_date_str, '%Y-%m-%d').date()
+    if description:
+        payment.description = description
+    if status:
+        payment.status = status
+        # Reset payment date if set back to Pending
+        if status == 'Pending':
+            payment.payment_date = None
+        elif status == 'Paid' and not payment.payment_date:
+            payment.payment_date = datetime.utcnow()
+        
+    db.session.commit()
+    log_user_action("Update EMI Payment", f"Updated installment #{payment.installment_number} for plan {payment.plan.title}")
+    
+    flash('Payment details updated successfully.', 'success')
+    return redirect(url_for('admin.emi_manager'))
+
+@admin_bp.route('/emi_manager/mark_paid/<int:payment_id>', methods=['GET', 'POST']) # Support POST for AJAX
+@login_required
+@role_required('admin')
+def mark_emi_paid(payment_id):
+    payment = EMIPayment.query.get_or_404(payment_id)
+    
+    if payment.status == 'Paid':
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': 'Payment already marked as Paid.'})
+        flash('Payment is already paid.', 'warning')
+        return redirect(url_for('admin.emi_manager'))
+
+    payment.status = 'Paid'
+    payment.payment_date = datetime.utcnow()
+    db.session.commit()
+
+    # Notify Lender
+    lender = payment.plan.lender
+    borrower = payment.plan.borrower
+    
+    email_status = "and Lender notified"
+    try:
+        send_email(
+            to=lender.email,
+            subject=f"Payment Received: {payment.description}",
+            template="mail/emi_paid_notification_lender.html",
+            lender=lender,
+            borrower=borrower,
+            payment=payment,
+            paid_date=datetime.utcnow()
+        )
+    except Exception as e:
+        print(f"Email error: {e}")
+        email_status = "but failed to send email"
+
+    log_user_action("Mark EMI Paid", f"Marked installment #{payment.installment_number} as paid for plan {payment.plan.title}")
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({
+            'success': True, 
+            'message': f'Installment marked as Paid {email_status}.',
+            'payment_date': payment.payment_date.strftime('%d/%m')
+        })
+
+    flash(f'Installment marked as paid {email_status}.', 'success')
+    return redirect(url_for('admin.emi_manager'))
+
+@admin_bp.route('/emi_manager/delete_plan/<int:plan_id>')
+@login_required
+@role_required('admin')
+def delete_emi_plan(plan_id):
+    plan = EMIPlan.query.get_or_404(plan_id)
+    title = plan.title
+    db.session.delete(plan)
+    db.session.commit()
+    log_user_action("Delete EMI Plan", f"Deleted EMI plan: {title}")
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({
+            'success': True, 
+            'message': f'EMI Plan "{title}" has been deleted.',
+            'remove_row_id': f'plan-{plan_id}' # Tells frontend which element to remove
+        })
+
+    flash(f'EMI Plan "{title}" has been deleted.', 'success')
+    return redirect(url_for('admin.emi_manager'))

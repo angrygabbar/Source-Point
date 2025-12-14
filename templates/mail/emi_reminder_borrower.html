@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head><style>body { font-family: sans-serif; background: #f4f7f6; padding: 20px; } .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }</style></head>
+<body>
+    <div class="container">
+        <h2 style="color: #4f46e5;">Payment Reminder</h2>
+        <p>Dear {{ user.username }},</p>
+        <p>This is a reminder that installment <strong>#{{ payment.installment_number }}</strong> is due for <strong>{{ payment.description }}</strong>.</p>
+        <p><strong>Lender:</strong> {{ lender.username }}</p>
+        <p><strong>Amount:</strong> ₹{{ "{:,.2f}".format(payment.amount) }}</p>
+        <p><strong>Due Date:</strong> {{ payment.due_date }}</p>
+        <p>Please ensure payment is made on time.</p>
+    </div>
+</body>
+</html>

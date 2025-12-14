@@ -76,6 +76,9 @@
                 <a href="{{ url_for('events.events') }}" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all">
                     <i class="fas fa-calendar-alt w-6 text-center mr-2"></i> Events
                 </a>
+                <a href="{{ url_for('admin.emi_manager') }}" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all {{ 'bg-white/10 text-white' if request.endpoint == 'admin.emi_manager' }}">
+                    <i class="fas fa-hand-holding-usd w-6 text-center mr-2"></i> EMI Manager
+                </a>
                 <a href="{{ url_for('admin.manage_records') }}" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all">
                     <i class="fas fa-database w-6 text-center mr-2"></i> Records
                 </a>

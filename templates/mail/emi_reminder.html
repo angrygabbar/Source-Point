@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    body { font-family: 'Inter', sans-serif; background-color: #f4f7f6; padding: 20px; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .header { background: #6366f1; padding: 30px; text-align: center; color: white; }
+    .content { padding: 30px; color: #333; line-height: 1.6; }
+    .amount { font-size: 24px; font-weight: bold; color: #4338ca; margin: 20px 0; text-align: center; }
+</style>
+</head>
+<body>
+    <div class="container">
+        <div class="header"><h1>Payment Reminder</h1></div>
+        <div class="content">
+            <p>Hello {{ user.username }},</p>
+            <p>This is a reminder that an installment is due in <strong>{{ days_remaining }} days</strong>.</p>
+            <div class="amount">₹{{ "%.2f"|format(payment.amount) }}</div>
+            <p><strong>Due Date:</strong> {{ payment.due_date }}</p>
+            <p><strong>Description:</strong> {{ payment.description }}</p>
+            <p>Please ensure the payment is made by the due date to avoid service interruption.</p>
+            <p>Regards,<br>Source Point Team</p>
+        </div>
+    </div>
+</body>
+</html>

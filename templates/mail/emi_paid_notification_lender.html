@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head><style>body { font-family: sans-serif; background: #f4f7f6; padding: 20px; } .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; border-top: 5px solid #10b981; }</style></head>
+<body>
+    <div class="container">
+        <h2 style="color: #10b981;">Payment Received</h2>
+        <p>Dear {{ lender.username }},</p>
+        <p>We are pleased to inform you that <strong>{{ borrower.username }}</strong> has completed payment for installment <strong>#{{ payment.installment_number }}</strong>.</p>
+        <p><strong>Description:</strong> {{ payment.description }}</p>
+        <p><strong>Amount:</strong> ₹{{ "{:,.2f}".format(payment.amount) }}</p>
+        <p><strong>Date Paid:</strong> {{ paid_date.strftime('%B %d, %Y') }}</p>
+    </div>
+</body>
+</html>

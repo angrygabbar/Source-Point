@@ -23,3 +23,4 @@ cloudinary
 Flask-Caching
 Flask-Limiter
 rich
+pypdf==3.17.1

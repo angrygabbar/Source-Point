@@ -138,7 +138,7 @@ class Feedback(db.Model):
 class ProductImage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
-    image_url = db.Column(db.Text, nullable=False)  # CHANGED to Text
+    image_url = db.Column(db.Text, nullable=False) 
 
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -147,7 +147,7 @@ class Product(db.Model):
     stock = db.Column(db.Integer, default=0, nullable=False)
     price = db.Column(db.Float, nullable=False, default=0.0)
     description = db.Column(db.Text, nullable=True)
-    image_url = db.Column(db.Text, nullable=True) # CHANGED to Text
+    image_url = db.Column(db.Text, nullable=True)
     images = db.relationship('ProductImage', backref='product', lazy=True, cascade="all, delete-orphan")
     category = db.Column(db.String(50), nullable=True)
     brand = db.Column(db.String(100), nullable=True)
@@ -166,7 +166,7 @@ class Invoice(db.Model):
     subtotal = db.Column(db.Float, nullable=False)
     tax = db.Column(db.Float, nullable=False, default=0.0)
     total_amount = db.Column(db.Float, nullable=False)
-    status = db.Column(db.String(20), default='Unpaid', nullable=False) # Added for payment tracking
+    status = db.Column(db.String(20), default='Unpaid', nullable=False) 
     due_date = db.Column(db.Date, nullable=True)
     notes = db.Column(db.Text, nullable=True)
     payment_details = db.Column(db.Text, nullable=True)
@@ -255,3 +255,27 @@ class ActivityLog(db.Model):
     details = db.Column(db.Text, nullable=True)
     ip_address = db.Column(db.String(50), nullable=True)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+class EMIPlan(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(150), nullable=False)
+    total_principal = db.Column(db.Float, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
+    borrower_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    lender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    borrower = db.relationship('User', foreign_keys=[borrower_id], backref='borrowing_plans')
+    lender = db.relationship('User', foreign_keys=[lender_id], backref='lending_plans')
+    payments = db.relationship('EMIPayment', backref='plan', lazy=True, cascade="all, delete-orphan")
+
+class EMIPayment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    plan_id = db.Column(db.Integer, db.ForeignKey('emi_plan.id'), nullable=False)
+    installment_number = db.Column(db.Integer, nullable=False, default=1)  # Added this field
+    due_date = db.Column(db.Date, nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    description = db.Column(db.String(200), nullable=True)
+    status = db.Column(db.String(20), default='Pending')
+    reminder_days_before = db.Column(db.Integer, default=3)
+    reminder_sent = db.Column(db.Boolean, default=False)
+    payment_date = db.Column(db.DateTime, nullable=True)
