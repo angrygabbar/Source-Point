@@ -107,6 +107,7 @@ class JobApplication(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     job_id = db.Column(db.Integer, db.ForeignKey('job_opening.id'), nullable=False)
     status = db.Column(db.String(20), default='pending', nullable=False)
+    resume_url = db.Column(db.String(500), nullable=True) # Added resume URL
     applied_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)
 
 class CodeTestSubmission(db.Model):

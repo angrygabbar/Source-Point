@@ -72,6 +72,7 @@ def dashboard():
     if current_user.role == 'admin': return redirect(url_for('admin.admin_dashboard'))
     elif current_user.role == 'developer': return redirect(url_for('developer.developer_dashboard'))
     elif current_user.role == 'moderator': return redirect(url_for('moderator.moderator_dashboard'))
+    elif current_user.role == 'recruiter': return redirect(url_for('recruiter.recruiter_dashboard'))
     elif current_user.role == 'buyer': return redirect(url_for('buyer.buyer_dashboard'))
     else: return redirect(url_for('candidate.candidate_dashboard'))
 
@@ -222,14 +223,14 @@ def change_password():
 # --- LEARNING ROUTES ---
 @main_bp.route('/learning')
 @login_required
-@role_required(['candidate', 'admin', 'developer'])
+@role_required(['candidate', 'admin', 'developer', 'recruiter', 'moderator'])
 @cache.cached(timeout=600) # Cache learning hub for 10 minutes
 def learning():
     return render_template('learning.html')
 
 @main_bp.route('/learn/<language>')
 @login_required
-@role_required(['candidate', 'admin', 'developer'])
+@role_required(['candidate', 'admin', 'developer', 'recruiter', 'moderator'])
 @cache.cached(timeout=300) # Cache individual tutorials
 def learn_language(language):
     supported_languages = ['java', 'cpp', 'c', 'sql', 'dbms', 'plsql', 'mysql']

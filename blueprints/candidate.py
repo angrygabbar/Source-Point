@@ -4,6 +4,7 @@ from extensions import db
 from models import User, JobOpening, JobApplication, CodeTestSubmission, CodeSnippet
 from utils import role_required, log_user_action, send_email
 from datetime import datetime, timedelta
+import cloudinary.uploader
 
 candidate_bp = Blueprint('candidate', __name__)
 
@@ -40,28 +41,65 @@ def code_test():
     messageable_users = User.query.filter(User.role.in_(['admin', 'developer'])).all()
     return render_template('code_test.html', messageable_users=messageable_users)
 
-@candidate_bp.route('/apply_job/<int:job_id>')
+@candidate_bp.route('/apply_job/<int:job_id>', methods=['POST'])
 @login_required
 @role_required('candidate')
 def apply_job(job_id):
     job = JobOpening.query.get_or_404(job_id)
     existing_application = JobApplication.query.filter_by(user_id=current_user.id, job_id=job.id).first()
+    
     if existing_application:
         flash('You have already applied for this job.', 'warning')
-    else:
-        new_application = JobApplication(user_id=current_user.id, job_id=job.id)
-        db.session.add(new_application)
-        db.session.commit()
+        return redirect(url_for('candidate.candidate_dashboard'))
 
-        admins = User.query.filter_by(role='admin').all()
-        admin_emails = [admin.email for admin in admins]
-        candidate = User.query.get(current_user.id)
+    # Resume Upload Logic
+    resume_url = None
+    if 'resume' in request.files:
+        file = request.files['resume']
+        if file.filename != '':
+            if file and file.filename.endswith('.pdf'):
+                try:
+                    upload_result = cloudinary.uploader.upload(
+                        file, 
+                        resource_type="raw", 
+                        folder="application_resumes",
+                        public_id=f"app_resume_{current_user.id}_{job.id}"
+                    )
+                    resume_url = upload_result['secure_url']
+                except Exception as e:
+                    flash(f'Resume upload failed: {str(e)}', 'danger')
+                    return redirect(url_for('candidate.candidate_dashboard'))
+            else:
+                flash('Only PDF files are allowed.', 'danger')
+                return redirect(url_for('candidate.candidate_dashboard'))
+    
+    # Fallback to profile resume if none uploaded
+    if not resume_url and current_user.resume_filename:
+        resume_url = current_user.resume_filename
 
-        send_email(to=admin_emails, subject=f"New Job Application: {job.title}", template="mail/application_submitted_admin.html", candidate=candidate, job=job, now=datetime.utcnow())
-        send_email(to=candidate.email, subject=f"Application Received: {job.title}", template="mail/application_submitted_candidate.html", candidate=candidate, job=job, now=datetime.utcnow())
-        
-        log_user_action("Apply Job", f"Applied for job: {job.title}")
-        flash('You have successfully applied for the job!', 'success')
+    if not resume_url:
+        flash('Please upload a resume to apply.', 'danger')
+        return redirect(url_for('candidate.candidate_dashboard'))
+
+    new_application = JobApplication(user_id=current_user.id, job_id=job.id, resume_url=resume_url)
+    db.session.add(new_application)
+    db.session.commit()
+
+    # Notifications
+    admins = User.query.filter_by(role='admin').all()
+    recruiters = User.query.filter_by(role='recruiter').all()
+    
+    # Notify admins and recruiters
+    recipient_emails = [u.email for u in admins + recruiters]
+    
+    if recipient_emails:
+        admin_user = User.query.filter_by(role='admin').first()
+        send_email(to=recipient_emails, subject=f"New Job Application: {job.title}", template="mail/application_submitted_admin.html", admin=admin_user, candidate=current_user, job=job, now=datetime.utcnow())
+    
+    send_email(to=current_user.email, subject=f"Application Received: {job.title}", template="mail/application_submitted_candidate.html", candidate=current_user, job=job, now=datetime.utcnow())
+    
+    log_user_action("Apply Job", f"Applied for job: {job.title}")
+    flash('You have successfully applied for the job!', 'success')
     return redirect(url_for('candidate.candidate_dashboard'))
 
 @candidate_bp.route('/submit_code_test', methods=['POST'])

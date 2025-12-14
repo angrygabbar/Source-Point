@@ -54,6 +54,7 @@ def create_app():
     from blueprints.developer import developer_bp
     from blueprints.moderator import moderator_bp
     from blueprints.events import events_bp
+    from blueprints.recruiter import recruiter_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -63,6 +64,7 @@ def create_app():
     app.register_blueprint(developer_bp)
     app.register_blueprint(moderator_bp)
     app.register_blueprint(events_bp)
+    app.register_blueprint(recruiter_bp)
 
     # --- GLOBAL CONTEXT PROCESSOR ---
     @app.context_processor

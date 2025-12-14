@@ -108,6 +108,21 @@
                 </a>
                 {% endif %}
 
+                {% if current_user.role == 'recruiter' %}
+                <div class="pt-4 pb-2">
+                    <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Hiring</p>
+                </div>
+                <a href="{{ url_for('recruiter.recruiter_dashboard') }}" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+                    <i class="fas fa-user-tie w-6 text-center mr-2"></i> Dashboard
+                </a>
+                <a href="{{ url_for('events.events') }}" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+                    <i class="fas fa-calendar-alt w-6 text-center mr-2"></i> Events & Tests
+                </a>
+                <a href="{{ url_for('main.learning') }}" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+                    <i class="fas fa-book w-6 text-center mr-2"></i> Resources
+                </a>
+                {% endif %}
+
                 {% if current_user.role == 'candidate' %}
                 <div class="pt-4 pb-2">
                     <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Preparation</p>
