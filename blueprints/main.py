@@ -20,8 +20,17 @@ SECRET_QUESTIONS = [
 ]
 
 @main_bp.route('/')
-# @cache.cached(timeout=600) # <-- FIXED: Caching removed so the page updates immediately on logout
+# @cache.cached(timeout=600) # Caching disabled to ensure login state updates immediately
 def home(): 
+    # Intelligent redirect if user lands on home while logged in
+    if current_user.is_authenticated:
+        if current_user.role == 'seller': return redirect(url_for('seller.seller_dashboard'))
+        elif current_user.role == 'admin': return redirect(url_for('admin.admin_dashboard'))
+        elif current_user.role == 'developer': return redirect(url_for('developer.developer_dashboard'))
+        elif current_user.role == 'moderator': return redirect(url_for('moderator.moderator_dashboard'))
+        elif current_user.role == 'recruiter': return redirect(url_for('recruiter.recruiter_dashboard'))
+        elif current_user.role == 'buyer': return redirect(url_for('buyer.buyer_dashboard'))
+        elif current_user.role == 'candidate': return redirect(url_for('candidate.candidate_dashboard'))
     return render_template('home.html')
 
 @main_bp.route('/offers')
@@ -31,7 +40,8 @@ def offers():
     return render_template('offers.html', ads=ads)
 
 @main_bp.route('/contact')
-def contact(): return render_template('contact.html')
+def contact(): 
+    return render_template('contact.html')
 
 @main_bp.route('/contact_submit', methods=['POST'])
 def submit_contact():
@@ -52,6 +62,7 @@ def submit_contact():
     <p>{query}</p>
     """
     
+    # Fallback admin logic if no admin exists in DB
     admin_email = "admin@sourcepoint.in"
     admin_user = User.query.filter_by(role='admin').first()
     
@@ -61,20 +72,29 @@ def submit_contact():
             email = admin_email
         admin_user = DummyUser()
 
-    send_email(to=admin_email, subject=subject, template="mail/broadcast.html", user=admin_user, body=body)
-    
-    flash('Your support request has been sent successfully!', 'success')
+    try:
+        send_email(to=admin_user.email, subject=subject, template="mail/broadcast.html", user=admin_user, body=body)
+        flash('Your support request has been sent successfully!', 'success')
+    except Exception as e:
+        flash(f'Error sending request: {str(e)}', 'danger')
+        
     return redirect(url_for('main.contact'))
 
 @main_bp.route('/dashboard')
 @login_required
 def dashboard():
-    if current_user.role == 'admin': return redirect(url_for('admin.admin_dashboard'))
+    """
+    Central Dashboard Router:
+    Redirects the user to their specific dashboard based on their role.
+    """
+    if current_user.role == 'seller': return redirect(url_for('seller.seller_dashboard'))
+    elif current_user.role == 'admin': return redirect(url_for('admin.admin_dashboard'))
     elif current_user.role == 'developer': return redirect(url_for('developer.developer_dashboard'))
     elif current_user.role == 'moderator': return redirect(url_for('moderator.moderator_dashboard'))
     elif current_user.role == 'recruiter': return redirect(url_for('recruiter.recruiter_dashboard'))
     elif current_user.role == 'buyer': return redirect(url_for('buyer.buyer_dashboard'))
-    else: return redirect(url_for('candidate.candidate_dashboard'))
+    elif current_user.role == 'candidate': return redirect(url_for('candidate.candidate_dashboard'))
+    else: return redirect(url_for('home')) # Fallback
 
 @main_bp.route('/messages')
 @login_required
@@ -82,10 +102,13 @@ def messages():
     messageable_users_dict = {}
     now = datetime.utcnow()
 
+    # Define who can message whom
     if current_user.role == 'candidate':
+        # Candidates can message Admins
         admins = User.query.filter_by(role='admin').all()
         for admin in admins:
             messageable_users_dict[admin.id] = admin
+        # And their assigned moderator during the test
         if current_user.test_start_time and current_user.test_end_time and \
            current_user.test_start_time <= now <= current_user.test_end_time and \
            current_user.moderator_id:
@@ -94,10 +117,11 @@ def messages():
                 messageable_users_dict[moderator.id] = moderator
 
     elif current_user.role == 'moderator':
+        # Moderators can message Admins
         admins = User.query.filter_by(role='admin').all()
         for admin in admins:
             messageable_users_dict[admin.id] = admin
-
+        # And active candidates assigned to them
         assigned_candidates = User.query.filter(
             User.moderator_id == current_user.id,
             User.test_start_time <= now,
@@ -106,7 +130,14 @@ def messages():
         for candidate in assigned_candidates:
             messageable_users_dict[candidate.id] = candidate
 
+    elif current_user.role in ['seller', 'buyer', 'recruiter']:
+        # Sellers/Buyers/Recruiters can message Admins for support
+        admins = User.query.filter_by(role='admin').all()
+        for admin in admins:
+            messageable_users_dict[admin.id] = admin
+
     elif current_user.role in ['admin', 'developer']:
+        # Admins/Developers can message everyone (except themselves)
         users = User.query.filter(User.id != current_user.id).all()
         for user in users:
             messageable_users_dict[user.id] = user
@@ -123,6 +154,7 @@ def get_conversation(other_user_id):
             (Message.sender_id == other_user_id) & (Message.recipient_id == current_user.id)
         )
     ).order_by(Message.timestamp.asc()).all()
+    
     conversation = [
         {
             'sender_id': msg.sender_id,
@@ -137,13 +169,18 @@ def get_conversation(other_user_id):
 def send_message():
     recipient_id = request.form.get('recipient_id')
     body = request.form.get('body')
+    
     if not recipient_id or not body:
         flash('Message cannot be empty.', 'danger')
     else:
-        msg = Message(sender_id=current_user.id, recipient_id=recipient_id, body=body)
-        db.session.add(msg)
-        db.session.commit()
-        flash('Message sent!', 'success')
+        try:
+            msg = Message(sender_id=current_user.id, recipient_id=recipient_id, body=body)
+            db.session.add(msg)
+            db.session.commit()
+            flash('Message sent!', 'success')
+        except Exception as e:
+            flash('Failed to send message.', 'danger')
+            
     return redirect(url_for('main.messages'))
 
 @main_bp.route('/profile')
@@ -189,6 +226,7 @@ def update_profile():
 def update_security_question():
     secret_question = request.form.get('secret_question')
     secret_answer = request.form.get('secret_answer')
+    
     if secret_question and secret_answer:
         current_user.secret_question = secret_question
         current_user.secret_answer_hash = bcrypt.generate_password_hash(secret_answer).decode('utf-8')
@@ -223,20 +261,23 @@ def change_password():
 # --- LEARNING ROUTES ---
 @main_bp.route('/learning')
 @login_required
-@role_required(['candidate', 'admin', 'developer', 'recruiter', 'moderator'])
-@cache.cached(timeout=600) # Cache learning hub for 10 minutes
+# Added 'seller' and 'buyer' to authorized roles
+@role_required(['candidate', 'admin', 'developer', 'recruiter', 'moderator', 'seller', 'buyer'])
+@cache.cached(timeout=600) 
 def learning():
     return render_template('learning.html')
 
 @main_bp.route('/learn/<language>')
 @login_required
-@role_required(['candidate', 'admin', 'developer', 'recruiter', 'moderator'])
-@cache.cached(timeout=300) # Cache individual tutorials
+# Added 'seller' and 'buyer' to authorized roles
+@role_required(['candidate', 'admin', 'developer', 'recruiter', 'moderator', 'seller', 'buyer'])
+@cache.cached(timeout=300) 
 def learn_language(language):
     supported_languages = ['java', 'cpp', 'c', 'sql', 'dbms', 'plsql', 'mysql']
     if language in supported_languages:
         learning_content = LearningContent.query.get(language)
         if not learning_content:
+            # Auto-create empty content if missing
             learning_content = LearningContent(id=language, content=f'<h1>{language.upper()} Tutorial</h1><p>Content coming soon...</p>')
             db.session.add(learning_content)
             db.session.commit()

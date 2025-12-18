@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+{% block title %}Create Invoice{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto animate-dynamic">
+    <div class="flex justify-between mb-6">
+        <h1 class="text-3xl font-bold text-white">New Invoice</h1>
+        <a href="{{ url_for('seller.manage_invoices') }}" class="text-gray-400 hover:text-white">Back</a>
+    </div>
+    <form action="{{ url_for('seller.create_invoice') }}" method="POST" class="glass-panel p-8 rounded-xl space-y-6">
+        <div class="grid grid-cols-2 gap-6">
+            <input type="text" name="recipient_name" required placeholder="Client Name" class="bg-gray-800 border-white/10 rounded p-2 text-white">
+            <input type="email" name="recipient_email" required placeholder="Email" class="bg-gray-800 border-white/10 rounded p-2 text-white">
+        </div>
+        <div class="grid grid-cols-2 gap-6">
+            <textarea name="bill_to_address" placeholder="Billing Address" class="bg-gray-800 border-white/10 rounded p-2 text-white"></textarea>
+            <textarea name="ship_to_address" placeholder="Shipping Address" class="bg-gray-800 border-white/10 rounded p-2 text-white"></textarea>
+        </div>
+        <input type="date" name="due_date" required class="bg-gray-800 border-white/10 rounded p-2 text-white">
+        
+        <div id="items-container" class="space-y-2">
+            <div class="item-row flex gap-2">
+                <input type="text" name="item_description[]" placeholder="Item" class="flex-1 bg-gray-800 rounded p-2 text-white">
+                <input type="number" name="item_quantity[]" value="1" class="w-20 bg-gray-800 rounded p-2 text-white">
+                <input type="number" name="item_price[]" placeholder="Price" class="w-32 bg-gray-800 rounded p-2 text-white">
+            </div>
+        </div>
+        <button type="button" onclick="addItem()" class="text-indigo-400 text-sm">+ Add Item</button>
+
+        <button type="submit" class="w-full bg-green-600 p-3 rounded text-white font-bold mt-4">Generate</button>
+    </form>
+</div>
+<script>
+    function addItem() {
+        const row = document.querySelector('.item-row').cloneNode(true);
+        row.querySelectorAll('input').forEach(i => i.value = '');
+        document.getElementById('items-container').appendChild(row);
+    }
+</script>
+{% endblock %}

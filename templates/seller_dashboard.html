@@ -1,0 +1,50 @@
+{% extends "layout.html" %}
+{% block title %}Seller Dashboard{% endblock %}
+{% block content %}
+<div class="space-y-6 animate-dynamic">
+    <h1 class="text-3xl font-bold text-white">Seller Dashboard</h1>
+    
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="glass-panel p-6 rounded-2xl border border-white/5">
+            <h3 class="text-gray-400 text-xs font-bold uppercase">Total Revenue</h3>
+            <p class="text-3xl font-bold text-white mt-2">₹{{ "{:,.2f}".format(total_revenue) }}</p>
+        </div>
+        <div class="glass-panel p-6 rounded-2xl border border-white/5">
+            <h3 class="text-gray-400 text-xs font-bold uppercase">Inventory Value</h3>
+            <p class="text-3xl font-bold text-white mt-2">₹{{ "{:,.2f}".format(total_inventory_value) }}</p>
+        </div>
+        <div class="glass-panel p-6 rounded-2xl border border-white/5">
+            <h3 class="text-gray-400 text-xs font-bold uppercase">Pending Orders</h3>
+            <p class="text-3xl font-bold text-yellow-400 mt-2">{{ pending_orders_count }}</p>
+        </div>
+        <div class="glass-panel p-6 rounded-2xl border border-white/5">
+            <h3 class="text-gray-400 text-xs font-bold uppercase">Low Stock Alerts</h3>
+            <p class="text-3xl font-bold text-red-400 mt-2">{{ low_stock_count }}</p>
+        </div>
+    </div>
+
+    <h2 class="text-xl font-bold text-white mt-8">Recent Orders</h2>
+    <div class="glass-panel rounded-xl overflow-hidden">
+        <table class="w-full text-sm text-left text-gray-400">
+            <thead class="text-xs text-gray-500 uppercase bg-white/5">
+                <tr>
+                    <th class="px-6 py-3">Order ID</th>
+                    <th class="px-6 py-3">Customer</th>
+                    <th class="px-6 py-3">Amount</th>
+                    <th class="px-6 py-3">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in recent_orders %}
+                <tr class="border-b border-white/5 hover:bg-white/5">
+                    <td class="px-6 py-4 font-bold text-white">{{ order.order_number }}</td>
+                    <td class="px-6 py-4">{{ order.buyer.username }}</td>
+                    <td class="px-6 py-4">₹{{ "{:,.2f}".format(order.total_amount) }}</td>
+                    <td class="px-6 py-4">{{ order.status }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

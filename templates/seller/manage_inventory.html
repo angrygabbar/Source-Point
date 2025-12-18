@@ -65,11 +65,11 @@
                 <i class="fas fa-file-import mr-2"></i> Import Inventory
             </button>
             
-            <form action="{{ url_for('admin.import_inventory') }}" method="POST" enctype="multipart/form-data" class="hidden">
+            <form action="{{ url_for('seller.import_inventory') }}" method="POST" enctype="multipart/form-data" class="hidden">
                 <input type="file" name="import_file" id="importUploadInput" accept=".csv, .xlsx" onchange="this.form.submit()">
             </form>
 
-            <a href="{{ url_for('admin.add_product_page') }}" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all transform hover:scale-[1.02] flex items-center justify-center">
+            <a href="{{ url_for('seller.add_product_page') }}" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all transform hover:scale-[1.02] flex items-center justify-center">
                 <i class="fas fa-plus mr-2"></i> Add Product
             </a>
         </div>
@@ -155,7 +155,7 @@
                         
                         <a href="#" 
                            class="p-2 rounded-lg bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-all" 
-                           data-url="{{ url_for('admin.delete_product', product_id=product.id) }}"
+                           data-url="{{ url_for('seller.delete_product', product_id=product.id) }}"
                            onclick="handleAjaxUrl(event, this.dataset.url, 'Are you sure you want to permanently delete {{ product.name }}?')" 
                            title="Delete">
                             <i class="fas fa-trash"></i>
@@ -170,7 +170,7 @@
                 </div>
                 <h3 class="text-lg font-bold text-white">Inventory Empty</h3>
                 <p class="text-gray-400 text-sm mt-1">Start by adding products to your catalog.</p>
-                <a href="{{ url_for('admin.add_product_page') }}" class="inline-block mt-4 text-indigo-400 hover:text-indigo-300 text-sm font-bold">Add First Product &rarr;</a>
+                <a href="{{ url_for('seller.add_product_page') }}" class="inline-block mt-4 text-indigo-400 hover:text-indigo-300 text-sm font-bold">Add First Product &rarr;</a>
             </div>
             {% endfor %}
         </div>
@@ -193,7 +193,7 @@
                 </button>
             </div>
             <div class="px-6 py-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-                <form id="editProductForm" action="{{ url_for('admin.update_product') }}" method="POST" class="space-y-5">
+                <form id="editProductForm" action="{{ url_for('seller.update_product') }}" method="POST" class="space-y-5">
                     <input type="hidden" name="product_id" id="edit_product_id">
                     
                     <div class="grid grid-cols-2 gap-5">
@@ -279,7 +279,6 @@
             if (show) {
                 editModal.classList.remove('hidden');
                 const panel = editModal.querySelector('.transform');
-                // Simple animation hook
                 setTimeout(() => {
                     panel.classList.add('scale-100', 'opacity-100');
                     panel.classList.remove('scale-95', 'opacity-0');
@@ -311,7 +310,6 @@
             if (e.target.closest('.remove-edit-img-btn')) e.target.closest('.flex').remove();
         });
 
-        // Attach click event to all Edit buttons
         document.querySelectorAll('.edit-product-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.getElementById('edit_product_id').value = this.dataset.id;
@@ -336,7 +334,6 @@
             });
         });
 
-        // Search Logic
         const searchInput = document.getElementById('searchInput');
         if(searchInput) {
             searchInput.addEventListener('keyup', function() {

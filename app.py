@@ -1,12 +1,13 @@
 from dotenv import load_dotenv
 import os
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect, url_for
 from extensions import db, bcrypt, login_manager, migrate, cache, limiter
 from models import User, Message, LearningContent
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
 from utils import send_email
+from flask_login import login_required, current_user
 
 # Load environment variables
 load_dotenv()
@@ -55,6 +56,7 @@ def create_app():
     from blueprints.moderator import moderator_bp
     from blueprints.events import events_bp
     from blueprints.recruiter import recruiter_bp
+    from blueprints.seller import seller_bp  # <--- IMPORT SELLER
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -65,11 +67,11 @@ def create_app():
     app.register_blueprint(moderator_bp)
     app.register_blueprint(events_bp)
     app.register_blueprint(recruiter_bp)
+    app.register_blueprint(seller_bp)  # <--- REGISTER SELLER
 
     # --- GLOBAL CONTEXT PROCESSOR ---
     @app.context_processor
     def inject_messages():
-        from flask_login import current_user
         if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
             messages = Message.query.filter(
                 (Message.sender_id == current_user.id) | (Message.recipient_id == current_user.id)
@@ -86,10 +88,9 @@ def create_app():
     def internal_server_error(e):
         return render_template('500.html'), 500
     
-    # 429 Too Many Requests Handler
     @app.errorhandler(429)
     def ratelimit_handler(e):
-        return render_template('404.html'), 429 # Reusing 404 template for simplicity, or create 429.html
+        return render_template('404.html'), 429 
 
     # --- CLI COMMANDS ---
     @app.cli.command("init-db")
@@ -128,6 +129,22 @@ app = create_app()
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+# --- TEMPORARY FIX ROUTE (RUN ONCE THEN DELETE) ---
+@app.route('/force-seller-role')
+@login_required
+def force_seller_role():
+    from flask_login import logout_user
+    
+    # Update the current user's role to seller
+    user = User.query.get(current_user.id)
+    user.role = 'seller'
+    db.session.commit()
+    
+    # Log them out so the session refreshes cleanly
+    logout_user()
+    
+    return "<h1>Success! Your account is now a SELLER. <a href='/login-register'>Click here to Login again</a></h1>"
 
 # --- BACKGROUND SCHEDULER ---
 def check_completed_tests():

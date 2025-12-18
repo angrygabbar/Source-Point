@@ -3,6 +3,7 @@ from datetime import datetime
 import uuid
 from extensions import db
 
+# Association table for Candidate-Developer contacts
 candidate_contacts = db.Table('candidate_contacts',
     db.Column('candidate_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
     db.Column('developer_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
@@ -68,7 +69,12 @@ class User(UserMixin, db.Model):
     invoices = db.relationship('Invoice', backref='admin', lazy=True)
     moderator_assignments = db.relationship('ModeratorAssignmentHistory', foreign_keys='ModeratorAssignmentHistory.moderator_id', backref='moderator', lazy=True)
     candidate_assignments = db.relationship('ModeratorAssignmentHistory', foreign_keys='ModeratorAssignmentHistory.candidate_id', backref='candidate', lazy=True)
-    orders = db.relationship('Order', backref='buyer', lazy=True)
+    
+    # --- UPDATED ORDER RELATIONSHIPS ---
+    # Orders I placed as a buyer
+    orders = db.relationship('Order', foreign_keys='Order.user_id', backref='buyer', lazy=True)
+    # Orders I manage as a seller
+    sales = db.relationship('Order', foreign_keys='Order.seller_id', backref='seller', lazy=True)
     
     activity_logs = db.relationship('ActivityLog', backref='user', lazy=True)
 
@@ -107,7 +113,7 @@ class JobApplication(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     job_id = db.Column(db.Integer, db.ForeignKey('job_opening.id'), nullable=False)
     status = db.Column(db.String(20), default='pending', nullable=False)
-    resume_url = db.Column(db.String(500), nullable=True) # Added resume URL
+    resume_url = db.Column(db.String(500), nullable=True) 
     applied_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)
 
 class CodeTestSubmission(db.Model):
@@ -234,7 +240,11 @@ class CartItem(db.Model):
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     order_number = db.Column(db.String(50), unique=True, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False) # Buyer
+    
+    # --- NEW SELLER FIELD ---
+    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True) # Seller/Admin of the order
+    
     total_amount = db.Column(db.Float, nullable=False)
     status = db.Column(db.String(20), default='Order Placed') 
     shipping_address = db.Column(db.Text, nullable=False)
@@ -272,7 +282,7 @@ class EMIPlan(db.Model):
 class EMIPayment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     plan_id = db.Column(db.Integer, db.ForeignKey('emi_plan.id'), nullable=False)
-    installment_number = db.Column(db.Integer, nullable=False, default=1)  # Added this field
+    installment_number = db.Column(db.Integer, nullable=False, default=1)
     due_date = db.Column(db.Date, nullable=False)
     amount = db.Column(db.Float, nullable=False)
     description = db.Column(db.String(200), nullable=True)

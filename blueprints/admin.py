@@ -11,6 +11,7 @@ import os
 import cloudinary.uploader
 import csv
 from io import TextIOWrapper
+import openpyxl  # Required for .xlsx support
 import pypdf
 import re
 
@@ -622,6 +623,145 @@ def manage_inventory():
     low_stock_count = sum(1 for p in products if int(p.stock) < 10)
 
     return render_template('manage_inventory.html', products=products, total_inventory_value=total_inventory_value, total_products_count=total_products_count, low_stock_count=low_stock_count)
+
+# --- CSV & XLSX IMPORT ROUTE ---
+@admin_bp.route('/inventory/import', methods=['POST'])
+@login_required
+@role_required('admin')
+def import_inventory():
+    file = request.files.get('import_file')
+    if not file:
+        flash('No file uploaded.', 'danger')
+        return redirect(url_for('admin.manage_inventory'))
+
+    if not (file.filename.endswith('.csv') or file.filename.endswith('.xlsx')):
+        flash('Only CSV or Excel (.xlsx) files are allowed.', 'danger')
+        return redirect(url_for('admin.manage_inventory'))
+
+    try:
+        items_to_process = []
+        
+        if file.filename.endswith('.csv'):
+            # Process CSV
+            csv_file = TextIOWrapper(file, encoding='utf-8')
+            csv_reader = csv.DictReader(csv_file)
+            items_to_process = list(csv_reader)
+            
+        elif file.filename.endswith('.xlsx'):
+            # Process XLSX using OpenPyXL
+            wb = openpyxl.load_workbook(file)
+            ws = wb.active
+            rows = list(ws.iter_rows(values_only=True))
+            
+            if rows:
+                headers = rows[0]  # First row is headers
+                # Map headers to values for remaining rows
+                for row in rows[1:]:
+                    # Create dictionary safely handling None cells
+                    row_data = {}
+                    for idx, header in enumerate(headers):
+                         if header:
+                             row_data[header] = row[idx] if idx < len(row) else None
+                    items_to_process.append(row_data)
+
+        added = 0
+        updated = 0
+
+        for row in items_to_process:
+            # Map headers to DB variables with safe extraction
+            # Supports both dictionary keys (CSV) and mapped keys (XLSX)
+            
+            # Helper for safe string extraction
+            def get_str(key):
+                val = row.get(key)
+                return str(val).strip() if val is not None else ''
+            
+            # Helper for safe float extraction
+            def get_float(key):
+                val = row.get(key)
+                if val is None: return 0.0
+                if isinstance(val, (int, float)): return float(val)
+                try:
+                    return float(str(val).replace(',', '').strip())
+                except ValueError:
+                    return 0.0
+            
+            # Helper for safe int extraction
+            def get_int(key):
+                val = row.get(key)
+                if val is None: return 0
+                if isinstance(val, (int, float)): return int(val)
+                try:
+                    return int(str(val).replace(',', '').strip())
+                except ValueError:
+                    return 0
+
+            sku = get_str('SKU')
+            name = get_str('Product Name')
+            
+            if not sku or not name:
+                continue 
+
+            category = get_str('Category')
+            brand = get_str('Brand')
+            image_url = get_str('Product Image URL')
+            description = get_str('Key Features (Detailed)')
+            
+            mrp = get_float('MRP (INR)')
+            price = get_float('Selling Price (INR)')
+            stock = get_int('Quantity')
+
+            # Check if product exists
+            product = Product.query.filter_by(product_code=sku).first()
+
+            if product:
+                # Update existing product
+                product.name = name
+                product.brand = brand
+                product.category = category
+                product.description = description
+                product.image_url = image_url
+                product.stock = stock
+                product.price = price
+                product.mrp = mrp
+                
+                if image_url:
+                    existing_img = ProductImage.query.filter_by(product_id=product.id, image_url=image_url).first()
+                    if not existing_img:
+                        db.session.add(ProductImage(product_id=product.id, image_url=image_url))
+                
+                updated += 1
+            else:
+                # Create new product
+                new_product = Product(
+                    product_code=sku,
+                    name=name,
+                    brand=brand,
+                    category=category,
+                    description=description,
+                    image_url=image_url,
+                    stock=stock,
+                    price=price,
+                    mrp=mrp
+                )
+                db.session.add(new_product)
+                db.session.flush() # Flush to generate ID
+                
+                if image_url:
+                    db.session.add(ProductImage(product_id=new_product.id, image_url=image_url))
+                
+                added += 1
+
+        db.session.commit()
+        log_user_action("Import Inventory", f"Bulk import ({file.filename}): {added} added, {updated} updated.")
+        flash(f'Inventory processed successfully: {added} New, {updated} Updated.', 'success')
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Import Error: {e}")
+        flash(f'Error processing file: {str(e)}', 'danger')
+
+    return redirect(url_for('admin.manage_inventory'))
 
 @admin_bp.route('/inventory/add', methods=['GET', 'POST'])
 @login_required

@@ -32,14 +32,26 @@ def log_user_action(action, details=None):
             print(f"Failed to log activity: {e}")
 
 def role_required(roles):
+    """
+    Decorator to restrict access based on user roles.
+    """
     if not isinstance(roles, list):
         roles = [roles]
     def wrapper(fn):
         @wraps(fn)
         def decorated_view(*args, **kwargs):
-            if not current_user.is_authenticated or current_user.role not in roles:
+            # 1. Check if user is logged in
+            if not current_user.is_authenticated:
+                return redirect(url_for('auth.login_register'))
+            
+            # 2. Check if user has the correct role
+            if current_user.role not in roles:
                 flash('You do not have permission to access this page.', 'danger')
-                return redirect(url_for('main.dashboard'))
+                
+                # CRITICAL FIX: Redirect to HOME, not Dashboard.
+                # If we redirect to dashboard, and dashboard checks role, it loops back here.
+                return redirect(url_for('main.home')) 
+                
             return fn(*args, **kwargs)
         return decorated_view
     return wrapper
