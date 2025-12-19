@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, jsonify
 from flask_login import login_required, current_user
 from extensions import db, bcrypt
-from models import User, JobApplication, ActivityUpdate, CodeSnippet, Project, Transaction, Order, AffiliateAd, ActivityLog, JobOpening, Feedback, CodeTestSubmission, ModeratorAssignmentHistory, Product, ProductImage, Invoice, InvoiceItem, BRD, LearningContent, EMIPlan, EMIPayment
+from models import User, JobApplication, ActivityUpdate, CodeSnippet, Project, Transaction, Order, AffiliateAd, ActivityLog, JobOpening, Feedback, CodeTestSubmission, ModeratorAssignmentHistory, Product, ProductImage, Invoice, InvoiceItem, BRD, LearningContent, EMIPlan, EMIPayment, SellerInventory, StockRequest
 from utils import role_required, log_user_action, send_email
 from datetime import datetime, timedelta
 from sqlalchemy import func, or_
@@ -11,7 +11,7 @@ import os
 import cloudinary.uploader
 import csv
 from io import TextIOWrapper
-import openpyxl  # Required for .xlsx support
+import openpyxl 
 import pypdf
 import re
 
@@ -24,8 +24,12 @@ GST_RATES = {
     'Home & Office': 12.0,
     'Books': 5.0,
     'Accessories': 12.0,
-    'Other': 18.0 # Default
+    'Other': 18.0 
 }
+
+# =========================================================
+# 1. DASHBOARD & ANALYTICS
+# =========================================================
 
 @admin_bp.route('/')
 @login_required
@@ -38,6 +42,7 @@ def admin_dashboard():
     candidates = User.query.filter_by(role='candidate').all()
     developers = User.query.filter_by(role='developer').all()
     moderators = User.query.filter_by(role='moderator').all()
+    
     scheduled_candidates = User.query.filter(
         User.role == 'candidate',
         User.problem_statement_id != None,
@@ -48,11 +53,13 @@ def admin_dashboard():
         User.role == 'candidate',
         User.moderator_id.isnot(None)
     ).all()
+    
     moderator_ids = list(set([c.moderator_id for c in assigned_candidates_with_moderators]))
     moderators_for_assignments = User.query.filter(User.id.in_(moderator_ids)).all()
     moderators_map = {m.id: m for m in moderators_for_assignments}
     
     pending_orders_count = Order.query.filter_by(status='Order Placed').count()
+    pending_requests_count = StockRequest.query.filter_by(status='Pending').count()
 
     return render_template('admin_dashboard.html',
                            pending_users=pending_users,
@@ -62,7 +69,8 @@ def admin_dashboard():
                            moderators=moderators, scheduled_candidates=scheduled_candidates,
                            assigned_candidates_with_moderators=assigned_candidates_with_moderators,
                            moderators_map=moderators_map,
-                           pending_orders_count=pending_orders_count)
+                           pending_orders_count=pending_orders_count,
+                           pending_requests_count=pending_requests_count)
 
 @admin_bp.route('/analytics')
 @login_required
@@ -141,11 +149,14 @@ def admin_activity_logs():
     logs = query.order_by(ActivityLog.timestamp.desc()).all()
     return render_template('admin_activity_logs.html', logs=logs)
 
+# =========================================================
+# 2. USER MANAGEMENT
+# =========================================================
+
 @admin_bp.route('/manage_users')
 @login_required
 @role_required('admin')
 def manage_users():
-    # --- Server-Side Pagination & Filtering Logic ---
     page = request.args.get('page', 1, type=int)
     search_query = request.args.get('search', '').strip()
     role_filter = request.args.get('role', 'all')
@@ -153,14 +164,12 @@ def manage_users():
 
     query = User.query
 
-    # Apply Search
     if search_query:
         query = query.filter(or_(
             User.username.ilike(f"%{search_query}%"),
             User.email.ilike(f"%{search_query}%")
         ))
 
-    # Apply Filters
     if role_filter != 'all':
         query = query.filter_by(role=role_filter)
     
@@ -168,7 +177,6 @@ def manage_users():
         is_active = True if status_filter == 'active' else False
         query = query.filter_by(is_active=is_active)
 
-    # Apply Pagination (12 items per page for a nice grid layout)
     users_pagination = query.order_by(User.id).paginate(page=page, per_page=12, error_out=False)
 
     return render_template('manage_users.html', 
@@ -198,12 +206,8 @@ def create_user():
     avatar_url = f'https://api.dicebear.com/8.x/initials/svg?seed={username}'
 
     new_user = User(
-        username=username,
-        email=email,
-        password_hash=hashed_password,
-        role=role,
-        avatar_url=avatar_url,
-        is_approved=True
+        username=username, email=email, password_hash=hashed_password,
+        role=role, avatar_url=avatar_url, is_approved=True
     )
     db.session.add(new_user)
     db.session.commit()
@@ -226,7 +230,6 @@ def toggle_user_status(user_id):
     
     log_user_action("Toggle User Status", f"{status.title()} user {user_to_toggle.username}")
 
-    # Check if the request is an AJAX request
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({
             'success': True,
@@ -303,11 +306,8 @@ def update_user_profile(user_id):
         if file.filename != '':
             if file and file.filename.endswith('.pdf'):
                 try:
-                    # --- CLOUDINARY LOGIC ---
                     upload_result = cloudinary.uploader.upload(
-                        file, 
-                        resource_type="raw", 
-                        folder="resumes",
+                        file, resource_type="raw", folder="resumes",
                         public_id=f"resume_{user_to_update.id}"
                     )
                     user_to_update.resume_filename = upload_result['secure_url']
@@ -340,6 +340,10 @@ def admin_change_user_password(user_id):
     log_user_action("Admin Change Password", f"Admin changed password for {user_to_update.username}")
     flash(f'Password for {user_to_update.username} has been updated.', 'success')
     return redirect(url_for('admin.manage_users'))
+
+# =========================================================
+# 3. ADS & JOBS
+# =========================================================
 
 @admin_bp.route('/manage_ads', methods=['GET', 'POST'])
 @login_required
@@ -473,7 +477,7 @@ def assign_moderator():
         return redirect(url_for('admin.admin_dashboard'))
 
     if not all([candidate.assigned_problem, candidate.test_start_time, candidate.test_end_time]):
-        flash(f"Error: Candidate {candidate.username} does not have a complete test schedule. Please assign or reschedule the test from the Events page.", 'danger')
+        flash(f"Error: Candidate {candidate.username} does not have a complete test schedule.", 'danger')
         return redirect(url_for('admin.admin_dashboard'))
 
     candidate.moderator_id = moderator_id
@@ -509,9 +513,9 @@ def assign_moderator():
     )
 
     if email_sent:
-        flash(f'Moderator {moderator.username} has been assigned to {candidate.username}. A notification has been sent.', 'success')
+        flash(f'Moderator assigned. Notification sent.', 'success')
     else:
-        flash(f'Moderator {moderator.username} has been assigned, but the notification email could not be sent.', 'warning')
+        flash(f'Moderator assigned, but email failed.', 'warning')
 
     return redirect(url_for('admin.admin_dashboard'))
 
@@ -589,14 +593,17 @@ def send_specific_email():
                 send_email(to=user.email, subject=subject, template="mail/broadcast.html", user=user, body=final_body, attachments=attachments)
                 count += 1
         
-        log_user_action("Send Specific Email", f"Sent email to {count} recipients. Subject: {subject}")
+        log_user_action("Send Specific Email", f"Sent email to {count} recipients.")
         flash(f'Email has been sent to {count} users.', 'success')
         return redirect(url_for('admin.admin_dashboard'))
 
     users = User.query.all()
     return render_template('send_specific_email.html', users=users)
 
-# --- INVENTORY ---
+# =========================================================
+# 4. INVENTORY MANAGEMENT (Updated)
+# =========================================================
+
 @admin_bp.route('/inventory', methods=['GET', 'POST'])
 @login_required
 @role_required('admin')
@@ -606,25 +613,202 @@ def manage_inventory():
         name = request.form.get('name')
         stock = request.form.get('stock')
         price = request.form.get('price')
-
+        
         if Product.query.filter_by(product_code=product_code).first():
             flash(f'Product ID {product_code} already exists.', 'danger')
         else:
-            new_product = Product(product_code=product_code, name=name, stock=int(stock), price=float(price))
+            # Create product in "Master/Admin" inventory
+            new_product = Product(
+                product_code=product_code, 
+                name=name, 
+                stock=int(stock), 
+                price=float(price),
+                seller_id=None # Default to unassigned/admin
+            )
             db.session.add(new_product)
             db.session.commit()
             log_user_action("Add Product", f"Added new product: {name}")
-            flash(f'Product "{name}" added successfully.', 'success')
+            flash(f'Product "{name}" added to Master Inventory.', 'success')
         return redirect(url_for('admin.manage_inventory'))
     
     products = Product.query.order_by(Product.name).all()
+    sellers = User.query.filter_by(role='seller').all()
+    
     total_inventory_value = sum(int(p.stock) * float(p.price) for p in products)
     total_products_count = len(products)
     low_stock_count = sum(1 for p in products if int(p.stock) < 10)
 
-    return render_template('manage_inventory.html', products=products, total_inventory_value=total_inventory_value, total_products_count=total_products_count, low_stock_count=low_stock_count)
+    return render_template('manage_inventory.html', 
+                           products=products, 
+                           sellers=sellers, 
+                           total_inventory_value=total_inventory_value, 
+                           total_products_count=total_products_count, 
+                           low_stock_count=low_stock_count)
 
-# --- CSV & XLSX IMPORT ROUTE ---
+# --- MANUAL ASSIGNMENT ---
+@admin_bp.route('/inventory/assign', methods=['POST'])
+@login_required
+@role_required('admin')
+def assign_inventory():
+    product_id = request.form.get('product_id')
+    seller_id = request.form.get('seller_id')
+    quantity = request.form.get('quantity')
+
+    if not all([product_id, seller_id, quantity]):
+        flash("Missing data for assignment.", "danger")
+        return redirect(url_for('admin.manage_inventory'))
+
+    try:
+        qty_to_assign = int(quantity)
+        if qty_to_assign <= 0:
+            flash("Quantity must be greater than 0.", "warning")
+            return redirect(url_for('admin.manage_inventory'))
+
+        product = Product.query.get_or_404(product_id)
+        seller = User.query.get_or_404(seller_id)
+
+        if product.stock < qty_to_assign:
+            flash(f"Insufficient stock in Master Inventory! Available: {product.stock}", "danger")
+            return redirect(url_for('admin.manage_inventory'))
+
+        # Deduct Master, Add to Seller
+        product.stock -= qty_to_assign
+        
+        seller_inv = SellerInventory.query.filter_by(seller_id=seller.id, product_id=product.id).first()
+        current_seller_stock = qty_to_assign
+        
+        if seller_inv:
+            seller_inv.stock += qty_to_assign
+            current_seller_stock = seller_inv.stock
+        else:
+            new_inv = SellerInventory(seller_id=seller.id, product_id=product.id, stock=qty_to_assign)
+            db.session.add(new_inv)
+
+        db.session.commit()
+        
+        # Notify
+        try:
+            send_email(
+                to=seller.email,
+                subject=f"Inventory Assigned: {product.name}",
+                template="mail/inventory_assigned.html",
+                seller=seller,
+                product=product,
+                quantity=qty_to_assign,
+                current_stock=current_seller_stock,
+                now=datetime.utcnow()
+            )
+        except Exception: pass
+        
+        log_user_action("Assign Inventory", f"Assigned {qty_to_assign} units of {product.name} to {seller.username}")
+        flash(f"Successfully assigned {qty_to_assign} units to {seller.username}.", "success")
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error assigning inventory: {e}", "danger")
+
+    return redirect(url_for('admin.manage_inventory'))
+
+# --- STOCK REQUESTS ---
+
+@admin_bp.route('/inventory/requests')
+@login_required
+@role_required('admin')
+def manage_stock_requests():
+    requests = StockRequest.query.filter_by(status='Pending').order_by(StockRequest.request_date.desc()).all()
+    history = StockRequest.query.filter(StockRequest.status != 'Pending').order_by(StockRequest.response_date.desc()).limit(20).all()
+    return render_template('manage_stock_requests.html', requests=requests, history=history)
+
+@admin_bp.route('/inventory/requests/approve/<int:req_id>', methods=['POST'])
+@login_required
+@role_required('admin')
+def approve_stock_request(req_id):
+    req = StockRequest.query.get_or_404(req_id)
+    if req.status != 'Pending':
+        flash('Request already processed.', 'warning')
+        return redirect(url_for('admin.manage_stock_requests'))
+
+    product = req.product
+    qty = req.quantity
+
+    if product.stock < qty:
+        flash(f'Insufficient Master Stock (Available: {product.stock}). Cannot approve.', 'danger')
+        return redirect(url_for('admin.manage_stock_requests'))
+
+    try:
+        # Transfer
+        product.stock -= qty
+        seller_inv = SellerInventory.query.filter_by(seller_id=req.seller_id, product_id=req.product_id).first()
+        current_seller_stock = qty
+        
+        if seller_inv:
+            seller_inv.stock += qty
+            current_seller_stock = seller_inv.stock
+        else:
+            new_inv = SellerInventory(seller_id=req.seller_id, product_id=req.product_id, stock=qty)
+            db.session.add(new_inv)
+
+        req.status = 'Approved'
+        req.response_date = datetime.utcnow()
+        req.admin_note = request.form.get('note')
+
+        db.session.commit()
+
+        # Notify Seller
+        try:
+            send_email(
+                to=req.seller.email,
+                subject=f"Stock Request Approved: {product.name}",
+                template="mail/request_status_update.html",
+                request=req,
+                product=product,
+                current_stock=current_seller_stock,
+                status="Approved"
+            )
+        except Exception as e:
+            print(f"Failed to send seller notification: {e}")
+
+        log_user_action("Approve Stock", f"Approved {qty} units of {product.name} for {req.seller.username}")
+        flash('Request approved and stock transferred.', 'success')
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error approving request: {e}', 'danger')
+
+    return redirect(url_for('admin.manage_stock_requests'))
+
+@admin_bp.route('/inventory/requests/reject/<int:req_id>', methods=['POST'])
+@login_required
+@role_required('admin')
+def reject_stock_request(req_id):
+    req = StockRequest.query.get_or_404(req_id)
+    if req.status != 'Pending':
+        return redirect(url_for('admin.manage_stock_requests'))
+
+    req.status = 'Rejected'
+    req.response_date = datetime.utcnow()
+    req.admin_note = request.form.get('note')
+    
+    db.session.commit()
+
+    # Notify Seller
+    try:
+        send_email(
+            to=req.seller.email,
+            subject=f"Stock Request Rejected: {req.product.name}",
+            template="mail/request_status_update.html",
+            request=req,
+            product=req.product,
+            status="Rejected"
+        )
+    except Exception: pass
+
+    log_user_action("Reject Stock", f"Rejected stock request from {req.seller.username}")
+    flash('Request rejected.', 'warning')
+    return redirect(url_for('admin.manage_stock_requests'))
+
+# --- STANDARD CRUD ---
+
 @admin_bp.route('/inventory/import', methods=['POST'])
 @login_required
 @role_required('admin')
@@ -640,125 +824,63 @@ def import_inventory():
 
     try:
         items_to_process = []
-        
         if file.filename.endswith('.csv'):
-            # Process CSV
             csv_file = TextIOWrapper(file, encoding='utf-8')
             csv_reader = csv.DictReader(csv_file)
             items_to_process = list(csv_reader)
-            
         elif file.filename.endswith('.xlsx'):
-            # Process XLSX using OpenPyXL
             wb = openpyxl.load_workbook(file)
             ws = wb.active
             rows = list(ws.iter_rows(values_only=True))
-            
             if rows:
-                headers = rows[0]  # First row is headers
-                # Map headers to values for remaining rows
+                headers = rows[0]
                 for row in rows[1:]:
-                    # Create dictionary safely handling None cells
                     row_data = {}
                     for idx, header in enumerate(headers):
-                         if header:
-                             row_data[header] = row[idx] if idx < len(row) else None
+                         if header: row_data[header] = row[idx] if idx < len(row) else None
                     items_to_process.append(row_data)
 
-        added = 0
-        updated = 0
-
+        added, updated = 0
         for row in items_to_process:
-            # Map headers to DB variables with safe extraction
-            # Supports both dictionary keys (CSV) and mapped keys (XLSX)
-            
-            # Helper for safe string extraction
-            def get_str(key):
-                val = row.get(key)
-                return str(val).strip() if val is not None else ''
-            
-            # Helper for safe float extraction
+            def get_str(key): return str(row.get(key) or '').strip()
             def get_float(key):
-                val = row.get(key)
-                if val is None: return 0.0
-                if isinstance(val, (int, float)): return float(val)
-                try:
-                    return float(str(val).replace(',', '').strip())
-                except ValueError:
-                    return 0.0
-            
-            # Helper for safe int extraction
+                try: return float(str(row.get(key)).replace(',', '').strip())
+                except: return 0.0
             def get_int(key):
-                val = row.get(key)
-                if val is None: return 0
-                if isinstance(val, (int, float)): return int(val)
-                try:
-                    return int(str(val).replace(',', '').strip())
-                except ValueError:
-                    return 0
+                try: return int(str(row.get(key)).replace(',', '').strip())
+                except: return 0
 
             sku = get_str('SKU')
             name = get_str('Product Name')
-            
-            if not sku or not name:
-                continue 
+            if not sku or not name: continue 
 
-            category = get_str('Category')
-            brand = get_str('Brand')
-            image_url = get_str('Product Image URL')
-            description = get_str('Key Features (Detailed)')
-            
-            mrp = get_float('MRP (INR)')
-            price = get_float('Selling Price (INR)')
-            stock = get_int('Quantity')
-
-            # Check if product exists
             product = Product.query.filter_by(product_code=sku).first()
-
             if product:
-                # Update existing product
                 product.name = name
-                product.brand = brand
-                product.category = category
-                product.description = description
-                product.image_url = image_url
-                product.stock = stock
-                product.price = price
-                product.mrp = mrp
-                
-                if image_url:
-                    existing_img = ProductImage.query.filter_by(product_id=product.id, image_url=image_url).first()
-                    if not existing_img:
-                        db.session.add(ProductImage(product_id=product.id, image_url=image_url))
-                
+                product.brand = get_str('Brand')
+                product.category = get_str('Category')
+                product.description = get_str('Key Features (Detailed)')
+                product.image_url = get_str('Product Image URL')
+                product.stock = get_int('Quantity')
+                product.price = get_float('Selling Price (INR)')
+                product.mrp = get_float('MRP (INR)')
                 updated += 1
             else:
-                # Create new product
                 new_product = Product(
-                    product_code=sku,
-                    name=name,
-                    brand=brand,
-                    category=category,
-                    description=description,
-                    image_url=image_url,
-                    stock=stock,
-                    price=price,
-                    mrp=mrp
+                    product_code=sku, name=name, brand=get_str('Brand'),
+                    category=get_str('Category'), description=get_str('Key Features (Detailed)'),
+                    image_url=get_str('Product Image URL'), stock=get_int('Quantity'),
+                    price=get_float('Selling Price (INR)'), mrp=get_float('MRP (INR)'),
+                    seller_id=None
                 )
                 db.session.add(new_product)
-                db.session.flush() # Flush to generate ID
-                
-                if image_url:
-                    db.session.add(ProductImage(product_id=new_product.id, image_url=image_url))
-                
                 added += 1
 
         db.session.commit()
-        log_user_action("Import Inventory", f"Bulk import ({file.filename}): {added} added, {updated} updated.")
-        flash(f'Inventory processed successfully: {added} New, {updated} Updated.', 'success')
+        flash(f'Inventory processed: {added} New, {updated} Updated.', 'success')
 
     except Exception as e:
         db.session.rollback()
-        print(f"Import Error: {e}")
         flash(f'Error processing file: {str(e)}', 'danger')
 
     return redirect(url_for('admin.manage_inventory'))
@@ -779,40 +901,31 @@ def add_product_page():
         mrp = request.form.get('mrp')
         warranty = request.form.get('warranty')
         return_policy = request.form.get('return_policy')
-
+        
         if Product.query.filter_by(product_code=product_code).first():
             flash(f'Product ID {product_code} already exists.', 'danger')
             return redirect(url_for('admin.add_product_page'))
         
-        # Primary Image (use first one, or None)
         primary_image = image_urls[0].strip() if image_urls and image_urls[0].strip() else None
         
         new_product = Product(
-            product_code=product_code,
-            name=name,
-            stock=int(stock),
-            price=float(price),
-            description=description,
-            image_url=primary_image,
-            category=category,
-            brand=brand,
-            mrp=float(mrp) if mrp else None,
-            warranty=warranty,
-            return_policy=return_policy
+            product_code=product_code, name=name, stock=int(stock), price=float(price),
+            description=description, image_url=primary_image, category=category,
+            brand=brand, mrp=float(mrp) if mrp else None, warranty=warranty, return_policy=return_policy,
+            seller_id=None
         )
         db.session.add(new_product)
         db.session.commit()
         
-        # Add all images to ProductImage table
         for url in image_urls:
             if url.strip():
                 img = ProductImage(product_id=new_product.id, image_url=url.strip())
                 db.session.add(img)
         db.session.commit()
         
-        log_user_action("Add Product", f"Added product {name} to catalog")
         flash(f'Product "{name}" added to catalog successfully.', 'success')
         return redirect(url_for('admin.manage_inventory'))
+    
     return render_template('add_product.html')
 
 @admin_bp.route('/inventory/update', methods=['POST'])
@@ -832,25 +945,17 @@ def update_product():
     product.warranty = request.form.get('warranty')
     product.return_policy = request.form.get('return_policy')
     
-    # --- UPDATED IMAGE LOGIC ---
     image_urls = request.form.getlist('image_urls[]')
-    
-    # 1. Update Primary Image (use first valid one)
     primary_image = image_urls[0].strip() if image_urls and image_urls[0].strip() else None
     product.image_url = primary_image
 
-    # 2. Reset ProductImage table for this product
-    # Clear existing images
     ProductImage.query.filter_by(product_id=product.id).delete()
-    
-    # Add new list
     for url in image_urls:
         if url.strip():
             img = ProductImage(product_id=product.id, image_url=url.strip())
             db.session.add(img)
 
     db.session.commit()
-    log_user_action("Update Product", f"Updated product {product.name}")
     flash(f'Product "{product.name}" updated.', 'success')
     return redirect(url_for('admin.manage_inventory'))
 
@@ -860,17 +965,20 @@ def update_product():
 def delete_product(product_id):
     product = Product.query.get_or_404(product_id)
     name = product.name
+    # Clean up associated allocations first
+    SellerInventory.query.filter_by(product_id=product_id).delete()
     db.session.delete(product)
     db.session.commit()
-    log_user_action("Delete Product", f"Deleted product {name}")
-
+    
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'success': True, 'message': 'Product deleted.', 'remove_row_id': f'product-{product_id}'})
-
     flash('Product deleted.', 'success')
     return redirect(url_for('admin.manage_inventory'))
 
-# --- INVOICES ---
+# =========================================================
+# 5. INVOICES
+# =========================================================
+
 @admin_bp.route('/invoices', methods=['GET'])
 @login_required
 @role_required('admin')
@@ -953,14 +1061,8 @@ def create_invoice():
     
     products = Product.query.filter(Product.stock > 0).order_by(Product.name).all()
     
-    # Serialize for JSON compatibility
     products_js = [
-        {
-            'id': p.id, 
-            'name': p.name, 
-            'price': p.price, 
-            'code': p.product_code
-        } for p in products
+        {'id': p.id, 'name': p.name, 'price': p.price, 'code': p.product_code} for p in products
     ]
     return render_template('create_invoice.html', products=products_js)
 
@@ -1058,11 +1160,9 @@ def mark_invoice_paid(invoice_id):
         flash('This invoice is already paid.', 'warning')
         return redirect(url_for('admin.manage_invoices'))
 
-    # Update Status
     invoice.status = 'Paid'
     db.session.commit()
 
-    # Send Receipt Email
     email_status = "and receipt email sent"
     try:
         send_email(
@@ -1084,6 +1184,10 @@ def mark_invoice_paid(invoice_id):
 
     flash(f'Invoice marked as Paid {email_status}.', 'success')
     return redirect(url_for('admin.manage_invoices'))
+
+# =========================================================
+# 6. ORDERS
+# =========================================================
 
 @admin_bp.route('/orders')
 @login_required
@@ -1129,44 +1233,33 @@ def update_order_status(order_id):
                 next_id = (last_invoice.id + 1) if last_invoice else 1
                 inv_num = f"INV{datetime.utcnow().year}{next_id:03d}"
                 
-                # --- REVISED TAX LOGIC: INCLUSIVE & CATEGORY-BASED ---
                 calculated_subtotal = 0.0
                 calculated_tax_amt = 0.0
                 invoice_items_to_add = []
 
                 for order_item in order.items:
-                    # Find product to determine tax rate
                     product = Product.query.filter_by(name=order_item.product_name).first()
                     category = product.category if product and product.category else 'Other'
-                    tax_rate_percent = GST_RATES.get(category, 18.0) # Default to 18%
+                    tax_rate_percent = GST_RATES.get(category, 18.0) 
 
-                    # Logic: Price is Inclusive.
-                    # Base Price = Total / (1 + TaxRate/100)
                     inclusive_total_item = order_item.price_at_purchase * order_item.quantity
                     base_total_item = inclusive_total_item / (1 + (tax_rate_percent / 100.0))
                     tax_amt_item = inclusive_total_item - base_total_item
                     
-                    # Base Unit Price
                     base_unit_price = order_item.price_at_purchase / (1 + (tax_rate_percent / 100.0))
 
                     calculated_subtotal += base_total_item
                     calculated_tax_amt += tax_amt_item
                     
-                    # Create Invoice Item with BASE unit price so sum(items) == Subtotal
                     inv_item = InvoiceItem(
                         description=order_item.product_name, 
                         quantity=order_item.quantity, 
                         price=base_unit_price, 
-                        invoice_id=None # Assigned after invoice creation
+                        invoice_id=None
                     )
                     invoice_items_to_add.append(inv_item)
 
-                # Final total should match order total exactly (or within floating point tolerance)
-                # We use order.total_amount to ensure buyer isn't charged 0.01 diff
                 final_total = order.total_amount
-                
-                # Calculate "Effective Tax Rate" for the DB field (since it only stores one rate)
-                # Rate = (Total Tax / Subtotal) * 100
                 effective_tax_rate = (calculated_tax_amt / calculated_subtotal * 100) if calculated_subtotal > 0 else 0.0
 
                 new_invoice = Invoice(
@@ -1176,7 +1269,7 @@ def update_order_status(order_id):
                     due_date=datetime.utcnow().date(), notes="Auto-generated invoice. Prices include applicable GST.", admin_id=current_user.id
                 )
                 db.session.add(new_invoice)
-                db.session.commit() # Commit to get ID
+                db.session.commit()
 
                 for inv_item in invoice_items_to_add:
                     inv_item.invoice_id = new_invoice.id
@@ -1199,6 +1292,10 @@ def update_order_status(order_id):
                     flash('Order accepted, but failed to send invoice email.', 'warning')
 
     return redirect(url_for('admin.manage_orders'))
+
+# =========================================================
+# 7. RECORDS & PROJECTS
+# =========================================================
 
 @admin_bp.route('/records')
 @login_required
@@ -1470,7 +1567,10 @@ def update_learning_content():
 
     return redirect(url_for('main.learn_language', language=language_id))
 
-# --- EMI MANAGER ---
+# =========================================================
+# 8. EMI MANAGER
+# =========================================================
+
 @admin_bp.route('/emi_manager')
 @login_required
 @role_required('admin')

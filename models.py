@@ -9,6 +9,30 @@ candidate_contacts = db.Table('candidate_contacts',
     db.Column('developer_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
 )
 
+# --- NEW: Stock Request Model ---
+class StockRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String(20), default='Pending', nullable=False) # Pending, Approved, Rejected
+    request_date = db.Column(db.DateTime, default=datetime.utcnow)
+    response_date = db.Column(db.DateTime, nullable=True)
+    admin_note = db.Column(db.String(255), nullable=True)
+
+    # Relationships
+    seller = db.relationship('User', backref='stock_requests')
+    product = db.relationship('Product', backref='stock_requests')
+
+class SellerInventory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    stock = db.Column(db.Integer, default=0, nullable=False)
+    
+    product = db.relationship('Product', backref='seller_allocations')
+    seller = db.relationship('User', backref='allocated_inventory')
+
 class LearningContent(db.Model):
     id = db.Column(db.String(50), primary_key=True)
     content = db.Column(db.Text, nullable=False)
@@ -70,12 +94,8 @@ class User(UserMixin, db.Model):
     moderator_assignments = db.relationship('ModeratorAssignmentHistory', foreign_keys='ModeratorAssignmentHistory.moderator_id', backref='moderator', lazy=True)
     candidate_assignments = db.relationship('ModeratorAssignmentHistory', foreign_keys='ModeratorAssignmentHistory.candidate_id', backref='candidate', lazy=True)
     
-    # --- UPDATED ORDER RELATIONSHIPS ---
-    # Orders I placed as a buyer
     orders = db.relationship('Order', foreign_keys='Order.user_id', backref='buyer', lazy=True)
-    # Orders I manage as a seller
     sales = db.relationship('Order', foreign_keys='Order.seller_id', backref='seller', lazy=True)
-    
     activity_logs = db.relationship('ActivityLog', backref='user', lazy=True)
 
 class Message(db.Model):
@@ -151,7 +171,7 @@ class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     product_code = db.Column(db.String(50), unique=True, nullable=False)
     name = db.Column(db.String(150), nullable=False)
-    stock = db.Column(db.Integer, default=0, nullable=False)
+    stock = db.Column(db.Integer, default=0, nullable=False) # Master Stock
     price = db.Column(db.Float, nullable=False, default=0.0)
     description = db.Column(db.Text, nullable=True)
     image_url = db.Column(db.Text, nullable=True)
@@ -161,6 +181,7 @@ class Product(db.Model):
     mrp = db.Column(db.Float, nullable=True) 
     warranty = db.Column(db.String(200), nullable=True)
     return_policy = db.Column(db.String(200), nullable=True)
+    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
 
 class Invoice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -240,11 +261,8 @@ class CartItem(db.Model):
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     order_number = db.Column(db.String(50), unique=True, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False) # Buyer
-    
-    # --- NEW SELLER FIELD ---
-    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True) # Seller/Admin of the order
-    
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     total_amount = db.Column(db.Float, nullable=False)
     status = db.Column(db.String(20), default='Order Placed') 
     shipping_address = db.Column(db.Text, nullable=False)

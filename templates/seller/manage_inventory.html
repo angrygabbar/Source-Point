@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
-{% block title %}Inventory Command Center{% endblock %}
-{% block content %}
+{% block title %}My Inventory Management{% endblock %}
 
+{% block content %}
 <div class="space-y-8 animate-dynamic pb-10">
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -9,7 +9,7 @@
             <div class="absolute -right-4 -top-4 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all duration-500"></div>
             <div class="relative z-10">
                 <div class="flex justify-between items-start mb-4">
-                    <p class="text-xs font-bold text-indigo-300 uppercase tracking-widest">Catalog Size</p>
+                    <p class="text-xs font-bold text-indigo-300 uppercase tracking-widest">My Catalog</p>
                     <i class="fas fa-boxes text-2xl text-indigo-400 opacity-50 group-hover:opacity-100 transition-opacity"></i>
                 </div>
                 <h3 class="text-3xl font-extrabold text-white">{{ total_products_count }} <span class="text-sm font-medium text-gray-400">Items</span></h3>
@@ -23,11 +23,11 @@
             <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all duration-500"></div>
             <div class="relative z-10">
                 <div class="flex justify-between items-start mb-4">
-                    <p class="text-xs font-bold text-emerald-300 uppercase tracking-widest">Total Valuation</p>
+                    <p class="text-xs font-bold text-emerald-300 uppercase tracking-widest">My Stock Value</p>
                     <i class="fas fa-sack-dollar text-2xl text-emerald-400 opacity-50 group-hover:opacity-100 transition-opacity"></i>
                 </div>
                 <h3 class="text-3xl font-extrabold text-white">₹{{ "{:,.2f}".format(total_inventory_value) }}</h3>
-                <p class="text-xs text-gray-500 mt-2">Current stock asset value</p>
+                <p class="text-xs text-gray-500 mt-2">Value of currently assigned stock</p>
             </div>
         </div>
 
@@ -35,11 +35,11 @@
             <div class="absolute -right-4 -top-4 w-24 h-24 bg-red-500/10 rounded-full blur-2xl group-hover:bg-red-500/20 transition-all duration-500"></div>
             <div class="relative z-10">
                 <div class="flex justify-between items-start mb-4">
-                    <p class="text-xs font-bold text-red-300 uppercase tracking-widest">Critical Stock</p>
+                    <p class="text-xs font-bold text-red-300 uppercase tracking-widest">Low Stock Alerts</p>
                     <i class="fas fa-exclamation-triangle text-2xl text-red-400 opacity-50 group-hover:opacity-100 transition-opacity"></i>
                 </div>
-                <h3 class="text-3xl font-extrabold text-white">{{ low_stock_count }} <span class="text-sm font-medium text-gray-400">Alerts</span></h3>
-                <p class="text-xs text-gray-500 mt-2">Items below reorder level</p>
+                <h3 class="text-3xl font-extrabold text-white">{{ low_stock_count }} <span class="text-sm font-medium text-gray-400">Items</span></h3>
+                <p class="text-xs text-gray-500 mt-2">Items requiring replenishment</p>
             </div>
         </div>
     </div>
@@ -49,7 +49,7 @@
             <span class="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center border border-white/10 text-indigo-400">
                 <i class="fas fa-warehouse"></i>
             </span>
-            Inventory List
+            My Assigned Inventory
         </h1>
         
         <div class="flex flex-col md:flex-row gap-4 w-full md:w-auto mt-4 md:mt-0">
@@ -57,30 +57,22 @@
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <i class="fas fa-search text-gray-500 group-focus-within:text-indigo-400 transition-colors"></i>
                 </div>
-                <input type="text" id="searchInput" placeholder="Search SKU, Name, Brand..." 
+                <input type="text" id="searchInput" placeholder="Search SKU, Name..." 
                     class="w-full bg-black/20 border border-white/10 text-white text-sm rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder-gray-600">
             </div>
-
-            <button onclick="document.getElementById('importUploadInput').click()" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition-all transform hover:scale-[1.02] flex items-center justify-center">
-                <i class="fas fa-file-import mr-2"></i> Import Inventory
-            </button>
             
-            <form action="{{ url_for('seller.import_inventory') }}" method="POST" enctype="multipart/form-data" class="hidden">
-                <input type="file" name="import_file" id="importUploadInput" accept=".csv, .xlsx" onchange="this.form.submit()">
-            </form>
-
-            <a href="{{ url_for('seller.add_product_page') }}" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all transform hover:scale-[1.02] flex items-center justify-center">
-                <i class="fas fa-plus mr-2"></i> Add Product
-            </a>
+            <button id="openRequestModal" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center">
+                <i class="fas fa-plus-circle mr-2"></i> Request Stock
+            </button>
         </div>
     </div>
 
     <div class="space-y-3">
-        <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-2 text-xs font-bold text-gray-500 uppercase tracking-widest">
-            <div class="col-span-4">Product Details</div>
+        <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-2 text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-white/5 pb-2">
+            <div class="col-span-5">Product Details</div>
             <div class="col-span-2">Category</div>
-            <div class="col-span-2 text-center">Stock Level</div>
-            <div class="col-span-2 text-right">Price</div>
+            <div class="col-span-2 text-center">My Quantity</div>
+            <div class="col-span-1 text-right">Price</div>
             <div class="col-span-2 text-right">Actions</div>
         </div>
 
@@ -89,10 +81,10 @@
             <div class="group relative glass-panel rounded-xl p-4 border border-white/5 transition-all duration-300 hover:bg-white/[0.07] hover:border-indigo-500/30 hover:shadow-lg product-row" id="product-{{ product.id }}">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
                     
-                    <div class="col-span-4 flex items-center gap-4">
-                        <div class="relative w-12 h-12 rounded-lg bg-gray-800 overflow-hidden border border-white/10 flex-shrink-0">
+                    <div class="col-span-5 flex items-center gap-4">
+                        <div class="relative w-12 h-12 rounded-lg bg-gray-800 overflow-hidden border border-white/10 flex-shrink-0 group-hover:border-indigo-500/50 transition-colors">
                             {% if product.image_url %}
-                                <img src="{{ product.image_url }}" alt="" class="w-full h-full object-cover">
+                                <img src="{{ product.image_url }}" alt="{{ product.name }}" class="w-full h-full object-cover">
                             {% else %}
                                 <div class="flex items-center justify-center h-full text-gray-600"><i class="fas fa-cube"></i></div>
                             {% endif %}
@@ -100,10 +92,7 @@
                         <div>
                             <h3 class="text-sm font-bold text-white product-name leading-tight">{{ product.name }}</h3>
                             <div class="flex items-center gap-2 mt-1">
-                                <span class="text-[10px] font-mono text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded">{{ product.product_code }}</span>
-                                {% if product.brand %}
-                                    <span class="text-[10px] text-gray-500">{{ product.brand }}</span>
-                                {% endif %}
+                                <span class="text-[10px] font-mono text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">{{ product.code }}</span>
                             </div>
                         </div>
                     </div>
@@ -113,64 +102,60 @@
                     </div>
 
                     <div class="col-span-2 flex justify-center">
-                        {% if product.stock == 0 %}
+                        {% if product.my_stock == 0 %}
                             <span class="px-3 py-1 rounded-full text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20 flex items-center shadow-[0_0_10px_rgba(239,68,68,0.2)]">
                                 <span class="w-1.5 h-1.5 rounded-full bg-red-500 mr-2"></span> Out of Stock
                             </span>
-                        {% elif product.stock < 10 %}
+                        {% elif product.my_stock < 10 %}
                             <span class="px-3 py-1 rounded-full text-xs font-bold bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 flex items-center animate-pulse">
-                                <span class="w-1.5 h-1.5 rounded-full bg-yellow-500 mr-2"></span> Low: {{ product.stock }}
+                                <span class="w-1.5 h-1.5 rounded-full bg-yellow-500 mr-2"></span> Low: {{ product.my_stock }}
                             </span>
                         {% else %}
                             <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span> {{ product.stock }} Units
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span> {{ product.my_stock }} Units
                             </span>
                         {% endif %}
                     </div>
 
-                    <div class="col-span-2 text-right">
-                        <span class="text-sm font-bold text-white block">₹{{ "{:,.2f}".format(product.price) }}</span>
-                        {% if product.mrp %}
-                            <span class="text-xs text-gray-500 line-through">₹{{ "{:,.2f}".format(product.mrp) }}</span>
-                        {% endif %}
+                    <div class="col-span-1 text-right">
+                        <span class="text-sm font-bold text-white block">₹{{ "{:,.0f}".format(product.price) }}</span>
                     </div>
 
                     <div class="col-span-2 flex justify-end gap-2">
-                        <button type="button"
-                                class="p-2 rounded-lg bg-white/5 hover:bg-blue-500/20 text-gray-400 hover:text-blue-400 transition-all edit-product-btn" 
-                                data-id="{{ product.id }}"
-                                data-code="{{ product.product_code }}"
+                        <button type="button" 
+                                class="p-2 rounded-lg bg-white/5 hover:bg-emerald-500/20 text-gray-400 hover:text-emerald-400 transition-all view-details-btn border border-white/10" 
                                 data-name="{{ product.name }}"
-                                data-stock="{{ product.stock }}"
+                                data-code="{{ product.code }}"
+                                data-brand="{{ product.brand }}"
+                                data-desc="{{ product.description }}"
+                                data-warranty="{{ product.warranty }}"
+                                data-return="{{ product.return_policy }}"
+                                title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+
+                        <button type="button"
+                                class="p-2 rounded-lg bg-white/5 hover:bg-blue-500/20 text-gray-400 hover:text-blue-400 transition-all edit-product-btn border border-white/10" 
+                                data-id="{{ product.id }}" 
+                                data-invid="{{ product.inventory_id }}"
+                                data-code="{{ product.code }}"
+                                data-name="{{ product.name }}"
+                                data-stock="{{ product.my_stock }}" 
                                 data-price="{{ product.price }}"
-                                data-category="{{ product.category or '' }}"
-                                data-brand="{{ product.brand or '' }}"
-                                data-mrp="{{ product.mrp or '' }}"
-                                data-warranty="{{ product.warranty or '' }}"
-                                data-return="{{ product.return_policy or '' }}"
-                                data-images='{% if product.images %}{{ (product.images|map(attribute="image_url")|list)|tojson|safe }}{% elif product.image_url %}{{ [product.image_url]|tojson|safe }}{% else %}[]{% endif %}'
-                                title="Edit">
+                                title="Update Stock Level">
                             <i class="fas fa-pen"></i>
                         </button>
-                        
-                        <a href="#" 
-                           class="p-2 rounded-lg bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-all" 
-                           data-url="{{ url_for('seller.delete_product', product_id=product.id) }}"
-                           onclick="handleAjaxUrl(event, this.dataset.url, 'Are you sure you want to permanently delete {{ product.name }}?')" 
-                           title="Delete">
-                            <i class="fas fa-trash"></i>
-                        </a>
                     </div>
                 </div>
             </div>
             {% else %}
-            <div class="glass-panel p-12 rounded-xl text-center border-dashed border-2 border-white/10">
-                <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-500">
-                    <i class="fas fa-box-open text-3xl"></i>
+            <div class="glass-panel p-16 rounded-xl text-center border-dashed border-2 border-white/10 flex flex-col items-center justify-center">
+                <div class="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6 text-gray-500">
+                    <i class="fas fa-box-open text-4xl opacity-50"></i>
                 </div>
-                <h3 class="text-lg font-bold text-white">Inventory Empty</h3>
-                <p class="text-gray-400 text-sm mt-1">Start by adding products to your catalog.</p>
-                <a href="{{ url_for('seller.add_product_page') }}" class="inline-block mt-4 text-indigo-400 hover:text-indigo-300 text-sm font-bold">Add First Product &rarr;</a>
+                <h3 class="text-xl font-bold text-white mb-2">No Inventory Assigned</h3>
+                <p class="text-gray-400 text-sm max-w-md mx-auto">It looks like the Administrator hasn't assigned any products to your account yet.</p>
+                <button onclick="document.getElementById('openRequestModal').click()" class="mt-4 text-indigo-400 hover:text-indigo-300 font-bold underline">Request Stock Now</button>
             </div>
             {% endfor %}
         </div>
@@ -183,85 +168,143 @@
         <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" id="editModalOverlay"></div>
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
         
-        <div class="inline-block align-middle bg-[#0f172a] rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-2xl sm:w-full border border-white/10">
+        <div class="inline-block align-middle bg-[#0f172a] rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-lg sm:w-full border border-white/10 relative">
             <div class="px-6 py-4 border-b border-white/10 flex justify-between items-center bg-white/5">
                 <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                    <i class="fas fa-edit text-indigo-400"></i> Edit Product
+                    <i class="fas fa-boxes text-indigo-400"></i> Update Stock
                 </h3>
-                <button type="button" id="closeEditModal" class="text-gray-400 hover:text-white transition-colors">
+                <button type="button" class="close-modal-btn text-gray-400 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="px-6 py-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-                <form id="editProductForm" action="{{ url_for('seller.update_product') }}" method="POST" class="space-y-5">
-                    <input type="hidden" name="product_id" id="edit_product_id">
+            
+            <div class="px-6 py-6">
+                <div class="mb-6 p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
+                    <p class="text-xs text-indigo-300 uppercase font-bold mb-1">Product</p>
+                    <p class="text-lg font-bold text-white" id="edit_product_name">Product Name</p>
+                    <p class="text-xs text-gray-400 font-mono mt-1" id="edit_product_code">SKU123</p>
+                </div>
+
+                <form id="editProductForm" action="{{ url_for('seller.update_product') }}" method="POST" class="space-y-6">
+                    <input type="hidden" name="inventory_id" id="edit_inventory_id">
                     
-                    <div class="grid grid-cols-2 gap-5">
+                    <div class="grid grid-cols-1 gap-6">
                         <div>
-                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Product Code</label>
-                            <input type="text" id="edit_product_code" disabled class="w-full px-4 py-2.5 bg-gray-800/50 border border-gray-600 rounded-lg text-gray-500 cursor-not-allowed">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Brand</label>
-                            <input type="text" name="brand" id="edit_brand" class="w-full px-4 py-2.5 bg-black/20 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 transition-all">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Product Name</label>
-                        <input type="text" name="name" id="edit_name" required class="w-full px-4 py-2.5 bg-black/20 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 transition-all">
-                    </div>
-
-                    <div class="grid grid-cols-3 gap-5">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Stock</label>
-                            <input type="number" name="stock" id="edit_stock" required min="0" class="w-full px-4 py-2.5 bg-black/20 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-indigo-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Price (₹)</label>
-                            <input type="number" step="0.01" name="price" id="edit_price" required min="0" class="w-full px-4 py-2.5 bg-black/20 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-indigo-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">MRP (₹)</label>
-                            <input type="number" step="0.01" name="mrp" id="edit_mrp" min="0" class="w-full px-4 py-2.5 bg-black/20 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-indigo-500">
+                            <label class="block text-xs font-bold text-gray-400 uppercase mb-2">My Quantity</label>
+                            <div class="relative">
+                                <input type="number" name="stock" id="edit_stock" required min="0" 
+                                       class="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all font-bold text-lg">
+                                <span class="absolute right-4 top-3.5 text-xs text-gray-500">Units</span>
+                            </div>
+                            <p class="text-[10px] text-gray-500 mt-2">Adjust this if you found damaged stock or sold items offline.</p>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-5">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Category</label>
-                            <select name="category" id="edit_category" class="w-full px-4 py-2.5 bg-black/20 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-indigo-500">
-                                <option value="Electronics">Electronics</option>
-                                <option value="Apparel">Apparel</option>
-                                <option value="Home & Office">Home & Office</option>
-                                <option value="Books">Books</option>
-                                <option value="Accessories">Accessories</option>
-                                <option value="Other">Other</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Warranty</label>
-                            <input type="text" name="warranty" id="edit_warranty" class="w-full px-4 py-2.5 bg-black/20 border border-white/10 rounded-lg text-white">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Return Policy</label>
-                        <input type="text" name="return_policy" id="edit_return_policy" class="w-full px-4 py-2.5 bg-black/20 border border-white/10 rounded-lg text-white">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Images</label>
-                        <div id="edit-images-container" class="space-y-2 mb-2"></div>
-                        <button type="button" id="edit-add-image-btn" class="text-xs text-indigo-400 hover:text-indigo-300 font-bold flex items-center">
-                            <i class="fas fa-plus-circle mr-1"></i> Add Another Image URL
+                    <div class="flex justify-end gap-3 pt-4 border-t border-white/5">
+                        <button type="button" class="close-modal-btn px-5 py-2.5 rounded-xl border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm font-bold">Cancel</button>
+                        <button type="submit" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-lg shadow-indigo-500/20 transition-all text-sm transform hover:scale-[1.02]">
+                            Save Updates
                         </button>
                     </div>
                 </form>
             </div>
-            <div class="px-6 py-4 bg-black/20 border-t border-white/10 flex justify-end gap-3">
-                <button type="button" id="cancelEditBtn" class="px-4 py-2 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm font-medium">Cancel</button>
-                <button type="submit" form="editProductForm" class="px-6 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 transition-all text-sm font-bold">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<div id="requestModal" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" id="requestModalOverlay"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+        
+        <div class="inline-block align-middle bg-[#0f172a] rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-lg sm:w-full border border-white/10 relative">
+            <div class="px-6 py-4 border-b border-white/10 flex justify-between items-center bg-white/5">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fas fa-cart-plus text-emerald-400"></i> Request New Stock
+                </h3>
+                <button type="button" class="close-modal-btn text-gray-400 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="px-6 py-6">
+                <form action="{{ url_for('seller.request_stock') }}" method="POST" class="space-y-6">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Select Product</label>
+                        <select name="product_id" required class="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 transition-all">
+                            <option value="">-- Choose Product from Master Catalog --</option>
+                            {% for p in all_products %}
+                                <option value="{{ p.id }}">{{ p.name }} (Code: {{ p.product_code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Quantity Needed</label>
+                        <div class="relative">
+                            <input type="number" name="quantity" required min="1" 
+                                   class="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all font-bold text-lg">
+                            <span class="absolute right-4 top-3.5 text-xs text-gray-500">Units</span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-3 pt-4 border-t border-white/5">
+                        <button type="button" class="close-modal-btn px-5 py-2.5 rounded-xl border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm font-bold">Cancel</button>
+                        <button type="submit" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-500/20 transition-all text-sm transform hover:scale-[1.02]">
+                            Submit Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="detailsModal" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" id="detailsModalOverlay"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+        
+        <div class="inline-block align-middle bg-[#0f172a] rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-2xl sm:w-full border border-white/10 relative">
+            <div class="px-6 py-4 border-b border-white/10 flex justify-between items-center bg-white/5">
+                <h3 class="text-lg font-bold text-white">Product Details</h3>
+                <button type="button" class="close-modal-btn text-gray-400 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="px-6 py-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="text-xs font-bold text-gray-500 uppercase mb-1">Product Name</h4>
+                        <p class="text-white font-medium" id="detail_name">--</p>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-gray-500 uppercase mb-1">SKU / Code</h4>
+                        <p class="text-indigo-400 font-mono text-sm" id="detail_code">--</p>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-gray-500 uppercase mb-1">Brand</h4>
+                        <p class="text-white" id="detail_brand">--</p>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="text-xs font-bold text-gray-500 uppercase mb-1">Description</h4>
+                        <p class="text-gray-300 text-sm leading-relaxed" id="detail_desc">--</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <h4 class="text-xs font-bold text-gray-500 uppercase mb-1">Warranty</h4>
+                            <p class="text-white text-sm" id="detail_warranty">--</p>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold text-gray-500 uppercase mb-1">Return Policy</h4>
+                            <p class="text-white text-sm" id="detail_return">--</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-black/20 border-t border-white/10 text-right">
+                <button type="button" class="close-modal-btn px-6 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold transition-all">Close</button>
             </div>
         </div>
     </div>
@@ -269,84 +312,69 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- Modal Logic ---
-        const editModal = document.getElementById('editModal');
-        const closeBtns = [document.getElementById('closeEditModal'), document.getElementById('cancelEditBtn'), document.getElementById('editModalOverlay')];
-        const imageContainer = document.getElementById('edit-images-container');
-        const addImageBtn = document.getElementById('edit-add-image-btn');
-
-        function toggleModal(show) {
+        // --- Modal Helper ---
+        function toggleModal(modalId, show) {
+            const modal = document.getElementById(modalId);
             if (show) {
-                editModal.classList.remove('hidden');
-                const panel = editModal.querySelector('.transform');
+                modal.classList.remove('hidden');
                 setTimeout(() => {
-                    panel.classList.add('scale-100', 'opacity-100');
-                    panel.classList.remove('scale-95', 'opacity-0');
+                    modal.querySelector('.transform').classList.add('scale-100', 'opacity-100');
+                    modal.querySelector('.transform').classList.remove('scale-95', 'opacity-0');
                 }, 10);
             } else {
-                editModal.classList.add('hidden');
+                modal.querySelector('.transform').classList.remove('scale-100', 'opacity-100');
+                modal.querySelector('.transform').classList.add('scale-95', 'opacity-0');
+                setTimeout(() => modal.classList.add('hidden'), 300);
             }
         }
 
-        closeBtns.forEach(btn => btn?.addEventListener('click', () => toggleModal(false)));
-
-        function createImageInput(url = '') {
-            const div = document.createElement('div');
-            div.className = 'flex gap-2 animate-fade-in';
-            div.innerHTML = `
-                <input type="url" name="image_urls[]" value="${url}"
-                       class="flex-1 px-3 py-2 bg-black/20 border border-white/10 rounded-lg text-white text-sm focus:ring-1 focus:ring-indigo-500 placeholder-gray-600" 
-                       placeholder="https://example.com/image.jpg">
-                <button type="button" class="text-red-400 hover:text-red-300 remove-edit-img-btn px-2 transition-colors">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-            `;
-            imageContainer.appendChild(div);
-        }
-
-        if(addImageBtn) addImageBtn.addEventListener('click', () => createImageInput());
-
-        imageContainer.addEventListener('click', (e) => {
-            if (e.target.closest('.remove-edit-img-btn')) e.target.closest('.flex').remove();
-        });
-
-        document.querySelectorAll('.edit-product-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.getElementById('edit_product_id').value = this.dataset.id;
-                document.getElementById('edit_product_code').value = this.dataset.code;
-                document.getElementById('edit_name').value = this.dataset.name;
-                document.getElementById('edit_stock').value = this.dataset.stock;
-                document.getElementById('edit_price').value = this.dataset.price;
-                document.getElementById('edit_brand').value = this.dataset.brand;
-                document.getElementById('edit_mrp').value = this.dataset.mrp;
-                document.getElementById('edit_category').value = this.dataset.category;
-                document.getElementById('edit_warranty').value = this.dataset.warranty;
-                document.getElementById('edit_return_policy').value = this.dataset.return;
-                
-                imageContainer.innerHTML = '';
-                let images = [];
-                try { images = JSON.parse(this.dataset.images || '[]'); } catch(e){}
-                
-                if (images.length > 0) images.forEach(url => createImageInput(url));
-                else createImageInput('');
-
-                toggleModal(true);
+        // Close buttons for all modals
+        document.querySelectorAll('.close-modal-btn, #editModalOverlay, #detailsModalOverlay, #requestModalOverlay').forEach(el => {
+            el.addEventListener('click', () => {
+                toggleModal('editModal', false);
+                toggleModal('detailsModal', false);
+                toggleModal('requestModal', false);
             });
         });
 
+        // --- UPDATE STOCK ---
+        document.querySelectorAll('.edit-product-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.getElementById('edit_inventory_id').value = this.dataset.invid;
+                document.getElementById('edit_product_name').textContent = this.dataset.name;
+                document.getElementById('edit_product_code').textContent = this.dataset.code;
+                document.getElementById('edit_stock').value = this.dataset.stock;
+                toggleModal('editModal', true);
+            });
+        });
+
+        // --- VIEW DETAILS ---
+        document.querySelectorAll('.view-details-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.getElementById('detail_name').textContent = this.dataset.name;
+                document.getElementById('detail_code').textContent = this.dataset.code;
+                document.getElementById('detail_brand').textContent = this.dataset.brand;
+                document.getElementById('detail_desc').textContent = this.dataset.desc;
+                document.getElementById('detail_warranty').textContent = this.dataset.warranty;
+                document.getElementById('detail_return').textContent = this.dataset.return;
+                toggleModal('detailsModal', true);
+            });
+        });
+
+        // --- REQUEST STOCK ---
+        const reqBtn = document.getElementById('openRequestModal');
+        if(reqBtn) reqBtn.addEventListener('click', () => toggleModal('requestModal', true));
+
+        // --- SEARCH ---
         const searchInput = document.getElementById('searchInput');
         if(searchInput) {
             searchInput.addEventListener('keyup', function() {
-                const query = this.value.toLowerCase();
+                const query = this.value.toLowerCase().trim();
                 document.querySelectorAll('.product-row').forEach(row => {
                     const name = row.querySelector('.product-name').textContent.toLowerCase();
-                    const code = row.querySelector('td:first-child').textContent.toLowerCase();
-                    
-                    if (name.includes(query) || code.includes(query)) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
+                    const code = row.querySelector('.font-mono') ? row.querySelector('.font-mono').textContent.toLowerCase() : '';
+                    if (name.includes(query) || code.includes(query)) row.style.display = '';
+                    else row.style.display = 'none';
                 });
             });
         }

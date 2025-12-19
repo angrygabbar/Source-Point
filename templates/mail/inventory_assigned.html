@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        .header { background-color: #4F46E5; color: white; padding: 15px; text-align: center; border-radius: 5px 5px 0 0; }
+        .content { padding: 20px; }
+        .details { background-color: #f9fafb; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #4F46E5; }
+        .footer { text-align: center; font-size: 12px; color: #666; margin-top: 20px; }
+        .btn { display: inline-block; padding: 10px 20px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>📦 New Stock Assigned</h2>
+        </div>
+        <div class="content">
+            <p>Hello <strong>{{ seller.username }}</strong>,</p>
+            <p>The Administrator has assigned new inventory to your account.</p>
+            
+            <div class="details">
+                <p><strong>Product:</strong> {{ product.name }}</p>
+                <p><strong>Product Code:</strong> {{ product.product_code }}</p>
+                <p><strong>Quantity Assigned:</strong> +{{ quantity }} Units</p>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
+                <p><strong>Your Total Stock:</strong> {{ current_stock }} Units</p>
+            </div>
+
+            <p>You can now manage this inventory and accept orders for this product.</p>
+            
+            <center>
+                <a href="{{ url_for('seller.manage_inventory', _external=True) }}" class="btn">Manage Inventory</a>
+            </center>
+        </div>
+        <div class="footer">
+            <p>&copy; {{ now.year }} Source Point. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

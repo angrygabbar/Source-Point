@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from extensions import db
-from models import Product, ProductImage, Invoice, InvoiceItem, Order, OrderItem, User
+from models import Product, ProductImage, Invoice, InvoiceItem, Order, OrderItem, User, SellerInventory, StockRequest
 from utils import role_required, log_user_action, send_email
 from datetime import datetime
 from invoice_service import InvoiceGenerator
@@ -11,18 +11,31 @@ import openpyxl
 
 seller_bp = Blueprint('seller', __name__, url_prefix='/seller')
 
-# --- DASHBOARD ---
+# =========================================================
+# 1. DASHBOARD
+# =========================================================
+
 @seller_bp.route('/dashboard')
 @login_required
 @role_required('seller')
 def seller_dashboard():
-    products = Product.query.all()
+    # Fetch inventory specifically assigned to this seller
+    inventory_items = db.session.query(SellerInventory, Product)\
+        .join(Product, SellerInventory.product_id == Product.id)\
+        .filter(SellerInventory.seller_id == current_user.id)\
+        .all()
+    
     # Filter only MY invoices and orders
     my_invoices = Invoice.query.filter_by(admin_id=current_user.id).all()
-    my_orders = Order.query.filter_by(seller_id=current_user.id).all()
     
-    total_inventory_value = sum(int(p.stock) * float(p.price) for p in products)
-    low_stock_count = sum(1 for p in products if int(p.stock) < 10)
+    total_inventory_value = 0
+    low_stock_count = 0
+    
+    # Calculate stats based on assigned inventory
+    for inv, prod in inventory_items:
+        total_inventory_value += (inv.stock * prod.price)
+        if inv.stock < 10:
+            low_stock_count += 1
     
     # Revenue from MY paid invoices
     total_revenue = sum(inv.total_amount for inv in my_invoices if inv.status == 'Paid')
@@ -39,176 +52,190 @@ def seller_dashboard():
                            total_revenue=total_revenue,
                            recent_orders=recent_orders)
 
-# --- INVENTORY MANAGEMENT ---
+# =========================================================
+# 2. INVENTORY MANAGEMENT
+# =========================================================
+
 @seller_bp.route('/inventory', methods=['GET', 'POST'])
 @login_required
 @role_required('seller')
 def manage_inventory():
-    products = Product.query.order_by(Product.name).all()
+    # 1. Get My Inventory (Assigned Items)
+    inventory_items = db.session.query(SellerInventory, Product)\
+        .join(Product, SellerInventory.product_id == Product.id)\
+        .filter(SellerInventory.seller_id == current_user.id)\
+        .order_by(Product.name)\
+        .all()
     
-    total_inventory_value = sum(int(p.stock) * float(p.price) for p in products)
-    total_products_count = len(products)
-    low_stock_count = sum(1 for p in products if int(p.stock) < 10)
+    # 2. Get All Products (For the "Request Stock" Dropdown)
+    all_products = Product.query.order_by(Product.name).all()
+    
+    products_display = []
+    total_val = 0
+    
+    for inv, prod in inventory_items:
+        # We include ALL details so the "View Details" modal works in the template
+        products_display.append({
+            'id': prod.id,
+            'inventory_id': inv.id, # Used to update specific stock
+            'code': prod.product_code,
+            'name': prod.name,
+            'image_url': prod.image_url,
+            'category': prod.category,
+            'brand': prod.brand or 'N/A',
+            'description': prod.description or 'No description available.',
+            'warranty': prod.warranty or 'N/A',
+            'return_policy': prod.return_policy or 'N/A',
+            'my_stock': inv.stock, # Seller's specific stock
+            'price': prod.price,
+            'mrp': prod.mrp
+        })
+        total_val += (inv.stock * prod.price)
 
     return render_template('seller/manage_inventory.html', 
-                           products=products, 
-                           total_inventory_value=total_inventory_value, 
-                           total_products_count=total_products_count, 
-                           low_stock_count=low_stock_count)
+                           products=products_display, 
+                           all_products=all_products, # Passed for Request Modal
+                           total_inventory_value=total_val, 
+                           total_products_count=len(products_display), 
+                           low_stock_count=sum(1 for p in products_display if p['my_stock'] < 10))
 
-@seller_bp.route('/inventory/add', methods=['GET', 'POST'])
+# --- REQUEST STOCK ROUTE (NEW) ---
+@seller_bp.route('/inventory/request', methods=['POST'])
 @login_required
 @role_required('seller')
-def add_product_page():
-    if request.method == 'POST':
-        product_code = request.form.get('product_code')
-        name = request.form.get('name')
-        stock = request.form.get('stock')
-        price = request.form.get('price')
-        description = request.form.get('description')
-        image_urls = request.form.getlist('image_urls[]')
-        category = request.form.get('category')
-        brand = request.form.get('brand')
-        mrp = request.form.get('mrp')
-        warranty = request.form.get('warranty')
-        return_policy = request.form.get('return_policy')
-
-        if Product.query.filter_by(product_code=product_code).first():
-            flash(f'Product ID {product_code} already exists.', 'danger')
-            return redirect(url_for('seller.add_product_page'))
-        
-        primary_image = image_urls[0].strip() if image_urls and image_urls[0].strip() else None
-        
-        new_product = Product(
-            product_code=product_code, name=name, stock=int(stock), price=float(price),
-            description=description, image_url=primary_image, category=category,
-            brand=brand, mrp=float(mrp) if mrp else None, warranty=warranty, return_policy=return_policy
-        )
-        db.session.add(new_product)
-        db.session.commit()
-        
-        for url in image_urls:
-            if url.strip():
-                img = ProductImage(product_id=new_product.id, image_url=url.strip())
-                db.session.add(img)
-        db.session.commit()
-        
-        log_user_action("Add Product", f"Seller added product {name}")
-        flash(f'Product "{name}" added to catalog successfully.', 'success')
+def request_stock():
+    product_id = request.form.get('product_id')
+    quantity = request.form.get('quantity')
+    
+    if not product_id or not quantity:
+        flash('Please select a product and quantity.', 'danger')
         return redirect(url_for('seller.manage_inventory'))
-    return render_template('seller/add_product.html')
+        
+    try:
+        qty = int(quantity)
+        if qty <= 0: raise ValueError
+        
+        # 1. Create Request Record
+        req = StockRequest(
+            seller_id=current_user.id,
+            product_id=product_id,
+            quantity=qty,
+            status='Pending'
+        )
+        db.session.add(req)
+        db.session.commit()
+        
+        # 2. Get Product Info for Email
+        product = Product.query.get(product_id)
+
+        # 3. Notify All Admins
+        admins = User.query.filter_by(role='admin').all()
+        email_sent_count = 0
+        for admin in admins:
+            try:
+                send_email(
+                    to=admin.email,
+                    subject=f"New Stock Request: {product.name}",
+                    template="mail/new_stock_request_admin.html",
+                    request=req,
+                    seller=current_user,
+                    product=product,
+                    now=datetime.utcnow()
+                )
+                email_sent_count += 1
+            except Exception as e:
+                print(f"Failed to email admin {admin.username}: {e}")
+        
+        log_user_action("Request Stock", f"Seller requested {qty} units of {product.name}. Notified {email_sent_count} admins.")
+        flash('Stock request sent to Administrator.', 'success')
+        
+    except ValueError:
+        flash('Invalid quantity.', 'danger')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error submitting request: {e}', 'danger')
+
+    return redirect(url_for('seller.manage_inventory'))
 
 @seller_bp.route('/inventory/update', methods=['POST'])
 @login_required
 @role_required('seller')
 def update_product():
-    product_id = request.form.get('product_id')
-    product = Product.query.get_or_404(product_id)
+    # Sellers update their OWN stock level (e.g. for corrections/offline sales)
+    inventory_id = request.form.get('inventory_id')
+    new_stock = request.form.get('stock')
+    # Optional: Allow price override if business logic permits
+    # new_price = request.form.get('price') 
     
-    product.name = request.form.get('name')
-    product.stock = int(request.form.get('stock'))
-    product.price = float(request.form.get('price'))
-    product.category = request.form.get('category')
-    product.brand = request.form.get('brand')
-    mrp = request.form.get('mrp')
-    if mrp: product.mrp = float(mrp)
-    product.warranty = request.form.get('warranty')
-    product.return_policy = request.form.get('return_policy')
-    
-    image_urls = request.form.getlist('image_urls[]')
-    primary_image = image_urls[0].strip() if image_urls and image_urls[0].strip() else None
-    product.image_url = primary_image
+    if inventory_id:
+        inv_item = SellerInventory.query.get(inventory_id)
+        # Security check: Ensure this inventory belongs to the logged-in seller
+        if inv_item and inv_item.seller_id == current_user.id:
+            if new_stock:
+                inv_item.stock = int(new_stock)
+            
+            # If allowing price overrides:
+            # if new_price: inv_item.price = float(new_price)
 
-    ProductImage.query.filter_by(product_id=product.id).delete()
-    for url in image_urls:
-        if url.strip():
-            img = ProductImage(product_id=product.id, image_url=url.strip())
-            db.session.add(img)
+            db.session.commit()
+            log_user_action("Update Inventory", f"Seller updated stock for {inv_item.product.name}")
+            flash('Inventory stock updated.', 'success')
+        else:
+            flash('Unauthorized update action.', 'danger')
+    else:
+        flash('Invalid request data.', 'danger')
 
-    db.session.commit()
-    log_user_action("Update Product", f"Seller updated product {product.name}")
-    flash(f'Product "{product.name}" updated.', 'success')
     return redirect(url_for('seller.manage_inventory'))
 
-@seller_bp.route('/inventory/delete/<int:product_id>')
+# --- RESTRICTED ROUTES (Security Placeholders) ---
+@seller_bp.route('/inventory/add', methods=['GET', 'POST'])
 @login_required
 @role_required('seller')
-def delete_product(product_id):
-    product = Product.query.get_or_404(product_id)
-    name = product.name
-    db.session.delete(product)
-    db.session.commit()
-    log_user_action("Delete Product", f"Seller deleted product {name}")
-
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return jsonify({'success': True, 'message': 'Product deleted.', 'remove_row_id': f'product-{product_id}'})
-    flash('Product deleted.', 'success')
+def add_product_page():
+    flash('Only Administrators can add new products to the catalog.', 'warning')
     return redirect(url_for('seller.manage_inventory'))
 
 @seller_bp.route('/inventory/import', methods=['POST'])
 @login_required
 @role_required('seller')
 def import_inventory():
-    file = request.files.get('import_file')
-    if not file:
-        flash('No file uploaded.', 'danger')
-        return redirect(url_for('seller.manage_inventory'))
-
-    try:
-        items_to_process = []
-        if file.filename.endswith('.csv'):
-            csv_file = TextIOWrapper(file, encoding='utf-8')
-            csv_reader = csv.DictReader(csv_file)
-            items_to_process = list(csv_reader)
-        elif file.filename.endswith('.xlsx'):
-            wb = openpyxl.load_workbook(file)
-            ws = wb.active
-            rows = list(ws.iter_rows(values_only=True))
-            if rows:
-                headers = rows[0]
-                for row in rows[1:]:
-                    row_data = {headers[i]: row[i] for i in range(len(headers)) if headers[i]}
-                    items_to_process.append(row_data)
-
-        added, updated = 0, 0
-        for row in items_to_process:
-            sku = row.get('SKU')
-            name = row.get('Product Name')
-            if not sku or not name: continue 
-
-            price = float(row.get('Selling Price (INR)', 0))
-            stock = int(row.get('Quantity', 0))
-            
-            product = Product.query.filter_by(product_code=sku).first()
-            if product:
-                product.stock = stock
-                product.price = price
-                updated += 1
-            else:
-                new_product = Product(product_code=sku, name=name, stock=stock, price=price)
-                db.session.add(new_product)
-                added += 1
-
-        db.session.commit()
-        flash(f'Inventory processed: {added} New, {updated} Updated.', 'success')
-
-    except Exception as e:
-        flash(f'Error processing file: {str(e)}', 'danger')
+    flash('Bulk import is restricted to Administrators.', 'warning')
     return redirect(url_for('seller.manage_inventory'))
 
-# --- ORDERS ---
+@seller_bp.route('/inventory/delete/<int:product_id>')
+@login_required
+@role_required('seller')
+def delete_product(product_id):
+    flash('Contact an Administrator to remove products from your assignment.', 'warning')
+    return redirect(url_for('seller.manage_inventory'))
+
+# =========================================================
+# 3. ORDERS
+# =========================================================
+
 @seller_bp.route('/orders')
 @login_required
 @role_required('seller')
 def manage_orders():
-    # STRICT FILTER: Only orders where seller_id matches current user
+    # Only orders where seller_id matches current user
     orders = Order.query.filter_by(seller_id=current_user.id).order_by(Order.created_at.desc()).all()
     
     # Fetch Data for Create Order Modal
     buyers = User.query.filter_by(role='buyer').all()
-    products = Product.query.filter(Product.stock > 0).all()
     
-    return render_template('seller/manage_orders.html', orders=orders, buyers=buyers, products=products)
+    # Filter product dropdown: Only show products I currently have in stock
+    my_inventory = db.session.query(SellerInventory, Product)\
+        .join(Product, SellerInventory.product_id == Product.id)\
+        .filter(SellerInventory.seller_id == current_user.id, SellerInventory.stock > 0)\
+        .all()
+    
+    products_available = []
+    for inv, prod in my_inventory:
+        # Determine max qty available for this seller
+        prod.max_qty = inv.stock 
+        products_available.append(prod)
+
+    return render_template('seller/manage_orders.html', orders=orders, buyers=buyers, products=products_available)
 
 @seller_bp.route('/orders/create', methods=['POST'])
 @login_required
@@ -237,15 +264,22 @@ def create_order():
         for i, p_id in enumerate(product_ids):
             if not p_id or not quantities[i]: continue
             
-            product = Product.query.get(p_id)
+            # Find the specific inventory record for this seller and product
+            inventory_item = SellerInventory.query.filter_by(
+                seller_id=current_user.id, 
+                product_id=p_id
+            ).first()
+
             qty = int(quantities[i])
             
-            if product and product.stock >= qty:
+            # Check stock in SELLER'S Inventory
+            if inventory_item and inventory_item.stock >= qty:
+                product = inventory_item.product
                 line_total = product.price * qty
                 total_amount += line_total
                 
-                # Deduct Stock
-                product.stock -= qty
+                # Deduct Stock from Seller's Allocation
+                inventory_item.stock -= qty
                 
                 # Add Item
                 order_items.append(OrderItem(
@@ -254,7 +288,8 @@ def create_order():
                     price_at_purchase=product.price
                 ))
             else:
-                flash(f'Insufficient stock for {product.name} (Available: {product.stock})', 'warning')
+                prod_name = Product.query.get(p_id).name if Product.query.get(p_id) else "Unknown"
+                flash(f'Insufficient stock for {prod_name}.', 'warning')
                 return redirect(url_for('seller.manage_orders'))
 
         if not order_items:
@@ -304,7 +339,7 @@ def update_order_status(order_id):
         order.status = new_status
         db.session.commit()
         
-        # Auto-create Invoice for Seller
+        # Auto-create Invoice for Seller logic (Simplified)
         if new_status == 'Order Accepted':
              if not Invoice.query.filter_by(order_id=order.order_number).first():
                 last_invoice = Invoice.query.order_by(Invoice.id.desc()).first()
@@ -337,12 +372,15 @@ def update_order_status(order_id):
 
     return redirect(url_for('seller.manage_orders'))
 
-# --- INVOICES ---
+# =========================================================
+# 4. INVOICES
+# =========================================================
+
 @seller_bp.route('/invoices')
 @login_required
 @role_required('seller')
 def manage_invoices():
-    # STRICT FILTER: Only show invoices where admin_id matches current seller
+    # Only show invoices where admin_id matches current seller
     invoices = Invoice.query.filter_by(admin_id=current_user.id).order_by(Invoice.created_at.desc()).all()
     return render_template('seller/manage_invoices.html', invoices=invoices)
 
@@ -392,8 +430,15 @@ def create_invoice():
         flash('Invoice created successfully.', 'success')
         return redirect(url_for('seller.manage_invoices'))
 
-    products = Product.query.filter(Product.stock > 0).all()
-    products_js = [{'id': p.id, 'name': p.name, 'price': p.price, 'code': p.product_code} for p in products]
+    # Load seller's products for invoice dropdown
+    # Using SellerInventory to ensure we only show allocated products
+    my_inventory = db.session.query(SellerInventory, Product)\
+        .join(Product, SellerInventory.product_id == Product.id)\
+        .filter(SellerInventory.seller_id == current_user.id, SellerInventory.stock > 0)\
+        .all()
+        
+    products_js = [{'id': prod.id, 'name': prod.name, 'price': prod.price, 'code': prod.product_code} for inv, prod in my_inventory]
+    
     return render_template('seller/create_invoice.html', products=products_js)
 
 @seller_bp.route('/invoices/delete/<int:invoice_id>')

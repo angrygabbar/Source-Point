@@ -1,0 +1,76 @@
+{% extends "layout.html" %}
+{% block title %}Stock Requests{% endblock %}
+{% block content %}
+
+<div class="space-y-8 animate-dynamic pb-10">
+    <div class="bg-white/5 border border-white/5 rounded-2xl p-4 backdrop-blur-xl shadow-lg mb-6">
+        <h1 class="text-xl font-bold text-white flex items-center gap-3">
+            <i class="fas fa-clipboard-list text-yellow-400"></i> Pending Requests
+        </h1>
+    </div>
+
+    <div class="grid gap-4">
+        {% for req in requests %}
+        <div class="glass-panel p-6 rounded-xl border border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-indigo-500/20 rounded-full flex items-center justify-center text-indigo-400 font-bold">
+                    {{ req.quantity }}
+                </div>
+                <div>
+                    <h3 class="text-white font-bold text-lg">{{ req.product.name }}</h3>
+                    <p class="text-sm text-gray-400">Requested by: <span class="text-white">{{ req.seller.username }}</span></p>
+                    <p class="text-xs text-gray-500">{{ req.request_date.strftime('%Y-%m-%d %H:%M') }}</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <form action="{{ url_for('admin.approve_stock_request', req_id=req.id) }}" method="POST" class="flex gap-2">
+                    <input type="text" name="note" placeholder="Admin Note (Optional)" class="bg-black/20 border border-white/10 text-white text-xs rounded px-2 py-1">
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-sm">Approve</button>
+                </form>
+                <form action="{{ url_for('admin.reject_stock_request', req_id=req.id) }}" method="POST">
+                    <button type="submit" class="px-4 py-2 bg-red-600/20 text-red-400 border border-red-500/30 hover:bg-red-600 hover:text-white rounded-lg font-bold text-sm">Reject</button>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-10 text-gray-500">No pending stock requests.</div>
+        {% endfor %}
+    </div>
+
+    <div class="mt-10">
+        <h2 class="text-lg font-bold text-white mb-4">Request History</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-gray-400">
+                <thead class="text-xs text-gray-500 uppercase bg-white/5">
+                    <tr>
+                        <th class="px-4 py-3">Date</th>
+                        <th class="px-4 py-3">Seller</th>
+                        <th class="px-4 py-3">Product</th>
+                        <th class="px-4 py-3">Qty</th>
+                        <th class="px-4 py-3">Status</th>
+                        <th class="px-4 py-3">Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in history %}
+                    <tr class="border-b border-white/5 hover:bg-white/5">
+                        <td class="px-4 py-3">{{ h.request_date.strftime('%d/%m') }}</td>
+                        <td class="px-4 py-3">{{ h.seller.username }}</td>
+                        <td class="px-4 py-3">{{ h.product.name }}</td>
+                        <td class="px-4 py-3">{{ h.quantity }}</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-1 rounded text-xs font-bold 
+                                {% if h.status == 'Approved' %}bg-emerald-500/10 text-emerald-400{% else %}bg-red-500/10 text-red-400{% endif %}">
+                                {{ h.status }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-xs">{{ h.admin_note or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
