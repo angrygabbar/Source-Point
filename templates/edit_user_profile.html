@@ -20,6 +20,8 @@
                     <input type="tel" name="mobile_number" id="mobile_number" value="{{ user.mobile_number or '' }}" class="mt-1 w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">
                 </div>
             </div>
+
+            {% if user.role not in ['buyer', 'seller'] %}
             <hr class="border-gray-700">
             <div>
                 <h2 class="text-xl font-semibold text-white mb-4">Professional Information</h2>
@@ -52,6 +54,8 @@
                 {% endif %}
             </div>
             {% endif %}
+            {% endif %}
+
             <div class="pt-4 flex justify-end">
                 <button type="submit" class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
                     Save Profile Changes

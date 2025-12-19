@@ -34,9 +34,13 @@
                 <button @click="activeTab = 'general'" :class="activeTab === 'general' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'" class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all">
                     <i class="fas fa-user-circle w-6 text-center mr-2"></i> General Information
                 </button>
+                
+                {% if current_user.role not in ['buyer', 'seller'] %}
                 <button @click="activeTab = 'professional'" :class="activeTab === 'professional' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'" class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all">
                     <i class="fas fa-briefcase w-6 text-center mr-2"></i> Professional Details
                 </button>
+                {% endif %}
+                
                 <button @click="activeTab = 'security'" :class="activeTab === 'security' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'" class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all">
                     <i class="fas fa-shield-alt w-6 text-center mr-2"></i> Security
                 </button>
@@ -70,6 +74,7 @@
                 </form>
             </div>
 
+            {% if current_user.role not in ['buyer', 'seller'] %}
             <div x-show="activeTab === 'professional'" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
                 <h3 class="text-lg font-bold text-white mb-6 border-b border-white/5 pb-4">Professional Details</h3>
                 <form action="{{ url_for('main.update_profile') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
@@ -118,6 +123,7 @@
                     </div>
                 </form>
             </div>
+            {% endif %}
 
             <div x-show="activeTab === 'security'" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
                 
