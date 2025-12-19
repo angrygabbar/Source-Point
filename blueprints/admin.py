@@ -35,14 +35,34 @@ GST_RATES = {
 @login_required
 @role_required('admin')
 def admin_dashboard():
-    pending_users = User.query.filter_by(is_approved=False).all()
-    received_snippets = CodeSnippet.query.filter_by(recipient_id=current_user.id).order_by(CodeSnippet.timestamp.desc()).all()
-    applications = JobApplication.query.order_by(JobApplication.applied_at.desc()).all()
-    activities = ActivityUpdate.query.order_by(ActivityUpdate.timestamp.desc()).all()
-    candidates = User.query.filter_by(role='candidate').all()
-    developers = User.query.filter_by(role='developer').all()
-    moderators = User.query.filter_by(role='moderator').all()
+    # --- MEMORY OPTIMIZATION START ---
+    # We use .count() and .limit() to prevent loading thousands of records into RAM
     
+    # 1. Pending Users
+    pending_users_count = User.query.filter_by(is_approved=False).count()
+    pending_users = User.query.filter_by(is_approved=False).limit(10).all()
+
+    # 2. Snippets
+    received_snippets = CodeSnippet.query.filter_by(recipient_id=current_user.id)\
+        .order_by(CodeSnippet.timestamp.desc()).limit(5).all()
+
+    # 3. Applications
+    applications = JobApplication.query.order_by(JobApplication.applied_at.desc()).limit(10).all()
+    pending_apps_count = JobApplication.query.filter_by(status='pending').count()
+
+    # 4. Activities
+    activities = ActivityUpdate.query.order_by(ActivityUpdate.timestamp.desc()).limit(15).all()
+    
+    # 5. Directories (Use counts for stats, limit lists to prevent crash)
+    candidates_count = User.query.filter_by(role='candidate').count()
+    developers_count = User.query.filter_by(role='developer').count()
+    moderators_count = User.query.filter_by(role='moderator').count()
+    
+    candidates = User.query.filter_by(role='candidate').limit(50).all()
+    developers = User.query.filter_by(role='developer').limit(50).all()
+    moderators = User.query.filter_by(role='moderator').all() 
+    
+    # 6. Scheduling
     scheduled_candidates = User.query.filter(
         User.role == 'candidate',
         User.problem_statement_id != None,
@@ -52,21 +72,32 @@ def admin_dashboard():
     assigned_candidates_with_moderators = User.query.filter(
         User.role == 'candidate',
         User.moderator_id.isnot(None)
-    ).all()
+    ).order_by(User.test_start_time.asc()).limit(20).all()
     
     moderator_ids = list(set([c.moderator_id for c in assigned_candidates_with_moderators]))
     moderators_for_assignments = User.query.filter(User.id.in_(moderator_ids)).all()
     moderators_map = {m.id: m for m in moderators_for_assignments}
     
+    # 7. Orders & Stock Stats
     pending_orders_count = Order.query.filter_by(status='Order Placed').count()
     pending_requests_count = StockRequest.query.filter_by(status='Pending').count()
 
+    # --- MEMORY OPTIMIZATION END ---
+
     return render_template('admin_dashboard.html',
                            pending_users=pending_users,
+                           pending_users_count=pending_users_count,
                            received_snippets=received_snippets,
-                           applications=applications, activities=activities,
-                           candidates=candidates, developers=developers,
-                           moderators=moderators, scheduled_candidates=scheduled_candidates,
+                           applications=applications, 
+                           pending_apps_count=pending_apps_count,
+                           activities=activities,
+                           candidates=candidates,
+                           candidates_count=candidates_count,
+                           developers=developers,
+                           developers_count=developers_count,
+                           moderators=moderators,
+                           moderators_count=moderators_count,
+                           scheduled_candidates=scheduled_candidates,
                            assigned_candidates_with_moderators=assigned_candidates_with_moderators,
                            moderators_map=moderators_map,
                            pending_orders_count=pending_orders_count,
@@ -146,7 +177,8 @@ def admin_activity_logs():
         date_obj = datetime.strptime(filter_date, '%Y-%m-%d')
         query = query.filter(func.date(ActivityLog.timestamp) == date_obj.date())
     
-    logs = query.order_by(ActivityLog.timestamp.desc()).all()
+    # Optimization: Limit logs to preventing loading entire history
+    logs = query.order_by(ActivityLog.timestamp.desc()).limit(100).all()
     return render_template('admin_activity_logs.html', logs=logs)
 
 # =========================================================
@@ -248,7 +280,7 @@ def approve_user(user_id):
     user.is_approved = True
     db.session.commit()
 
-    email_sent = send_email(
+    send_email(
         to=user.email,
         subject="Your DevConnect Hub Account is Approved!",
         template="mail/account_approved.html",
@@ -256,10 +288,7 @@ def approve_user(user_id):
         now=datetime.utcnow()
     )
     log_user_action("Approve User", f"Approved user {user.username}")
-    if email_sent:
-        flash(f'User {user.username} has been approved and a notification has been sent.', 'success')
-    else:
-        flash(f'User {user.username} has been approved, but the notification email could not be sent.', 'warning')
+    flash(f'User {user.username} has been approved.', 'success')
 
     return redirect(url_for('admin.admin_dashboard'))
 
