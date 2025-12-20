@@ -5,7 +5,7 @@ from extensions import db, bcrypt, login_manager, migrate, cache, limiter
 from models import User, Message, LearningContent
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
-from apscheduler.schedulers.background import BackgroundScheduler
+# Removed APScheduler imports to save memory
 from utils import send_email
 from flask_login import login_required, current_user
 
@@ -21,21 +21,24 @@ def create_app():
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30) 
     
-    # --- CACHE CONFIG (In-Memory for Free Tier) ---
+    # --- CACHE CONFIG (Optimized for Free Tier) ---
+    # Limits memory usage to prevent "Out of Memory" crashes
     app.config['CACHE_TYPE'] = 'SimpleCache'
     app.config['CACHE_DEFAULT_TIMEOUT'] = 300 # 5 minutes default
+    app.config['CACHE_THRESHOLD'] = 200       # Limit to 200 items to save RAM
 
     # Uploads 
     app.config['UPLOAD_FOLDER'] = 'static/resumes'
     app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-    # --- DATABASE POOLING STABILITY ---
+    # --- DATABASE POOLING STABILITY (Critical for Render Free Tier) ---
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
         "pool_pre_ping": True,  
         "pool_recycle": 280,    
-        "pool_size": 10,        
-        "max_overflow": 20      
+        "pool_size": 4,         # Reduced to match worker threads
+        "max_overflow": 0,      # Reduced to 0 to prevent memory spikes
+        "pool_timeout": 30      # Stop workers from hanging if DB is busy
     }
 
     # Initialize Extensions
@@ -56,7 +59,7 @@ def create_app():
     from blueprints.moderator import moderator_bp
     from blueprints.events import events_bp
     from blueprints.recruiter import recruiter_bp
-    from blueprints.seller import seller_bp  # <--- IMPORT SELLER
+    from blueprints.seller import seller_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -67,7 +70,7 @@ def create_app():
     app.register_blueprint(moderator_bp)
     app.register_blueprint(events_bp)
     app.register_blueprint(recruiter_bp)
-    app.register_blueprint(seller_bp)  # <--- REGISTER SELLER
+    app.register_blueprint(seller_bp)
 
     # --- GLOBAL CONTEXT PROCESSOR ---
     @app.context_processor
@@ -146,29 +149,7 @@ def force_seller_role():
     
     return "<h1>Success! Your account is now a SELLER. <a href='/login-register'>Click here to Login again</a></h1>"
 
-# --- BACKGROUND SCHEDULER ---
-def check_completed_tests():
-    with app.app_context():
-        now = datetime.utcnow()
-        completed_candidates = User.query.filter(
-            User.role == 'candidate',
-            User.test_end_time <= now,
-            User.test_completed == False,
-            User.problem_statement_id != None
-        ).all()
-
-        if completed_candidates:
-            for candidate in completed_candidates:
-                problem_title = candidate.assigned_problem.title if candidate.assigned_problem else "your assigned problem"
-                if send_email(to=candidate.email, subject="Test Completed", template="mail/test_completed_candidate.html", candidate=candidate, problem_title=problem_title):
-                    candidate.test_completed = True
-                    db.session.commit()
-            print(f"Checked tests: {len(completed_candidates)} marked as completed.")
-
-if os.environ.get('FLASK_ENV') == 'development':
-    scheduler = BackgroundScheduler(daemon=True)
-    scheduler.add_job(check_completed_tests, 'interval', minutes=15)
-    scheduler.start()
+# Removed BackgroundScheduler block to prevent memory leaks and worker timeouts
 
 if __name__ == '__main__':
     app.run(debug=True)

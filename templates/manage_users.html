@@ -14,7 +14,6 @@
         </button>
     </div>
 
-    <!-- Server-Side Filter Form -->
     <form method="GET" action="{{ url_for('admin.manage_users') }}" class="glass-panel p-2 rounded-xl flex flex-col md:flex-row gap-2">
         <div class="relative flex-1">
             <i class="fas fa-search absolute left-4 top-3.5 text-gray-500"></i>
@@ -28,20 +27,20 @@
                 <option value="developer" {% if current_role == 'developer' %}selected{% endif %}>Developer</option>
                 <option value="moderator" {% if current_role == 'moderator' %}selected{% endif %}>Moderator</option>
                 <option value="candidate" {% if current_role == 'candidate' %}selected{% endif %}>Candidate</option>
+                <option value="seller" {% if current_role == 'seller' %}selected{% endif %}>Seller</option>
                 <option value="buyer" {% if current_role == 'buyer' %}selected{% endif %}>Buyer</option>
+                <option value="recruiter" {% if current_role == 'recruiter' %}selected{% endif %}>Recruiter</option>
             </select>
             <select name="status" onchange="this.form.submit()" class="bg-black/20 border border-white/5 rounded-lg px-4 py-3 text-sm text-gray-300 focus:ring-1 focus:ring-indigo-500 focus:bg-black/40 transition-all cursor-pointer min-w-[140px]">
                 <option value="all" {% if current_status == 'all' %}selected{% endif %}>All Status</option>
                 <option value="active" {% if current_status == 'active' %}selected{% endif %}>Active</option>
                 <option value="inactive" {% if current_status == 'inactive' %}selected{% endif %}>Inactive</option>
             </select>
-            <!-- Hidden submit for 'Enter' key on search input -->
             <button type="submit" class="hidden"></button>
         </div>
     </form>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="user-grid">
-        <!-- Iterate over users.items for pagination -->
         {% for user in users.items %}
         <div class="group glass-panel rounded-xl p-5 border border-white/5 hover:border-indigo-500/30 transition-all duration-300 hover:-translate-y-1 user-card" 
              data-role="{{ user.role }}" 
@@ -63,7 +62,6 @@
                         <i class="fas fa-pen"></i>
                     </a>
                     {% if user.id != current_user.id %}
-                        <!-- AJAX Toggle Status Link -->
                         <a href="#" 
                            class="p-1.5 rounded-md transition-colors toggle-status-btn {% if user.is_active %}text-red-400 hover:text-red-300 hover:bg-red-500/10{% else %}text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10{% endif %}"
                            title="{% if user.is_active %}Deactivate{% else %}Activate{% endif %}"
@@ -85,6 +83,9 @@
                         {% elif user.role == 'developer' %} bg-blue-500/10 text-blue-400 border-blue-500/20
                         {% elif user.role == 'moderator' %} bg-orange-500/10 text-orange-400 border-orange-500/20
                         {% elif user.role == 'candidate' %} bg-emerald-500/10 text-emerald-400 border-emerald-500/20
+                        {% elif user.role == 'seller' %} bg-pink-500/10 text-pink-400 border-pink-500/20
+                        {% elif user.role == 'buyer' %} bg-teal-500/10 text-teal-400 border-teal-500/20
+                        {% elif user.role == 'recruiter' %} bg-cyan-500/10 text-cyan-400 border-cyan-500/20
                         {% else %} bg-gray-700/30 text-gray-400 border-gray-600/30 {% endif %}">
                         {{ user.role }}
                     </span>
@@ -93,7 +94,6 @@
             </div>
         </div>
         {% else %}
-        <!-- Empty State inside loop else block -->
         <div class="col-span-full py-20 text-center glass-panel rounded-xl border-dashed border-2 border-gray-700">
             <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-800 mb-4">
                 <i class="fas fa-search text-2xl text-gray-600"></i>
@@ -104,17 +104,14 @@
         {% endfor %}
     </div>
 
-    <!-- Pagination Controls -->
     {% if users.pages > 1 %}
     <div class="flex justify-center mt-8">
         <nav class="glass-panel inline-flex rounded-lg shadow-sm isolate">
-            <!-- Previous Page -->
             <a href="{{ url_for('admin.manage_users', page=users.prev_num, search=current_search, role=current_role, status=current_status) if users.has_prev else '#' }}" 
                class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-400 hover:text-white border-r border-white/5 {{ 'opacity-50 cursor-not-allowed pointer-events-none' if not users.has_prev else '' }}">
                 <i class="fas fa-chevron-left mr-2"></i> Prev
             </a>
 
-            <!-- Page Numbers -->
             {% for page_num in users.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
                 {% if page_num %}
                     <a href="{{ url_for('admin.manage_users', page=page_num, search=current_search, role=current_role, status=current_status) }}" 
@@ -127,7 +124,6 @@
                 {% endif %}
             {% endfor %}
 
-            <!-- Next Page -->
             <a href="{{ url_for('admin.manage_users', page=users.next_num, search=current_search, role=current_role, status=current_status) if users.has_next else '#' }}" 
                class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-400 hover:text-white {{ 'opacity-50 cursor-not-allowed pointer-events-none' if not users.has_next else '' }}">
                 Next <i class="fas fa-chevron-right ml-2"></i>
@@ -138,7 +134,6 @@
 
 </div>
 
-<!-- Create User Modal (Same as before) -->
 <div id="createUserModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" id="modalOverlay"></div>
 
@@ -178,6 +173,8 @@
                                 <option value="developer">Developer</option>
                                 <option value="moderator">Moderator</option>
                                 <option value="buyer">Buyer</option>
+                                <option value="seller">Seller</option>
+                                <option value="recruiter">Recruiter</option>
                                 <option value="admin">Admin</option>
                             </select>
                         </div>

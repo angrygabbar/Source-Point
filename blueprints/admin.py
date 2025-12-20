@@ -36,7 +36,6 @@ GST_RATES = {
 @role_required('admin')
 def admin_dashboard():
     # --- MEMORY OPTIMIZATION START ---
-    # We use .count() and .limit() to prevent loading thousands of records into RAM
     
     # 1. Pending Users
     pending_users_count = User.query.filter_by(is_approved=False).count()
@@ -50,17 +49,17 @@ def admin_dashboard():
     applications = JobApplication.query.order_by(JobApplication.applied_at.desc()).limit(10).all()
     pending_apps_count = JobApplication.query.filter_by(status='pending').count()
 
-    # 4. Activities
-    activities = ActivityUpdate.query.order_by(ActivityUpdate.timestamp.desc()).limit(15).all()
+    # 4. Activity Logs (RESTORED: Shows IP & Access Details)
+    # Using ActivityLog instead of ActivityUpdate to show "Who accessed what + IP"
+    recent_logs = ActivityLog.query.order_by(ActivityLog.timestamp.desc()).limit(20).all()
     
-    # 5. Directories (Use counts for stats, limit lists to prevent crash)
-    candidates_count = User.query.filter_by(role='candidate').count()
-    developers_count = User.query.filter_by(role='developer').count()
-    moderators_count = User.query.filter_by(role='moderator').count()
-    
+    # 5. Directories - FETCH ALL ROLES
     candidates = User.query.filter_by(role='candidate').limit(50).all()
     developers = User.query.filter_by(role='developer').limit(50).all()
-    moderators = User.query.filter_by(role='moderator').all() 
+    moderators = User.query.filter_by(role='moderator').limit(50).all()
+    sellers = User.query.filter_by(role='seller').limit(50).all()     # [NEW]
+    buyers = User.query.filter_by(role='buyer').limit(50).all()       # [NEW]
+    recruiters = User.query.filter_by(role='recruiter').limit(50).all() # [NEW]
     
     # 6. Scheduling
     scheduled_candidates = User.query.filter(
@@ -90,13 +89,15 @@ def admin_dashboard():
                            received_snippets=received_snippets,
                            applications=applications, 
                            pending_apps_count=pending_apps_count,
-                           activities=activities,
+                           recent_logs=recent_logs,  # [CHANGED] Passing logs instead of generic activities
+                           # Pass all user lists
                            candidates=candidates,
-                           candidates_count=candidates_count,
                            developers=developers,
-                           developers_count=developers_count,
                            moderators=moderators,
-                           moderators_count=moderators_count,
+                           sellers=sellers,       # [NEW]
+                           buyers=buyers,         # [NEW]
+                           recruiters=recruiters, # [NEW]
+                           # Schedule data
                            scheduled_candidates=scheduled_candidates,
                            assigned_candidates_with_moderators=assigned_candidates_with_moderators,
                            moderators_map=moderators_map,

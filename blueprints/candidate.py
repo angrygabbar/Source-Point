@@ -27,17 +27,29 @@ def candidate_dashboard():
 @role_required('candidate')
 def code_test():
     now = datetime.utcnow()
+    
+    # 1. Check if test is assigned
     if not current_user.assigned_problem:
         message = "No test has been assigned to you yet."
         return render_template('test_locked.html', message=message)
+    
+    # 2. Check if test hasn't started yet
     if current_user.test_start_time and now < current_user.test_start_time:
         ist_start_time = current_user.test_start_time + timedelta(hours=5, minutes=30)
         message = f"Your test has been assigned but is not yet active. It will be available starting {ist_start_time.strftime('%b %d, %Y at %I:%M %p')} IST."
         return render_template('test_locked.html', message=message)
+
+    # 3. Check if test has ended (Lazy Update Logic)
     if current_user.test_end_time and now > current_user.test_end_time:
+        # If the test is expired but database still says "not completed", update it now.
+        if not current_user.test_completed:
+            current_user.test_completed = True
+            db.session.commit()
+            
         ist_end_time = current_user.test_end_time + timedelta(hours=5, minutes=30)
         message = f"The deadline for your assigned test has passed. The test was available until {ist_end_time.strftime('%b %d, %Y at %I:%M %p')} IST."
         return render_template('test_locked.html', message=message)
+
     messageable_users = User.query.filter(User.role.in_(['admin', 'developer'])).all()
     return render_template('code_test.html', messageable_users=messageable_users)
 
