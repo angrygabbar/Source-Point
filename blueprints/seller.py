@@ -74,10 +74,9 @@ def manage_inventory():
     total_val = 0
     
     for inv, prod in inventory_items:
-        # We include ALL details so the "View Details" modal works in the template
         products_display.append({
             'id': prod.id,
-            'inventory_id': inv.id, # Used to update specific stock
+            'inventory_id': inv.id,
             'code': prod.product_code,
             'name': prod.name,
             'image_url': prod.image_url,
@@ -86,7 +85,7 @@ def manage_inventory():
             'description': prod.description or 'No description available.',
             'warranty': prod.warranty or 'N/A',
             'return_policy': prod.return_policy or 'N/A',
-            'my_stock': inv.stock, # Seller's specific stock
+            'my_stock': inv.stock,
             'price': prod.price,
             'mrp': prod.mrp
         })
@@ -94,12 +93,11 @@ def manage_inventory():
 
     return render_template('seller/manage_inventory.html', 
                            products=products_display, 
-                           all_products=all_products, # Passed for Request Modal
+                           all_products=all_products, 
                            total_inventory_value=total_val, 
                            total_products_count=len(products_display), 
                            low_stock_count=sum(1 for p in products_display if p['my_stock'] < 10))
 
-# --- REQUEST STOCK ROUTE (NEW) ---
 @seller_bp.route('/inventory/request', methods=['POST'])
 @login_required
 @role_required('seller')
@@ -115,7 +113,6 @@ def request_stock():
         qty = int(quantity)
         if qty <= 0: raise ValueError
         
-        # 1. Create Request Record
         req = StockRequest(
             seller_id=current_user.id,
             product_id=product_id,
@@ -125,10 +122,9 @@ def request_stock():
         db.session.add(req)
         db.session.commit()
         
-        # 2. Get Product Info for Email
         product = Product.query.get(product_id)
 
-        # 3. Notify All Admins
+        # Notify All Admins
         admins = User.query.filter_by(role='admin').all()
         email_sent_count = 0
         for admin in admins:
@@ -161,22 +157,14 @@ def request_stock():
 @login_required
 @role_required('seller')
 def update_product():
-    # Sellers update their OWN stock level (e.g. for corrections/offline sales)
     inventory_id = request.form.get('inventory_id')
     new_stock = request.form.get('stock')
-    # Optional: Allow price override if business logic permits
-    # new_price = request.form.get('price') 
     
     if inventory_id:
         inv_item = SellerInventory.query.get(inventory_id)
-        # Security check: Ensure this inventory belongs to the logged-in seller
         if inv_item and inv_item.seller_id == current_user.id:
             if new_stock:
                 inv_item.stock = int(new_stock)
-            
-            # If allowing price overrides:
-            # if new_price: inv_item.price = float(new_price)
-
             db.session.commit()
             log_user_action("Update Inventory", f"Seller updated stock for {inv_item.product.name}")
             flash('Inventory stock updated.', 'success')
@@ -187,7 +175,7 @@ def update_product():
 
     return redirect(url_for('seller.manage_inventory'))
 
-# --- RESTRICTED ROUTES (Security Placeholders) ---
+# --- RESTRICTED ROUTES ---
 @seller_bp.route('/inventory/add', methods=['GET', 'POST'])
 @login_required
 @role_required('seller')
@@ -217,13 +205,10 @@ def delete_product(product_id):
 @login_required
 @role_required('seller')
 def manage_orders():
-    # Only orders where seller_id matches current user
     orders = Order.query.filter_by(seller_id=current_user.id).order_by(Order.created_at.desc()).all()
-    
-    # Fetch Data for Create Order Modal
     buyers = User.query.filter_by(role='buyer').all()
     
-    # Filter product dropdown: Only show products I currently have in stock
+    # Corrected filter logic (== instead of =)
     my_inventory = db.session.query(SellerInventory, Product)\
         .join(Product, SellerInventory.product_id == Product.id)\
         .filter(SellerInventory.seller_id == current_user.id, SellerInventory.stock > 0)\
@@ -231,7 +216,6 @@ def manage_orders():
     
     products_available = []
     for inv, prod in my_inventory:
-        # Determine max qty available for this seller
         prod.max_qty = inv.stock 
         products_available.append(prod)
 
@@ -253,7 +237,6 @@ def create_order():
         return redirect(url_for('seller.manage_orders'))
 
     try:
-        # Generate Order Number
         last_order = Order.query.order_by(Order.id.desc()).first()
         next_id = (last_order.id + 1) if last_order else 1
         order_number = f"ORD{datetime.utcnow().year}{next_id:04d}"
@@ -264,7 +247,6 @@ def create_order():
         for i, p_id in enumerate(product_ids):
             if not p_id or not quantities[i]: continue
             
-            # Find the specific inventory record for this seller and product
             inventory_item = SellerInventory.query.filter_by(
                 seller_id=current_user.id, 
                 product_id=p_id
@@ -272,16 +254,13 @@ def create_order():
 
             qty = int(quantities[i])
             
-            # Check stock in SELLER'S Inventory
             if inventory_item and inventory_item.stock >= qty:
                 product = inventory_item.product
                 line_total = product.price * qty
                 total_amount += line_total
                 
-                # Deduct Stock from Seller's Allocation
                 inventory_item.stock -= qty
                 
-                # Add Item
                 order_items.append(OrderItem(
                     product_name=product.name,
                     quantity=qty,
@@ -296,11 +275,10 @@ def create_order():
             flash('No valid items added to order.', 'warning')
             return redirect(url_for('seller.manage_orders'))
 
-        # Create Order
         new_order = Order(
             order_number=order_number,
-            user_id=buyer_id, # Buyer
-            seller_id=current_user.id, # Seller (Creator)
+            user_id=buyer_id,
+            seller_id=current_user.id,
             total_amount=total_amount,
             status='Order Placed',
             shipping_address=shipping_address,
@@ -318,7 +296,6 @@ def create_order():
     except Exception as e:
         db.session.rollback()
         flash(f'Error creating order: {str(e)}', 'danger')
-        print(e)
 
     return redirect(url_for('seller.manage_orders'))
 
@@ -328,7 +305,6 @@ def create_order():
 def update_order_status(order_id):
     order = Order.query.get_or_404(order_id)
     
-    # Security Check
     if order.seller_id != current_user.id:
         flash('Unauthorized: You can only update your own orders.', 'danger')
         return redirect(url_for('seller.manage_orders'))
@@ -339,7 +315,7 @@ def update_order_status(order_id):
         order.status = new_status
         db.session.commit()
         
-        # Auto-create Invoice for Seller logic (Simplified)
+        # --- Invoice Generation Logic (On Accept) ---
         if new_status == 'Order Accepted':
              if not Invoice.query.filter_by(order_id=order.order_number).first():
                 last_invoice = Invoice.query.order_by(Invoice.id.desc()).first()
@@ -354,7 +330,7 @@ def update_order_status(order_id):
                     order_id=order.order_number, subtotal=order.total_amount, tax=0, 
                     total_amount=order.total_amount,
                     due_date=datetime.utcnow().date(), notes="Auto-generated by Seller.", 
-                    admin_id=current_user.id # Assigned to current SELLER
+                    admin_id=current_user.id
                 )
                 db.session.add(new_invoice)
                 db.session.commit()
@@ -362,11 +338,39 @@ def update_order_status(order_id):
                     db.session.add(InvoiceItem(description=item.product_name, quantity=item.quantity, price=item.price_at_purchase, invoice_id=new_invoice.id))
                 db.session.commit()
 
+                # Generate PDF and Send Invoice Email
+                try:
+                    invoice_generator = InvoiceGenerator(new_invoice)
+                    pdf_data = invoice_generator.generate_pdf()
+                    attachment = {'filename': f'{new_invoice.invoice_number}.pdf', 'content_type': 'application/pdf', 'data': pdf_data}
+                    send_email(
+                        to=new_invoice.recipient_email, subject=f'Invoice for Order {order.order_number}',
+                        template='mail/professional_invoice_email.html', recipient_name=new_invoice.recipient_name,
+                        invoice_number=new_invoice.invoice_number, total_amount=new_invoice.total_amount,
+                        due_date=new_invoice.due_date.strftime('%B %d, %Y'), attachments=[attachment]
+                    )
+                    flash('Invoice generated and sent to buyer successfully.', 'info')
+                except Exception as e:
+                    print(f"Failed to generate/send invoice: {e}")
+                    flash('Order accepted, but failed to send invoice email.', 'warning')
+        
+        # --- NEW: General Status Update Notification (For All Statuses) ---
+        # This matches the admin's notification logic
         try:
-            send_email(to=order.buyer.email, subject=f'Order Update: {new_status}', template='mail/order_status_update.html', 
-                       buyer_name=order.buyer.username, order_number=order.order_number, status=new_status, 
-                       order_date=order.created_at.strftime('%Y-%m-%d'), total_amount=order.total_amount)
-        except Exception: pass
+            send_email(
+                to=order.buyer.email, 
+                subject=f'Order Update: {new_status} (Order #{order.order_number})', 
+                template='mail/order_status_update.html', 
+                buyer_name=order.buyer.username, 
+                order_number=order.order_number, 
+                status=new_status, 
+                order_date=order.created_at.strftime('%B %d, %Y'), 
+                total_amount=order.total_amount,
+                shipping_address=order.shipping_address,
+                now=datetime.utcnow()
+            )
+        except Exception as e: 
+            print(f"Failed to send status notification: {e}")
         
         flash(f'Order {order.order_number} updated to {new_status}.', 'success')
 
@@ -380,7 +384,6 @@ def update_order_status(order_id):
 @login_required
 @role_required('seller')
 def manage_invoices():
-    # Only show invoices where admin_id matches current seller
     invoices = Invoice.query.filter_by(admin_id=current_user.id).order_by(Invoice.created_at.desc()).all()
     return render_template('seller/manage_invoices.html', invoices=invoices)
 
@@ -405,15 +408,36 @@ def create_invoice():
         
         subtotal = 0
         items = []
+        
+        # --- FIX FOR VALUE ERROR (Empty strings in lists) ---
         for i in range(len(item_descs)):
-            qty, price = int(item_qtys[i]), float(item_prices[i])
+            desc = item_descs[i].strip()
+            qty_str = item_qtys[i].strip()
+            price_str = item_prices[i].strip()
+            
+            # Skip if description or price is missing/empty
+            if not desc or not price_str:
+                continue
+            
+            try:
+                # Default to 1 if quantity is empty but price/desc exists
+                qty = int(qty_str) if qty_str else 1
+                price = float(price_str)
+            except ValueError:
+                continue # Skip malformed numbers
+
             subtotal += qty * price
-            items.append(InvoiceItem(description=item_descs[i], quantity=qty, price=price))
+            items.append(InvoiceItem(description=desc, quantity=qty, price=price))
+        
+        if not items:
+            flash('Cannot create an invoice with no valid items.', 'danger')
+            return redirect(url_for('seller.manage_invoices'))
+        # ----------------------------------------------------
         
         invoice = Invoice(
             invoice_number=invoice_number, recipient_name=recipient_name, recipient_email=recipient_email,
             bill_to_address=bill_to, ship_to_address=ship_to, subtotal=subtotal, total_amount=subtotal,
-            due_date=due_date, admin_id=current_user.id # Set Creator to SELLER
+            due_date=due_date, admin_id=current_user.id
         )
         invoice.items = items
         db.session.add(invoice)
@@ -425,13 +449,12 @@ def create_invoice():
             att = {'filename': f'{invoice_number}.pdf', 'content_type': 'application/pdf', 'data': pdf}
             send_email(to=recipient_email, subject=f"Invoice {invoice_number}", template='mail/professional_invoice_email.html', 
                        recipient_name=recipient_name, invoice_number=invoice_number, total_amount=subtotal, due_date=due_date, attachments=[att])
-        except Exception: pass
+        except Exception as e:
+             print(f"Error sending invoice email: {e}")
 
         flash('Invoice created successfully.', 'success')
         return redirect(url_for('seller.manage_invoices'))
 
-    # Load seller's products for invoice dropdown
-    # Using SellerInventory to ensure we only show allocated products
     my_inventory = db.session.query(SellerInventory, Product)\
         .join(Product, SellerInventory.product_id == Product.id)\
         .filter(SellerInventory.seller_id == current_user.id, SellerInventory.stock > 0)\
@@ -446,7 +469,6 @@ def create_invoice():
 @role_required('seller')
 def delete_invoice(invoice_id):
     invoice = Invoice.query.get_or_404(invoice_id)
-    # Security Check
     if invoice.admin_id != current_user.id:
         flash('Unauthorized action.', 'danger')
         return redirect(url_for('seller.manage_invoices'))
@@ -463,16 +485,32 @@ def delete_invoice(invoice_id):
 @role_required('seller')
 def mark_invoice_paid(invoice_id):
     invoice = Invoice.query.get_or_404(invoice_id)
-    # Security Check
     if invoice.admin_id != current_user.id:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
         
     if invoice.status != 'Paid':
         invoice.status = 'Paid'
         db.session.commit()
+        
+        # --- EMAIL NOTIFICATION LOGIC ---
+        email_status = "and receipt email sent"
+        try:
+            send_email(
+                to=invoice.recipient_email,
+                subject=f"Payment Receipt: Invoice {invoice.invoice_number}",
+                template="mail/payment_received.html",
+                invoice=invoice,
+                recipient_name=invoice.recipient_name,
+                total_amount=invoice.total_amount
+            )
+        except Exception as e:
+            print(f"Email error: {e}")
+            email_status = "but failed to send email"
+        # --------------------------------
+            
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'success': True, 'message': 'Marked as Paid.'})
-        flash('Invoice marked as Paid.', 'success')
+            return jsonify({'success': True, 'message': f'Marked as Paid {email_status}.'})
+        flash(f'Invoice marked as Paid {email_status}.', 'success')
     return redirect(url_for('seller.manage_invoices'))
 
 @seller_bp.route('/invoices/resend', methods=['POST'])
@@ -480,18 +518,53 @@ def mark_invoice_paid(invoice_id):
 @role_required('seller')
 def resend_invoice():
     invoice_id = request.form.get('invoice_id')
-    invoice = Invoice.query.get_or_404(invoice_id)
+    recipient_emails_str = request.form.get('recipient_emails')
     
-    # Security Check
+    if not invoice_id:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+             return jsonify({'success': False, 'message': 'Invalid ID'}), 400
+        return redirect(url_for('seller.manage_invoices'))
+        
+    invoice = Invoice.query.get_or_404(invoice_id)
     if invoice.admin_id != current_user.id:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
              return jsonify({'success': False, 'message': 'Unauthorized'}), 403
         return redirect(url_for('seller.manage_invoices'))
 
-    # Logic to resend email...
+    # Determine recipients
+    recipient_list = [invoice.recipient_email]
+    if recipient_emails_str:
+        recipient_list = [email.strip() for email in recipient_emails_str.split(',') if email.strip()]
+
+    # --- EMAIL SENDING LOGIC ---
+    success = False
+    message = ''
+    try:
+        invoice_generator = InvoiceGenerator(invoice)
+        pdf_data = invoice_generator.generate_pdf()
+        attachment = {'filename': f'{invoice.invoice_number}.pdf', 'content_type': 'application/pdf', 'data': pdf_data}
+
+        send_email(
+            to=recipient_list, 
+            subject=f'Invoice ({invoice.invoice_number}) from Source Point',
+            template='mail/professional_invoice_email.html', 
+            recipient_name=invoice.recipient_name,
+            invoice_number=invoice.invoice_number, 
+            total_amount=invoice.total_amount,
+            due_date=invoice.due_date.strftime('%B %d, %Y') if invoice.due_date else "Immediate", 
+            attachments=[attachment]
+        )
+        success = True
+        message = 'Invoice email resent successfully.'
+    except Exception as e:
+        success = False
+        message = f'Failed to resend invoice: {str(e)}'
+    # ---------------------------
+
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return jsonify({'success': True, 'message': 'Invoice resent.'})
-    flash('Invoice resent.', 'success')
+        return jsonify({'success': success, 'message': message})
+        
+    flash(message, 'success' if success else 'danger')
     return redirect(url_for('seller.manage_invoices'))
 
 @seller_bp.route('/invoices/remind/<int:invoice_id>', methods=['POST'])
@@ -502,8 +575,36 @@ def send_invoice_reminder(invoice_id):
     if invoice.admin_id != current_user.id:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
 
-    # Logic to send reminder...
+    # --- REMINDER LOGIC ---
+    success = False
+    message = ''
+    try:
+        invoice_generator = InvoiceGenerator(invoice)
+        pdf_data = invoice_generator.generate_pdf()
+        attachment = {'filename': f'{invoice.invoice_number}.pdf', 'content_type': 'application/pdf', 'data': pdf_data}
+
+        email_sent = send_email(
+            to=invoice.recipient_email, 
+            subject=f'Payment Reminder: Invoice {invoice.invoice_number}',
+            template='mail/reminder_invoice_email.html', 
+            recipient_name=invoice.recipient_name,
+            invoice_number=invoice.invoice_number, 
+            created_at=invoice.created_at.strftime('%B %d, %Y'),
+            total_amount=invoice.total_amount, 
+            due_date=invoice.due_date.strftime('%B %d, %Y') if invoice.due_date else "Immediate",
+            attachments=[attachment]
+        )
+        if email_sent:
+            success = True
+            message = f'Reminder sent to {invoice.recipient_email}.'
+        else:
+            message = 'Failed to send reminder email.'
+    except Exception as e:
+        message = f'Error sending reminder: {str(e)}'
+    # ----------------------
+
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return jsonify({'success': True, 'message': 'Reminder sent.'})
-    flash('Reminder sent.', 'success')
+        return jsonify({'success': success, 'message': message})
+        
+    flash(message, 'success' if success else 'danger')
     return redirect(url_for('seller.manage_invoices'))
