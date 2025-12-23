@@ -24,14 +24,17 @@ class StockRequest(db.Model):
     seller = db.relationship('User', backref='stock_requests')
     product = db.relationship('Product', backref='stock_requests')
 
+# In Source Point/models.py
+
 class SellerInventory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
-    stock = db.Column(db.Integer, default=0, nullable=False)
-    
+    stock = db.Column(db.Integer, default=0)
+
+    # [NEW] Add these relationships so Admin can access names
+    seller = db.relationship('User', backref='inventory_items')
     product = db.relationship('Product', backref='seller_allocations')
-    seller = db.relationship('User', backref='allocated_inventory')
 
 class LearningContent(db.Model):
     id = db.Column(db.String(50), primary_key=True)

@@ -104,6 +104,91 @@ def admin_dashboard():
                            pending_orders_count=pending_orders_count,
                            pending_requests_count=pending_requests_count)
 
+# --- NEW: COMMERCE DASHBOARD ---
+@admin_bp.route('/commerce_dashboard')
+@login_required
+@role_required('admin')
+def admin_commerce_dashboard():
+    # --- COMMERCE METRICS ---
+    pending_orders_count = Order.query.filter_by(status='Order Placed').count()
+    pending_requests_count = StockRequest.query.filter_by(status='Pending').count()
+    low_stock_count = Product.query.filter(Product.stock < 10).count()
+    
+    # Sales Data
+    recent_orders = Order.query.order_by(Order.created_at.desc()).limit(10).all()
+    pending_requests = StockRequest.query.filter_by(status='Pending').order_by(StockRequest.request_date.desc()).all()
+    recent_invoices = Invoice.query.order_by(Invoice.created_at.desc()).limit(5).all()
+    
+    # Commerce User Approvals (Sellers/Buyers only)
+    pending_commerce_users = User.query.filter(
+        User.is_approved == False,
+        User.role.in_(['seller', 'buyer'])
+    ).all()
+
+    # Directories
+    sellers = User.query.filter_by(role='seller').limit(20).all()
+    buyers = User.query.filter_by(role='buyer').limit(20).all()
+
+    return render_template('admin_commerce_dashboard.html',
+                           pending_orders_count=pending_orders_count,
+                           pending_requests_count=pending_requests_count,
+                           low_stock_count=low_stock_count,
+                           recent_orders=recent_orders,
+                           pending_requests=pending_requests,
+                           recent_invoices=recent_invoices,
+                           pending_commerce_users=pending_commerce_users,
+                           sellers=sellers,
+                           buyers=buyers)
+
+# --- NEW: HIRING DASHBOARD ---
+@admin_bp.route('/hiring_dashboard')
+@login_required
+@role_required('admin')
+def admin_hiring_dashboard():
+    # --- HIRING METRICS ---
+    pending_apps_count = JobApplication.query.filter_by(status='pending').count()
+    
+    # Hiring User Approvals (Candidates/Devs/Mods/Recruiters)
+    pending_hiring_users = User.query.filter(
+        User.is_approved == False,
+        User.role.in_(['candidate', 'developer', 'moderator', 'recruiter'])
+    ).all()
+    
+    # Applications
+    applications = JobApplication.query.order_by(JobApplication.applied_at.desc()).limit(20).all()
+    
+    # Scheduling & Tests
+    scheduled_candidates = User.query.filter(
+        User.role == 'candidate',
+        User.problem_statement_id != None,
+        User.moderator_id == None
+    ).all()
+
+    assigned_candidates = User.query.filter(
+        User.role == 'candidate',
+        User.moderator_id.isnot(None)
+    ).order_by(User.test_start_time.asc()).limit(20).all()
+    
+    # Map moderators for the view
+    mod_ids = list(set([c.moderator_id for c in assigned_candidates if c.moderator_id]))
+    moderators_map = {m.id: m for m in User.query.filter(User.id.in_(mod_ids)).all()}
+    all_moderators = User.query.filter_by(role='moderator').all()
+
+    # Code Snippets
+    received_snippets = CodeSnippet.query.filter_by(recipient_id=current_user.id)\
+        .order_by(CodeSnippet.timestamp.desc()).limit(5).all()
+
+    return render_template('admin_hiring_dashboard.html',
+                           pending_apps_count=pending_apps_count,
+                           pending_hiring_users=pending_hiring_users,
+                           applications=applications,
+                           scheduled_candidates=scheduled_candidates,
+                           assigned_candidates=assigned_candidates,
+                           moderators_map=moderators_map,
+                           all_moderators=all_moderators,
+                           received_snippets=received_snippets)
+
+
 @admin_bp.route('/analytics')
 @login_required
 @role_required('admin')
@@ -738,6 +823,78 @@ def assign_inventory():
         flash(f"Error assigning inventory: {e}", "danger")
 
     return redirect(url_for('admin.manage_inventory'))
+
+# =========================================================
+# SELLER INVENTORY MANAGEMENT (Consolidated & Fixed)
+# =========================================================
+
+@admin_bp.route('/inventory/sellers')
+@login_required
+@role_required('admin')
+def manage_seller_inventory():
+    # 1. Fetch ALL sellers to populate the dropdown
+    sellers = User.query.filter_by(role='seller').order_by(User.username).all()
+    
+    # 2. Check if a seller is selected in the URL (e.g. ?seller_id=5)
+    seller_id = request.args.get('seller_id')
+    
+    selected_seller = None
+    allocations = []
+
+    if seller_id:
+        selected_seller = User.query.get(seller_id)
+        if selected_seller:
+            # 3. If a seller is selected, fetch ONLY their inventory
+            allocations = SellerInventory.query.filter_by(seller_id=selected_seller.id)\
+                .join(Product).order_by(Product.name).all()
+
+    return render_template('manage_seller_inventory.html', 
+                           sellers=sellers, 
+                           selected_seller=selected_seller, 
+                           allocations=allocations)
+
+@admin_bp.route('/inventory/seller/update', methods=['POST'])
+@login_required
+@role_required('admin')
+def update_seller_stock():
+    allocation_id = request.form.get('allocation_id')
+    try:
+        new_stock = int(request.form.get('stock'))
+        allocation = SellerInventory.query.get_or_404(allocation_id)
+        
+        if new_stock < 0:
+            flash("Stock cannot be negative.", "danger")
+        else:
+            old_stock = allocation.stock
+            allocation.stock = new_stock
+            db.session.commit()
+            
+            log_user_action("Admin Stock Update", f"Changed {allocation.seller.username}'s stock for {allocation.product.name} from {old_stock} to {new_stock}")
+            flash(f"Updated {allocation.seller.username}'s stock for {allocation.product.name} to {new_stock}.", "success")
+            
+    except ValueError:
+        flash("Invalid stock value.", "danger")
+        
+    # Redirect back to the specific seller's view
+    return redirect(url_for('admin.manage_seller_inventory', seller_id=allocation.seller_id))
+
+@admin_bp.route('/inventory/seller/delete/<int:allocation_id>')
+@login_required
+@role_required('admin')
+def delete_seller_allocation(allocation_id):
+    allocation = SellerInventory.query.get_or_404(allocation_id)
+    seller_id = allocation.seller_id
+    seller_name = allocation.seller.username
+    product_name = allocation.product.name
+    
+    db.session.delete(allocation)
+    db.session.commit()
+    
+    log_user_action("Delete Seller Allocation", f"Removed {product_name} from {seller_name}'s inventory")
+    flash(f"Removed {product_name} from {seller_name}'s inventory.", "success")
+    
+    # Redirect back to the specific seller's view
+    return redirect(url_for('admin.manage_seller_inventory', seller_id=seller_id))
 
 # --- STOCK REQUESTS ---
 
