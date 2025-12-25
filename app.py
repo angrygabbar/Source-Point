@@ -36,8 +36,8 @@ def create_app():
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
         "pool_pre_ping": True,  
         "pool_recycle": 280,    
-        "pool_size": 4,         # Reduced to match worker threads
-        "max_overflow": 0,      # Reduced to 0 to prevent memory spikes
+        "pool_size": 2,         # Reduced to match worker threads
+        "max_overflow": 1,      # Reduced to 0 to prevent memory spikes
         "pool_timeout": 30      # Stop workers from hanging if DB is busy
     }
 
