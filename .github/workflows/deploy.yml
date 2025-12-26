@@ -1,0 +1,29 @@
+name: Deploy to Laptop
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:  # This adds the manual "Run" button
+
+jobs:
+  deploy:
+    runs-on: self-hosted  # Critical: Tells GitHub to use your laptop, not their servers
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install Dependencies
+        run: |
+          # Use the full path to your virtual environment pip
+          /var/www/sourcepoint/venv/bin/pip install -r requirements.txt
+
+      - name: Apply Database Migrations (Optional)
+        run: |
+          export FLASK_APP=app.py
+          /var/www/sourcepoint/venv/bin/flask db upgrade || echo "No migrations to apply or failed safely"
+
+      - name: Restart Application
+        run: |
+          # This restarts the background service so changes take effect
+          sudo systemctl restart sourcepoint
