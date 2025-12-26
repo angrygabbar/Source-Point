@@ -1,7 +1,11 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from extensions import db
-from models import User, ProblemStatement, CodeTestSubmission
+# --- CORRECTED IMPORTS BELOW ---
+from models.auth import User
+from models.learning import ProblemStatement
+from models.hiring import CodeTestSubmission
+# -------------------------------
 from utils import role_required, log_user_action, send_email
 from datetime import datetime, timedelta
 import requests

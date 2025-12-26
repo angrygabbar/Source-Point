@@ -1,7 +1,10 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from extensions import db
-from models import ActivityUpdate, CodeSnippet
+# --- CORRECTED IMPORTS BELOW ---
+from models.auth import ActivityUpdate
+from models.hiring import CodeSnippet
+# -------------------------------
 from utils import role_required, log_user_action
 
 developer_bp = Blueprint('developer', __name__)

@@ -16,7 +16,9 @@ MAIL_DEFAULT_SENDER_NAME = 'Source Point'
 # Avoid circular import for ActivityLog model
 def log_user_action(action, details=None):
     """Logs a user action to the database."""
-    from models import ActivityLog 
+    # --- FIXED IMPORT BELOW ---
+    from models.auth import ActivityLog 
+    # --------------------------
     if current_user.is_authenticated:
         try:
             ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)

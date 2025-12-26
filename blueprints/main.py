@@ -1,7 +1,11 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, current_app
 from flask_login import login_required, current_user
 from extensions import db, bcrypt, cache
-from models import User, Message, AffiliateAd, LearningContent, JobOpening, JobApplication
+from models.auth import User, Message, ActivityLog, ActivityUpdate
+from models.commerce import Product, Order, Invoice, StockRequest, AffiliateAd
+from models.hiring import JobOpening, JobApplication, CodeTestSubmission, Feedback
+from models.learning import LearningContent, ProblemStatement
+from models.finance import Project, Transaction, EMIPlan
 from utils import role_required, log_user_action, send_email
 from sqlalchemy import or_
 from werkzeug.utils import secure_filename

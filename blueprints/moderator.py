@@ -1,7 +1,10 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from extensions import db
-from models import User, Feedback
+from models.auth import User
+from models.hiring import (CodeTestSubmission, Feedback, ModeratorAssignmentHistory, 
+                           JobApplication)
+from models.learning import ProblemStatement
 from utils import role_required, log_user_action, send_email
 
 moderator_bp = Blueprint('moderator', __name__)

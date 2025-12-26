@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from extensions import db
-from models import User, JobOpening, JobApplication, ModeratorAssignmentHistory, ProblemStatement, CodeTestSubmission
+from models.auth import User, Message
+from models.hiring import JobOpening, JobApplication, CodeTestSubmission
 from utils import role_required, log_user_action, send_email
 from datetime import datetime, timedelta
 

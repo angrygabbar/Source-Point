@@ -1,7 +1,13 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, jsonify
 from flask_login import login_required, current_user
 from extensions import db, bcrypt
-from models import User, JobApplication, ActivityUpdate, CodeSnippet, Project, Transaction, Order, AffiliateAd, ActivityLog, JobOpening, Feedback, CodeTestSubmission, ModeratorAssignmentHistory, Product, ProductImage, Invoice, InvoiceItem, BRD, LearningContent, EMIPlan, EMIPayment, SellerInventory, StockRequest
+from models.auth import User, ActivityUpdate, ActivityLog
+from models.hiring import (JobApplication, JobOpening, CodeSnippet, Feedback, 
+                           CodeTestSubmission, ModeratorAssignmentHistory)
+from models.commerce import (Product, ProductImage, Order, AffiliateAd, Invoice, 
+                             InvoiceItem, SellerInventory, StockRequest)
+from models.finance import Project, Transaction, BRD, EMIPlan, EMIPayment
+from models.learning import LearningContent
 from utils import role_required, log_user_action, send_email
 from datetime import datetime, timedelta
 from sqlalchemy import func, or_

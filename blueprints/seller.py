@@ -1,7 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from extensions import db
-from models import Product, ProductImage, Invoice, InvoiceItem, Order, OrderItem, User, SellerInventory, StockRequest
+from models.auth import User
+from models.commerce import (Product, ProductImage, Order, OrderItem, Invoice, 
+                             InvoiceItem, StockRequest, SellerInventory)
 from utils import role_required, log_user_action, send_email
 from datetime import datetime
 from invoice_service import InvoiceGenerator

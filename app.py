@@ -1,45 +1,28 @@
-from dotenv import load_dotenv
 import os
-from flask import Flask, render_template, redirect, url_for
+from dotenv import load_dotenv
+from flask import Flask, render_template
 from extensions import db, bcrypt, login_manager, migrate, cache, limiter
-from models import User, Message, LearningContent
+from models.auth import User, Message
+from models.learning import LearningContent
 from bs4 import BeautifulSoup
-from datetime import datetime, timedelta
-# Removed APScheduler imports to save memory
-from utils import send_email
-from flask_login import login_required, current_user
+from flask_login import current_user
+from config import DevelopmentConfig, ProductionConfig
 
 # Load environment variables
 load_dotenv()
 
-def create_app():
+def create_app(config_class=DevelopmentConfig):
     app = Flask(__name__)
     
-    # --- CONFIGURATION ---
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev_key_change_in_prod')
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30) 
-    
-    # --- CACHE CONFIG (Optimized for Free Tier) ---
-    # Limits memory usage to prevent "Out of Memory" crashes
-    app.config['CACHE_TYPE'] = 'SimpleCache'
-    app.config['CACHE_DEFAULT_TIMEOUT'] = 300 # 5 minutes default
-    app.config['CACHE_THRESHOLD'] = 200       # Limit to 200 items to save RAM
+    # --- LOAD CONFIGURATION ---
+    # Switch to ProductionConfig based on env var
+    if os.environ.get('FLASK_ENV') == 'production':
+        app.config.from_object(ProductionConfig)
+    else:
+        app.config.from_object(DevelopmentConfig)
 
-    # Uploads 
-    app.config['UPLOAD_FOLDER'] = 'static/resumes'
-    app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+    # Ensure upload folder exists
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-
-    # --- DATABASE POOLING STABILITY (Critical for Render Free Tier) ---
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        "pool_pre_ping": True,  
-        "pool_recycle": 280,    
-        "pool_size": 2,         # Reduced to match worker threads
-        "max_overflow": 1,      # Reduced to 0 to prevent memory spikes
-        "pool_timeout": 30      # Stop workers from hanging if DB is busy
-    }
 
     # Initialize Extensions
     db.init_app(app)
@@ -75,7 +58,7 @@ def create_app():
     # --- GLOBAL CONTEXT PROCESSOR ---
     @app.context_processor
     def inject_messages():
-        if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
+        if current_user.is_authenticated:
             messages = Message.query.filter(
                 (Message.sender_id == current_user.id) | (Message.recipient_id == current_user.id)
             ).order_by(Message.timestamp.desc()).all()
@@ -96,6 +79,11 @@ def create_app():
         return render_template('404.html'), 429 
 
     # --- CLI COMMANDS ---
+    register_commands(app)
+
+    return app
+
+def register_commands(app):
     @app.cli.command("init-db")
     def init_db():
         db.create_all()
@@ -103,10 +91,13 @@ def create_app():
 
     @app.cli.command("populate-db")
     def populate_db():
+        """Seeds the database with initial Learning Content."""
         supported_languages = ['java', 'cpp', 'c', 'sql', 'dbms', 'plsql', 'mysql']
         for lang in supported_languages:
             existing_content = LearningContent.query.get(lang)
-            if existing_content: db.session.delete(existing_content)
+            if existing_content: 
+                db.session.delete(existing_content)
+            
             try:
                 file_path = f'templates/learn_{lang}.html'
                 if os.path.exists(file_path):
@@ -125,31 +116,12 @@ def create_app():
         db.session.commit()
         print("Database populated with learning content.")
 
-    return app
-
+# Create the app instance for Gunicorn
 app = create_app()
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
-
-# --- TEMPORARY FIX ROUTE (RUN ONCE THEN DELETE) ---
-@app.route('/force-seller-role')
-@login_required
-def force_seller_role():
-    from flask_login import logout_user
-    
-    # Update the current user's role to seller
-    user = User.query.get(current_user.id)
-    user.role = 'seller'
-    db.session.commit()
-    
-    # Log them out so the session refreshes cleanly
-    logout_user()
-    
-    return "<h1>Success! Your account is now a SELLER. <a href='/login-register'>Click here to Login again</a></h1>"
-
-# Removed BackgroundScheduler block to prevent memory leaks and worker timeouts
 
 if __name__ == '__main__':
     app.run(debug=True)
