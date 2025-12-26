@@ -2,11 +2,12 @@
 {% block title %}Order Operations Center{% endblock %}
 {% block content %}
 
+{# --- Calculate Stats Logic (Preserved) --- #}
 {% set total_revenue = orders | sum(attribute='total_amount') %}
 {% set pending_count = orders | selectattr('status', 'equalto', 'Order Placed') | list | length %}
 {% set completed_count = orders | selectattr('status', 'in', ['Order Delivered', 'Order Dispatched']) | list | length %}
 
-<div class="space-y-8 animate-dynamic pb-10">
+<div class="space-y-8 animate-fade-in pb-10">
     
     <div class="flex flex-col md:flex-row justify-between items-end gap-6">
         <div>
@@ -134,7 +135,11 @@
 
                     <div class="col-span-3 flex justify-end items-center gap-2">
                         
-                        <form action="{{ url_for('admin.update_order_status', order_id=order.id) }}" method="POST" class="relative group/select">
+                        <form action="{{ url_for('admin.update_order_status', order_id=order.id) }}" method="POST" 
+                              hx-post="{{ url_for('admin.update_order_status', order_id=order.id) }}"
+                              hx-trigger="change"
+                              hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
+                              class="relative group/select">
                             <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none z-10">
                                 <span class="w-2 h-2 rounded-full 
                                     {% if order.status == 'Order Placed' %}bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]
@@ -144,7 +149,7 @@
                                     {% else %}bg-red-500{% endif %}">
                                 </span>
                             </div>
-                            <select name="status" onchange="this.form.submit()" 
+                            <select name="status" 
                                     class="appearance-none bg-black/40 border border-white/10 hover:border-indigo-500/50 text-xs font-bold text-gray-300 rounded-lg pl-6 pr-8 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all cursor-pointer shadow-lg w-36">
                                 <option value="Order Placed" {% if order.status == 'Order Placed' %}selected{% endif %}>Placed</option>
                                 <option value="Order Accepted" {% if order.status == 'Order Accepted' %}selected{% endif %}>Accept</option>
@@ -233,7 +238,6 @@
         if (el.classList.contains('hidden')) {
             el.classList.remove('hidden');
             icon.style.transform = 'rotate(180deg)';
-            // Add a subtle glow to the active card
             btn.closest('.order-card').classList.add('border-indigo-500/50');
         } else {
             el.classList.add('hidden');
@@ -242,7 +246,7 @@
         }
     }
 
-    // Search Functionality
+    // Client-side search logic preserved
     document.getElementById('orderSearch').addEventListener('keyup', function() {
         const query = this.value.toLowerCase();
         const rows = document.querySelectorAll('.order-card');
@@ -251,7 +255,6 @@
             const text = row.innerText.toLowerCase();
             if(text.includes(query)) {
                 row.style.display = 'block';
-                // Add fade-in animation for filtered items
                 row.classList.add('animate-fade-in');
             } else {
                 row.style.display = 'none';

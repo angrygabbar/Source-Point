@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% block title %}Seller Dashboard{% endblock %}
 {% block content %}
-<div class="space-y-6 animate-dynamic">
+<div class="space-y-6 animate-fade-in">
     <h1 class="text-3xl font-bold text-white">Seller Dashboard</h1>
     
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -36,11 +36,18 @@
             </thead>
             <tbody>
                 {% for order in recent_orders %}
-                <tr class="border-b border-white/5 hover:bg-white/5">
+                <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
                     <td class="px-6 py-4 font-bold text-white">{{ order.order_number }}</td>
                     <td class="px-6 py-4">{{ order.buyer.username }}</td>
                     <td class="px-6 py-4">₹{{ "{:,.2f}".format(order.total_amount) }}</td>
-                    <td class="px-6 py-4">{{ order.status }}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-1 rounded text-xs font-bold 
+                            {{ 'bg-green-500/20 text-green-400' if order.status == 'Delivered' else 
+                               'bg-yellow-500/20 text-yellow-400' if order.status == 'Pending' else 
+                               'bg-blue-500/20 text-blue-400' }}">
+                            {{ order.status }}
+                        </span>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

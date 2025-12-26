@@ -2,7 +2,7 @@
 {% block title %}Manage Coding Events{% endblock %}
 {% block content %}
 
-<div class="mb-10 animate-dynamic">
+<div class="mb-10 animate-fade-in">
     <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 mb-2">
         Coding Events Hub
     </h1>
@@ -12,7 +12,7 @@
 <div class="space-y-8">
 
     {% if current_user.role != 'moderator' %}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-dynamic" style="animation-delay: 0.1s;">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in" style="animation-delay: 0.1s;">
         
         <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 backdrop-blur-md overflow-hidden">
             <div class="p-6 border-b border-white/5 bg-gradient-to-r from-blue-900/20 to-transparent">
@@ -21,7 +21,10 @@
                 </h2>
             </div>
             <div class="p-6">
-                <form action="{{ url_for('events.create_problem') }}" method="POST" class="space-y-4">
+                <form action="{{ url_for('events.create_problem') }}" method="POST" 
+                      hx-post="{{ url_for('events.create_problem') }}"
+                      hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
+                      class="space-y-4">
                     <div>
                         <label class="block text-xs font-medium text-gray-400 uppercase mb-1">Problem Title</label>
                         <input type="text" name="problem_title" placeholder="e.g., Reverse Linked List" required class="w-full px-4 py-2 rounded-lg bg-gray-900/50 border border-gray-600 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
@@ -44,7 +47,10 @@
                 </h2>
             </div>
             <div class="p-6">
-                <form action="{{ url_for('events.assign_problem') }}" method="POST" class="space-y-4">
+                <form action="{{ url_for('events.assign_problem') }}" method="POST" 
+                      hx-post="{{ url_for('events.assign_problem') }}"
+                      hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
+                      class="space-y-4">
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-medium text-gray-400 uppercase mb-1">Candidate</label>
@@ -96,7 +102,7 @@
     </div>
     {% endif %}
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-dynamic" style="animation-delay: 0.2s;">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in" style="animation-delay: 0.2s;">
         <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 backdrop-blur-md flex flex-col">
             <div class="p-6 border-b border-white/5 flex justify-between items-center">
                 <h2 class="text-xl font-bold text-white flex items-center"><i class="fas fa-clock text-yellow-400 mr-3"></i> Scheduled Events</h2>
@@ -131,7 +137,10 @@
 
                         <div class="border-t border-white/5 pt-3 mt-3">
                             <div class="flex flex-col gap-2">
-                                <form action="{{ url_for('events.reschedule_event', user_id=event.id) }}" method="POST" class="flex items-center space-x-2 bg-white/5 p-2 rounded-lg">
+                                <form action="{{ url_for('events.reschedule_event', user_id=event.id) }}" method="POST"
+                                      hx-post="{{ url_for('events.reschedule_event', user_id=event.id) }}"
+                                      hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
+                                      class="flex items-center space-x-2 bg-white/5 p-2 rounded-lg">
                                     <input type="datetime-local" name="new_start_time" required class="w-1/2 px-2 py-1 text-xs bg-gray-800 border border-gray-600 rounded text-white focus:ring-1 focus:ring-indigo-500">
                                     <input type="datetime-local" name="new_end_time" required class="w-1/2 px-2 py-1 text-xs bg-gray-800 border border-gray-600 rounded text-white focus:ring-1 focus:ring-indigo-500">
                                     <button type="submit" class="p-1.5 text-yellow-400 hover:text-yellow-300 hover:bg-yellow-400/10 rounded transition-colors" title="Reschedule">
@@ -140,10 +149,16 @@
                                 </form>
                                 
                                 <div class="flex justify-between items-center mt-2">
-                                    <a href="{{ url_for('events.mark_event_completed', user_id=event.id) }}" class="text-xs flex items-center text-blue-400 hover:text-blue-300 transition-colors" onclick="return confirm('Mark this event as manually completed?');">
+                                    <a hx-get="{{ url_for('events.mark_event_completed', user_id=event.id) }}" 
+                                       hx-confirm="Mark this event as manually completed?"
+                                       hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
+                                       class="text-xs flex items-center text-blue-400 hover:text-blue-300 transition-colors cursor-pointer">
                                         <i class="fas fa-check-circle mr-1"></i> Mark Completed
                                     </a>
-                                    <a href="{{ url_for('events.cancel_event', user_id=event.id) }}" class="text-xs flex items-center text-red-400 hover:text-red-300 transition-colors" onclick="return confirm('Are you sure you want to cancel this event?');">
+                                    <a hx-get="{{ url_for('events.cancel_event', user_id=event.id) }}" 
+                                       hx-confirm="Are you sure you want to cancel this event?"
+                                       hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
+                                       class="text-xs flex items-center text-red-400 hover:text-red-300 transition-colors cursor-pointer">
                                         <i class="fas fa-ban mr-1"></i> Cancel Event
                                     </a>
                                 </div>
@@ -188,7 +203,7 @@
     </div>
 
     {% if current_user.role != 'moderator' %}
-    <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 backdrop-blur-md animate-dynamic" style="animation-delay: 0.3s;">
+    <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 backdrop-blur-md animate-fade-in" style="animation-delay: 0.3s;">
         <div class="p-6 border-b border-white/5">
             <h2 class="text-xl font-bold text-white flex items-center"><i class="fas fa-laptop-code text-pink-400 mr-3"></i> Recent Code Submissions</h2>
         </div>
@@ -205,7 +220,10 @@
                                 <p class="text-xs text-gray-400">{{ test.submitted_at.strftime('%b %d, %Y at %I:%M %p') }}</p>
                             </div>
                         </div>
-                        <a href="{{ url_for('events.delete_code_test_submission', submission_id=test.id) }}" class="text-red-400 hover:text-red-300 p-2 transition-colors" title="Delete Submission" onclick="return confirm('Delete this submission?');">
+                        <a hx-get="{{ url_for('events.delete_code_test_submission', submission_id=test.id) }}" 
+                           hx-confirm="Delete this submission?"
+                           hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
+                           class="text-red-400 hover:text-red-300 p-2 transition-colors cursor-pointer" title="Delete Submission">
                             <i class="fas fa-trash-alt"></i>
                         </a>
                     </div>

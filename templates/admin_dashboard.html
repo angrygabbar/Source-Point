@@ -2,7 +2,7 @@
 {% block title %}Master Command Center{% endblock %}
 
 {% block content %}
-<div class="space-y-8 pb-10 max-w-7xl mx-auto">
+<div class="space-y-8 pb-10 max-w-7xl mx-auto animate-fade-in">
     
     <div class="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-white/10 pb-6">
         <div>
@@ -10,10 +10,14 @@
             <p class="text-gray-400 mt-1">Welcome back, <span class="text-indigo-400 font-medium">{{ current_user.username }}</span>. Select a domain to manage.</p>
         </div>
         <div class="flex gap-3">
-             <a href="{{ url_for('admin.broadcast_email') }}" class="group flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm font-medium transition-all text-gray-300 hover:text-white">
+             <a hx-get="{{ url_for('admin.broadcast_email') }}" 
+                hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                class="group flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm font-medium transition-all text-gray-300 hover:text-white cursor-pointer">
                 <i class="fas fa-bullhorn group-hover:text-indigo-400 transition-colors"></i> Broadcast
             </a>
-            <a href="{{ url_for('admin.admin_analytics') }}" class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all">
+            <a hx-get="{{ url_for('admin.admin_analytics') }}" 
+               hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+               class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all cursor-pointer">
                 <i class="fas fa-chart-pie"></i> Analytics
             </a>
         </div>
@@ -47,7 +51,9 @@
                     </div>
                 </div>
 
-                <a href="{{ url_for('admin.admin_commerce_dashboard') }}" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-center shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-2 group-hover:translate-y-[-2px]">
+                <a hx-get="{{ url_for('admin.admin_commerce_dashboard') }}" 
+                   hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                   class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-center shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-2 group-hover:translate-y-[-2px] cursor-pointer">
                     Enter Commerce Dashboard <i class="fas fa-arrow-right"></i>
                 </a>
             </div>
@@ -79,7 +85,9 @@
                     </div>
                 </div>
 
-                <a href="{{ url_for('admin.admin_hiring_dashboard') }}" class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-center shadow-lg shadow-indigo-500/25 transition-all flex items-center justify-center gap-2 group-hover:translate-y-[-2px]">
+                <a hx-get="{{ url_for('admin.admin_hiring_dashboard') }}" 
+                   hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                   class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-center shadow-lg shadow-indigo-500/25 transition-all flex items-center justify-center gap-2 group-hover:translate-y-[-2px] cursor-pointer">
                     Enter Hiring Dashboard <i class="fas fa-arrow-right"></i>
                 </a>
             </div>
@@ -110,8 +118,16 @@
                             </td>
                             <td class="py-3 px-2 text-right">
                                 <div class="flex justify-end gap-2">
-                                    <a href="{{ url_for('admin.approve_user', user_id=user.id) }}" class="text-emerald-400 hover:text-white" title="Approve"><i class="fas fa-check-circle text-lg"></i></a>
-                                    <a href="{{ url_for('admin.reject_user', user_id=user.id) }}" class="text-red-400 hover:text-white" title="Reject"><i class="fas fa-times-circle text-lg"></i></a>
+                                    <a hx-get="{{ url_for('admin.approve_user', user_id=user.id) }}" 
+                                       hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
+                                       class="text-emerald-400 hover:text-white cursor-pointer" title="Approve">
+                                       <i class="fas fa-check-circle text-lg"></i>
+                                    </a>
+                                    <a hx-get="{{ url_for('admin.reject_user', user_id=user.id) }}" 
+                                       hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
+                                       class="text-red-400 hover:text-white cursor-pointer" title="Reject">
+                                       <i class="fas fa-times-circle text-lg"></i>
+                                    </a>
                                 </div>
                             </td>
                         </tr>
@@ -120,7 +136,11 @@
                 </table>
             </div>
             <div class="mt-4 pt-4 border-t border-white/5 text-center">
-                <a href="{{ url_for('admin.manage_users') }}" class="text-xs text-gray-500 hover:text-white transition-colors">View All Users &rarr;</a>
+                <a hx-get="{{ url_for('admin.manage_users') }}" 
+                   hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                   class="text-xs text-gray-500 hover:text-white transition-colors cursor-pointer">
+                   View All Users &rarr;
+                </a>
             </div>
             {% else %}
             <div class="py-8 text-center text-gray-500 text-sm bg-white/5 rounded-xl border border-dashed border-white/10">
@@ -132,7 +152,9 @@
         <div class="glass-panel p-6 rounded-2xl border border-white/10">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="font-bold text-white">Live Activity</h3>
-                <a href="{{ url_for('admin.admin_activity_logs') }}" class="text-xs text-indigo-400 hover:text-white">Full Logs</a>
+                <a hx-get="{{ url_for('admin.admin_activity_logs') }}" 
+                   hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                   class="text-xs text-indigo-400 hover:text-white cursor-pointer">Full Logs</a>
             </div>
             <div class="space-y-4 max-h-[250px] overflow-y-auto custom-scrollbar pr-2">
                 {% for log in recent_logs %}

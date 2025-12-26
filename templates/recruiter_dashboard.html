@@ -2,7 +2,7 @@
 {% block title %}Recruiter Dashboard{% endblock %}
 {% block content %}
 
-<div class="space-y-8 animate-dynamic" x-data="{ activeTab: 'pipeline' }">
+<div class="space-y-8 animate-fade-in" x-data="{ activeTab: 'pipeline' }">
     
     <div class="flex flex-col md:flex-row justify-between items-end gap-4">
         <div>
@@ -10,7 +10,9 @@
             <p class="text-gray-400 text-sm mt-1">Manage jobs, applications, and assessments.</p>
         </div>
         <div class="flex gap-3">
-            <a href="{{ url_for('events.events') }}" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg shadow-lg transition-all flex items-center">
+            <a hx-get="{{ url_for('events.events') }}" 
+               hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+               class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg shadow-lg transition-all flex items-center cursor-pointer">
                 <i class="fas fa-calendar-alt mr-2"></i> Manage Events
             </a>
         </div>
@@ -66,7 +68,9 @@
                     <tr class="hover:bg-white/5 transition-colors">
                         <td class="px-6 py-4 font-medium text-white">
                             {{ app.candidate.username }}
-                            <a href="{{ url_for('recruiter.view_candidate_profile', user_id=app.candidate.id) }}" class="text-xs text-indigo-400 hover:underline block mt-1" target="_blank">View Profile</a>
+                            <a hx-get="{{ url_for('recruiter.view_candidate_profile', user_id=app.candidate.id) }}" 
+                               hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true"
+                               class="text-xs text-indigo-400 hover:underline block mt-1 cursor-pointer">View Profile</a>
                         </td>
                         <td class="px-6 py-4">{{ app.job.title }}</td>
                         <td class="px-6 py-4">
@@ -89,8 +93,13 @@
                         </td>
                         <td class="px-6 py-4 text-right flex justify-end gap-2">
                             {% if app.status == 'pending' %}
-                            <a href="{{ url_for('recruiter.manage_application', app_id=app.id, action='accept') }}" class="text-green-400 hover:text-green-300 p-1" title="Accept"><i class="fas fa-check"></i></a>
-                            <a href="{{ url_for('recruiter.manage_application', app_id=app.id, action='reject') }}" class="text-red-400 hover:text-red-300 p-1" title="Reject"><i class="fas fa-times"></i></a>
+                            <a hx-get="{{ url_for('recruiter.manage_application', app_id=app.id, action='accept') }}" 
+                               hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
+                               class="text-green-400 hover:text-green-300 p-1 cursor-pointer" title="Accept"><i class="fas fa-check"></i></a>
+                            
+                            <a hx-get="{{ url_for('recruiter.manage_application', app_id=app.id, action='reject') }}" 
+                               hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
+                               class="text-red-400 hover:text-red-300 p-1 cursor-pointer" title="Reject"><i class="fas fa-times"></i></a>
                             {% else %}
                             <span class="text-gray-600">-</span>
                             {% endif %}
@@ -107,7 +116,10 @@
     <div x-show="activeTab === 'jobs'" x-cloak class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="glass-panel p-6 rounded-xl h-fit">
             <h3 class="font-bold text-white mb-4">Post New Job</h3>
-            <form action="{{ url_for('recruiter.post_job') }}" method="POST" class="space-y-4">
+            <form action="{{ url_for('recruiter.post_job') }}" method="POST"
+                  hx-post="{{ url_for('recruiter.post_job') }}"
+                  hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
+                  class="space-y-4">
                 <div>
                     <label class="block text-xs font-medium text-gray-400 uppercase mb-1">Job Title</label>
                     <input type="text" name="job_title" required class="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white focus:ring-1 focus:ring-indigo-500">
@@ -132,7 +144,10 @@
                     </div>
                 </div>
                 <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <a href="{{ url_for('recruiter.delete_job', job_id=job.id) }}" class="p-2 text-gray-400 hover:text-red-400 transition-colors" onclick="return confirm('Delete this job?');">
+                    <a hx-get="{{ url_for('recruiter.delete_job', job_id=job.id) }}" 
+                       hx-confirm="Delete this job?"
+                       hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
+                       class="p-2 text-gray-400 hover:text-red-400 transition-colors cursor-pointer">
                         <i class="fas fa-trash"></i>
                     </a>
                 </div>
@@ -147,7 +162,10 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
                 <p class="text-sm text-gray-400 mb-4">Select a candidate with a scheduled test and assign a moderator to invigilate.</p>
-                <form action="{{ url_for('recruiter.assign_moderator') }}" method="POST" class="space-y-4">
+                <form action="{{ url_for('recruiter.assign_moderator') }}" method="POST" 
+                      hx-post="{{ url_for('recruiter.assign_moderator') }}"
+                      hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
+                      class="space-y-4">
                     <div>
                         <label class="block text-xs font-medium text-gray-400 uppercase mb-1">Candidate (Scheduled)</label>
                         <select name="candidate_id" required class="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white focus:ring-1 focus:ring-indigo-500">

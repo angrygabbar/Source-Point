@@ -2,7 +2,7 @@
 {% block title %}Developer Workspace{% endblock %}
 {% block content %}
 
-<div class="space-y-6 animate-dynamic">
+<div class="space-y-6 animate-fade-in">
     
     <div class="flex flex-col md:flex-row justify-between items-end gap-4">
         <div>
@@ -21,7 +21,10 @@
         <div class="lg:col-span-2 flex flex-col space-y-6 h-full">
             
             <div class="glass-panel p-4 rounded-xl">
-                <form method="POST" action="{{ url_for('developer.developer_dashboard') }}" id="activity-form" class="flex gap-4">
+                <form action="{{ url_for('developer.developer_dashboard') }}" method="POST"
+                      hx-post="{{ url_for('developer.developer_dashboard') }}"
+                      hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
+                      id="activity-form" class="flex gap-4">
                     <div class="flex-shrink-0 hidden sm:block">
                         <img src="{{ current_user.avatar_url }}" class="w-10 h-10 rounded-lg border border-gray-600">
                     </div>
@@ -86,7 +89,10 @@
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="text-[10px] text-gray-500">{{ snippet.timestamp.strftime('%b %d') }}</span>
-                            <a href="{{ url_for('candidate.delete_snippet', snippet_id=snippet.id) }}" class="text-gray-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
+                            <a hx-get="{{ url_for('candidate.delete_snippet', snippet_id=snippet.id) }}" 
+                               hx-confirm="Delete this code snippet?"
+                               hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
+                               class="text-gray-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer">
                                 <i class="fas fa-trash-alt text-xs"></i>
                             </a>
                         </div>
@@ -109,18 +115,4 @@
 
     </div>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const form = document.getElementById('activity-form');
-        const btn = document.getElementById('post-update-btn');
-        
-        if(form) {
-            form.addEventListener('submit', () => {
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            });
-        }
-    });
-</script>
 {% endblock %}

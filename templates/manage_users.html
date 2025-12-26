@@ -2,7 +2,7 @@
 {% block title %}Manage Users{% endblock %}
 {% block content %}
 
-<div class="space-y-8 animate-dynamic">
+<div class="space-y-8 animate-fade-in">
     
     <div class="flex flex-col md:flex-row justify-between items-end gap-4">
         <div>
@@ -14,14 +14,18 @@
         </button>
     </div>
 
-    <form method="GET" action="{{ url_for('admin.manage_users') }}" class="glass-panel p-2 rounded-xl flex flex-col md:flex-row gap-2">
+    <form hx-get="{{ url_for('admin.manage_users') }}" 
+          hx-target="#user-grid-container" 
+          hx-select="#user-grid-container"
+          hx-trigger="change, keyup delay:500ms from:#userSearchInput"
+          class="glass-panel p-2 rounded-xl flex flex-col md:flex-row gap-2">
         <div class="relative flex-1">
             <i class="fas fa-search absolute left-4 top-3.5 text-gray-500"></i>
-            <input type="text" name="search" value="{{ current_search }}" placeholder="Search by name or email..." 
+            <input type="text" name="search" id="userSearchInput" value="{{ current_search }}" placeholder="Search by name or email..." 
                    class="w-full bg-black/20 border border-white/5 rounded-lg pl-10 pr-4 py-3 text-sm text-white placeholder-gray-500 focus:ring-1 focus:ring-indigo-500 focus:border-white/10 transition-all">
         </div>
         <div class="flex gap-2">
-            <select name="role" onchange="this.form.submit()" class="bg-black/20 border border-white/5 rounded-lg px-4 py-3 text-sm text-gray-300 focus:ring-1 focus:ring-indigo-500 focus:bg-black/40 transition-all cursor-pointer min-w-[140px]">
+            <select name="role" class="bg-black/20 border border-white/5 rounded-lg px-4 py-3 text-sm text-gray-300 focus:ring-1 focus:ring-indigo-500 focus:bg-black/40 transition-all cursor-pointer min-w-[140px]">
                 <option value="all" {% if current_role == 'all' %}selected{% endif %}>All Roles</option>
                 <option value="admin" {% if current_role == 'admin' %}selected{% endif %}>Admin</option>
                 <option value="developer" {% if current_role == 'developer' %}selected{% endif %}>Developer</option>
@@ -31,106 +35,112 @@
                 <option value="buyer" {% if current_role == 'buyer' %}selected{% endif %}>Buyer</option>
                 <option value="recruiter" {% if current_role == 'recruiter' %}selected{% endif %}>Recruiter</option>
             </select>
-            <select name="status" onchange="this.form.submit()" class="bg-black/20 border border-white/5 rounded-lg px-4 py-3 text-sm text-gray-300 focus:ring-1 focus:ring-indigo-500 focus:bg-black/40 transition-all cursor-pointer min-w-[140px]">
+            <select name="status" class="bg-black/20 border border-white/5 rounded-lg px-4 py-3 text-sm text-gray-300 focus:ring-1 focus:ring-indigo-500 focus:bg-black/40 transition-all cursor-pointer min-w-[140px]">
                 <option value="all" {% if current_status == 'all' %}selected{% endif %}>All Status</option>
                 <option value="active" {% if current_status == 'active' %}selected{% endif %}>Active</option>
                 <option value="inactive" {% if current_status == 'inactive' %}selected{% endif %}>Inactive</option>
             </select>
-            <button type="submit" class="hidden"></button>
         </div>
     </form>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="user-grid">
-        {% for user in users.items %}
-        <div class="group glass-panel rounded-xl p-5 border border-white/5 hover:border-indigo-500/30 transition-all duration-300 hover:-translate-y-1 user-card" 
-             data-role="{{ user.role }}" 
-             data-status="{% if user.is_active %}active{% else %}inactive{% endif %}"
-             data-name="{{ user.username|lower }}"
-             data-email="{{ user.email|lower }}">
-            
-            <div class="flex justify-between items-start mb-4">
-                <div class="relative">
-                    <img src="{{ user.avatar_url }}" alt="" class="w-12 h-12 rounded-full border-2 border-gray-700 group-hover:border-indigo-500 transition-colors">
-                    <span class="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#0f172a] {% if user.is_active %}bg-emerald-500{% else %}bg-red-500{% endif %} user-status-dot"></span>
-                </div>
+    <div id="user-grid-container">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="user-grid">
+            {% for user in users.items %}
+            <div class="group glass-panel rounded-xl p-5 border border-white/5 hover:border-indigo-500/30 transition-all duration-300 hover:-translate-y-1 user-card" 
+                 data-role="{{ user.role }}" 
+                 data-status="{% if user.is_active %}active{% else %}inactive{% endif %}">
                 
-                <div class="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <a href="{{ url_for('admin.view_profile', user_id=user.id) }}" class="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors" title="View Profile">
-                        <i class="fas fa-eye"></i>
-                    </a>
-                    <a href="{{ url_for('admin.edit_user_profile', user_id=user.id) }}" class="p-1.5 rounded-md text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors" title="Edit">
-                        <i class="fas fa-pen"></i>
-                    </a>
-                    {% if user.id != current_user.id %}
-                        <a href="#" 
-                           class="p-1.5 rounded-md transition-colors toggle-status-btn {% if user.is_active %}text-red-400 hover:text-red-300 hover:bg-red-500/10{% else %}text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10{% endif %}"
-                           title="{% if user.is_active %}Deactivate{% else %}Activate{% endif %}"
-                           data-url="{{ url_for('admin.toggle_user_status', user_id=user.id) }}"
-                           onclick="toggleUserStatus(event, '{{ user.id }}', this.dataset.url)">
-                            <i class="fas fa-power-off"></i>
+                <div class="flex justify-between items-start mb-4">
+                    <div class="relative">
+                        <img src="{{ user.avatar_url }}" alt="" class="w-12 h-12 rounded-full border-2 border-gray-700 group-hover:border-indigo-500 transition-colors">
+                        <span class="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#0f172a] {% if user.is_active %}bg-emerald-500{% else %}bg-red-500{% endif %} user-status-dot"></span>
+                    </div>
+                    
+                    <div class="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <a hx-get="{{ url_for('admin.view_profile', user_id=user.id) }}" 
+                           hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true"
+                           class="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer" title="View Profile">
+                            <i class="fas fa-eye"></i>
                         </a>
-                    {% endif %}
+                        <a hx-get="{{ url_for('admin.edit_user_profile', user_id=user.id) }}" 
+                           hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true"
+                           class="p-1.5 rounded-md text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors cursor-pointer" title="Edit">
+                            <i class="fas fa-pen"></i>
+                        </a>
+                        {% if user.id != current_user.id %}
+                            <a href="#" 
+                               class="p-1.5 rounded-md transition-colors toggle-status-btn {% if user.is_active %}text-red-400 hover:text-red-300 hover:bg-red-500/10{% else %}text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10{% endif %}"
+                               title="{% if user.is_active %}Deactivate{% else %}Activate{% endif %}"
+                               data-url="{{ url_for('admin.toggle_user_status', user_id=user.id) }}"
+                               onclick="toggleUserStatus(event, '{{ user.id }}', this.dataset.url)">
+                                <i class="fas fa-power-off"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-bold text-white truncate">{{ user.username }}</h3>
+                    <p class="text-xs text-gray-400 truncate mb-3">{{ user.email }}</p>
+                    
+                    <div class="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
+                        <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide border 
+                            {% if user.role == 'admin' %} bg-purple-500/10 text-purple-400 border-purple-500/20
+                            {% elif user.role == 'developer' %} bg-blue-500/10 text-blue-400 border-blue-500/20
+                            {% elif user.role == 'moderator' %} bg-orange-500/10 text-orange-400 border-orange-500/20
+                            {% elif user.role == 'candidate' %} bg-emerald-500/10 text-emerald-400 border-emerald-500/20
+                            {% elif user.role == 'seller' %} bg-pink-500/10 text-pink-400 border-pink-500/20
+                            {% elif user.role == 'buyer' %} bg-teal-500/10 text-teal-400 border-teal-500/20
+                            {% elif user.role == 'recruiter' %} bg-cyan-500/10 text-cyan-400 border-cyan-500/20
+                            {% else %} bg-gray-700/30 text-gray-400 border-gray-600/30 {% endif %}">
+                            {{ user.role }}
+                        </span>
+                        <span class="text-[10px] text-gray-500 font-mono">ID: {{ user.id }}</span>
+                    </div>
                 </div>
             </div>
-
-            <div>
-                <h3 class="text-lg font-bold text-white truncate">{{ user.username }}</h3>
-                <p class="text-xs text-gray-400 truncate mb-3">{{ user.email }}</p>
-                
-                <div class="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
-                    <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide border 
-                        {% if user.role == 'admin' %} bg-purple-500/10 text-purple-400 border-purple-500/20
-                        {% elif user.role == 'developer' %} bg-blue-500/10 text-blue-400 border-blue-500/20
-                        {% elif user.role == 'moderator' %} bg-orange-500/10 text-orange-400 border-orange-500/20
-                        {% elif user.role == 'candidate' %} bg-emerald-500/10 text-emerald-400 border-emerald-500/20
-                        {% elif user.role == 'seller' %} bg-pink-500/10 text-pink-400 border-pink-500/20
-                        {% elif user.role == 'buyer' %} bg-teal-500/10 text-teal-400 border-teal-500/20
-                        {% elif user.role == 'recruiter' %} bg-cyan-500/10 text-cyan-400 border-cyan-500/20
-                        {% else %} bg-gray-700/30 text-gray-400 border-gray-600/30 {% endif %}">
-                        {{ user.role }}
-                    </span>
-                    <span class="text-[10px] text-gray-500 font-mono">ID: {{ user.id }}</span>
+            {% else %}
+            <div class="col-span-full py-20 text-center glass-panel rounded-xl border-dashed border-2 border-gray-700">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-800 mb-4">
+                    <i class="fas fa-search text-2xl text-gray-600"></i>
                 </div>
+                <h3 class="text-lg font-medium text-white">No users found</h3>
+                <p class="text-gray-400 text-sm mt-1">Try adjusting your filters.</p>
             </div>
-        </div>
-        {% else %}
-        <div class="col-span-full py-20 text-center glass-panel rounded-xl border-dashed border-2 border-gray-700">
-            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-800 mb-4">
-                <i class="fas fa-search text-2xl text-gray-600"></i>
-            </div>
-            <h3 class="text-lg font-medium text-white">No users found</h3>
-            <p class="text-gray-400 text-sm mt-1">Try adjusting your filters.</p>
-        </div>
-        {% endfor %}
-    </div>
-
-    {% if users.pages > 1 %}
-    <div class="flex justify-center mt-8">
-        <nav class="glass-panel inline-flex rounded-lg shadow-sm isolate">
-            <a href="{{ url_for('admin.manage_users', page=users.prev_num, search=current_search, role=current_role, status=current_status) if users.has_prev else '#' }}" 
-               class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-400 hover:text-white border-r border-white/5 {{ 'opacity-50 cursor-not-allowed pointer-events-none' if not users.has_prev else '' }}">
-                <i class="fas fa-chevron-left mr-2"></i> Prev
-            </a>
-
-            {% for page_num in users.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
-                {% if page_num %}
-                    <a href="{{ url_for('admin.manage_users', page=page_num, search=current_search, role=current_role, status=current_status) }}" 
-                       class="relative inline-flex items-center px-4 py-2 text-sm font-medium border-r border-white/5 last:border-0
-                       {{ 'bg-indigo-600 text-white z-10' if page_num == users.page else 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
-                        {{ page_num }}
-                    </a>
-                {% else %}
-                    <span class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-500 border-r border-white/5">...</span>
-                {% endif %}
             {% endfor %}
+        </div>
 
-            <a href="{{ url_for('admin.manage_users', page=users.next_num, search=current_search, role=current_role, status=current_status) if users.has_next else '#' }}" 
-               class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-400 hover:text-white {{ 'opacity-50 cursor-not-allowed pointer-events-none' if not users.has_next else '' }}">
-                Next <i class="fas fa-chevron-right ml-2"></i>
-            </a>
-        </nav>
+        {% if users.pages > 1 %}
+        <div class="flex justify-center mt-8">
+            <nav class="glass-panel inline-flex rounded-lg shadow-sm isolate">
+                <a hx-get="{{ url_for('admin.manage_users', page=users.prev_num, search=current_search, role=current_role, status=current_status) if users.has_prev else '#' }}" 
+                   hx-target="#user-grid-container" hx-select="#user-grid-container" hx-push-url="true"
+                   class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-400 hover:text-white border-r border-white/5 cursor-pointer {{ 'opacity-50 cursor-not-allowed pointer-events-none' if not users.has_prev else '' }}">
+                    <i class="fas fa-chevron-left mr-2"></i> Prev
+                </a>
+
+                {% for page_num in users.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
+                    {% if page_num %}
+                        <a hx-get="{{ url_for('admin.manage_users', page=page_num, search=current_search, role=current_role, status=current_status) }}" 
+                           hx-target="#user-grid-container" hx-select="#user-grid-container" hx-push-url="true"
+                           class="relative inline-flex items-center px-4 py-2 text-sm font-medium border-r border-white/5 last:border-0 cursor-pointer
+                           {{ 'bg-indigo-600 text-white z-10' if page_num == users.page else 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
+                            {{ page_num }}
+                        </a>
+                    {% else %}
+                        <span class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-500 border-r border-white/5">...</span>
+                    {% endif %}
+                {% endfor %}
+
+                <a hx-get="{{ url_for('admin.manage_users', page=users.next_num, search=current_search, role=current_role, status=current_status) if users.has_next else '#' }}" 
+                   hx-target="#user-grid-container" hx-select="#user-grid-container" hx-push-url="true"
+                   class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-400 hover:text-white cursor-pointer {{ 'opacity-50 cursor-not-allowed pointer-events-none' if not users.has_next else '' }}">
+                    Next <i class="fas fa-chevron-right ml-2"></i>
+                </a>
+            </nav>
+        </div>
+        {% endif %}
     </div>
-    {% endif %}
 
 </div>
 
@@ -153,7 +163,10 @@
                         </button>
                     </div>
                     
-                    <form id="createUserForm" action="{{ url_for('admin.create_user') }}" method="POST" class="space-y-4">
+                    <form id="createUserForm" action="{{ url_for('admin.create_user') }}" method="POST" 
+                          hx-post="{{ url_for('admin.create_user') }}"
+                          hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
+                          class="space-y-4">
                         <div>
                             <label class="block text-xs font-medium text-gray-400 uppercase mb-1.5">Username</label>
                             <input type="text" name="username" required class="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:ring-1 focus:ring-indigo-500 placeholder-gray-600" placeholder="jdoe">
@@ -191,14 +204,14 @@
 </div>
 
 <script>
-    // --- AJAX TOGGLE STATUS ---
+    // --- AJAX TOGGLE STATUS (Manual Fetch for custom behavior) ---
     async function toggleUserStatus(event, userId, url) {
         event.preventDefault();
         const btn = event.currentTarget;
         const card = btn.closest('.user-card');
         const dot = card.querySelector('.user-status-dot');
         
-        // Optimistic UI update (make it feel instant)
+        // Optimistic UI update
         const originalClass = btn.className;
         const originalTitle = btn.title;
         btn.style.opacity = '0.5';
@@ -212,33 +225,20 @@
             
             if (data.success) {
                 if (data.is_active) {
-                    // Update Button to "Deactivate" style
                     btn.className = 'p-1.5 rounded-md transition-colors toggle-status-btn text-red-400 hover:text-red-300 hover:bg-red-500/10';
                     btn.title = "Deactivate";
-                    
-                    // Update Status Dot
                     dot.classList.remove('bg-red-500');
                     dot.classList.add('bg-emerald-500');
-                    
-                    // Update Data Attribute
                     card.dataset.status = 'active';
                 } else {
-                    // Update Button to "Activate" style
                     btn.className = 'p-1.5 rounded-md transition-colors toggle-status-btn text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10';
                     btn.title = "Activate";
-                    
-                    // Update Status Dot
                     dot.classList.remove('bg-emerald-500');
                     dot.classList.add('bg-red-500');
-                    
-                    // Update Data Attribute
                     card.dataset.status = 'inactive';
                 }
                 
-                // Show Toast Notification
-                if (window.showToast) {
-                    window.showToast(data.message, 'success');
-                }
+                if (window.showToast) window.showToast(data.message, 'success');
             } else {
                 if (window.showToast) window.showToast('Action failed', 'error');
             }

@@ -2,7 +2,7 @@
 {% block title %}Inventory Command Center{% endblock %}
 {% block content %}
 
-<div class="space-y-8 animate-dynamic pb-10">
+<div class="space-y-8 animate-fade-in pb-10">
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div class="glass-panel p-6 rounded-2xl border border-white/5 relative overflow-hidden group">
@@ -39,7 +39,9 @@
                 <input type="file" name="import_file" id="importUploadInput" accept=".csv, .xlsx" onchange="this.form.submit()">
             </form>
 
-            <a href="{{ url_for('admin.add_product_page') }}" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all transform hover:scale-[1.02] flex items-center justify-center">
+            <a hx-get="{{ url_for('admin.add_product_page') }}" 
+               hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+               class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all transform hover:scale-[1.02] flex items-center justify-center cursor-pointer">
                 <i class="fas fa-plus mr-2"></i> Add Product
             </a>
         </div>
@@ -117,9 +119,10 @@
                             <i class="fas fa-pen"></i>
                         </button>
                         
-                        <a href="{{ url_for('admin.delete_product', product_id=product.id) }}" 
-                           class="p-2 rounded-lg bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-all"
-                           onclick="return confirm('Delete this product permanently? This will also remove assigned stock from sellers.')" 
+                        <a hx-get="{{ url_for('admin.delete_product', product_id=product.id) }}" 
+                           hx-confirm="Delete this product permanently? This will also remove assigned stock from sellers."
+                           hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
+                           class="p-2 rounded-lg bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-all cursor-pointer"
                            title="Delete">
                             <i class="fas fa-trash"></i>
                         </a>
@@ -133,7 +136,7 @@
                 </div>
                 <h3 class="text-lg font-bold text-white">Inventory Empty</h3>
                 <p class="text-gray-400 text-sm mt-1">Start by adding products to your master catalog.</p>
-                <a href="{{ url_for('admin.add_product_page') }}" class="inline-block mt-4 text-indigo-400 hover:text-indigo-300 text-sm font-bold">Add First Product &rarr;</a>
+                <a hx-get="{{ url_for('admin.add_product_page') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" class="inline-block mt-4 text-indigo-400 hover:text-indigo-300 text-sm font-bold cursor-pointer">Add First Product &rarr;</a>
             </div>
             {% endfor %}
         </div>
@@ -159,7 +162,10 @@
             <div class="px-6 py-6">
                 <p class="text-sm text-gray-400 mb-4">Allocating stock for: <span id="assign_product_name" class="font-bold text-white"></span></p>
                 
-                <form action="{{ url_for('admin.assign_inventory') }}" method="POST" class="space-y-5">
+                <form action="{{ url_for('admin.assign_inventory') }}" method="POST" 
+                      hx-post="{{ url_for('admin.assign_inventory') }}"
+                      hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
+                      class="space-y-5">
                     <input type="hidden" name="product_id" id="assign_product_id">
                     
                     <div>
@@ -205,7 +211,10 @@
                 </button>
             </div>
             <div class="px-6 py-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-                <form id="editProductForm" action="{{ url_for('admin.update_product') }}" method="POST" class="space-y-5">
+                <form id="editProductForm" action="{{ url_for('admin.update_product') }}" method="POST" 
+                      hx-post="{{ url_for('admin.update_product') }}"
+                      hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
+                      class="space-y-5">
                     <input type="hidden" name="product_id" id="edit_product_id">
                     
                     <div class="grid grid-cols-2 gap-5">
@@ -376,12 +385,8 @@
             searchInput.addEventListener('keyup', function() {
                 const query = this.value.toLowerCase();
                 document.querySelectorAll('.product-row').forEach(row => {
-                    const name = row.querySelector('.product-name').textContent.toLowerCase();
-                    const code = row.querySelector('td:first-child')?.textContent.toLowerCase() || ''; 
-                    // Note: table structure changed to divs, so adjusting search logic
-                    const textContent = row.textContent.toLowerCase();
-                    
-                    if (textContent.includes(query)) {
+                    // Check text content of entire row
+                    if (row.textContent.toLowerCase().includes(query)) {
                         row.style.display = '';
                     } else {
                         row.style.display = 'none';

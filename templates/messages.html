@@ -2,7 +2,7 @@
 {% block title %}Messages{% endblock %}
 {% block content %}
 
-<div class="animate-dynamic h-[calc(100vh-8rem)] flex flex-col">
+<div class="animate-fade-in h-[calc(100vh-8rem)] flex flex-col">
     
     <div class="flex items-end justify-between mb-4 flex-shrink-0">
         <div>
@@ -78,7 +78,7 @@
             </div>
 
             <div id="message-area" class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-4 bg-gradient-to-b from-transparent to-black/20 scroll-smooth">
-                </div>
+            </div>
 
             <div id="message-form-container" class="p-4 border-t border-white/5 bg-[#0f172a]/80 backdrop-blur-xl hidden">
                 <form id="message-form" class="flex items-end gap-3">
@@ -101,7 +101,8 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+// HTMX Compatibility Fix: Use an IIFE instead of DOMContentLoaded
+(function() {
     const contactList = document.getElementById('contact-list');
     const chatWindow = document.getElementById('chat-window');
     const userContacts = document.querySelectorAll('.user-contact');
@@ -120,59 +121,52 @@ document.addEventListener('DOMContentLoaded', () => {
     const messageBodyInput = document.getElementById('message-body-input');
     const sendBtn = document.getElementById('send-message-btn');
     
-    // UPDATED: Added Search Elements
     const contactSearch = document.getElementById('contact-search');
     
+    // Check if elements exist before running logic (safety check)
+    if (!contactList) return; 
+
     // Safe injection of current_user.id for JS
     const currentUserId = {{ current_user.id }};
     
     let activeChatUserId = null;
 
-    // --- NEW SEARCH LOGIC ---
     if (contactSearch) {
         contactSearch.addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase();
-            
             userContacts.forEach(contact => {
                 const username = contact.dataset.username.toLowerCase();
                 const role = contact.dataset.role.toLowerCase();
-                
-                // Show if username OR role matches the search
                 if (username.includes(searchTerm) || role.includes(searchTerm)) {
-                    contact.style.display = ''; // Restore default display (flex)
+                    contact.style.display = ''; 
                 } else {
-                    contact.style.display = 'none'; // Hide
+                    contact.style.display = 'none'; 
                 }
             });
         });
     }
 
-    // Mobile Responsiveness Logic
     function showChat() {
-        contactList.classList.add('-translate-x-full', 'absolute'); // Hide sidebar
+        contactList.classList.add('-translate-x-full', 'absolute');
         contactList.classList.remove('relative');
         chatWindow.classList.remove('hidden');
         chatWindow.classList.add('flex');
     }
 
     function showContacts() {
-        contactList.classList.remove('-translate-x-full', 'absolute'); // Show sidebar
+        contactList.classList.remove('-translate-x-full', 'absolute');
         contactList.classList.add('relative');
         chatWindow.classList.add('hidden');
         chatWindow.classList.remove('flex');
     }
 
-    // Fetch logic
     async function fetchAndDisplayConversation(userId) {
-        // Show loading if empty
         if(messageArea.children.length === 0) {
             messageArea.innerHTML = '<div class="flex justify-center pt-10"><i class="fas fa-circle-notch fa-spin text-indigo-500 text-2xl"></i></div>';
         }
         
         try {
-            // Correctly constructed URL using Flask's url_for
             const url = "{{ url_for('main.get_conversation', other_user_id=0) }}".replace('0', userId);
-            
             const response = await fetch(url);
             if (!response.ok) throw new Error('Network response was not ok');
             const conversation = await response.json();
@@ -191,10 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 conversation.forEach(msg => {
                     const isSender = msg.sender_id === currentUserId;
                     const messageElement = document.createElement('div');
-                    
                     messageElement.className = `flex w-full mb-4 ${isSender ? 'justify-end' : 'justify-start'}`;
-                    
-                    // Modern Bubble Styling
                     const bubbleClass = isSender 
                         ? 'bg-indigo-600 text-white rounded-2xl rounded-tr-none' 
                         : 'bg-white/10 text-gray-200 border border-white/5 rounded-2xl rounded-tl-none';
@@ -212,19 +203,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     messageArea.appendChild(messageElement);
                 });
             }
-            // Scroll to bottom
             messageArea.scrollTop = messageArea.scrollHeight;
-            
         } catch (error) {
             console.error('Fetch error:', error);
             messageArea.innerHTML = '<p class="text-red-400 text-center text-xs mt-4">Unable to load messages.</p>';
         }
     }
 
-    // Event Listeners
     userContacts.forEach(contact => {
         contact.addEventListener('click', () => {
-            // Visual Selection State
             userContacts.forEach(c => {
                 c.classList.remove('bg-white/5');
                 c.querySelector('.active-indicator').classList.remove('opacity-100');
@@ -239,19 +226,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             activeChatUserId = userId;
 
-            // Update Header
             chatUsername.textContent = username;
             chatRole.textContent = role.charAt(0).toUpperCase() + role.slice(1);
             headerAvatar.src = avatar;
             headerAvatar.classList.remove('hidden');
 
-            // Show Interface
             noChatSelected.classList.add('hidden');
             messageFormContainer.classList.remove('hidden');
             refreshButton.classList.remove('hidden');
             recipientIdInput.value = userId;
 
-            // Mobile Toggle
             if (window.innerWidth < 768) showChat();
 
             fetchAndDisplayConversation(userId);
@@ -259,9 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    if (backButton) {
-        backButton.addEventListener('click', showContacts);
-    }
+    if (backButton) backButton.addEventListener('click', showContacts);
 
     if (refreshButton) {
         refreshButton.addEventListener('click', () => {
@@ -275,51 +257,52 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    messageForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const recipientId = recipientIdInput.value;
-        const body = messageBodyInput.value;
+    if (messageForm) {
+        messageForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const recipientId = recipientIdInput.value;
+            const body = messageBodyInput.value;
 
-        if (!recipientId || !body.trim()) return;
-        
-        // Optimistic UI update
-        const tempMsg = document.createElement('div');
-        tempMsg.className = 'flex w-full mb-4 justify-end opacity-50';
-        tempMsg.innerHTML = `
-            <div class="max-w-[75%] sm:max-w-[60%]">
-                <div class="px-4 py-2.5 bg-indigo-600 text-white rounded-2xl rounded-tr-none shadow-sm">
-                    <p class="text-sm leading-relaxed whitespace-pre-wrap break-words">${body}</p>
-                </div>
-            </div>`;
-        messageArea.appendChild(tempMsg);
-        messageArea.scrollTop = messageArea.scrollHeight;
+            if (!recipientId || !body.trim()) return;
+            
+            const tempMsg = document.createElement('div');
+            tempMsg.className = 'flex w-full mb-4 justify-end opacity-50';
+            tempMsg.innerHTML = `
+                <div class="max-w-[75%] sm:max-w-[60%]">
+                    <div class="px-4 py-2.5 bg-indigo-600 text-white rounded-2xl rounded-tr-none shadow-sm">
+                        <p class="text-sm leading-relaxed whitespace-pre-wrap break-words">${body}</p>
+                    </div>
+                </div>`;
+            messageArea.appendChild(tempMsg);
+            messageArea.scrollTop = messageArea.scrollHeight;
 
-        const originalInput = messageBodyInput.value;
-        messageBodyInput.value = '';
-        sendBtn.disabled = true;
+            const originalInput = messageBodyInput.value;
+            messageBodyInput.value = '';
+            sendBtn.disabled = true;
 
-        try {
-            const formData = new FormData();
-            formData.append('recipient_id', recipientId);
-            formData.append('body', body);
+            try {
+                const formData = new FormData();
+                formData.append('recipient_id', recipientId);
+                formData.append('body', body);
 
-            await fetch("{{ url_for('main.send_message') }}", {
-                method: 'POST',
-                body: formData,
-            });
+                await fetch("{{ url_for('main.send_message') }}", {
+                    method: 'POST',
+                    body: formData,
+                });
 
-            fetchAndDisplayConversation(recipientId); 
+                fetchAndDisplayConversation(recipientId); 
 
-        } catch (error) {
-            console.error('Send error:', error);
-            messageBodyInput.value = originalInput;
-            tempMsg.remove(); 
-            alert("Failed to send message");
-        } finally {
-            sendBtn.disabled = false;
-            messageBodyInput.focus();
-        }
-    });
-});
+            } catch (error) {
+                console.error('Send error:', error);
+                messageBodyInput.value = originalInput;
+                tempMsg.remove(); 
+                alert("Failed to send message");
+            } finally {
+                sendBtn.disabled = false;
+                messageBodyInput.focus();
+            }
+        });
+    }
+})();
 </script>
 {% endblock %}

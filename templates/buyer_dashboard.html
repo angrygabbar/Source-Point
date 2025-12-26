@@ -2,7 +2,7 @@
 {% block title %}Product Catalog{% endblock %}
 {% block content %}
 
-<div class="space-y-8 animate-dynamic">
+<div class="space-y-8 animate-fade-in">
     
     <div class="flex flex-col md:flex-row justify-between items-end gap-4">
         <div>
@@ -10,10 +10,14 @@
             <p class="text-gray-400 text-sm mt-1">Browse premium developer gear and software.</p>
         </div>
         <div class="flex space-x-3">
-            <a href="{{ url_for('buyer.my_orders') }}" class="glass-panel px-4 py-2 rounded-lg text-gray-300 hover:text-white text-sm font-medium transition-all">
+            <a hx-get="{{ url_for('buyer.my_orders') }}" 
+               hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+               class="glass-panel px-4 py-2 rounded-lg text-gray-300 hover:text-white text-sm font-medium transition-all cursor-pointer">
                 Orders
             </a>
-            <a href="{{ url_for('buyer.view_cart') }}" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg shadow-lg shadow-indigo-500/20 text-sm font-bold transition-all flex items-center">
+            <a hx-get="{{ url_for('buyer.view_cart') }}" 
+               hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+               class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg shadow-lg shadow-indigo-500/20 text-sm font-bold transition-all flex items-center cursor-pointer">
                 <i class="fas fa-shopping-cart mr-2"></i> View Cart
             </a>
         </div>
@@ -21,13 +25,15 @@
 
     <div class="relative group">
         <div class="flex space-x-3 overflow-x-auto pb-2 custom-scrollbar mask-fade-right">
-            <a href="{{ url_for('buyer.buyer_dashboard') }}" 
-               class="whitespace-nowrap px-5 py-2 rounded-full text-sm font-medium transition-all border {{ 'bg-white text-black border-white' if not current_category else 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white' }}">
+            <a hx-get="{{ url_for('buyer.buyer_dashboard') }}" 
+               hx-target="#main-content" hx-select="#main-content" hx-push-url="true"
+               class="whitespace-nowrap px-5 py-2 rounded-full text-sm font-medium transition-all border cursor-pointer {{ 'bg-white text-black border-white' if not current_category else 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white' }}">
                All Products
             </a>
             {% for cat in categories %}
-            <a href="{{ url_for('buyer.buyer_dashboard', category=cat) }}" 
-               class="whitespace-nowrap px-5 py-2 rounded-full text-sm font-medium transition-all border {{ 'bg-white text-black border-white' if current_category == cat else 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white' }}">
+            <a hx-get="{{ url_for('buyer.buyer_dashboard', category=cat) }}" 
+               hx-target="#main-content" hx-select="#main-content" hx-push-url="true"
+               class="whitespace-nowrap px-5 py-2 rounded-full text-sm font-medium transition-all border cursor-pointer {{ 'bg-white text-black border-white' if current_category == cat else 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white' }}">
                {{ cat }}
             </a>
             {% endfor %}
@@ -39,7 +45,10 @@
         {% for product in products %}
         <div class="group relative glass-panel rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-500/10 border border-white/5 hover:border-indigo-500/30">
             
-            <a href="{{ url_for('buyer.product_detail_page', product_id=product.id) }}" class="block relative aspect-square bg-gray-800/50 overflow-hidden">
+            <a hx-get="{{ url_for('buyer.product_detail_page', product_id=product.id) }}" 
+               hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+               class="block relative aspect-square bg-gray-800/50 overflow-hidden cursor-pointer">
+               
                 {% if product.image_url %}
                     <img src="{{ product.image_url }}" alt="{{ product.name }}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
                 {% else %}
@@ -63,7 +72,11 @@
                 {% endif %}
 
                 <div class="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out bg-gradient-to-t from-black/90 via-black/60 to-transparent pt-10">
-                    <form action="{{ url_for('buyer.add_to_cart', product_id=product.id) }}" method="POST">
+                    <form action="{{ url_for('buyer.add_to_cart', product_id=product.id) }}" method="POST"
+                          hx-post="{{ url_for('buyer.add_to_cart', product_id=product.id) }}"
+                          hx-target="#main-content"
+                          hx-select="#main-content"
+                          hx-swap="outerHTML">
                         <button type="submit" class="w-full py-2.5 bg-white text-black font-bold rounded-lg hover:bg-gray-200 transition-colors text-sm flex items-center justify-center shadow-lg">
                             <i class="fas fa-plus mr-2"></i> Quick Add
                         </button>
@@ -74,7 +87,11 @@
             <div class="p-5">
                 <div class="flex justify-between items-start mb-2">
                     <h3 class="text-base font-bold text-white leading-tight group-hover:text-indigo-400 transition-colors">
-                        <a href="{{ url_for('buyer.product_detail_page', product_id=product.id) }}">{{ product.name }}</a>
+                        <a hx-get="{{ url_for('buyer.product_detail_page', product_id=product.id) }}" 
+                           hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                           class="cursor-pointer">
+                            {{ product.name }}
+                        </a>
                     </h3>
                 </div>
                 
@@ -93,7 +110,11 @@
             </div>
             <h3 class="text-xl font-bold text-white">No Products Found</h3>
             <p class="text-gray-400 mt-2">Check back later or try a different category.</p>
-            <a href="{{ url_for('buyer.buyer_dashboard') }}" class="inline-block mt-6 px-6 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm font-medium transition-all">Clear Filters</a>
+            <a hx-get="{{ url_for('buyer.buyer_dashboard') }}" 
+               hx-target="#main-content" hx-select="#main-content" hx-push-url="true"
+               class="inline-block mt-6 px-6 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm font-medium transition-all cursor-pointer">
+               Clear Filters
+            </a>
         </div>
         {% endfor %}
     </div>
