@@ -25,3 +25,4 @@ Flask-Limiter
 rich
 pypdf==3.17.1
 openpyxl
+google-generativeai==0.3.2

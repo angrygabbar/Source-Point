@@ -1,3 +1,6 @@
+from google import genai
+import os
+# ... existing imports ...
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, current_app
 from flask_login import login_required, current_user
 from extensions import db, bcrypt, cache
@@ -291,3 +294,51 @@ def learn_language(language):
     else:
         flash('The requested learning page does not exist.', 'danger')
         return redirect(url_for('main.learning'))
+# Source Point/blueprints/main.py
+
+# Source Point/blueprints/main.py
+
+# Source Point/blueprints/main.py
+
+# Source Point/blueprints/main.py
+
+@main_bp.route('/ask_learning_ai', methods=['POST'])
+@login_required
+def ask_learning_ai():
+    data = request.get_json()
+    question = data.get('question')
+    subject = data.get('subject', 'General Programming')
+    
+    if not question:
+        return jsonify({'error': 'No question provided'}), 400
+
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        return jsonify({'error': 'Server configuration error (Missing API Key)'}), 500
+
+    try:
+        # 1. Initialize Client
+        client = genai.Client(api_key=api_key)
+        
+        # 2. Create the Prompt
+        prompt = f"""
+        You are an expert technical tutor for {subject}.
+        The user is asking: "{question}"
+        
+        Keep your answer concise (under 150 words) and helpful for a student.
+        If the question is irrelevant to coding or {subject}, politely decline.
+        """
+        
+        # 3. Generate Content (Using the "Latest" alias which is usually Free 1.5 Flash)
+        response = client.models.generate_content(
+            model='gemini-flash-latest', 
+            contents=prompt
+        )
+        
+        # 4. Return text
+        return jsonify({'answer': response.text})
+
+    except Exception as e:
+        print(f"Gemini AI Error: {e}")
+        # Detailed error logging to help debug if this fails too
+        return jsonify({'error': 'I am having trouble thinking right now. Try again later.'}), 500
