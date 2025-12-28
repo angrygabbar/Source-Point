@@ -1,154 +1,144 @@
 {% extends "layout.html" %}
-{% block title %}Access Portal{% endblock %}
-{% block content %}
 
-<div class="min-h-[90vh] flex items-center justify-center px-4 py-12 relative z-10">
+{% block title %}Login or Register - SourcePoint{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" 
+     x-data="{ mode: 'login', role: 'candidate' }">
     
-    <div class="w-full max-w-[420px] animate-fade-in">
+    <div class="max-w-md w-full space-y-8 glass-panel p-8 rounded-2xl shadow-2xl relative my-8">
         
-        <div class="text-center mb-8">
-            <a href="{{ url_for('main.home') }}" class="inline-block mb-4">
-                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 mx-auto">
-                    <i class="fas fa-fingerprint text-white text-xl"></i>
-                </div>
-            </a>
-            <h2 class="text-2xl font-bold text-white tracking-tight">Welcome Back</h2>
+        <div class="flex rounded-lg bg-gray-900/50 p-1">
+            <button @click="mode = 'login'" 
+                    :class="{ 'bg-indigo-600 text-white shadow-lg': mode === 'login', 'text-gray-400 hover:text-white': mode !== 'login' }"
+                    class="w-1/2 py-2.5 text-sm font-medium rounded-md transition-all duration-200">
+                Sign In
+            </button>
+            <button @click="mode = 'register'" 
+                    :class="{ 'bg-indigo-600 text-white shadow-lg': mode === 'register', 'text-gray-400 hover:text-white': mode !== 'register' }"
+                    class="w-1/2 py-2.5 text-sm font-medium rounded-md transition-all duration-200">
+                Create Account
+            </button>
         </div>
 
-        <div class="glass-panel rounded-3xl overflow-hidden shadow-2xl relative">
-            
-            <div class="flex p-2 gap-2 bg-black/20">
-                <button id="tab-login" onclick="switchTab('login')" 
-                    class="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 bg-indigo-600 text-white shadow-lg">
-                    Sign In
-                </button>
-                <button id="tab-register" onclick="switchTab('register')" 
-                    class="flex-1 py-2.5 rounded-xl text-sm font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-all duration-300">
-                    Create Account
-                </button>
+        <div class="text-center">
+            <h2 class="mt-2 text-3xl font-bold tracking-tight text-white" x-text="mode === 'login' ? 'Welcome Back' : 'Join SourcePoint'"></h2>
+            <p class="mt-2 text-sm text-gray-400">
+                <span x-show="mode === 'login'">Access your dashboard and manage your activities.</span>
+                <span x-show="mode === 'register'">Start your journey as a <span x-text="role" class="capitalize font-bold text-indigo-400"></span>.</span>
+            </p>
+        </div>
+
+        <form x-show="mode === 'login'" action="{{ url_for('auth.login') }}" method="POST" class="mt-8 space-y-6" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100">
+            <div class="space-y-4">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-400">Email Address</label>
+                    <input id="email" name="email" type="email" required 
+                           class="mt-1 block w-full rounded-lg bg-gray-800/50 border border-gray-600 px-4 py-3 text-white placeholder-gray-500 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-colors">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-400">Password</label>
+                    <input id="password" name="password" type="password" required 
+                           class="mt-1 block w-full rounded-lg bg-gray-800/50 border border-gray-600 px-4 py-3 text-white placeholder-gray-500 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-colors">
+                </div>
             </div>
 
-            <div class="relative overflow-hidden min-h-[400px]">
-                
-                <div id="view-login" class="p-8 absolute inset-0 transition-all duration-500 ease-out transform translate-x-0 opacity-100">
-                    <form method="POST" action="{{ url_for('auth.login_register') }}" class="space-y-5">
-                        <input type="hidden" name="login" value="1">
-                        
-                        <div class="space-y-1.5">
-                            <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider ml-1">Email</label>
-                            <input type="email" name="email" required 
-                                   class="input-premium w-full px-4 py-3 rounded-xl text-white placeholder-gray-600"
-                                   placeholder="dev@sourcepoint.io">
-                        </div>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 rounded border-gray-600 bg-gray-800 text-indigo-600 focus:ring-indigo-500">
+                    <label for="remember-me" class="ml-2 block text-sm text-gray-400">Remember me</label>
+                </div>
+                <div class="text-sm">
+                    <a href="{{ url_for('auth.reset_password_request') }}" class="font-medium text-indigo-400 hover:text-indigo-300">Forgot password?</a>
+                </div>
+            </div>
 
-                        <div class="space-y-1.5">
-                            <div class="flex justify-between items-center ml-1">
-                                <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Password</label>
-                                <a href="{{ url_for('auth.forgot_password') }}" class="text-xs text-indigo-400 hover:text-indigo-300 hover:underline">Forgot?</a>
-                            </div>
-                            <input type="password" name="password" required 
-                                   class="input-premium w-full px-4 py-3 rounded-xl text-white placeholder-gray-600"
-                                   placeholder="••••••••">
-                        </div>
+            <button type="submit" class="group relative flex w-full justify-center rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_25px_rgba(79,70,229,0.5)]">
+                Sign In
+            </button>
+        </form>
 
-                        <button type="submit" class="btn-glow w-full py-3.5 bg-indigo-600 text-white rounded-xl font-bold text-sm mt-4">
-                            Sign In to Dashboard
-                        </button>
-                    </form>
-                    
-                    <div class="mt-8 text-center">
-                        <p class="text-xs text-gray-500">Protected by reCAPTCHA Enterprise.</p>
+        <form x-show="mode === 'register'" action="{{ url_for('auth.register') }}" method="POST" class="mt-8 space-y-4" style="display: none;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100">
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">I want to join as a:</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" @click="role = 'candidate'" :class="role === 'candidate' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-gray-800/50 border-gray-600 text-gray-400 hover:bg-gray-700'" class="border rounded-md py-2 text-sm font-medium transition-all">Candidate</button>
+                    <button type="button" @click="role = 'seller'" :class="role === 'seller' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-gray-800/50 border-gray-600 text-gray-400 hover:bg-gray-700'" class="border rounded-md py-2 text-sm font-medium transition-all">Seller</button>
+                    <button type="button" @click="role = 'buyer'" :class="role === 'buyer' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-gray-800/50 border-gray-600 text-gray-400 hover:bg-gray-700'" class="border rounded-md py-2 text-sm font-medium transition-all">Buyer</button>
+                    <button type="button" @click="role = 'developer'" :class="role === 'developer' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-gray-800/50 border-gray-600 text-gray-400 hover:bg-gray-700'" class="border rounded-md py-2 text-sm font-medium transition-all">Developer</button>
+                    <button type="button" @click="role = 'recruiter'" :class="role === 'recruiter' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-gray-800/50 border-gray-600 text-gray-400 hover:bg-gray-700'" class="border rounded-md py-2 text-sm font-medium transition-all">Recruiter</button>
+                    <button type="button" @click="role = 'moderator'" :class="role === 'moderator' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-gray-800/50 border-gray-600 text-gray-400 hover:bg-gray-700'" class="border rounded-md py-2 text-sm font-medium transition-all">Moderator</button>
+                </div>
+                <input type="hidden" name="role" x-model="role">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-400">Username</label>
+                    <input name="username" type="text" required class="mt-1 block w-full rounded-lg bg-gray-800/50 border border-gray-600 px-4 py-2 text-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-400">Mobile Number</label>
+                    <input name="mobile_number" type="tel" required class="mt-1 block w-full rounded-lg bg-gray-800/50 border border-gray-600 px-4 py-2 text-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-400">Email Address</label>
+                <input name="email" type="email" required class="mt-1 block w-full rounded-lg bg-gray-800/50 border border-gray-600 px-4 py-2 text-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+            </div>
+
+            <div x-show="['candidate', 'developer'].includes(role)" x-transition class="space-y-4 border-t border-gray-700 pt-4">
+                <p class="text-xs font-semibold text-gray-500 uppercase">Skill Set</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400">Primary Skill</label>
+                        <select name="primary_skill" class="mt-1 block w-full rounded-lg bg-gray-800/50 border border-gray-600 px-3 py-2 text-white text-sm">
+                            <option value="">Select...</option>
+                            <option value="java">Java</option>
+                            <option value="python">Python</option>
+                            <option value="sql">SQL / Database</option>
+                            <option value="react">React / Frontend</option>
+                            <option value="cpp">C++</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400">Experience</label>
+                        <select name="primary_skill_experience" class="mt-1 block w-full rounded-lg bg-gray-800/50 border border-gray-600 px-3 py-2 text-white text-sm">
+                            <option value="0-1">Fresher (0-1 Years)</option>
+                            <option value="1-3">Junior (1-3 Years)</option>
+                            <option value="3-5">Mid-Level (3-5 Years)</option>
+                            <option value="5+">Senior (5+ Years)</option>
+                        </select>
                     </div>
                 </div>
-
-                <div id="view-register" class="p-8 absolute inset-0 transition-all duration-500 ease-out transform translate-x-full opacity-0 pointer-events-none">
-                    <form method="POST" action="{{ url_for('auth.login_register') }}" class="space-y-4">
-                        <input type="hidden" name="register" value="1">
-                        
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="space-y-1">
-                                <label class="text-[10px] font-bold text-gray-500 uppercase">Username</label>
-                                <input type="text" name="username" required class="input-premium w-full px-3 py-2.5 rounded-lg text-sm text-white">
-                            </div>
-                            <div class="space-y-1">
-                                <label class="text-[10px] font-bold text-gray-500 uppercase">Mobile</label>
-                                <input type="tel" name="mobile_number" required class="input-premium w-full px-3 py-2.5 rounded-lg text-sm text-white">
-                            </div>
-                        </div>
-
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-bold text-gray-500 uppercase">Email</label>
-                            <input type="email" name="email" required class="input-premium w-full px-3 py-2.5 rounded-lg text-sm text-white">
-                        </div>
-
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-bold text-gray-500 uppercase">Password</label>
-                            <input type="password" name="password" required class="input-premium w-full px-3 py-2.5 rounded-lg text-sm text-white">
-                        </div>
-
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-bold text-gray-500 uppercase">Role</label>
-                            <select name="role" class="input-premium w-full px-3 py-2.5 rounded-lg text-sm text-white cursor-pointer appearance-none">
-                                <option value="developer" class="bg-gray-900">Developer</option>
-                                <option value="candidate" class="bg-gray-900">Candidate</option>
-                                <option value="recruiter" class="bg-gray-900">Recruiter</option>
-                                <option value="moderator" class="bg-gray-900">Moderator</option>
-                                <option value="buyer" class="bg-gray-900">Buyer</option> 
-                                <option value="seller" class="bg-gray-900">Seller</option>
-                            </select>
-                        </div>
-
-                        <button type="submit" class="btn-glow w-full py-3 bg-purple-600 text-white rounded-xl font-bold text-sm">
-                            Create Account
-                        </button>
-                    </form>
-                </div>
-
             </div>
-        </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-400">Password</label>
+                    <input name="password" type="password" required class="mt-1 block w-full rounded-lg bg-gray-800/50 border border-gray-600 px-4 py-2 text-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-400">Confirm</label>
+                    <input name="confirm_password" type="password" required class="mt-1 block w-full rounded-lg bg-gray-800/50 border border-gray-600 px-4 py-2 text-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-400">Secret Question (For Recovery)</label>
+                <input name="secret_question" type="text" placeholder="e.g. What is your pet's name?" required class="mt-1 block w-full rounded-lg bg-gray-800/50 border border-gray-600 px-4 py-2 text-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-400">Secret Answer</label>
+                <input name="secret_answer" type="text" required class="mt-1 block w-full rounded-lg bg-gray-800/50 border border-gray-600 px-4 py-2 text-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+            </div>
+
+            <button type="submit" class="group relative flex w-full justify-center rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3 text-sm font-bold text-white hover:from-indigo-500 hover:to-purple-500 focus:outline-none transition-all shadow-lg shadow-indigo-500/30 mt-4 mb-6">
+                Register Now
+            </button>
+        </form>
     </div>
 </div>
-
-<script>
-    function switchTab(tab) {
-        const loginView = document.getElementById('view-login');
-        const registerView = document.getElementById('view-register');
-        const loginTab = document.getElementById('tab-login');
-        const registerTab = document.getElementById('tab-register');
-
-        const activeClass = ['bg-indigo-600', 'text-white', 'shadow-lg'];
-        const inactiveClass = ['text-gray-400', 'hover:text-white', 'hover:bg-white/5'];
-
-        if (tab === 'login') {
-            // Show Login
-            loginView.classList.remove('translate-x-full', 'opacity-0', 'pointer-events-none');
-            loginView.classList.add('translate-x-0', 'opacity-100');
-            
-            // Hide Register
-            registerView.classList.remove('translate-x-0', 'opacity-100');
-            registerView.classList.add('translate-x-full', 'opacity-0', 'pointer-events-none');
-
-            // Update Buttons
-            loginTab.classList.add(...activeClass);
-            loginTab.classList.remove(...inactiveClass);
-            registerTab.classList.remove(...activeClass);
-            registerTab.classList.add(...inactiveClass);
-
-        } else {
-            // Show Register
-            registerView.classList.remove('translate-x-full', 'opacity-0', 'pointer-events-none');
-            registerView.classList.add('translate-x-0', 'opacity-100');
-
-            // Hide Login
-            loginView.classList.remove('translate-x-0', 'opacity-100');
-            loginView.classList.add('-translate-x-full', 'opacity-0', 'pointer-events-none');
-
-            // Update Buttons
-            registerTab.classList.add(...activeClass);
-            registerTab.classList.remove(...inactiveClass);
-            loginTab.classList.remove(...activeClass);
-            loginTab.classList.add(...inactiveClass);
-        }
-    }
-</script>
 {% endblock %}

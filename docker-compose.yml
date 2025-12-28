@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: sourcepoint_local
+    restart: always
+    ports:
+      - "5000:5000"  # Maps localhost:5000 to container:5000
+    env_file:
+      - .env         # Loads your local API keys automatically
+    volumes:
+      - .:/app       # SYNC: Any code change you make on Mac updates instantly in Docker!
