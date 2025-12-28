@@ -4,6 +4,7 @@ from models.auth import User
 from extensions import db, bcrypt
 from utils import send_email
 from datetime import datetime
+import traceback  # Added for better error logging
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -131,9 +132,9 @@ def register():
         db.session.add(new_user)
         db.session.commit()
 
-        # --- EMAIL NOTIFICATION BLOCK (FIXED) ---
+        # --- EMAIL NOTIFICATION BLOCK ---
         try:
-            # Only notify if they need approval
+            # Only notify if they need approval (Regular users)
             if not is_approved: 
                 # STEP 1: Try to get admin email from Config
                 admin_email = current_app.config.get('ADMIN_EMAIL')
@@ -144,9 +145,11 @@ def register():
                     if admin_user:
                         admin_email = admin_user.email
                 
-                # STEP 3: Fallback (Just in case no admin exists yet, though unlikely)
+                # STEP 3: Fallback
                 if not admin_email:
+                    # Provide a generic fallback or log a warning
                     admin_email = 'admin@sourcepoint.com'
+                    print("WARNING: No Admin email found. Defaulting to placeholder.")
 
                 send_email(
                     to=[admin_email],
@@ -156,8 +159,13 @@ def register():
                     now=datetime.utcnow()
                 )
         except Exception as e:
-            # Log error but don't stop the user creation
-            print(f"Error sending admin notification email: {e}")
+            # IMPROVED LOGGING: Print the full error so you can debug it
+            print("--------------------------------------------------")
+            print(f"CRITICAL ERROR: Failed to send Admin Notification Email.")
+            print(f"Exception: {e}")
+            traceback.print_exc() 
+            print("--------------------------------------------------")
+            # We do NOT rollback here because the user was successfully created.
 
         if is_approved:
             flash('Account created! Since you are the first user, you are now Admin.', 'success')
@@ -167,6 +175,7 @@ def register():
     except Exception as e:
         db.session.rollback()
         flash(f'Error creating account: {str(e)}', 'danger')
+        print(f"Database Error: {e}")
 
     return redirect(url_for('auth.login_register'))
 
