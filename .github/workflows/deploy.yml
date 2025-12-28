@@ -3,27 +3,35 @@ name: Deploy to Laptop
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch:  # This adds the manual "Run" button
+  workflow_dispatch:  # Manual run button
 
 jobs:
   deploy:
-    runs-on: self-hosted  # Critical: Tells GitHub to use your laptop, not their servers
+    runs-on: self-hosted  # Runs on your laptop
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
+      # --- THIS IS THE MISSING STEP ---
+      - name: Copy Files to Web Server
+        run: |
+          # Copy all new files from the runner to your live website folder
+          # -r: recursive, -u: update only new files, -v: verbose
+          cp -rf . /var/www/sourcepoint/Source-Point/
+
       - name: Install Dependencies
         run: |
-          # Use the full path to your virtual environment pip
-          /var/www/sourcepoint/venv/bin/pip install -r requirements.txt
+          # Install libraries (e.g. google-generativeai) into the virtual env
+          /var/www/sourcepoint/venv/bin/pip install -r /var/www/sourcepoint/Source-Point/requirements.txt
 
-      - name: Apply Database Migrations (Optional)
+      - name: Apply Database Migrations
         run: |
           export FLASK_APP=app.py
-          /var/www/sourcepoint/venv/bin/flask db upgrade || echo "No migrations to apply or failed safely"
+          cd /var/www/sourcepoint/Source-Point
+          /var/www/sourcepoint/venv/bin/flask db upgrade || echo "No migrations needed"
 
       - name: Restart Application
         run: |
-          # This restarts the background service so changes take effect
+          # Restart the service to load the new Python code
           sudo systemctl restart sourcepoint
