@@ -1,69 +1,100 @@
 {% extends "layout.html" %}
-{% block title %}Welcome to Source Point{% endblock %}
+{% block title %}SourcePoint - The Future of Development{% endblock %}
 {% block content %}
 
-<div class="relative min-h-[80vh] flex flex-col justify-center items-center text-center overflow-hidden animate-dynamic">
+<div class="relative min-h-[90vh] flex flex-col justify-center items-center text-center overflow-hidden px-4">
     
-    <div class="relative z-10 max-w-5xl px-4">
-        <div class="inline-flex items-center px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-sm font-medium backdrop-blur-md mb-8">
-            <span class="relative flex h-2 w-2 mr-2">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+    <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-600/20 rounded-full blur-[120px] -z-10 animate-pulse"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-[120px] -z-10 animate-pulse" style="animation-delay: 2s;"></div>
+
+    <div class="relative z-10 max-w-6xl mx-auto animate-fade-in">
+        
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8 hover:bg-white/10 transition-colors cursor-default">
+            <span class="flex h-2 w-2 relative">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            The Ultimate Developer Ecosystem
+            <span class="text-xs font-medium text-gray-300 uppercase tracking-wide">v2.0 System Online</span>
         </div>
         
-        <h1 class="text-5xl md:text-7xl font-extrabold text-white tracking-tight mb-6 leading-tight">
-            Forge the Future, <br>
-            <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">Together.</span>
+        <h1 class="text-5xl md:text-7xl lg:text-8xl font-black text-white tracking-tight leading-[1.1] mb-8">
+            Build Faster.<br>
+            <span class="text-gradient-animated">Scale Smarter.</span>
         </h1>
         
-        <p class="mt-6 text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
-            The central hub for development teams. Streamline updates, manage projects, and onboard top talent in one unified workspace.
+        <p class="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed mb-10">
+            The all-in-one ecosystem for engineering teams. Source talent, manage code tests, and orchestrate commerce in a single, beautiful workspace.
         </p>
         
-        <div class="mt-10 flex flex-col sm:flex-row justify-center gap-4">
+        <div class="flex flex-col sm:flex-row justify-center gap-5">
             <a href="{{ url_for('auth.login_register') }}"
-                class="px-8 py-4 rounded-xl text-white bg-indigo-600 hover:bg-indigo-500 font-bold text-lg shadow-lg shadow-indigo-600/30 transition-all transform hover:scale-105 flex items-center justify-center group">
-                Get Started <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+               class="btn-glow px-8 py-4 rounded-xl bg-indigo-600 text-white font-bold text-lg shadow-xl shadow-indigo-600/20 flex items-center justify-center">
+                Start Building Free
+                <i class="fas fa-arrow-right ml-3"></i>
             </a>
             <a href="#features"
-                class="px-8 py-4 rounded-xl text-gray-300 bg-white/5 hover:bg-white/10 border border-white/10 font-bold text-lg backdrop-blur-md transition-all flex items-center justify-center">
-                Learn More
+               class="px-8 py-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold text-lg backdrop-blur-md transition-all flex items-center justify-center group">
+                <i class="fas fa-play text-xs mr-3 text-gray-400 group-hover:text-white transition-colors"></i>
+                Watch Demo
             </a>
+        </div>
+
+        <div class="mt-16 pt-8 border-t border-white/5 grid grid-cols-2 md:grid-cols-4 gap-8 opacity-80">
+            <div>
+                <h3 class="text-3xl font-bold text-white">10k+</h3>
+                <p class="text-xs text-gray-500 uppercase tracking-widest mt-1">Developers</p>
+            </div>
+            <div>
+                <h3 class="text-3xl font-bold text-white">99.9%</h3>
+                <p class="text-xs text-gray-500 uppercase tracking-widest mt-1">Uptime</p>
+            </div>
+            <div>
+                <h3 class="text-3xl font-bold text-white">$2M+</h3>
+                <p class="text-xs text-gray-500 uppercase tracking-widest mt-1">Processed</p>
+            </div>
+            <div>
+                <h3 class="text-3xl font-bold text-white">24/7</h3>
+                <p class="text-xs text-gray-500 uppercase tracking-widest mt-1">AI Support</p>
+            </div>
         </div>
     </div>
 </div>
 
-<div id="features" class="py-24 relative z-10">
-    <div class="text-center mb-16 animate-dynamic">
-        <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Built for Developers</h2>
-        <p class="text-gray-400 max-w-2xl mx-auto">Everything you need to manage your team and projects effectively.</p>
+<div id="features" class="py-24 relative z-10 max-w-7xl mx-auto px-4">
+    <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-5xl font-bold text-white mb-6">Why SourcePoint?</h2>
+        <p class="text-gray-400 max-w-2xl mx-auto text-lg">We've removed the friction from hiring, project management, and commerce.</p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 px-4">
-        <div class="glass-panel p-8 rounded-2xl hover:bg-white/5 transition-all duration-300 group border border-white/5 hover:border-indigo-500/30">
-            <div class="h-14 w-14 bg-indigo-500/20 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 text-indigo-400">
-                <i class="fas fa-bolt text-2xl"></i>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="glass-panel p-8 rounded-3xl group relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150 duration-700"></div>
+            
+            <div class="w-14 h-14 rounded-2xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 mb-6 group-hover:bg-indigo-500 group-hover:text-white transition-colors duration-300">
+                <i class="fas fa-code-branch text-2xl"></i>
             </div>
-            <h3 class="text-xl font-bold text-white mb-3">Streamlined Workflow</h3>
-            <p class="text-gray-400 leading-relaxed">Post daily updates in seconds. Keep the team in sync without the meeting fatigue.</p>
+            <h3 class="text-2xl font-bold text-white mb-3">Unified Workflow</h3>
+            <p class="text-gray-400 leading-relaxed">Stop context switching. Manage your repository, team updates, and project milestones in one dashboard.</p>
         </div>
 
-        <div class="glass-panel p-8 rounded-2xl hover:bg-white/5 transition-all duration-300 group border border-white/5 hover:border-purple-500/30">
-            <div class="h-14 w-14 bg-purple-500/20 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 text-purple-400">
-                <i class="fas fa-chart-line text-2xl"></i>
+        <div class="glass-panel p-8 rounded-3xl group relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150 duration-700"></div>
+            
+            <div class="w-14 h-14 rounded-2xl bg-purple-500/20 flex items-center justify-center text-purple-400 mb-6 group-hover:bg-purple-500 group-hover:text-white transition-colors duration-300">
+                <i class="fas fa-brain text-2xl"></i>
             </div>
-            <h3 class="text-xl font-bold text-white mb-3">Transparent Progress</h3>
-            <p class="text-gray-400 leading-relaxed">Get a real-time view of the entire team's activity. Understand dependencies instantly.</p>
+            <h3 class="text-2xl font-bold text-white mb-3">AI-Powered Hiring</h3>
+            <p class="text-gray-400 leading-relaxed">Let our AI screen resumes and grade code tests. Focus on interviewing the top 1% of talent.</p>
         </div>
 
-        <div class="glass-panel p-8 rounded-2xl hover:bg-white/5 transition-all duration-300 group border border-white/5 hover:border-emerald-500/30">
-            <div class="h-14 w-14 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 text-emerald-400">
-                <i class="fas fa-user-plus text-2xl"></i>
+        <div class="glass-panel p-8 rounded-3xl group relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150 duration-700"></div>
+            
+            <div class="w-14 h-14 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 mb-6 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-300">
+                <i class="fas fa-shopping-bag text-2xl"></i>
             </div>
-            <h3 class="text-xl font-bold text-white mb-3">Seamless Onboarding</h3>
-            <p class="text-gray-400 leading-relaxed">A simple, clear path for new candidates to join the team. Review and approve in one place.</p>
+            <h3 class="text-2xl font-bold text-white mb-3">Developer Marketplace</h3>
+            <p class="text-gray-400 leading-relaxed">Buy and sell assets directly. Integrated stock management and automated invoicing included.</p>
         </div>
     </div>
 </div>

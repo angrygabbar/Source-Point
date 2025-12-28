@@ -1,69 +1,66 @@
 {% extends "layout.html" %}
-{% block title %}Inventory Command Center{% endblock %}
+{% block title %}My Inventory{% endblock %}
 {% block content %}
 
-<div class="space-y-8 animate-fade-in pb-10">
-
+<div class="space-y-8 animate-fade-in pb-20">
+    
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div class="glass-panel p-6 rounded-2xl border border-white/5 relative overflow-hidden group">
             <h3 class="text-3xl font-extrabold text-white">{{ total_products_count }} <span class="text-sm font-medium text-gray-400">Items</span></h3>
-            <p class="text-xs font-bold text-indigo-300 uppercase tracking-widest mt-2">Catalog Size</p>
+            <p class="text-xs font-bold text-indigo-300 uppercase tracking-widest mt-2">My Catalog</p>
         </div>
         <div class="glass-panel p-6 rounded-2xl border border-white/5 relative overflow-hidden group">
             <h3 class="text-3xl font-extrabold text-white">₹{{ "{:,.2f}".format(total_inventory_value) }}</h3>
-            <p class="text-xs font-bold text-emerald-300 uppercase tracking-widest mt-2">Total Valuation</p>
+            <p class="text-xs font-bold text-emerald-300 uppercase tracking-widest mt-2">Total Value</p>
         </div>
         <div class="glass-panel p-6 rounded-2xl border border-white/5 relative overflow-hidden group">
             <h3 class="text-3xl font-extrabold text-white">{{ low_stock_count }} <span class="text-sm font-medium text-gray-400">Alerts</span></h3>
-            <p class="text-xs font-bold text-red-300 uppercase tracking-widest mt-2">Critical Stock</p>
+            <p class="text-xs font-bold text-red-300 uppercase tracking-widest mt-2">Low Stock</p>
         </div>
     </div>
 
     <div class="flex flex-col md:flex-row justify-between items-center bg-white/5 border border-white/5 rounded-2xl p-4 backdrop-blur-xl shadow-lg">
         <h1 class="text-xl font-bold text-white flex items-center gap-3">
-            <i class="fas fa-warehouse text-indigo-400"></i> Inventory List
+            <span class="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center border border-white/10 text-indigo-400">
+                <i class="fas fa-warehouse"></i>
+            </span>
+            My Assigned Inventory
         </h1>
         
         <div class="flex flex-col md:flex-row gap-4 w-full md:w-auto mt-4 md:mt-0">
-             <div class="relative group w-full md:w-80">
+            <div class="relative group w-full md:w-80">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i class="fas fa-search text-gray-500"></i>
+                    <i class="fas fa-search text-gray-500 group-focus-within:text-indigo-400 transition-colors"></i>
                 </div>
-                <input type="text" id="searchInput" placeholder="Search SKU, Name, Brand..." class="w-full bg-black/20 border border-white/10 text-white text-sm rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder-gray-600">
+                <input type="text" id="searchInput" placeholder="Search SKU, Name..." 
+                    class="w-full bg-black/20 border border-white/10 text-white text-sm rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder-gray-600">
             </div>
-
-            <button onclick="document.getElementById('importUploadInput').click()" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition-all transform hover:scale-[1.02] flex items-center justify-center">
-                <i class="fas fa-file-import mr-2"></i> Import
+            
+            <button id="openRequestStockBtn" 
+                    class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center">
+                <i class="fas fa-plus-circle mr-2"></i> Request Stock
             </button>
-            <form action="{{ url_for('admin.import_inventory') }}" method="POST" enctype="multipart/form-data" class="hidden">
-                <input type="file" name="import_file" id="importUploadInput" accept=".csv, .xlsx" onchange="this.form.submit()">
-            </form>
-
-            <a hx-get="{{ url_for('admin.add_product_page') }}" 
-               hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
-               class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all transform hover:scale-[1.02] flex items-center justify-center cursor-pointer">
-                <i class="fas fa-plus mr-2"></i> Add Product
-            </a>
         </div>
     </div>
 
     <div class="space-y-3">
-        <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-2 text-xs font-bold text-gray-500 uppercase tracking-widest">
+        <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-2 text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-white/5 pb-2">
             <div class="col-span-5">Product Details</div>
             <div class="col-span-2">Category</div>
-            <div class="col-span-2 text-center">Unassigned Stock</div>
-            <div class="col-span-3 text-right">Actions</div>
+            <div class="col-span-2 text-center">My Quantity</div>
+            <div class="col-span-1 text-right">Price</div>
+            <div class="col-span-2 text-right">Actions</div>
         </div>
 
         <div id="inventoryContainer" class="space-y-3">
             {% for product in products %}
-            <div class="group relative glass-panel rounded-xl p-4 border border-white/5 transition-all duration-300 hover:bg-white/[0.07] hover:border-indigo-500/30 hover:shadow-lg product-row">
+            <div class="group relative glass-panel rounded-xl p-4 border border-white/5 transition-all duration-300 hover:bg-white/[0.07] hover:border-indigo-500/30 hover:shadow-lg product-row" id="product-{{ product.id }}">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
                     
                     <div class="col-span-5 flex items-center gap-4">
-                        <div class="relative w-12 h-12 rounded-lg bg-gray-800 overflow-hidden border border-white/10 flex-shrink-0">
+                        <div class="relative w-12 h-12 rounded-lg bg-gray-800 overflow-hidden border border-white/10 flex-shrink-0 group-hover:border-indigo-500/50 transition-colors">
                             {% if product.image_url %}
-                                <img src="{{ product.image_url }}" alt="" class="w-full h-full object-cover">
+                                <img src="{{ product.image_url }}" alt="{{ product.name }}" class="w-full h-full object-cover">
                             {% else %}
                                 <div class="flex items-center justify-center h-full text-gray-600"><i class="fas fa-cube"></i></div>
                             {% endif %}
@@ -71,10 +68,7 @@
                         <div>
                             <h3 class="text-sm font-bold text-white product-name leading-tight">{{ product.name }}</h3>
                             <div class="flex items-center gap-2 mt-1">
-                                <span class="text-[10px] font-mono text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded">{{ product.product_code }}</span>
-                                {% if product.brand %}
-                                    <span class="text-[10px] text-gray-500">{{ product.brand }}</span>
-                                {% endif %}
+                                <span class="text-[10px] font-mono text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">{{ product.code }}</span>
                             </div>
                         </div>
                     </div>
@@ -84,59 +78,60 @@
                     </div>
 
                     <div class="col-span-2 flex justify-center">
-                        {% if product.stock == 0 %}
-                            <span class="text-red-400 text-xs font-bold bg-red-500/10 px-2 py-1 rounded border border-red-500/20">Out of Stock</span>
-                        {% elif product.stock < 10 %}
-                            <span class="text-yellow-400 text-xs font-bold bg-yellow-500/10 px-2 py-1 rounded border border-yellow-500/20">Low: {{ product.stock }}</span>
+                        {% if product.my_stock == 0 %}
+                            <span class="px-3 py-1 rounded-full text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20 flex items-center shadow-[0_0_10px_rgba(239,68,68,0.2)]">
+                                <span class="w-1.5 h-1.5 rounded-full bg-red-500 mr-2"></span> Out of Stock
+                            </span>
+                        {% elif product.my_stock < 10 %}
+                            <span class="px-3 py-1 rounded-full text-xs font-bold bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 flex items-center animate-pulse">
+                                <span class="w-1.5 h-1.5 rounded-full bg-yellow-500 mr-2"></span> Low: {{ product.my_stock }}
+                            </span>
                         {% else %}
-                            <span class="text-emerald-400 text-xs font-bold bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">{{ product.stock }} Units</span>
+                            <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span> {{ product.my_stock }} Units
+                            </span>
                         {% endif %}
                     </div>
 
-                    <div class="col-span-3 flex justify-end gap-2">
+                    <div class="col-span-1 text-right">
+                        <span class="text-sm font-bold text-white block">₹{{ "{:,.0f}".format(product.price) }}</span>
+                    </div>
+
+                    <div class="col-span-2 flex justify-end gap-2">
                         <button type="button" 
-                                class="px-3 py-1.5 bg-purple-600/20 text-purple-400 border border-purple-500/30 rounded-lg hover:bg-purple-600 hover:text-white transition-all text-xs font-bold assign-btn flex items-center"
-                                data-id="{{ product.id }}" 
-                                data-name="{{ product.name }}" 
-                                data-max="{{ product.stock }}">
-                            <i class="fas fa-share-alt mr-1"></i> Assign
-                        </button>
-                        
-                        <button type="button"
-                                class="p-2 rounded-lg bg-white/5 hover:bg-blue-500/20 text-gray-400 hover:text-blue-400 transition-all edit-product-btn" 
-                                data-id="{{ product.id }}"
-                                data-code="{{ product.product_code }}"
+                                class="p-2 rounded-lg bg-white/5 hover:bg-emerald-500/20 text-gray-400 hover:text-emerald-400 transition-all view-details-btn border border-white/10" 
                                 data-name="{{ product.name }}"
-                                data-stock="{{ product.stock }}"
+                                data-code="{{ product.code }}"
+                                data-brand="{{ product.brand }}"
+                                data-desc="{{ product.description }}"
+                                data-warranty="{{ product.warranty }}"
+                                data-return="{{ product.return_policy }}"
+                                title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+
+                        <button type="button"
+                                class="p-2 rounded-lg bg-white/5 hover:bg-blue-500/20 text-gray-400 hover:text-blue-400 transition-all edit-product-btn border border-white/10" 
+                                data-id="{{ product.id }}" 
+                                data-invid="{{ product.inventory_id }}"
+                                data-code="{{ product.code }}"
+                                data-name="{{ product.name }}"
+                                data-stock="{{ product.my_stock }}" 
                                 data-price="{{ product.price }}"
-                                data-category="{{ product.category or '' }}"
-                                data-brand="{{ product.brand or '' }}"
-                                data-mrp="{{ product.mrp or '' }}"
-                                data-warranty="{{ product.warranty or '' }}"
-                                data-return="{{ product.return_policy or '' }}"
-                                data-images='{% if product.images %}{{ (product.images|map(attribute="image_url")|list)|tojson|safe }}{% elif product.image_url %}{{ [product.image_url]|tojson|safe }}{% else %}[]{% endif %}'
-                                title="Edit">
+                                title="Update Stock Level">
                             <i class="fas fa-pen"></i>
                         </button>
-                        
-                        <a hx-get="{{ url_for('admin.delete_product', product_id=product.id) }}" 
-                           hx-confirm="Delete this product permanently? This will also remove assigned stock from sellers."
-                           hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
-                           class="p-2 rounded-lg bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-all cursor-pointer"
-                           title="Delete">
-                            <i class="fas fa-trash"></i>
-                        </a>
                     </div>
                 </div>
             </div>
             {% else %}
-            <div class="glass-panel p-12 rounded-xl text-center border-dashed border-2 border-white/10">
-                <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-500">
-                    <i class="fas fa-box-open text-3xl"></i>
+            <div class="glass-panel p-16 rounded-xl text-center border-dashed border-2 border-white/10 flex flex-col items-center justify-center">
+                <div class="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6 text-gray-500">
+                    <i class="fas fa-box-open text-4xl opacity-50"></i>
                 </div>
-                <h3 class="text-lg font-bold text-white">Inventory Empty</h3>
-                <p class="text-gray-400 text-sm mt-1">Start by adding products to your master catalog.</p>
-                <a hx-get="{{ url_for('admin.add_product_page') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" class="inline-block mt-4 text-indigo-400 hover:text-indigo-300 text-sm font-bold cursor-pointer">Add First Product &rarr;</a>
+                <h3 class="text-xl font-bold text-white mb-2">No Inventory Assigned</h3>
+                <p class="text-gray-400 text-sm max-w-md mx-auto">It looks like the Administrator hasn't assigned any products to your account yet.</p>
+                <button id="openRequestStockBtnEmpty" class="mt-4 text-indigo-400 hover:text-indigo-300 font-bold underline">Request Stock Now</button>
             </div>
             {% endfor %}
         </div>
@@ -144,51 +139,75 @@
 
 </div>
 
-<div id="assignModal" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" id="assignModalOverlay"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-        
-        <div class="inline-block align-middle bg-[#0f172a] rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-md sm:w-full border border-white/10">
-            <div class="px-6 py-4 border-b border-white/10 flex justify-between items-center bg-white/5">
-                <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                    <i class="fas fa-share-alt text-purple-400"></i> Assign Inventory
-                </h3>
-                <button type="button" id="closeAssignModal" class="text-gray-400 hover:text-white transition-colors">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <div class="px-6 py-6">
-                <p class="text-sm text-gray-400 mb-4">Allocating stock for: <span id="assign_product_name" class="font-bold text-white"></span></p>
+<div id="modalRequestStock" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity close-modal-trigger"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:block sm:p-0">
+            <div class="relative transform overflow-hidden rounded-2xl bg-[#0f172a] border border-white/10 text-left shadow-2xl transition-all sm:my-8 sm:max-w-lg sm:w-full inline-block align-middle">
                 
-                <form action="{{ url_for('admin.assign_inventory') }}" method="POST" 
-                      hx-post="{{ url_for('admin.assign_inventory') }}"
-                      hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
-                      class="space-y-5">
-                    <input type="hidden" name="product_id" id="assign_product_id">
-                    
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Select Seller</label>
-                        <select name="seller_id" required class="w-full px-4 py-2.5 bg-black/20 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-purple-500 transition-all">
-                            <option value="">-- Choose Seller --</option>
-                            {% for seller in sellers %}
-                                <option value="{{ seller.id }}">{{ seller.username }} ({{ seller.email }})</option>
-                            {% endfor %}
-                        </select>
+                <form action="{{ url_for('seller.request_stock') }}" method="POST" class="p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fas fa-cart-plus text-emerald-400"></i> Request New Stock
+                        </h3>
+                        <button type="button" class="text-gray-400 hover:text-white transition-colors close-modal-trigger">
+                            <i class="fas fa-times"></i>
+                        </button>
                     </div>
                     
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Quantity to Assign</label>
-                        <div class="relative">
-                            <input type="number" name="quantity" id="assign_qty" required min="1" class="w-full px-4 py-2.5 bg-black/20 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-purple-500">
-                            <span class="absolute right-3 top-2.5 text-xs text-gray-500">Max: <span id="assign_max_stock">0</span></span>
+                    <div class="space-y-4">
+                        <div x-data="{
+                            open: false,
+                            search: '',
+                            selectedId: '',
+                            selectedName: 'Select Product...',
+                            products: [
+                                {% for p in all_products %}
+                                {
+                                    id: '{{ p.id }}',
+                                    name: `{{ p.name }}`,
+                                    code: '{{ p.product_code }}'
+                                },
+                                {% endfor %}
+                            ],
+                            get filtered() {
+                                return this.products.filter(p => 
+                                    p.name.toLowerCase().includes(this.search.toLowerCase()) || 
+                                    p.code.toLowerCase().includes(this.search.toLowerCase())
+                                );
+                            }
+                        }" class="relative">
+                            <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Product</label>
+                            <input type="hidden" name="product_id" :value="selectedId" required>
+                            
+                            <div @click="open = !open" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white cursor-pointer flex justify-between items-center">
+                                <span x-text="selectedName" :class="selectedId ? 'text-white' : 'text-gray-500'"></span>
+                                <i class="fas fa-chevron-down text-xs text-gray-500"></i>
+                            </div>
+
+                            <div x-show="open" @click.outside="open = false" class="absolute z-50 w-full mt-2 bg-[#1e293b] border border-white/10 rounded-xl shadow-xl max-h-60 overflow-y-auto">
+                                <div class="p-2 sticky top-0 bg-[#1e293b] border-b border-white/5">
+                                    <input x-model="search" type="text" placeholder="Search..." class="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                                </div>
+                                <template x-for="p in filtered" :key="p.id">
+                                    <div @click="selectedId = p.id; selectedName = p.name; open = false" class="px-4 py-2 hover:bg-white/5 cursor-pointer text-sm text-gray-300 hover:text-white flex justify-between">
+                                        <span x-text="p.name" class="font-medium truncate pr-2"></span>
+                                        <span x-text="p.code" class="text-xs text-gray-500 font-mono flex-shrink-0"></span>
+                                    </div>
+                                </template>
+                                <div x-show="filtered.length === 0" class="p-4 text-center text-xs text-gray-500">No products found.</div>
+                            </div>
                         </div>
-                        <p class="text-[10px] text-gray-500 mt-1">This amount will be moved from Master Stock to the Seller's inventory.</p>
+
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Quantity</label>
+                            <input type="number" name="quantity" min="1" required class="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 font-bold text-lg">
+                        </div>
                     </div>
 
-                    <div class="flex justify-end gap-3 mt-4">
-                        <button type="submit" class="w-full px-6 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold shadow-lg shadow-purple-500/20 transition-all">Confirm Allocation</button>
+                    <div class="mt-6 flex justify-end gap-3 pt-4 border-t border-white/5">
+                        <button type="button" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 text-sm font-medium close-modal-trigger">Cancel</button>
+                        <button type="submit" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-emerald-500/20 transform hover:scale-105 transition-all">Submit Request</button>
                     </div>
                 </form>
             </div>
@@ -196,93 +215,78 @@
     </div>
 </div>
 
-<div id="editModal" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" id="editModalOverlay"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-        
-        <div class="inline-block align-middle bg-[#0f172a] rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-2xl sm:w-full border border-white/10">
-            <div class="px-6 py-4 border-b border-white/10 flex justify-between items-center bg-white/5">
-                <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                    <i class="fas fa-edit text-indigo-400"></i> Edit Product
-                </h3>
-                <button type="button" id="closeEditModal" class="text-gray-400 hover:text-white transition-colors">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="px-6 py-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-                <form id="editProductForm" action="{{ url_for('admin.update_product') }}" method="POST" 
-                      hx-post="{{ url_for('admin.update_product') }}"
-                      hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
-                      class="space-y-5">
-                    <input type="hidden" name="product_id" id="edit_product_id">
+<div id="modalUpdateStock" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity close-modal-trigger"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4 text-center">
+            <div class="relative transform overflow-hidden rounded-2xl bg-[#0f172a] border border-white/10 text-left shadow-2xl transition-all sm:w-full sm:max-w-sm">
+                <form action="{{ url_for('seller.update_product') }}" method="POST" class="p-6">
+                    <h3 class="text-lg font-bold text-white mb-2">Update Local Stock</h3>
+                    <p class="text-xs text-gray-400 mb-4">Manually adjust count for <span id="update_product_name" class="text-pink-400 font-bold"></span>.</p>
                     
-                    <div class="grid grid-cols-2 gap-5">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Product Code</label>
-                            <input type="text" id="edit_product_code" disabled class="w-full px-4 py-2.5 bg-gray-800/50 border border-gray-600 rounded-lg text-gray-500 cursor-not-allowed">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Brand</label>
-                            <input type="text" name="brand" id="edit_brand" class="w-full px-4 py-2.5 bg-black/20 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 transition-all">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Product Name</label>
-                        <input type="text" name="name" id="edit_name" required class="w-full px-4 py-2.5 bg-black/20 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 transition-all">
-                    </div>
-
-                    <div class="grid grid-cols-3 gap-5">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Master Stock</label>
-                            <input type="number" name="stock" id="edit_stock" required min="0" class="w-full px-4 py-2.5 bg-black/20 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-indigo-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Price (₹)</label>
-                            <input type="number" step="0.01" name="price" id="edit_price" required min="0" class="w-full px-4 py-2.5 bg-black/20 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-indigo-500">
-                        </div>
-                         <div>
-                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">MRP (₹)</label>
-                            <input type="number" step="0.01" name="mrp" id="edit_mrp" min="0" class="w-full px-4 py-2.5 bg-black/20 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-indigo-500">
-                        </div>
-                    </div>
+                    <input type="hidden" name="inventory_id" id="edit_inventory_id">
                     
-                    <div class="grid grid-cols-2 gap-5">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Category</label>
-                            <select name="category" id="edit_category" class="w-full px-4 py-2.5 bg-black/20 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-indigo-500">
-                                <option value="Electronics">Electronics</option>
-                                <option value="Apparel">Apparel</option>
-                                <option value="Home & Office">Home & Office</option>
-                                <option value="Books">Books</option>
-                                <option value="Accessories">Accessories</option>
-                                <option value="Other">Other</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Warranty</label>
-                            <input type="text" name="warranty" id="edit_warranty" class="w-full px-4 py-2.5 bg-black/20 border border-white/10 rounded-lg text-white">
-                        </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">New Count</label>
+                        <input type="number" name="stock" id="edit_stock" required min="0" 
+                               class="w-full px-4 py-2.5 bg-black/20 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-pink-500">
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Return Policy</label>
-                        <input type="text" name="return_policy" id="edit_return_policy" class="w-full px-4 py-2.5 bg-black/20 border border-white/10 rounded-lg text-white">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Images</label>
-                        <div id="edit-images-container" class="space-y-2 mb-2"></div>
-                        <button type="button" id="edit-add-image-btn" class="text-xs text-indigo-400 hover:text-indigo-300 font-bold flex items-center">
-                            <i class="fas fa-plus-circle mr-1"></i> Add Another Image URL
-                        </button>
+                    <div class="mt-6 flex justify-end gap-3">
+                        <button type="button" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 text-sm close-modal-trigger">Cancel</button>
+                        <button type="submit" class="px-6 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-pink-500/20">Update</button>
                     </div>
                 </form>
             </div>
-            <div class="px-6 py-4 bg-black/20 border-t border-white/10 flex justify-end gap-3">
-                <button type="button" id="cancelEditBtn" class="px-4 py-2 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm font-medium">Cancel</button>
-                <button type="submit" form="editProductForm" class="px-6 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 transition-all text-sm font-bold">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<div id="modalDetails" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity close-modal-trigger"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+        
+        <div class="inline-block align-middle bg-[#0f172a] rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-2xl sm:w-full border border-white/10 relative">
+            <div class="px-6 py-4 border-b border-white/10 flex justify-between items-center bg-white/5">
+                <h3 class="text-lg font-bold text-white">Product Details</h3>
+                <button type="button" class="close-modal-btn text-gray-400 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg close-modal-trigger"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="px-6 py-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="text-xs font-bold text-gray-500 uppercase mb-1">Product Name</h4>
+                        <p class="text-white font-medium" id="detail_name">--</p>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-gray-500 uppercase mb-1">SKU / Code</h4>
+                        <p class="text-indigo-400 font-mono text-sm" id="detail_code">--</p>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-gray-500 uppercase mb-1">Brand</h4>
+                        <p class="text-white" id="detail_brand">--</p>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="text-xs font-bold text-gray-500 uppercase mb-1">Description</h4>
+                        <p class="text-gray-300 text-sm leading-relaxed" id="detail_desc">--</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <h4 class="text-xs font-bold text-gray-500 uppercase mb-1">Warranty</h4>
+                            <p class="text-white text-sm" id="detail_warranty">--</p>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold text-gray-500 uppercase mb-1">Return Policy</h4>
+                            <p class="text-white text-sm" id="detail_return">--</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-black/20 border-t border-white/10 text-right">
+                <button type="button" class="px-6 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold transition-all close-modal-trigger">Close</button>
             </div>
         </div>
     </div>
@@ -290,107 +294,92 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- Modal Control Functions ---
-        function toggleModal(modalId, show) {
+        
+        // --- Modal Helper Functions ---
+        function openModal(modalId) {
             const modal = document.getElementById(modalId);
-            if (show) {
+            if(modal) {
                 modal.classList.remove('hidden');
-                const panel = modal.querySelector('.transform');
-                // Simple animation
+                // Animation
                 setTimeout(() => {
-                    panel.classList.add('scale-100', 'opacity-100');
-                    panel.classList.remove('scale-95', 'opacity-0');
+                    const panel = modal.querySelector('.transform');
+                    if(panel) {
+                        panel.classList.add('scale-100', 'opacity-100');
+                        panel.classList.remove('scale-95', 'opacity-0');
+                    }
                 }, 10);
-            } else {
-                modal.classList.add('hidden');
             }
         }
 
-        // --- ASSIGN MODAL LOGIC ---
-        const assignModal = document.getElementById('assignModal');
-        document.querySelectorAll('.assign-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                // Populate Modal Data
-                document.getElementById('assign_product_id').value = this.dataset.id;
-                document.getElementById('assign_product_name').textContent = this.dataset.name;
-                
-                const maxStock = parseInt(this.dataset.max);
-                document.getElementById('assign_max_stock').textContent = maxStock;
-                document.getElementById('assign_qty').max = maxStock;
-                
-                toggleModal('assignModal', true);
-            });
-        });
-        
-        document.getElementById('closeAssignModal').onclick = () => toggleModal('assignModal', false);
-        document.getElementById('assignModalOverlay').onclick = () => toggleModal('assignModal', false);
-
-
-        // --- EDIT MODAL LOGIC ---
-        const editModal = document.getElementById('editModal');
-        const imageContainer = document.getElementById('edit-images-container');
-        const addImageBtn = document.getElementById('edit-add-image-btn');
-
-        function createImageInput(url = '') {
-            const div = document.createElement('div');
-            div.className = 'flex gap-2 animate-fade-in';
-            div.innerHTML = `
-                <input type="url" name="image_urls[]" value="${url}"
-                       class="flex-1 px-3 py-2 bg-black/20 border border-white/10 rounded-lg text-white text-sm focus:ring-1 focus:ring-indigo-500 placeholder-gray-600" 
-                       placeholder="https://example.com/image.jpg">
-                <button type="button" class="text-red-400 hover:text-red-300 remove-edit-img-btn px-2 transition-colors">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-            `;
-            imageContainer.appendChild(div);
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if(modal) {
+                const panel = modal.querySelector('.transform');
+                if(panel) {
+                    panel.classList.remove('scale-100', 'opacity-100');
+                    panel.classList.add('scale-95', 'opacity-0');
+                }
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            }
         }
 
-        if(addImageBtn) addImageBtn.addEventListener('click', () => createImageInput());
+        // --- Event Listeners ---
 
-        imageContainer.addEventListener('click', (e) => {
-            if (e.target.closest('.remove-edit-img-btn')) e.target.closest('.flex').remove();
-        });
+        // 1. Open Request Stock (Main Button)
+        const btnOpenRequest = document.getElementById('openRequestStockBtn');
+        if(btnOpenRequest) {
+            btnOpenRequest.addEventListener('click', () => openModal('modalRequestStock'));
+        }
 
+        // 2. Open Request Stock (Empty State Button)
+        const btnOpenRequestEmpty = document.getElementById('openRequestStockBtnEmpty');
+        if(btnOpenRequestEmpty) {
+            btnOpenRequestEmpty.addEventListener('click', () => openModal('modalRequestStock'));
+        }
+
+        // 3. Open Update Stock (Table Buttons)
         document.querySelectorAll('.edit-product-btn').forEach(btn => {
             btn.addEventListener('click', function() {
-                document.getElementById('edit_product_id').value = this.dataset.id;
-                document.getElementById('edit_product_code').value = this.dataset.code;
-                document.getElementById('edit_name').value = this.dataset.name;
+                document.getElementById('edit_inventory_id').value = this.dataset.invid;
+                document.getElementById('edit_product_name').textContent = this.dataset.name;
+                document.getElementById('edit_product_code').textContent = this.dataset.code;
                 document.getElementById('edit_stock').value = this.dataset.stock;
-                document.getElementById('edit_price').value = this.dataset.price;
-                document.getElementById('edit_brand').value = this.dataset.brand;
-                document.getElementById('edit_mrp').value = this.dataset.mrp;
-                document.getElementById('edit_category').value = this.dataset.category;
-                document.getElementById('edit_warranty').value = this.dataset.warranty;
-                document.getElementById('edit_return_policy').value = this.dataset.return;
-                
-                imageContainer.innerHTML = '';
-                let images = [];
-                try { images = JSON.parse(this.dataset.images || '[]'); } catch(e){}
-                
-                if (images.length > 0) images.forEach(url => createImageInput(url));
-                else createImageInput('');
-
-                toggleModal('editModal', true);
+                openModal('modalUpdateStock');
             });
         });
 
-        document.getElementById('closeEditModal').onclick = () => toggleModal('editModal', false);
-        document.getElementById('cancelEditBtn').onclick = () => toggleModal('editModal', false);
-        document.getElementById('editModalOverlay').onclick = () => toggleModal('editModal', false);
+        // 4. Open Details (Table Buttons)
+        document.querySelectorAll('.view-details-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.getElementById('detail_name').textContent = this.dataset.name;
+                document.getElementById('detail_code').textContent = this.dataset.code;
+                document.getElementById('detail_brand').textContent = this.dataset.brand;
+                document.getElementById('detail_desc').textContent = this.dataset.desc;
+                document.getElementById('detail_warranty').textContent = this.dataset.warranty;
+                document.getElementById('detail_return').textContent = this.dataset.return;
+                openModal('modalDetails');
+            });
+        });
 
-        // --- SEARCH ---
+        // 5. Global Close Trigger (Background click or X button)
+        document.querySelectorAll('.close-modal-trigger').forEach(trigger => {
+            trigger.addEventListener('click', function(e) {
+                // Find closest parent modal
+                const modal = this.closest('.fixed.z-50');
+                if(modal) closeModal(modal.id);
+            });
+        });
+
+        // --- Search Logic ---
         const searchInput = document.getElementById('searchInput');
         if(searchInput) {
             searchInput.addEventListener('keyup', function() {
-                const query = this.value.toLowerCase();
+                const query = this.value.toLowerCase().trim();
                 document.querySelectorAll('.product-row').forEach(row => {
-                    // Check text content of entire row
-                    if (row.textContent.toLowerCase().includes(query)) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
+                    const name = row.querySelector('.product-name').textContent.toLowerCase();
+                    const code = row.querySelector('.font-mono') ? row.querySelector('.font-mono').textContent.toLowerCase() : '';
+                    if (name.includes(query) || code.includes(query)) row.style.display = '';
+                    else row.style.display = 'none';
                 });
             });
         }

@@ -1,138 +1,132 @@
 /* =========================================
-   1. HTMX & Loading Indicators (Professional)
+   1. Design Tokens & Base
+   ========================================= */
+:root {
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-bg: rgba(10, 10, 12, 0.6);
+    --glass-shine: rgba(255, 255, 255, 0.03);
+    --primary-glow: rgba(99, 102, 241, 0.4);
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
+    color: #e2e8f0;
+    /* The layout.html handles the background canvas */
+}
+
+/* =========================================
+   2. Premium Glassmorphism
    ========================================= */
 
-/* Top Progress Bar for HTMX Requests */
+/* The base glass container */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Hover effect for cards */
+.glass-panel:hover {
+    border-color: rgba(99, 102, 241, 0.3); /* Indigo tint on hover */
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.1), inset 0 0 20px var(--glass-shine);
+}
+
+/* Premium Input Fields */
+.input-premium {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--glass-border);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.input-premium:focus {
+    background: rgba(0, 0, 0, 0.5);
+    border-color: #6366f1; /* Indigo-500 */
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    outline: none;
+}
+
+/* =========================================
+   3. Animations & Micro-Interactions
+   ========================================= */
+
+/* Smooth Fade In */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+    animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Text Gradient Flow */
+@keyframes textShine {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+.text-gradient-animated {
+    background: linear-gradient(to right, #818cf8, #c084fc, #f472b6, #818cf8);
+    background-size: 200% auto;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: textShine 4s linear infinite;
+}
+
+/* Button Glow on Hover */
+.btn-glow {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+.btn-glow::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 60%);
+    opacity: 0;
+    transform: scale(0.5);
+    transition: transform 0.5s ease, opacity 0.5s ease;
+}
+.btn-glow:hover::after {
+    opacity: 1;
+    transform: scale(1);
+}
+.btn-glow:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px -5px var(--primary-glow);
+}
+
+/* =========================================
+   4. HTMX & Utilities
+   ========================================= */
+
+/* Top Loading Bar */
 .htmx-indicator-bar {
     display: none;
     position: fixed;
     top: 0;
     left: 0;
     height: 3px;
-    background: linear-gradient(to right, #6366f1, #a855f7); /* Indigo to Purple gradient */
+    background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
     z-index: 9999;
     width: 100%;
-    animation: progress 2s infinite ease-in-out;
+    animation: progress 1.5s infinite ease-in-out;
 }
-
-/* Show the bar when an HTMX request is in flight */
-.htmx-request .htmx-indicator-bar {
-    display: block;
-}
-
+.htmx-request .htmx-indicator-bar { display: block; }
 @keyframes progress {
     0% { transform: translateX(-100%); }
-    50% { transform: translateX(0); }
     100% { transform: translateX(100%); }
 }
 
-/* Skeleton Loading Pulse (for data fetching) */
-.htmx-indicator {
-    opacity: 0;
-    transition: opacity 200ms ease-in;
-}
-.htmx-request .htmx-indicator {
-    opacity: 1;
-}
-.htmx-request.htmx-indicator {
-    opacity: 1;
-}
-
-/* =========================================
-   2. General Animations (Refined)
-   ========================================= */
-
-@keyframes fadeIn { 
-    from { opacity: 0; transform: translateY(10px); } 
-    to { opacity: 1; transform: translateY(0); } 
-}
-.animate-fade-in { 
-    animation: fadeIn 0.5s ease-out forwards; 
-}
-
-/* Button Pulse - Made more subtle for professional feel */
-@keyframes pulse {
-    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
-    50% { transform: scale(1.02); box-shadow: 0 0 0 6px rgba(99, 102, 241, 0); }
-}
-.animate-pulse-button { 
-    animation: pulse 3s infinite; 
-}
-
-/* Floating animation - Slowed down (10s) for subtlety */
-@keyframes float {
-	0% { transform: translateY(0px); }
-	50% { transform: translateY(-10px); }
-	100% { transform: translateY(0px); }
-}
-.animate-float {
-    animation: float 10s ease-in-out infinite;
-}
-
-/* =========================================
-   3. Base Styles & Utilities
-   ========================================= */
-
-body {
-    font-family: 'Inter', sans-serif;
-    overflow-x: hidden; /* Prevent horizontal scrollbar from 3D background */
-}
-
-/* Custom Scrollbar for Widgets (Dashboard Lists) */
-.custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.02);
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 2px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-/* =========================================
-   4. Interactive Elements
-   ========================================= */
-
-/* Interactive Card Tilt Effect */
-.interactive-card {
-    transform-style: preserve-3d;
-    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-.interactive-card:hover {
-    transform: perspective(1000px) rotateY(var(--rotateY)) rotateX(var(--rotateX)) scale3d(1.02, 1.02, 1.02);
-}
-
-/* Drag Handle for Kanban/Lists */
-.drag-handle {
-    cursor: grab;
-    padding: 0.5rem;
-    display: inline-block;
-    color: #a5b4fc; 
-    transition: color 0.2s;
-}
-.drag-handle:hover {
-    color: #ffffff;
-}
-.drag-handle:active {
-    cursor: grabbing;
-}
-
-/* Style for the sortable item being dragged */
-.sortable-ghost {
-    opacity: 0.4;
-    background: #4f46e5;
-    border: 1px dashed rgba(255,255,255,0.5);
-}
-
-/* Glassmorphism Utilities */
-.glass-panel {
-    /* Slightly darker for better contrast */
-    background: rgba(20, 20, 25, 0.6); 
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-}
+/* Scrollbar */
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }

@@ -25,4 +25,11 @@ Flask-Limiter
 rich
 pypdf==3.17.1
 openpyxl
-google-generativeai==0.3.2
+
+# --- AI & FIXES ---
+# New Google AI SDK (Replaces google-generativeai)
+google-genai
+
+# CRITICAL FIX: google-api-core 2.28.0+ crashes on Python 3.9
+# We pin it to a safe version until you upgrade to Python 3.10+
+google-api-core<2.28.0

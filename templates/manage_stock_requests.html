@@ -2,75 +2,137 @@
 {% block title %}Stock Requests{% endblock %}
 {% block content %}
 
-<div class="space-y-8 animate-dynamic pb-10">
-    <div class="bg-white/5 border border-white/5 rounded-2xl p-4 backdrop-blur-xl shadow-lg mb-6">
-        <h1 class="text-xl font-bold text-white flex items-center gap-3">
-            <i class="fas fa-clipboard-list text-yellow-400"></i> Pending Requests
-        </h1>
+<div class="space-y-8 animate-fade-in pb-20">
+    
+    <div class="flex flex-col md:flex-row justify-between items-end gap-6 border-b border-white/5 pb-8">
+        <div>
+            <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-400 to-white tracking-tight">
+                Stock Requests
+            </h1>
+            <p class="text-gray-400 text-sm mt-2">Approve or reject inventory replenishment requests from sellers.</p>
+        </div>
+        
+        <div class="flex gap-4">
+            <div class="text-right px-4 border-r border-white/10">
+                <span class="block text-xs text-gray-500 uppercase font-bold tracking-wider">Pending</span>
+                <span class="text-xl font-bold text-yellow-400">{{ requests|length }}</span>
+            </div>
+            <div class="text-right pl-2">
+                <span class="block text-xs text-gray-500 uppercase font-bold tracking-wider">Processed Today</span>
+                <span class="text-xl font-bold text-white">{{ history|selectattr("response_date")|list|length }}</span>
+            </div>
+        </div>
     </div>
 
-    <div class="grid gap-4">
-        {% for req in requests %}
-        <div class="glass-panel p-6 rounded-xl border border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-indigo-500/20 rounded-full flex items-center justify-center text-indigo-400 font-bold">
-                    {{ req.quantity }}
-                </div>
-                <div>
-                    <h3 class="text-white font-bold text-lg">{{ req.product.name }}</h3>
-                    <p class="text-sm text-gray-400">Requested by: <span class="text-white">{{ req.seller.username }}</span></p>
-                    <p class="text-xs text-gray-500">{{ req.request_date.strftime('%Y-%m-%d %H:%M') }}</p>
+    <div class="space-y-4">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+            <i class="fas fa-clock text-yellow-400"></i> Pending Approvals
+        </h2>
+
+        {% if requests %}
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {% for req in requests %}
+            <div class="glass-panel p-6 rounded-2xl border border-yellow-500/20 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-20 h-20 bg-yellow-500/10 rounded-bl-full -mr-10 -mt-10 transition-transform group-hover:scale-150"></div>
+                
+                <div class="relative z-10">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center border border-white/10">
+                                {% if req.product.image_url %}
+                                <img src="{{ req.product.image_url }}" class="w-full h-full object-cover rounded-lg">
+                                {% else %}
+                                <i class="fas fa-box text-gray-500"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-white leading-tight">{{ req.product.name }}</h3>
+                                <p class="text-xs text-gray-500 font-mono">{{ req.product.product_code }}</p>
+                            </div>
+                        </div>
+                        <span class="px-2 py-1 rounded text-[10px] font-bold bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
+                            {{ req.quantity }} Units
+                        </span>
+                    </div>
+
+                    <div class="flex justify-between items-center text-xs text-gray-400 mb-6 bg-black/20 p-3 rounded-lg">
+                        <span>Requested by: <strong class="text-white">{{ req.seller.username }}</strong></span>
+                        <span>{{ req.request_date.strftime('%d %b') }}</span>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <form action="{{ url_for('admin_commerce.approve_stock_request', req_id=req.id) }}" method="POST" class="flex-1">
+                            <button type="submit" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-500/20 transition-all text-xs flex items-center justify-center gap-2">
+                                <i class="fas fa-check"></i> Approve
+                            </button>
+                        </form>
+                        
+                        <form action="{{ url_for('admin_commerce.reject_stock_request', req_id=req.id) }}" method="POST" class="flex-1">
+                            <button type="submit" class="w-full py-2 bg-white/5 hover:bg-red-500/20 text-gray-300 hover:text-red-400 font-bold rounded-lg border border-white/10 hover:border-red-500/30 transition-all text-xs flex items-center justify-center gap-2">
+                                <i class="fas fa-times"></i> Reject
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
-            
-            <div class="flex items-center gap-3">
-                <form action="{{ url_for('admin.approve_stock_request', req_id=req.id) }}" method="POST" class="flex gap-2">
-                    <input type="text" name="note" placeholder="Admin Note (Optional)" class="bg-black/20 border border-white/10 text-white text-xs rounded px-2 py-1">
-                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-sm">Approve</button>
-                </form>
-                <form action="{{ url_for('admin.reject_stock_request', req_id=req.id) }}" method="POST">
-                    <button type="submit" class="px-4 py-2 bg-red-600/20 text-red-400 border border-red-500/30 hover:bg-red-600 hover:text-white rounded-lg font-bold text-sm">Reject</button>
-                </form>
-            </div>
+            {% endfor %}
         </div>
         {% else %}
-        <div class="text-center py-10 text-gray-500">No pending stock requests.</div>
-        {% endfor %}
+        <div class="glass-panel p-12 rounded-2xl border border-dashed border-white/10 text-center">
+            <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-600">
+                <i class="fas fa-check-double text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white">All Caught Up</h3>
+            <p class="text-gray-500 text-sm">No pending stock requests at the moment.</p>
+        </div>
+        {% endif %}
     </div>
 
-    <div class="mt-10">
-        <h2 class="text-lg font-bold text-white mb-4">Request History</h2>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left text-gray-400">
-                <thead class="text-xs text-gray-500 uppercase bg-white/5">
-                    <tr>
-                        <th class="px-4 py-3">Date</th>
-                        <th class="px-4 py-3">Seller</th>
-                        <th class="px-4 py-3">Product</th>
-                        <th class="px-4 py-3">Qty</th>
-                        <th class="px-4 py-3">Status</th>
-                        <th class="px-4 py-3">Note</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for h in history %}
-                    <tr class="border-b border-white/5 hover:bg-white/5">
-                        <td class="px-4 py-3">{{ h.request_date.strftime('%d/%m') }}</td>
-                        <td class="px-4 py-3">{{ h.seller.username }}</td>
-                        <td class="px-4 py-3">{{ h.product.name }}</td>
-                        <td class="px-4 py-3">{{ h.quantity }}</td>
-                        <td class="px-4 py-3">
-                            <span class="px-2 py-1 rounded text-xs font-bold 
-                                {% if h.status == 'Approved' %}bg-emerald-500/10 text-emerald-400{% else %}bg-red-500/10 text-red-400{% endif %}">
-                                {{ h.status }}
-                            </span>
-                        </td>
-                        <td class="px-4 py-3 text-xs">{{ h.admin_note or '-' }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="space-y-4 pt-8 border-t border-white/5">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+            <i class="fas fa-history text-gray-500"></i> Request History
+        </h2>
+
+        <div class="glass-panel rounded-2xl overflow-hidden border border-white/10">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-black/40 text-gray-500 text-[10px] uppercase font-bold tracking-wider">
+                        <tr>
+                            <th class="px-6 py-4">Product</th>
+                            <th class="px-6 py-4">Seller</th>
+                            <th class="px-6 py-4 text-center">Qty</th>
+                            <th class="px-6 py-4">Date Processed</th>
+                            <th class="px-6 py-4 text-right">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5">
+                        {% for item in history %}
+                        <tr class="hover:bg-white/5 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="font-medium text-white">{{ item.product.name }}</div>
+                                <div class="text-xs text-gray-500">{{ item.product.product_code }}</div>
+                            </td>
+                            <td class="px-6 py-4 text-gray-300">{{ item.seller.username }}</td>
+                            <td class="px-6 py-4 text-center font-mono">{{ item.quantity }}</td>
+                            <td class="px-6 py-4 text-gray-500 text-xs">
+                                {{ item.response_date.strftime('%Y-%m-%d %H:%M') if item.response_date else '-' }}
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <span class="px-2 py-1 rounded text-[10px] font-bold uppercase
+                                    {% if item.status == 'Approved' %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20
+                                    {% else %}bg-red-500/10 text-red-400 border border-red-500/20{% endif %}">
+                                    {{ item.status }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="px-6 py-8 text-center text-gray-500 italic">No history found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
+
 </div>
 {% endblock %}

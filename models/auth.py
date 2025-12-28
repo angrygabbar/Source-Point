@@ -9,7 +9,7 @@ candidate_contacts = db.Table('candidate_contacts',
 )
 
 class User(UserMixin, db.Model):
-    # --- PRIMARY KEY (Essential) ---
+    # --- PRIMARY KEY ---
     id = db.Column(db.Integer, primary_key=True)
     
     # --- Columns ---
@@ -20,7 +20,7 @@ class User(UserMixin, db.Model):
     is_approved = db.Column(db.Boolean, default=False, nullable=False)
     avatar_url = db.Column(db.String(200), nullable=False, default='https://api.dicebear.com/8.x/initials/svg?seed=User')
     
-    # Foreign Keys (Using string table names to avoid imports)
+    # Foreign Keys
     problem_statement_id = db.Column(db.Integer, db.ForeignKey('problem_statement.id'), nullable=True)
     moderator_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     
@@ -44,15 +44,13 @@ class User(UserMixin, db.Model):
     secret_answer_hash = db.Column(db.String(128), nullable=True)
     meeting_link = db.Column(db.String(255), nullable=True)
 
-    # --- Relationships ---
-    # We use string references (e.g. 'Message') to avoid importing other files here
+    # --- Core Relationships ---
     
     allowed_contacts = db.relationship('User', secondary=candidate_contacts,
                                        primaryjoin=(candidate_contacts.c.candidate_id == id),
                                        secondaryjoin=(candidate_contacts.c.developer_id == id),
                                        backref=db.backref('contact_for', lazy='dynamic'), lazy='dynamic')
 
-    # Note: foreign_keys are passed as strings to handle circular dependencies
     created_problems = db.relationship('ProblemStatement', foreign_keys='ProblemStatement.created_by_id', backref='creator', lazy=True)
     
     sent_messages = db.relationship('Message', foreign_keys='Message.sender_id', backref='sender', lazy=True)
@@ -61,25 +59,13 @@ class User(UserMixin, db.Model):
     activity_updates = db.relationship('ActivityUpdate', backref='author', lazy=True)
     activity_logs = db.relationship('ActivityLog', backref='user', lazy=True)
     
-    sent_snippets = db.relationship('CodeSnippet', foreign_keys='CodeSnippet.sender_id', backref='snippet_sender', lazy=True)
-    received_snippets = db.relationship('CodeSnippet', foreign_keys='CodeSnippet.recipient_id', backref='snippet_recipient', lazy=True)
-    
-    applications = db.relationship('JobApplication', backref='candidate', lazy=True, cascade="all, delete-orphan")
-    
-    test_submissions = db.relationship('CodeTestSubmission', foreign_keys='CodeTestSubmission.candidate_id', backref='candidate_submitter', lazy='dynamic')
-    received_tests = db.relationship('CodeTestSubmission', foreign_keys='CodeTestSubmission.recipient_id', backref='test_recipient', lazy=True)
-    
-    feedback_given = db.relationship('Feedback', foreign_keys='Feedback.moderator_id', backref='moderator', lazy=True)
-    feedback_received = db.relationship('Feedback', foreign_keys='Feedback.candidate_id', backref='candidate', lazy=True)
-    
+    # Commerce relationships
     invoices = db.relationship('Invoice', backref='admin', lazy=True)
-    
-    moderator_assignments = db.relationship('ModeratorAssignmentHistory', foreign_keys='ModeratorAssignmentHistory.moderator_id', backref='moderator', lazy=True)
-    candidate_assignments = db.relationship('ModeratorAssignmentHistory', foreign_keys='ModeratorAssignmentHistory.candidate_id', backref='candidate', lazy=True)
-    
     orders = db.relationship('Order', foreign_keys='Order.user_id', backref='buyer', lazy=True)
     sales = db.relationship('Order', foreign_keys='Order.seller_id', backref='seller', lazy=True)
 
+    # NOTE: Hiring relationships (Feedback, Snippets, Submissions) are now defined 
+    # in models/hiring.py using backrefs to avoid conflicts.
 
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)

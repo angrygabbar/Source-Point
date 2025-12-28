@@ -20,6 +20,9 @@ class JobApplication(db.Model):
     resume_url = db.Column(db.String(500), nullable=True) 
     applied_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)
 
+    # Safe user relationship
+    candidate = db.relationship('User', foreign_keys=[user_id], backref=db.backref('applications', lazy=True))
+
 class CodeTestSubmission(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     candidate_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -29,6 +32,9 @@ class CodeTestSubmission(db.Model):
     language = db.Column(db.String(50), nullable=False, default='java')
     submitted_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)
 
+    candidate = db.relationship('User', foreign_keys=[candidate_id], backref='test_submissions')
+    recipient = db.relationship('User', foreign_keys=[recipient_id], backref='received_tests')
+
 class CodeSnippet(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -37,17 +43,38 @@ class CodeSnippet(db.Model):
     language = db.Column(db.String(50), nullable=False, default='java')
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
 
+    snippet_sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_snippets')
+    snippet_recipient = db.relationship('User', foreign_keys=[recipient_id], backref='received_snippets')
+
 class Feedback(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     moderator_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     candidate_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    code_correctness = db.Column(db.Integer, nullable=False)
-    code_efficiency = db.Column(db.Integer, nullable=False)
-    code_readability = db.Column(db.Integer, nullable=False)
-    problem_solving = db.Column(db.Integer, nullable=False)
-    time_management = db.Column(db.Integer, nullable=False)
+    
+    # Detailed Scores
+    code_correctness = db.Column(db.Integer, nullable=False, default=0)
+    code_efficiency = db.Column(db.Integer, nullable=False, default=0)
+    code_readability = db.Column(db.Integer, nullable=False, default=0)
+    problem_solving = db.Column(db.Integer, nullable=False, default=0)
+    time_management = db.Column(db.Integer, nullable=False, default=0)
+    
     remarks = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    moderator = db.relationship('User', foreign_keys=[moderator_id], backref='feedback_given')
+    candidate = db.relationship('User', foreign_keys=[candidate_id], backref='feedback_received')
+
+    # NEW: Calculated Property for the Template
+    @property
+    def rating(self):
+        """Calculates average rating from the 5 parameters."""
+        try:
+            total = (self.code_correctness + self.code_efficiency + 
+                     self.code_readability + self.problem_solving + 
+                     self.time_management)
+            return round(total / 5, 1)
+        except TypeError:
+            return 0
 
 class ModeratorAssignmentHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -55,3 +82,9 @@ class ModeratorAssignmentHistory(db.Model):
     moderator_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     problem_statement_id = db.Column(db.Integer, db.ForeignKey('problem_statement.id'), nullable=False)
     assigned_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    candidate = db.relationship('User', foreign_keys=[candidate_id], backref='candidate_assignments')
+    moderator = db.relationship('User', foreign_keys=[moderator_id], backref='moderator_assignments')
+    
+    # Use back_populates to avoid conflicts with learning.py
+    problem = db.relationship('ProblemStatement', foreign_keys=[problem_statement_id], back_populates='assignment_history')

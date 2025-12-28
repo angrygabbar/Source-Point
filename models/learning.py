@@ -14,6 +14,11 @@ class ProblemStatement(db.Model):
     description = db.Column(db.Text, nullable=False)
     created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     
-    # Relationships (Using string references)
+    # Relationships
+    # 1. Users working on this problem (candidates)
+    # We use string reference 'User' to avoid circular imports
     users = db.relationship('User', foreign_keys='User.problem_statement_id', backref='assigned_problem', lazy=True)
-    assignment_history = db.relationship('ModeratorAssignmentHistory', backref='problem', lazy=True)
+    
+    # 2. History of moderator assignments
+    # FIX: Changed 'backref' to 'back_populates' to match hiring.py
+    assignment_history = db.relationship('ModeratorAssignmentHistory', back_populates='problem', lazy=True)

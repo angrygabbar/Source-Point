@@ -14,7 +14,7 @@
         </button>
     </div>
 
-    <form hx-get="{{ url_for('admin.manage_users') }}" 
+    <form hx-get="{{ url_for('admin_users.manage_users') }}" 
           hx-target="#user-grid-container" 
           hx-select="#user-grid-container"
           hx-trigger="change, keyup delay:500ms from:#userSearchInput"
@@ -57,12 +57,12 @@
                     </div>
                     
                     <div class="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <a hx-get="{{ url_for('admin.view_profile', user_id=user.id) }}" 
+                        <a hx-get="{{ url_for('admin_users.view_profile', user_id=user.id) }}" 
                            hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true"
                            class="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer" title="View Profile">
                             <i class="fas fa-eye"></i>
                         </a>
-                        <a hx-get="{{ url_for('admin.edit_user_profile', user_id=user.id) }}" 
+                        <a hx-get="{{ url_for('admin_users.edit_user_profile', user_id=user.id) }}" 
                            hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true"
                            class="p-1.5 rounded-md text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors cursor-pointer" title="Edit">
                             <i class="fas fa-pen"></i>
@@ -71,7 +71,7 @@
                             <a href="#" 
                                class="p-1.5 rounded-md transition-colors toggle-status-btn {% if user.is_active %}text-red-400 hover:text-red-300 hover:bg-red-500/10{% else %}text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10{% endif %}"
                                title="{% if user.is_active %}Deactivate{% else %}Activate{% endif %}"
-                               data-url="{{ url_for('admin.toggle_user_status', user_id=user.id) }}"
+                               data-url="{{ url_for('admin_users.toggle_user_status', user_id=user.id) }}"
                                onclick="toggleUserStatus(event, '{{ user.id }}', this.dataset.url)">
                                 <i class="fas fa-power-off"></i>
                             </a>
@@ -113,7 +113,7 @@
         {% if users.pages > 1 %}
         <div class="flex justify-center mt-8">
             <nav class="glass-panel inline-flex rounded-lg shadow-sm isolate">
-                <a hx-get="{{ url_for('admin.manage_users', page=users.prev_num, search=current_search, role=current_role, status=current_status) if users.has_prev else '#' }}" 
+                <a hx-get="{{ url_for('admin_users.manage_users', page=users.prev_num, search=current_search, role=current_role, status=current_status) if users.has_prev else '#' }}" 
                    hx-target="#user-grid-container" hx-select="#user-grid-container" hx-push-url="true"
                    class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-400 hover:text-white border-r border-white/5 cursor-pointer {{ 'opacity-50 cursor-not-allowed pointer-events-none' if not users.has_prev else '' }}">
                     <i class="fas fa-chevron-left mr-2"></i> Prev
@@ -121,7 +121,7 @@
 
                 {% for page_num in users.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
                     {% if page_num %}
-                        <a hx-get="{{ url_for('admin.manage_users', page=page_num, search=current_search, role=current_role, status=current_status) }}" 
+                        <a hx-get="{{ url_for('admin_users.manage_users', page=page_num, search=current_search, role=current_role, status=current_status) }}" 
                            hx-target="#user-grid-container" hx-select="#user-grid-container" hx-push-url="true"
                            class="relative inline-flex items-center px-4 py-2 text-sm font-medium border-r border-white/5 last:border-0 cursor-pointer
                            {{ 'bg-indigo-600 text-white z-10' if page_num == users.page else 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
@@ -132,7 +132,7 @@
                     {% endif %}
                 {% endfor %}
 
-                <a hx-get="{{ url_for('admin.manage_users', page=users.next_num, search=current_search, role=current_role, status=current_status) if users.has_next else '#' }}" 
+                <a hx-get="{{ url_for('admin_users.manage_users', page=users.next_num, search=current_search, role=current_role, status=current_status) if users.has_next else '#' }}" 
                    hx-target="#user-grid-container" hx-select="#user-grid-container" hx-push-url="true"
                    class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-400 hover:text-white cursor-pointer {{ 'opacity-50 cursor-not-allowed pointer-events-none' if not users.has_next else '' }}">
                     Next <i class="fas fa-chevron-right ml-2"></i>
@@ -163,8 +163,8 @@
                         </button>
                     </div>
                     
-                    <form id="createUserForm" action="{{ url_for('admin.create_user') }}" method="POST" 
-                          hx-post="{{ url_for('admin.create_user') }}"
+                    <form id="createUserForm" action="{{ url_for('admin_users.create_user') }}" method="POST" 
+                          hx-post="{{ url_for('admin_users.create_user') }}"
                           hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
                           class="space-y-4">
                         <div>

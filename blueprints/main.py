@@ -1,6 +1,5 @@
 from google import genai
 import os
-# ... existing imports ...
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, current_app
 from flask_login import login_required, current_user
 from extensions import db, bcrypt, cache
@@ -12,7 +11,6 @@ from models.finance import Project, Transaction, EMIPlan
 from utils import role_required, log_user_action, send_email
 from sqlalchemy import or_
 from werkzeug.utils import secure_filename
-import os
 from datetime import datetime
 import cloudinary.uploader
 
@@ -27,12 +25,12 @@ SECRET_QUESTIONS = [
 ]
 
 @main_bp.route('/')
-# @cache.cached(timeout=600) # Caching disabled to ensure login state updates immediately
+# @cache.cached(timeout=600) 
 def home(): 
-    # Intelligent redirect if user lands on home while logged in
     if current_user.is_authenticated:
         if current_user.role == 'seller': return redirect(url_for('seller.seller_dashboard'))
-        elif current_user.role == 'admin': return redirect(url_for('admin.admin_dashboard'))
+        # FIXED: admin -> admin_core
+        elif current_user.role == 'admin': return redirect(url_for('admin_core.admin_dashboard'))
         elif current_user.role == 'developer': return redirect(url_for('developer.developer_dashboard'))
         elif current_user.role == 'moderator': return redirect(url_for('moderator.moderator_dashboard'))
         elif current_user.role == 'recruiter': return redirect(url_for('recruiter.recruiter_dashboard'))
@@ -41,7 +39,7 @@ def home():
     return render_template('home.html')
 
 @main_bp.route('/offers')
-@cache.cached(timeout=300) # Cache offers for 5 minutes
+@cache.cached(timeout=300)
 def offers():
     ads = AffiliateAd.query.all()
     return render_template('offers.html', ads=ads)
@@ -69,7 +67,6 @@ def submit_contact():
     <p>{query}</p>
     """
     
-    # Fallback admin logic if no admin exists in DB
     admin_email = "admin@sourcepoint.in"
     admin_user = User.query.filter_by(role='admin').first()
     
@@ -91,17 +88,17 @@ def submit_contact():
 @login_required
 def dashboard():
     """
-    Central Dashboard Router:
-    Redirects the user to their specific dashboard based on their role.
+    Central Dashboard Router
     """
     if current_user.role == 'seller': return redirect(url_for('seller.seller_dashboard'))
-    elif current_user.role == 'admin': return redirect(url_for('admin.admin_dashboard'))
+    # FIXED: admin -> admin_core
+    elif current_user.role == 'admin': return redirect(url_for('admin_core.admin_dashboard'))
     elif current_user.role == 'developer': return redirect(url_for('developer.developer_dashboard'))
     elif current_user.role == 'moderator': return redirect(url_for('moderator.moderator_dashboard'))
     elif current_user.role == 'recruiter': return redirect(url_for('recruiter.recruiter_dashboard'))
     elif current_user.role == 'buyer': return redirect(url_for('buyer.buyer_dashboard'))
     elif current_user.role == 'candidate': return redirect(url_for('candidate.candidate_dashboard'))
-    else: return redirect(url_for('home')) # Fallback
+    else: return redirect(url_for('main.home'))
 
 @main_bp.route('/messages')
 @login_required
@@ -111,11 +108,9 @@ def messages():
 
     # Define who can message whom
     if current_user.role == 'candidate':
-        # Candidates can message Admins
         admins = User.query.filter_by(role='admin').all()
         for admin in admins:
             messageable_users_dict[admin.id] = admin
-        # And their assigned moderator during the test
         if current_user.test_start_time and current_user.test_end_time and \
            current_user.test_start_time <= now <= current_user.test_end_time and \
            current_user.moderator_id:
@@ -124,11 +119,9 @@ def messages():
                 messageable_users_dict[moderator.id] = moderator
 
     elif current_user.role == 'moderator':
-        # Moderators can message Admins
         admins = User.query.filter_by(role='admin').all()
         for admin in admins:
             messageable_users_dict[admin.id] = admin
-        # And active candidates assigned to them
         assigned_candidates = User.query.filter(
             User.moderator_id == current_user.id,
             User.test_start_time <= now,
@@ -138,13 +131,11 @@ def messages():
             messageable_users_dict[candidate.id] = candidate
 
     elif current_user.role in ['seller', 'buyer', 'recruiter']:
-        # Sellers/Buyers/Recruiters can message Admins for support
         admins = User.query.filter_by(role='admin').all()
         for admin in admins:
             messageable_users_dict[admin.id] = admin
 
     elif current_user.role in ['admin', 'developer']:
-        # Admins/Developers can message everyone (except themselves)
         users = User.query.filter(User.id != current_user.id).all()
         for user in users:
             messageable_users_dict[user.id] = user
@@ -265,10 +256,8 @@ def change_password():
     flash('Your password has been updated successfully!', 'success')
     return redirect(url_for('main.profile'))
 
-# --- LEARNING ROUTES ---
 @main_bp.route('/learning')
 @login_required
-# Added 'seller' and 'buyer' to authorized roles
 @role_required(['candidate', 'admin', 'developer', 'recruiter', 'moderator', 'seller', 'buyer'])
 @cache.cached(timeout=600) 
 def learning():
@@ -276,7 +265,6 @@ def learning():
 
 @main_bp.route('/learn/<language>')
 @login_required
-# Added 'seller' and 'buyer' to authorized roles
 @role_required(['candidate', 'admin', 'developer', 'recruiter', 'moderator', 'seller', 'buyer'])
 @cache.cached(timeout=300) 
 def learn_language(language):
@@ -284,7 +272,6 @@ def learn_language(language):
     if language in supported_languages:
         learning_content = LearningContent.query.get(language)
         if not learning_content:
-            # Auto-create empty content if missing
             learning_content = LearningContent(id=language, content=f'<h1>{language.upper()} Tutorial</h1><p>Content coming soon...</p>')
             db.session.add(learning_content)
             db.session.commit()
@@ -294,13 +281,6 @@ def learn_language(language):
     else:
         flash('The requested learning page does not exist.', 'danger')
         return redirect(url_for('main.learning'))
-# Source Point/blueprints/main.py
-
-# Source Point/blueprints/main.py
-
-# Source Point/blueprints/main.py
-
-# Source Point/blueprints/main.py
 
 @main_bp.route('/ask_learning_ai', methods=['POST'])
 @login_required
@@ -317,28 +297,15 @@ def ask_learning_ai():
         return jsonify({'error': 'Server configuration error (Missing API Key)'}), 500
 
     try:
-        # 1. Initialize Client
         client = genai.Client(api_key=api_key)
-        
-        # 2. Create the Prompt
         prompt = f"""
         You are an expert technical tutor for {subject}.
         The user is asking: "{question}"
-        
         Keep your answer concise (under 150 words) and helpful for a student.
-        If the question is irrelevant to coding or {subject}, politely decline.
         """
-        
-        # 3. Generate Content (Using the "Latest" alias which is usually Free 1.5 Flash)
-        response = client.models.generate_content(
-            model='gemini-flash-latest', 
-            contents=prompt
-        )
-        
-        # 4. Return text
+        response = client.models.generate_content(model='gemini-flash-latest', contents=prompt)
         return jsonify({'answer': response.text})
 
     except Exception as e:
         print(f"Gemini AI Error: {e}")
-        # Detailed error logging to help debug if this fails too
         return jsonify({'error': 'I am having trouble thinking right now. Try again later.'}), 500

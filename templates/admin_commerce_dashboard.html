@@ -15,10 +15,10 @@
             <p class="text-gray-400">Manage orders, inventory, and financial flows.</p>
         </div>
         <div class="flex gap-3">
-            <a href="{{ url_for('admin.manage_inventory') }}" class="px-4 py-2 bg-white/5 hover:bg-emerald-600/20 border border-white/10 hover:border-emerald-500 text-emerald-400 rounded-lg text-sm font-bold transition-all">
+            <a href="{{ url_for('admin_commerce.manage_inventory') }}" class="px-4 py-2 bg-white/5 hover:bg-emerald-600/20 border border-white/10 hover:border-emerald-500 text-emerald-400 rounded-lg text-sm font-bold transition-all">
                 <i class="fas fa-boxes mr-2"></i> Inventory
             </a>
-            <a href="{{ url_for('admin.create_invoice') }}" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all">
+            <a href="{{ url_for('admin_commerce.create_invoice') }}" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all">
                 <i class="fas fa-plus mr-2"></i> New Invoice
             </a>
         </div>
@@ -43,7 +43,7 @@
             <div class="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity"><i class="fas fa-exclamation-triangle text-5xl text-red-400"></i></div>
             <p class="text-xs font-bold text-gray-400 uppercase">Low Stock Items</p>
             <h3 class="text-3xl font-bold text-white mt-1">{{ low_stock_count }}</h3>
-            <a href="{{ url_for('admin.manage_inventory') }}" class="text-xs text-red-400 mt-2 hover:underline">Restock Now &rarr;</a>
+            <a href="{{ url_for('admin_commerce.manage_inventory') }}" class="text-xs text-red-400 mt-2 hover:underline">Restock Now &rarr;</a>
         </div>
 
         <div class="glass-panel p-5 rounded-xl border-l-4 border-blue-500 relative overflow-hidden group">
@@ -94,7 +94,7 @@
                                     </td>
                                     <td class="px-4 py-3 text-right">
                                         {% if order.status == 'Order Placed' %}
-                                        <form action="{{ url_for('admin.update_order_status', order_id=order.id) }}" method="POST" class="inline">
+                                        <form action="{{ url_for('admin_commerce.update_order_status', order_id=order.id) }}" method="POST" class="inline">
                                             <input type="hidden" name="status" value="Order Accepted">
                                             <button class="text-emerald-400 hover:text-white" title="Accept"><i class="fas fa-check"></i></button>
                                         </form>
@@ -119,10 +119,10 @@
                                 <p class="text-xs text-gray-500">Requested by: <span class="text-yellow-400">{{ req.seller.username }}</span> • Qty: {{ req.quantity }}</p>
                             </div>
                             <div class="flex gap-2">
-                                <form action="{{ url_for('admin.approve_stock_request', req_id=req.id) }}" method="POST">
+                                <form action="{{ url_for('admin_commerce.approve_stock_request', req_id=req.id) }}" method="POST">
                                     <button class="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded hover:bg-emerald-500 hover:text-white transition-colors text-xs font-bold">Approve</button>
                                 </form>
-                                <form action="{{ url_for('admin.reject_stock_request', req_id=req.id) }}" method="POST">
+                                <form action="{{ url_for('admin_commerce.reject_stock_request', req_id=req.id) }}" method="POST">
                                     <button class="px-3 py-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500 hover:text-white transition-colors text-xs font-bold">Reject</button>
                                 </form>
                             </div>
@@ -151,8 +151,8 @@
                                     </td>
                                     <td class="px-4 py-3 text-right">
                                         <div class="flex justify-end gap-2">
-                                            <a href="{{ url_for('admin.approve_user', user_id=user.id) }}" class="text-emerald-400 hover:text-white"><i class="fas fa-check-circle text-xl"></i></a>
-                                            <a href="{{ url_for('admin.reject_user', user_id=user.id) }}" class="text-red-400 hover:text-white"><i class="fas fa-times-circle text-xl"></i></a>
+                                            <a href="{{ url_for('admin_users.approve_user', user_id=user.id) }}" class="text-emerald-400 hover:text-white"><i class="fas fa-check-circle text-xl"></i></a>
+                                            <a href="{{ url_for('admin_users.reject_user', user_id=user.id) }}" class="text-red-400 hover:text-white"><i class="fas fa-times-circle text-xl"></i></a>
                                         </div>
                                     </td>
                                 </tr>
@@ -171,23 +171,23 @@
             <div class="glass-panel p-5 rounded-2xl border border-white/10">
                 <h3 class="font-bold text-white mb-4">Quick Actions</h3>
                 <div class="grid grid-cols-2 gap-3">
-                    <a href="{{ url_for('admin.manage_orders') }}" class="p-3 bg-white/5 rounded-lg border border-white/5 text-center hover:bg-white/10 transition-colors">
+                    <a href="{{ url_for('admin_commerce.manage_orders') }}" class="p-3 bg-white/5 rounded-lg border border-white/5 text-center hover:bg-white/10 transition-colors">
                         <i class="fas fa-shipping-fast text-emerald-400 mb-2 block text-xl"></i>
                         <span class="text-xs text-gray-300">All Orders</span>
                     </a>
-                    <a href="{{ url_for('admin.manage_invoices') }}" class="p-3 bg-white/5 rounded-lg border border-white/5 text-center hover:bg-white/10 transition-colors">
+                    <a href="{{ url_for('admin_commerce.manage_invoices') }}" class="p-3 bg-white/5 rounded-lg border border-white/5 text-center hover:bg-white/10 transition-colors">
                         <i class="fas fa-file-invoice-dollar text-yellow-400 mb-2 block text-xl"></i>
                         <span class="text-xs text-gray-300">Invoices</span>
                     </a>
-                    <a href="{{ url_for('admin.add_product_page') }}" class="p-3 bg-white/5 rounded-lg border border-white/5 text-center hover:bg-white/10 transition-colors">
+                    <a href="{{ url_for('admin_commerce.manage_inventory') }}" class="p-3 bg-white/5 rounded-lg border border-white/5 text-center hover:bg-white/10 transition-colors">
                         <i class="fas fa-plus-circle text-blue-400 mb-2 block text-xl"></i>
-                        <span class="text-xs text-gray-300">Add Product</span>
+                        <span class="text-xs text-gray-300">Inventory</span>
                     </a>
-                    <a href="{{ url_for('admin.manage_ads') }}" class="p-3 bg-white/5 rounded-lg border border-white/5 text-center hover:bg-white/10 transition-colors">
+                    <a href="{{ url_for('admin_commerce.manage_ads') }}" class="p-3 bg-white/5 rounded-lg border border-white/5 text-center hover:bg-white/10 transition-colors">
                         <i class="fas fa-ad text-purple-400 mb-2 block text-xl"></i>
                         <span class="text-xs text-gray-300">Ad Manager</span>
                     </a>
-                    <a href="{{ url_for('admin.manage_seller_inventory') }}" class="p-3 bg-white/5 rounded-lg border border-white/5 text-center hover:bg-white/10 transition-colors">
+                    <a href="{{ url_for('admin_commerce.manage_inventory') }}" class="p-3 bg-white/5 rounded-lg border border-white/5 text-center hover:bg-white/10 transition-colors">
                         <i class="fas fa-warehouse text-pink-400 mb-2 block text-xl"></i>
                         <span class="text-xs text-gray-300">Seller Stock</span>
                     </a>
@@ -197,7 +197,7 @@
             <div class="glass-panel p-5 rounded-2xl border border-white/10">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="font-bold text-white">Latest Invoices</h3>
-                    <a href="{{ url_for('admin.manage_invoices') }}" class="text-xs text-emerald-400">View All</a>
+                    <a href="{{ url_for('admin_commerce.manage_invoices') }}" class="text-xs text-emerald-400">View All</a>
                 </div>
                 <div class="space-y-3">
                     {% for inv in recent_invoices %}

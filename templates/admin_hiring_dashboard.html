@@ -18,7 +18,7 @@
             <button class="px-4 py-2 bg-white/5 hover:bg-indigo-600/20 border border-white/10 hover:border-indigo-500 text-indigo-400 rounded-lg text-sm font-bold transition-all" onclick="document.getElementById('postJobModal').showModal()">
                 <i class="fas fa-briefcase mr-2"></i> Post Job
             </button>
-            <a href="{{ url_for('admin.admin_analytics') }}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all">
+            <a href="{{ url_for('admin_core.admin_analytics') }}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all">
                 <i class="fas fa-chart-line mr-2"></i> Analytics
             </a>
         </div>
@@ -82,7 +82,7 @@
                                     <p class="text-xs text-gray-400 mt-1 pl-8">{{ candidate.assigned_problem.title }}</p>
                                     <p class="text-xs text-orange-300 mt-1 pl-8"><i class="far fa-clock"></i> {{ candidate.test_start_time.strftime('%Y-%m-%d %H:%M') }}</p>
                                 </div>
-                                <form action="{{ url_for('admin.assign_moderator') }}" method="POST" class="flex items-center gap-2">
+                                <form action="{{ url_for('admin_hiring.assign_moderator') }}" method="POST" class="flex items-center gap-2">
                                     <input type="hidden" name="candidate_id" value="{{ candidate.id }}">
                                     <select name="moderator_id" class="bg-black/40 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500">
                                         {% for mod in all_moderators %}
@@ -151,8 +151,8 @@
                                     </td>
                                     <td class="px-4 py-3 text-right">
                                         {% if app.status == 'pending' %}
-                                        <a href="{{ url_for('admin.accept_application', app_id=app.id) }}" class="text-green-400 mr-2"><i class="fas fa-check"></i></a>
-                                        <a href="{{ url_for('admin.reject_application', app_id=app.id) }}" class="text-red-400"><i class="fas fa-times"></i></a>
+                                        <a href="{{ url_for('admin_hiring.accept_application', app_id=app.id) }}" class="text-green-400 mr-2"><i class="fas fa-check"></i></a>
+                                        <a href="{{ url_for('admin_hiring.reject_application', app_id=app.id) }}" class="text-red-400"><i class="fas fa-times"></i></a>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -175,8 +175,8 @@
                                 </div>
                             </div>
                             <div class="flex gap-2">
-                                <a href="{{ url_for('admin.approve_user', user_id=user.id) }}" class="p-1.5 bg-green-500/20 text-green-400 rounded hover:bg-green-500 hover:text-white transition-colors"><i class="fas fa-check"></i></a>
-                                <a href="{{ url_for('admin.reject_user', user_id=user.id) }}" class="p-1.5 bg-red-500/20 text-red-400 rounded hover:bg-red-500 hover:text-white transition-colors"><i class="fas fa-times"></i></a>
+                                <a href="{{ url_for('admin_users.approve_user', user_id=user.id) }}" class="p-1.5 bg-green-500/20 text-green-400 rounded hover:bg-green-500 hover:text-white transition-colors"><i class="fas fa-check"></i></a>
+                                <a href="{{ url_for('admin_users.reject_user', user_id=user.id) }}" class="p-1.5 bg-red-500/20 text-red-400 rounded hover:bg-red-500 hover:text-white transition-colors"><i class="fas fa-times"></i></a>
                             </div>
                         </div>
                         {% else %}
@@ -214,15 +214,15 @@
             <div class="glass-panel p-5 rounded-2xl border border-white/10">
                 <h3 class="font-bold text-white mb-4">Directories</h3>
                 <div class="space-y-2">
-                    <a href="{{ url_for('admin.manage_users', role='candidate') }}" class="flex items-center justify-between p-3 rounded bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group">
+                    <a href="{{ url_for('admin_users.manage_users', role='candidate') }}" class="flex items-center justify-between p-3 rounded bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group">
                         <span class="text-gray-300 text-sm group-hover:text-white">Candidates</span>
                         <i class="fas fa-chevron-right text-xs text-gray-600 group-hover:text-indigo-400"></i>
                     </a>
-                    <a href="{{ url_for('admin.manage_users', role='developer') }}" class="flex items-center justify-between p-3 rounded bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group">
+                    <a href="{{ url_for('admin_users.manage_users', role='developer') }}" class="flex items-center justify-between p-3 rounded bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group">
                         <span class="text-gray-300 text-sm group-hover:text-white">Developers</span>
                         <i class="fas fa-chevron-right text-xs text-gray-600 group-hover:text-emerald-400"></i>
                     </a>
-                    <a href="{{ url_for('admin.manage_users', role='moderator') }}" class="flex items-center justify-between p-3 rounded bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group">
+                    <a href="{{ url_for('admin_users.manage_users', role='moderator') }}" class="flex items-center justify-between p-3 rounded bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group">
                         <span class="text-gray-300 text-sm group-hover:text-white">Moderators</span>
                         <i class="fas fa-chevron-right text-xs text-gray-600 group-hover:text-red-400"></i>
                     </a>
@@ -233,7 +233,7 @@
 
     <dialog id="postJobModal" class="bg-gray-900 text-white p-6 rounded-2xl border border-white/10 shadow-2xl backdrop:bg-black/80">
         <h3 class="text-xl font-bold mb-4">Post New Job</h3>
-        <form action="{{ url_for('admin.post_job') }}" method="POST" class="space-y-4">
+        <form action="{{ url_for('admin_hiring.post_job') }}" method="POST" class="space-y-4">
             <input type="text" name="job_title" placeholder="Job Title" class="w-full bg-white/5 border border-white/10 rounded px-4 py-2 text-white" required>
             <textarea name="job_description" placeholder="Description" rows="4" class="w-full bg-white/5 border border-white/10 rounded px-4 py-2 text-white" required></textarea>
             <div class="flex justify-end gap-2">

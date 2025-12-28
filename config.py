@@ -1,3 +1,4 @@
+# Source Point/config.py
 import os
 from datetime import timedelta
 
@@ -24,6 +25,10 @@ class Config:
         "max_overflow": 1,
         "pool_timeout": 30
     }
+    
+    @classmethod
+    def init_app(cls, app):
+        pass
 
 class DevelopmentConfig(Config):
     """Development configuration."""
@@ -39,7 +44,10 @@ class ProductionConfig(Config):
     @classmethod
     def init_app(cls, app):
         Config.init_app(app)
-        assert os.environ.get('SECRET_KEY'), 'SECRET_KEY is not set!'
+        
+        # Security Enhancement: Fail fast if no secret key
+        if not os.environ.get('SECRET_KEY'):
+             raise RuntimeError("CRITICAL: SECRET_KEY is not set in Production environment!")
 
 class TestingConfig(Config):
     """Testing configuration."""

@@ -1,4 +1,10 @@
 import cloudinary.uploader
+import os
+from io import BytesIO
+from pypdf import PdfReader
+# --- NEW SDK IMPORT ---
+from google import genai
+# ----------------------
 from extensions import db
 from models.hiring import JobOpening, JobApplication, CodeTestSubmission, CodeSnippet
 from models.auth import User
@@ -24,8 +30,24 @@ class HiringService:
         # 2. Resume Upload (Cloudinary)
         resume_url = None
         if resume_file and resume_file.filename != '':
-            if not resume_file.filename.endswith('.pdf'):
-                return False, "Only PDF files are allowed."
+            # --- SECURITY ENHANCEMENT: Validate PDF Content ---
+            try:
+                # Read file into memory to validate
+                file_content = resume_file.read()
+                file_stream = BytesIO(file_content)
+                
+                # Try to read the PDF structure
+                reader = PdfReader(file_stream)
+                if len(reader.pages) == 0:
+                    raise Exception("Empty PDF")
+                    
+                # IMPORTANT: Reset pointer for Cloudinary upload
+                resume_file.seek(0) 
+            except Exception as e:
+                print(f"PDF Validation Error: {e}")
+                return False, "Invalid file format. Please upload a valid PDF."
+            # --------------------------------------------------
+
             try:
                 upload_result = cloudinary.uploader.upload(
                     resume_file, 
@@ -54,7 +76,6 @@ class HiringService:
             return False, "Database error while saving application."
 
         # 4. Notifications
-        # Notify Admins & Recruiters
         admins = User.query.filter_by(role='admin').all()
         recruiters = User.query.filter_by(role='recruiter').all()
         recipient_emails = [u.email for u in admins + recruiters]
@@ -87,10 +108,43 @@ class HiringService:
     def submit_code_test(candidate, recipient_id, code, output):
         """
         Handles code test submission and email notification.
+        ENHANCEMENT: Uses new Google Gen AI SDK.
         """
         if not recipient_id or not code.strip():
             return False, "Please select a recipient and provide code."
             
+        # --- AI ENHANCEMENT: Automated Grading (Migrated to google-genai) ---
+        ai_feedback = "AI Grading unavailable."
+        
+        if os.environ.get('GEMINI_API_KEY'):
+            try:
+                # Initialize Client (New SDK pattern)
+                client = genai.Client(api_key=os.environ.get('GEMINI_API_KEY'))
+                
+                prompt = (
+                    f"Analyze the following Java code submitted for a test.\n"
+                    f"Code:\n{code}\n\n"
+                    f"Output produced:\n{output}\n\n"
+                    f"Provide a brief summary of code correctness, time complexity, "
+                    f"and any potential bugs. Keep it under 150 words."
+                )
+                
+                # Call the model (New SDK method signature)
+                response = client.models.generate_content(
+                    model='gemini-1.5-flash', 
+                    contents=prompt
+                )
+                
+                if response.text:
+                    ai_feedback = response.text
+                else:
+                    ai_feedback = "AI could not generate a response."
+                    
+            except Exception as e:
+                print(f"Gemini API Error: {e}")
+                ai_feedback = f"AI Analysis Failed (Service Error)."
+        # -----------------------------------------
+
         try:
             submission = CodeTestSubmission(
                 candidate_id=candidate.id, 
@@ -103,6 +157,7 @@ class HiringService:
             db.session.commit()
         except Exception as e:
             db.session.rollback()
+            print(f"DB Error: {e}")
             return False, "Error saving submission."
 
         # Notification
@@ -119,7 +174,8 @@ class HiringService:
             problem_title=problem_title, 
             language='java', 
             code=code, 
-            output=output, 
+            output=output,
+            ai_feedback=ai_feedback,
             now=datetime.utcnow()
         )
         

@@ -2,319 +2,192 @@
 {% block title %}System Records{% endblock %}
 {% block content %}
 
-<div class="animate-dynamic space-y-8" x-data="{ activeTab: 'jobs', expandedRow: null }">
+<div class="space-y-8 animate-fade-in pb-20" x-data="{ currentTab: 'jobs' }">
     
-    <div class="flex flex-col md:flex-row justify-between items-end gap-4">
+    <div class="flex flex-col md:flex-row justify-between items-end gap-6 border-b border-white/5 pb-8">
         <div>
-            <h1 class="text-3xl font-bold text-white tracking-tight">System Archives</h1>
-            <p class="text-gray-400 text-sm mt-1">Historical data, logs, and performance records.</p>
+            <h1 class="text-4xl font-extrabold text-white tracking-tight">System Records</h1>
+            <p class="text-gray-400 text-sm mt-2">Archives for jobs, feedback, code submissions, and assignment history.</p>
         </div>
-        <div class="glass-panel px-4 py-2 rounded-lg flex items-center gap-4 border border-white/5">
-            <div class="text-center">
-                <span class="block text-xs text-gray-500 uppercase font-bold">Jobs</span>
-                <span class="text-white font-bold">{{ jobs|length }}</span>
-            </div>
-            <div class="w-px h-8 bg-white/10"></div>
-            <div class="text-center">
-                <span class="block text-xs text-gray-500 uppercase font-bold">Feedbacks</span>
-                <span class="text-white font-bold">{{ feedback|length }}</span>
-            </div>
-            <div class="w-px h-8 bg-white/10"></div>
-            <div class="text-center">
-                <span class="block text-xs text-gray-500 uppercase font-bold">Tests</span>
-                <span class="text-white font-bold">{{ submissions|length }}</span>
-            </div>
-        </div>
-    </div>
-
-    <div class="border-b border-white/10">
-        <nav class="-mb-px flex space-x-6 overflow-x-auto custom-scrollbar pb-1">
-            <button @click="activeTab = 'jobs'" :class="activeTab === 'jobs' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'" class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center">
-                <i class="fas fa-briefcase mr-2"></i> Job Openings
-            </button>
-            <button @click="activeTab = 'feedback'" :class="activeTab === 'feedback' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'" class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center">
-                <i class="fas fa-star-half-alt mr-2"></i> Candidate Feedback
-            </button>
-            <button @click="activeTab = 'submissions'" :class="activeTab === 'submissions' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'" class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center">
-                <i class="fas fa-code mr-2"></i> Code Submissions
-            </button>
-            <button @click="activeTab = 'history'" :class="activeTab === 'history' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'" class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center">
-                <i class="fas fa-history mr-2"></i> Assignment Logs
-            </button>
-            <button @click="activeTab = 'events'" :class="activeTab === 'events' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'" class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center">
-                <i class="fas fa-calendar-check mr-2"></i> Completed Events
-            </button>
-        </nav>
-    </div>
-
-    <div class="glass-panel rounded-xl overflow-hidden border border-white/5 min-h-[500px]">
         
-        <div x-show="activeTab === 'jobs'" x-transition.opacity class="p-0">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-white/5 text-gray-400 text-xs uppercase border-b border-white/5">
-                        <tr>
-                            <th class="px-6 py-4 font-medium">Title</th>
-                            <th class="px-6 py-4 font-medium text-center">Status</th>
-                            <th class="px-6 py-4 font-medium">Created On</th>
-                            <th class="px-6 py-4 font-medium text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-white/5">
-                        {% for job in jobs %}
-                        <tr id="job-{{ job.id }}" @click="expandedRow = expandedRow === 'job-details-{{ job.id }}' ? null : 'job-details-{{ job.id }}'" class="hover:bg-white/5 transition-colors cursor-pointer group">
-                            <td class="px-6 py-4 font-medium text-white">
-                                {{ job.title }}
-                                <i :class="expandedRow === 'job-details-{{ job.id }}' ? 'rotate-180' : ''" class="fas fa-chevron-down ml-2 text-xs text-gray-600 transition-transform"></i>
-                            </td>
-                            <td class="px-6 py-4 text-center">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border 
-                                    {% if job.is_open %}bg-green-500/10 text-green-400 border-green-500/20
-                                    {% else %}bg-red-500/10 text-red-400 border-red-500/20{% endif %}">
-                                    {{ 'Open' if job.is_open else 'Closed' }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 text-gray-400 font-mono text-xs">{{ job.created_at.strftime('%b %d, %Y') }}</td>
-                            <td class="px-6 py-4 text-right">
-                                <a href="#" 
-                                   class="text-gray-500 hover:text-red-400 transition-colors p-2" 
-                                   title="Delete" 
-                                   data-url="{{ url_for('admin.delete_job_opening', job_id=job.id) }}"
-                                   onclick="event.stopPropagation(); handleAjaxUrl(event, this.dataset.url, 'Are you sure? This will delete the job and all associated applications.');">
-                                    <i class="fas fa-trash-alt"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        <tr x-show="expandedRow === 'job-details-{{ job.id }}'" x-transition class="bg-black/20 border-b border-white/5">
-                            <td colspan="4" class="px-6 py-6">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <h4 class="text-xs font-bold text-gray-500 uppercase mb-2">Description</h4>
-                                        <p class="text-gray-300 text-sm leading-relaxed">{{ job.description }}</p>
-                                    </div>
-                                    <div>
-                                        <h4 class="text-xs font-bold text-gray-500 uppercase mb-2">Applicants ({{ job.applications|length }})</h4>
-                                        {% if job.applications %}
-                                            <div class="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
-                                                {% for app in job.applications %}
-                                                    <div class="flex justify-between items-center bg-white/5 p-2 rounded text-xs border border-white/5">
-                                                        <span class="text-white">{{ app.candidate.username }}</span>
-                                                        <span class="uppercase font-bold 
-                                                            {% if app.status == 'accepted' %}text-green-400
-                                                            {% elif app.status == 'rejected' %}text-red-400
-                                                            {% else %}text-yellow-400{% endif %}">
-                                                            {{ app.status }}
-                                                        </span>
-                                                    </div>
-                                                {% endfor %}
-                                            </div>
-                                        {% else %}
-                                            <p class="text-xs text-gray-500 italic">No applications received yet.</p>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr><td colspan="4" class="px-6 py-12 text-center text-gray-500">No job openings found.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+        <div class="flex bg-black/20 p-1 rounded-xl border border-white/5 backdrop-blur-md">
+            <button @click="currentTab = 'jobs'" :class="currentTab === 'jobs' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'" class="px-4 py-2 rounded-lg text-sm font-bold transition-all">
+                Jobs
+            </button>
+            <button @click="currentTab = 'feedback'" :class="currentTab === 'feedback' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'" class="px-4 py-2 rounded-lg text-sm font-bold transition-all">
+                Feedback
+            </button>
+            <button @click="currentTab = 'submissions'" :class="currentTab === 'submissions' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'" class="px-4 py-2 rounded-lg text-sm font-bold transition-all">
+                Code Tests
+            </button>
+            <button @click="currentTab = 'history'" :class="currentTab === 'history' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'" class="px-4 py-2 rounded-lg text-sm font-bold transition-all">
+                History
+            </button>
         </div>
-
-        <div x-show="activeTab === 'feedback'" x-transition.opacity class="p-0">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-white/5 text-gray-400 text-xs uppercase border-b border-white/5">
-                        <tr>
-                            <th class="px-6 py-4">Candidate</th>
-                            <th class="px-6 py-4">Moderator</th>
-                            <th class="px-6 py-4">Date</th>
-                            <th class="px-6 py-4 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-white/5">
-                        {% for f in feedback %}
-                        <tr id="feed-{{ f.id }}" @click="expandedRow = expandedRow === 'feed-details-{{ f.id }}' ? null : 'feed-details-{{ f.id }}'" class="hover:bg-white/5 transition-colors cursor-pointer">
-                            <td class="px-6 py-4 font-medium text-white">
-                                {{ f.candidate.username }}
-                                <i :class="expandedRow === 'feed-details-{{ f.id }}' ? 'rotate-180' : ''" class="fas fa-chevron-down ml-2 text-xs text-gray-600 transition-transform"></i>
-                            </td>
-                            <td class="px-6 py-4 text-indigo-300">{{ f.moderator.username }}</td>
-                            <td class="px-6 py-4 text-gray-400 font-mono text-xs">{{ f.created_at.strftime('%b %d, %Y') }}</td>
-                            <td class="px-6 py-4 text-right">
-                                <a href="#" 
-                                   class="text-gray-500 hover:text-red-400 transition-colors" 
-                                   data-url="{{ url_for('admin.delete_feedback', feedback_id=f.id) }}"
-                                   onclick="event.stopPropagation(); handleAjaxUrl(event, this.dataset.url, 'Are you sure?');">
-                                    <i class="fas fa-trash-alt"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        <tr x-show="expandedRow === 'feed-details-{{ f.id }}'" x-transition class="bg-black/20 border-b border-white/5">
-                            <td colspan="4" class="px-6 py-6">
-                                <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-                                    {% for label, score in [('Correctness', f.code_correctness), ('Efficiency', f.code_efficiency), ('Readability', f.code_readability), ('Problem Solving', f.problem_solving), ('Time Mgmt', f.time_management)] %}
-                                    <div class="bg-white/5 p-3 rounded-lg text-center border border-white/5">
-                                        <span class="block text-[10px] text-gray-500 uppercase">{{ label }}</span>
-                                        <span class="font-bold text-lg {{ 'text-green-400' if score >= 4 else ('text-yellow-400' if score == 3 else 'text-red-400') }}">{{ score }}/5</span>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                                <div>
-                                    <h4 class="text-xs font-bold text-gray-500 uppercase mb-2">Moderator Remarks</h4>
-                                    <p class="text-gray-300 text-sm bg-white/5 p-4 rounded-lg border border-white/5">{{ f.remarks or 'No additional remarks.' }}</p>
-                                </div>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr><td colspan="4" class="px-6 py-12 text-center text-gray-500">No feedback records found.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div x-show="activeTab === 'submissions'" x-transition.opacity class="p-0">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-white/5 text-gray-400 text-xs uppercase border-b border-white/5">
-                        <tr>
-                            <th class="px-6 py-4">Candidate</th>
-                            <th class="px-6 py-4">Language</th>
-                            <th class="px-6 py-4">Submitted To</th>
-                            <th class="px-6 py-4">Date</th>
-                            <th class="px-6 py-4 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-white/5">
-                        {% for sub in submissions %}
-                        <tr id="sub-{{ sub.id }}" @click="expandedRow = expandedRow === 'sub-details-{{ sub.id }}' ? null : 'sub-details-{{ sub.id }}'" class="hover:bg-white/5 transition-colors cursor-pointer">
-                            <td class="px-6 py-4 font-medium text-white">{{ sub.candidate_submitter.username }}</td>
-                            <td class="px-6 py-4 text-gray-300">
-                                <span class="px-2 py-1 bg-white/10 rounded text-xs">{{ sub.language|title }}</span>
-                            </td>
-                            <td class="px-6 py-4 text-indigo-300">{{ sub.test_recipient.username }}</td>
-                            <td class="px-6 py-4 text-gray-400 font-mono text-xs">{{ sub.submitted_at.strftime('%b %d, %H:%M') }}</td>
-                            <td class="px-6 py-4 text-right">
-                                <a href="#" 
-                                   class="text-gray-500 hover:text-red-400 transition-colors" 
-                                   data-url="{{ url_for('admin.delete_submission_record', submission_id=sub.id) }}"
-                                   onclick="event.stopPropagation(); handleAjaxUrl(event, this.dataset.url, 'Are you sure?');">
-                                    <i class="fas fa-trash-alt"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        <tr x-show="expandedRow === 'sub-details-{{ sub.id }}'" x-transition class="bg-black/20 border-b border-white/5">
-                            <td colspan="5" class="px-0 py-0">
-                                <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/10">
-                                    <div class="p-4">
-                                        <p class="text-xs text-gray-500 uppercase font-bold mb-2">Source Code</p>
-                                        <pre class="bg-[#0d1117] p-3 rounded text-xs font-mono text-gray-300 overflow-x-auto custom-scrollbar max-h-60 border border-white/5">{{ sub.code }}</pre>
-                                    </div>
-                                    <div class="p-4">
-                                        <p class="text-xs text-gray-500 uppercase font-bold mb-2">Output</p>
-                                        <pre class="bg-[#0d1117] p-3 rounded text-xs font-mono text-green-400 overflow-x-auto custom-scrollbar max-h-60 border border-white/5">{{ sub.output or 'No output recorded.' }}</pre>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr><td colspan="5" class="px-6 py-12 text-center text-gray-500">No submissions found.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div x-show="activeTab === 'history'" x-transition.opacity class="p-0">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-white/5 text-gray-400 text-xs uppercase border-b border-white/5">
-                        <tr>
-                            <th class="px-6 py-4">Candidate</th>
-                            <th class="px-6 py-4">Moderator</th>
-                            <th class="px-6 py-4">Problem</th>
-                            <th class="px-6 py-4">Assigned Date</th>
-                            <th class="px-6 py-4 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-white/5">
-                        {% for record in history %}
-                        <tr id="hist-{{ record.id }}" class="hover:bg-white/5 transition-colors">
-                            <td class="px-6 py-4 font-medium text-white">{{ record.candidate.username }}</td>
-                            <td class="px-6 py-4 text-indigo-300">{{ record.moderator.username }}</td>
-                            <td class="px-6 py-4 text-gray-300">{{ record.problem.title }}</td>
-                            <td class="px-6 py-4 text-gray-400 font-mono text-xs">{{ record.assigned_at.strftime('%b %d, %Y') }}</td>
-                            <td class="px-6 py-4 text-right">
-                                <a href="#" 
-                                   class="text-gray-500 hover:text-red-400 transition-colors" 
-                                   data-url="{{ url_for('admin.delete_assignment_history', history_id=record.id) }}"
-                                   onclick="handleAjaxUrl(event, this.dataset.url, 'Are you sure?');">
-                                    <i class="fas fa-trash-alt"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr><td colspan="5" class="px-6 py-12 text-center text-gray-500">No assignment history found.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div x-show="activeTab === 'events'" x-transition.opacity class="p-0">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-white/5 text-gray-400 text-xs uppercase border-b border-white/5">
-                        <tr>
-                            <th class="px-6 py-4">Candidate</th>
-                            <th class="px-6 py-4">Problem</th>
-                            <th class="px-6 py-4">Moderator</th>
-                            <th class="px-6 py-4">Completion Date</th>
-                            <th class="px-6 py-4 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-white/5">
-                        {% for event in events %}
-                            <tr id="evt-{{ event.id }}" @click="expandedRow = expandedRow === 'evt-details-{{ event.id }}' ? null : 'evt-details-{{ event.id }}'" class="hover:bg-white/5 transition-colors cursor-pointer">
-                                <td class="px-6 py-4 font-medium text-white">{{ event.username }}</td>
-                                <td class="px-6 py-4 text-gray-300">{{ event.assigned_problem.title }}</td>
-                                <td class="px-6 py-4 text-indigo-300">
-                                    {{ moderators_map.get(event.moderator_id).username if event.moderator_id else 'None' }}
-                                </td>
-                                <td class="px-6 py-4 text-gray-400 font-mono text-xs">{{ event.test_end_time.strftime('%b %d, %Y') if event.test_end_time else 'N/A' }}</td>
-                                <td class="px-6 py-4 text-right">
-                                    <a href="#" 
-                                       class="text-gray-500 hover:text-red-400 transition-colors" 
-                                       title="Clear History" 
-                                       data-url="{{ url_for('admin.delete_coding_event', user_id=event.id) }}"
-                                       onclick="event.stopPropagation(); handleAjaxUrl(event, this.dataset.url, 'Are you sure?');">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            <tr x-show="expandedRow === 'evt-details-{{ event.id }}'" x-transition class="bg-black/20 border-b border-white/5">
-                                <td colspan="5" class="px-6 py-6">
-                                    <strong class="block text-xs uppercase text-gray-500 mb-2">Latest Code Submission</strong>
-                                    {% set submissions_list = event.test_submissions.all() %}
-                                    {% if submissions_list %}
-                                        {% set submission = submissions_list | sort(attribute='submitted_at', reverse=True) | first %}
-                                        <pre class="bg-[#0d1117] p-3 rounded text-xs font-mono text-gray-300 overflow-x-auto custom-scrollbar max-h-40 border border-white/5">{{ submission.code }}</pre>
-                                    {% else %}
-                                        <p class="text-xs text-gray-500 italic">No code submission recorded.</p>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% else %}
-                            <tr><td colspan="5" class="px-6 py-12 text-center text-gray-500">No completed events found.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
     </div>
+
+    <div x-show="currentTab === 'jobs'" class="glass-panel rounded-2xl overflow-hidden border border-white/10" x-transition.opacity>
+        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+            <h3 class="font-bold text-white">Active Job Openings</h3>
+            <span class="text-xs text-gray-500 bg-white/5 px-2 py-1 rounded">{{ jobs|length }} Records</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-gray-400">
+                <thead class="bg-black/20 text-xs uppercase font-bold text-gray-500">
+                    <tr>
+                        <th class="px-6 py-4">Title</th>
+                        <th class="px-6 py-4">Description</th>
+                        <th class="px-6 py-4">Posted Date</th>
+                        <th class="px-6 py-4 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    {% for job in jobs %}
+                    <tr id="job-{{ job.id }}" class="hover:bg-white/5 transition-colors">
+                        <td class="px-6 py-4 font-medium text-white">{{ job.title }}</td>
+                        <td class="px-6 py-4 truncate max-w-xs">{{ job.description }}</td>
+                        <td class="px-6 py-4">{{ job.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td class="px-6 py-4 text-right">
+                            <button data-url="{{ url_for('admin_hiring.delete_job_opening', job_id=job.id) }}" 
+                                    onclick="handleAjaxUrl(event, this.dataset.url, 'Delete this job opening?')"
+                                    class="text-red-400 hover:text-red-300 transition-colors p-2 rounded hover:bg-red-500/10">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" class="px-6 py-8 text-center text-gray-500 italic">No job openings found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div x-show="currentTab === 'feedback'" class="glass-panel rounded-2xl overflow-hidden border border-white/10" x-cloak x-transition.opacity>
+        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+            <h3 class="font-bold text-white">Interview Feedback</h3>
+            <span class="text-xs text-gray-500 bg-white/5 px-2 py-1 rounded">{{ feedback|length }} Records</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-gray-400">
+                <thead class="bg-black/20 text-xs uppercase font-bold text-gray-500">
+                    <tr>
+                        <th class="px-6 py-4">Candidate</th>
+                        <th class="px-6 py-4">Moderator</th>
+                        <th class="px-6 py-4">Rating</th>
+                        <th class="px-6 py-4">Comments</th>
+                        <th class="px-6 py-4 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    {% for feed in feedback %}
+                    <tr id="feed-{{ feed.id }}" class="hover:bg-white/5 transition-colors">
+                        <td class="px-6 py-4 font-medium text-white">{{ feed.candidate.username }}</td>
+                        <td class="px-6 py-4">{{ feed.moderator.username }}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 rounded text-xs font-bold 
+                                {% if feed.rating >= 4 %}bg-green-500/20 text-green-400
+                                {% elif feed.rating == 3 %}bg-yellow-500/20 text-yellow-400
+                                {% else %}bg-red-500/20 text-red-400{% endif %}">
+                                {{ feed.rating }}/5
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 truncate max-w-xs">{{ feed.remarks }}</td>
+                        <td class="px-6 py-4 text-right">
+                            <button data-url="{{ url_for('admin_hiring.delete_feedback', feedback_id=feed.id) }}" 
+                                    onclick="handleAjaxUrl(event, this.dataset.url, 'Delete this feedback?')"
+                                    class="text-red-400 hover:text-red-300 transition-colors p-2 rounded hover:bg-red-500/10">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="px-6 py-8 text-center text-gray-500 italic">No feedback records found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div x-show="currentTab === 'submissions'" class="glass-panel rounded-2xl overflow-hidden border border-white/10" x-cloak x-transition.opacity>
+        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+            <h3 class="font-bold text-white">Code Test Submissions</h3>
+            <span class="text-xs text-gray-500 bg-white/5 px-2 py-1 rounded">{{ submissions|length }} Records</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-gray-400">
+                <thead class="bg-black/20 text-xs uppercase font-bold text-gray-500">
+                    <tr>
+                        <th class="px-6 py-4">Candidate</th>
+                        <th class="px-6 py-4">Language</th>
+                        <th class="px-6 py-4">Submitted At</th>
+                        <th class="px-6 py-4">Output Preview</th>
+                        <th class="px-6 py-4 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    {% for sub in submissions %}
+                    <tr id="sub-{{ sub.id }}" class="hover:bg-white/5 transition-colors">
+                        <td class="px-6 py-4 font-medium text-white">{{ sub.candidate.username }}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 bg-blue-500/10 text-blue-400 rounded text-xs font-mono border border-blue-500/20">{{ sub.language }}</span>
+                        </td>
+                        <td class="px-6 py-4">{{ sub.submitted_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td class="px-6 py-4 font-mono text-xs text-gray-500 truncate max-w-xs">{{ sub.output[:50] }}...</td>
+                        <td class="px-6 py-4 text-right">
+                            <button data-url="{{ url_for('admin_hiring.delete_submission_record', submission_id=sub.id) }}" 
+                                    onclick="handleAjaxUrl(event, this.dataset.url, 'Delete this submission?')"
+                                    class="text-red-400 hover:text-red-300 transition-colors p-2 rounded hover:bg-red-500/10">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="px-6 py-8 text-center text-gray-500 italic">No code submissions found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div x-show="currentTab === 'history'" class="glass-panel rounded-2xl overflow-hidden border border-white/10" x-cloak x-transition.opacity>
+        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+            <h3 class="font-bold text-white">Moderator Assignment History</h3>
+            <span class="text-xs text-gray-500 bg-white/5 px-2 py-1 rounded">{{ history|length }} Records</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-gray-400">
+                <thead class="bg-black/20 text-xs uppercase font-bold text-gray-500">
+                    <tr>
+                        <th class="px-6 py-4">Candidate</th>
+                        <th class="px-6 py-4">Assigned Moderator</th>
+                        <th class="px-6 py-4">Problem Statement</th>
+                        <th class="px-6 py-4">Assigned At</th>
+                        <th class="px-6 py-4 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    {% for record in history %}
+                    <tr id="hist-{{ record.id }}" class="hover:bg-white/5 transition-colors">
+                        <td class="px-6 py-4 font-medium text-white">{{ record.candidate.username }}</td>
+                        <td class="px-6 py-4">{{ record.moderator.username }}</td>
+                        <td class="px-6 py-4 text-indigo-400">{{ record.problem.title if record.problem else 'N/A' }}</td>
+                        <td class="px-6 py-4">{{ record.assigned_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td class="px-6 py-4 text-right">
+                            <button data-url="{{ url_for('admin_hiring.delete_assignment_history', history_id=record.id) }}" 
+                                    onclick="handleAjaxUrl(event, this.dataset.url, 'Delete this history record?')"
+                                    class="text-red-400 hover:text-red-300 transition-colors p-2 rounded hover:bg-red-500/10">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="px-6 py-8 text-center text-gray-500 italic">No assignment history found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
 </div>
 {% endblock %}

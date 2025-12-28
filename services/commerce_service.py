@@ -1,6 +1,9 @@
 import time
+from datetime import datetime
 from extensions import db
 from models.commerce import Product, Order, OrderItem, Cart, CartItem
+from models.auth import User
+from utils import send_email  # Import the mail utility
 
 class CommerceService:
     @staticmethod
@@ -15,7 +18,7 @@ class CommerceService:
         if not cart:
             cart = Cart(user_id=user_id)
             db.session.add(cart)
-            db.session.commit() # Commit to get cart.id
+            db.session.commit()
 
         item = CartItem.query.filter_by(cart_id=cart.id, product_id=product_id).first()
         if item:
@@ -30,11 +33,14 @@ class CommerceService:
     @staticmethod
     def process_checkout(user_id, shipping_address, billing_address):
         """
-        Atomic Checkout Process.
-        Either EVERYTHING succeeds (Order created, Stock deducted, Cart cleared),
-        or NOTHING happens.
+        Atomic Checkout Process with Email Notification.
         """
         try:
+            # 1. Fetch User (Required for Email)
+            user = User.query.get(user_id)
+            if not user:
+                return None, "User not found."
+
             cart = Cart.query.filter_by(user_id=user_id).first()
             if not cart or not cart.items:
                 return None, "Your cart is empty."
@@ -42,27 +48,27 @@ class CommerceService:
             total_amount = 0
             order_items = []
             
-            # 1. Validation & Calculation loop
+            # 2. Validation & Calculation
             for item in cart.items:
                 product = Product.query.get(item.product_id)
                 
-                # Race Condition Check: Ensure stock exists NOW
+                # Race Condition Check
                 if product.stock < item.quantity:
                     return None, f"Insufficient stock for {product.name}. Only {product.stock} left."
                 
                 total_amount += product.price * item.quantity
                 
-                # 2. Update Inventory (In Memory)
+                # Deduct Inventory
                 product.stock -= item.quantity
                 
-                # 3. Prepare Order Item
+                # Prepare Order Item
                 order_items.append(OrderItem(
                     product_name=product.name, 
                     quantity=item.quantity, 
                     price_at_purchase=product.price
                 ))
 
-            # 4. Create Order
+            # 3. Create Order
             order_number = f"ORD-{int(time.time())}-{user_id}"
             new_order = Order(
                 order_number=order_number, 
@@ -73,21 +79,41 @@ class CommerceService:
                 status='Order Placed'
             )
             db.session.add(new_order)
-            db.session.flush() # Generate ID without committing
+            db.session.flush()
 
-            # 5. Link Items
+            # 4. Link Items
             for oi in order_items:
                 oi.order_id = new_order.id
                 db.session.add(oi)
             
-            # 6. Clear Cart
+            # 5. Clear Cart
             db.session.delete(cart)
 
-            # 7. COMMIT TRANSACTION
+            # 6. COMMIT TRANSACTION
             db.session.commit()
-            return new_order, "Order placed successfully!"
+
+            # 7. SEND NOTIFICATION (Enhancement)
+            # We send this AFTER commit to ensure we don't email about a failed order
+            try:
+                send_email(
+                    to=user.email,
+                    subject=f"Order Confirmation: {new_order.order_number}",
+                    template="mail/order_status_update.html", # Reusing existing template
+                    buyer_name=user.username,
+                    order_number=new_order.order_number,
+                    status="Order Placed",
+                    order_date=datetime.utcnow().strftime('%B %d, %Y'),
+                    total_amount=new_order.total_amount,
+                    shipping_address=shipping_address,
+                    now=datetime.utcnow()
+                )
+            except Exception as e:
+                # Log error but don't fail the order
+                print(f"Failed to send order email: {e}")
+
+            return new_order, "Order placed successfully! Confirmation email sent."
 
         except Exception as e:
-            db.session.rollback() # CRITICAL: Undo everything if error
+            db.session.rollback()
             print(f"Checkout Error: {e}")
             return None, "An error occurred during checkout. Please try again."
