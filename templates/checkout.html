@@ -37,27 +37,30 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    // --- FIX: Removed 'DOMContentLoaded' wrapper so it runs immediately on HTMX swap ---
+    {
         const checkbox = document.getElementById('same_as_shipping');
         const shipping = document.getElementById('shipping_address');
         const billing = document.getElementById('billing_address');
 
-        checkbox.addEventListener('change', () => {
-            if (checkbox.checked) {
-                billing.value = shipping.value;
-                billing.readOnly = true;
-                billing.classList.add('opacity-50', 'cursor-not-allowed');
-            } else {
-                billing.readOnly = false;
-                billing.classList.remove('opacity-50', 'cursor-not-allowed');
-            }
-        });
+        if (checkbox && shipping && billing) {
+            checkbox.addEventListener('change', () => {
+                if (checkbox.checked) {
+                    billing.value = shipping.value;
+                    billing.readOnly = true;
+                    billing.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    billing.readOnly = false;
+                    billing.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            });
 
-        shipping.addEventListener('input', () => {
-            if (checkbox.checked) {
-                billing.value = shipping.value;
-            }
-        });
-    });
+            shipping.addEventListener('input', () => {
+                if (checkbox.checked) {
+                    billing.value = shipping.value;
+                }
+            });
+        }
+    }
 </script>
 {% endblock %}

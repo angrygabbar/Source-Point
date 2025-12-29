@@ -216,7 +216,8 @@
                                 {{ test.language[0]|upper }}
                             </div>
                             <div>
-                                <p class="text-white font-medium">{{ test.candidate_submitter.username }}</p>
+                                {# --- FIXED ATTRIBUTE HERE --- #}
+                                <p class="text-white font-medium">{{ test.candidate.username }}</p>
                                 <p class="text-xs text-gray-400">{{ test.submitted_at.strftime('%b %d, %Y at %I:%M %p') }}</p>
                             </div>
                         </div>

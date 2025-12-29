@@ -2,11 +2,6 @@
 {% block title %}Order Operations Center{% endblock %}
 {% block content %}
 
-{# --- Calculate Stats Logic (Preserved) --- #}
-{% set total_revenue = orders | sum(attribute='total_amount') %}
-{% set pending_count = orders | selectattr('status', 'equalto', 'Order Placed') | list | length %}
-{% set completed_count = orders | selectattr('status', 'in', ['Order Delivered', 'Order Dispatched']) | list | length %}
-
 <div class="space-y-8 animate-fade-in pb-10">
     
     <div class="flex flex-col md:flex-row justify-between items-end gap-6">
@@ -35,7 +30,7 @@
             </div>
             <div class="relative z-10">
                 <p class="text-xs font-bold text-indigo-300 uppercase tracking-widest mb-1">Total Volume</p>
-                <h3 class="text-3xl font-bold text-white">₹{{ "{:,.2f}".format(total_revenue) }}</h3>
+                <h3 class="text-3xl font-bold text-white">€{{ "{:,.2f}".format(total_revenue) }}</h3>
                 <div class="w-full bg-gray-700/50 rounded-full h-1 mt-4 overflow-hidden">
                     <div class="bg-gradient-to-r from-indigo-500 to-purple-500 h-full w-3/4 rounded-full"></div>
                 </div>
@@ -127,7 +122,7 @@
                     </div>
 
                     <div class="col-span-2">
-                        <span class="text-sm font-bold text-white">₹{{ "{:,.2f}".format(order.total_amount) }}</span>
+                        <span class="text-sm font-bold text-white">€{{ "{:,.2f}".format(order.total_amount) }}</span>
                         <p class="text-[10px] text-gray-500">
                             {{ order.items|length }} Item(s)
                         </p>
@@ -135,8 +130,8 @@
 
                     <div class="col-span-3 flex justify-end items-center gap-2">
                         
-                        <form action="{{ url_for('admin.update_order_status', order_id=order.id) }}" method="POST" 
-                              hx-post="{{ url_for('admin.update_order_status', order_id=order.id) }}"
+                        <form action="{{ url_for('admin_commerce.update_order_status', order_id=order.id) }}" method="POST" 
+                              hx-post="{{ url_for('admin_commerce.update_order_status', order_id=order.id) }}"
                               hx-trigger="change"
                               hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
                               class="relative group/select">
@@ -203,14 +198,14 @@
                                     <span class="text-sm text-gray-200 font-medium">{{ item.product_name }}</span>
                                     <div class="text-right">
                                         <span class="text-xs text-gray-500 block">Qty: {{ item.quantity }}</span>
-                                        <span class="text-sm text-indigo-300 font-mono">₹{{ "{:,.2f}".format(item.price_at_purchase) }}</span>
+                                        <span class="text-sm text-indigo-300 font-mono">€{{ "{:,.2f}".format(item.price_at_purchase) }}</span>
                                     </div>
                                 </li>
                                 {% endfor %}
                             </ul>
                             <div class="px-4 py-3 bg-indigo-500/10 border-t border-indigo-500/20 flex justify-between items-center">
                                 <span class="text-xs font-bold text-indigo-300 uppercase">Total Value</span>
-                                <span class="text-base font-bold text-white">₹{{ "{:,.2f}".format(order.total_amount) }}</span>
+                                <span class="text-base font-bold text-white">€{{ "{:,.2f}".format(order.total_amount) }}</span>
                             </div>
                         </div>
 

@@ -8,13 +8,11 @@ class Product(db.Model):
     product_code = db.Column(db.String(50), unique=True, nullable=False)
     name = db.Column(db.String(150), nullable=False)
     stock = db.Column(db.Integer, default=0, nullable=False)
-    # Enhancement: Use Numeric for money
     price = db.Column(Numeric(10, 2), nullable=False, default=0.00)
     description = db.Column(db.Text, nullable=True)
     image_url = db.Column(db.Text, nullable=True)
     category = db.Column(db.String(50), nullable=True)
     brand = db.Column(db.String(100), nullable=True)
-    # Enhancement: Use Numeric for money
     mrp = db.Column(Numeric(10, 2), nullable=True) 
     warranty = db.Column(db.String(200), nullable=True)
     return_policy = db.Column(db.String(200), nullable=True)
@@ -28,40 +26,34 @@ class ProductImage(db.Model):
     image_url = db.Column(db.Text, nullable=False)
 
 class Order(db.Model):
+    # This must match your PostgreSQL "order" table exactly
     id = db.Column(db.Integer, primary_key=True)
     order_number = db.Column(db.String(50), unique=True, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    # Enhancement: Use Numeric for money
     total_amount = db.Column(Numeric(10, 2), nullable=False)
     status = db.Column(db.String(20), default='Order Placed') 
     
-    # Enhancement: Structured Address Data
+    # --- FIX: Restored shipping_address column to satisfy NotNullViolation ---
+    shipping_address = db.Column(db.Text, nullable=False)
+    
+    # We keep these as nullable=True so they don't cause errors if they exist in DB
     shipping_street = db.Column(db.String(200), nullable=True)
     shipping_city = db.Column(db.String(100), nullable=True)
     shipping_state = db.Column(db.String(100), nullable=True)
     shipping_zip = db.Column(db.String(20), nullable=True)
     shipping_country = db.Column(db.String(100), nullable=True)
     
-    # Billing Address (Simplified for now, but could follow same pattern)
     billing_address = db.Column(db.Text, nullable=True)
-    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     items = db.relationship('OrderItem', backref='order', lazy=True, cascade="all, delete-orphan")
-
-    @property
-    def shipping_address(self):
-        """Returns the full address as a string for backward compatibility."""
-        parts = [self.shipping_street, self.shipping_city, self.shipping_state, self.shipping_zip, self.shipping_country]
-        return ", ".join(filter(None, parts))
 
 class OrderItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
     product_name = db.Column(db.String(150), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
-    # Enhancement: Use Numeric for money
     price_at_purchase = db.Column(Numeric(10, 2), nullable=False)
 
 class Cart(db.Model):
@@ -84,26 +76,21 @@ class Invoice(db.Model):
     bill_to_address = db.Column(db.Text, nullable=True)
     ship_to_address = db.Column(db.Text, nullable=True)
     order_id = db.Column(db.String(50), nullable=True)
-    
-    # Enhancement: Use Numeric for money
     subtotal = db.Column(Numeric(10, 2), nullable=False)
     tax = db.Column(Numeric(10, 2), nullable=False, default=0.00)
     total_amount = db.Column(Numeric(10, 2), nullable=False)
-    
     status = db.Column(db.String(20), default='Unpaid', nullable=False) 
     due_date = db.Column(db.Date, nullable=True)
     notes = db.Column(db.Text, nullable=True)
     payment_details = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    
     items = db.relationship('InvoiceItem', backref='invoice', lazy=True, cascade="all, delete-orphan")
 
 class InvoiceItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.String(200), nullable=False)
     quantity = db.Column(db.Integer, nullable=False, default=1)
-    # Enhancement: Use Numeric for money
     price = db.Column(Numeric(10, 2), nullable=False)
     invoice_id = db.Column(db.Integer, db.ForeignKey('invoice.id'), nullable=False)
 
@@ -116,7 +103,6 @@ class StockRequest(db.Model):
     request_date = db.Column(db.DateTime, default=datetime.utcnow)
     response_date = db.Column(db.DateTime, nullable=True)
     admin_note = db.Column(db.String(255), nullable=True)
-
     seller = db.relationship('User', backref='stock_requests')
     product = db.relationship('Product', backref='stock_requests')
 
@@ -125,7 +111,6 @@ class SellerInventory(db.Model):
     seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
     stock = db.Column(db.Integer, default=0)
-
     seller = db.relationship('User', backref='inventory_items')
     product = db.relationship('Product', backref='seller_allocations')
 

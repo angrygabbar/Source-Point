@@ -187,9 +187,10 @@
             const iconColorClass = category === 'success' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400';
             div.innerHTML = `<div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg ${iconColorClass}"><i class="fas ${iconClass}"></i></div><div class="ml-3 text-sm font-normal">${message}</div><button type="button" class="ml-auto -mx-1.5 -my-1.5 text-gray-400 hover:text-white rounded-lg p-1.5 inline-flex h-8 w-8" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>`;
             container.appendChild(div);
-            setTimeout(() => { div.style.transition = 'all 0.5s ease-out'; div.style.opacity = '0'; div.style.transform = 'translateX(100%)'; setTimeout(() => div.remove(), 500); }, 4000);
+            // UPDATED: Set to 2000ms (2 seconds)
+            setTimeout(() => { div.style.transition = 'all 0.5s ease-out'; div.style.opacity = '0'; div.style.transform = 'translateX(100%)'; setTimeout(() => div.remove(), 500); }, 2000);
         };
-        // ... (Ajax handlers & Three.js code same as original) ...
+
         window.handleAjaxUrl = async function(event, url, confirmMsg = null) {
             event.preventDefault();
             if (confirmMsg && !confirm(confirmMsg)) return;
@@ -271,118 +272,130 @@
             }
         };
 
-        document.addEventListener('DOMContentLoaded', () => {
+        // --- UPDATED: Robust Notification Auto-Dismissal ---
+        function initFlashMessages() {
             const alerts = document.querySelectorAll('#flash-container [role="alert"]');
             alerts.forEach(alert => {
+                // Prevent attaching multiple timers to the same alert
+                if (alert.dataset.timerAttached) return;
+                alert.dataset.timerAttached = 'true';
+
+                // UPDATED: Set to 2000ms (2 seconds)
                 setTimeout(() => {
                     alert.style.transition = 'all 0.5s ease-out';
                     alert.style.opacity = '0';
                     alert.style.transform = 'translateX(100%)';
                     setTimeout(() => alert.remove(), 500);
-                }, 4000);
+                }, 2000); 
             });
+        }
 
-            // --- Optimized Three.js Background (Mobile Check) ---
-            if (window.innerWidth > 768) {
-                const scene = new THREE.Scene();
-                const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 2000);
-                const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), antialias: true });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setClearColor(0x00000a, 1);
+        // Run on initial load
+        document.addEventListener('DOMContentLoaded', initFlashMessages);
+        
+        // Run after HTMX swaps (fixes issues with sidebar navigation)
+        document.addEventListener('htmx:afterSwap', initFlashMessages);
 
-                function createStarTexture() {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = 32;
-                    canvas.height = 32;
-                    const context = canvas.getContext('2d');
-                    const gradient = context.createRadialGradient(16, 16, 0, 16, 16, 16);
-                    gradient.addColorStop(0, 'rgba(255,255,255,1)');
-                    gradient.addColorStop(0.2, 'rgba(255,255,255,0.8)');
-                    gradient.addColorStop(0.4, 'rgba(255,255,255,0.2)');
-                    gradient.addColorStop(1, 'rgba(255,255,255,0)');
-                    context.fillStyle = gradient;
-                    context.fillRect(0, 0, 32, 32);
-                    return new THREE.CanvasTexture(canvas);
-                }
+        // --- Optimized Three.js Background (Mobile Check) ---
+        if (window.innerWidth > 768) {
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 2000);
+            const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x00000a, 1);
 
-                function createNebulaTexture() {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = 128;
-                    canvas.height = 128;
-                    const context = canvas.getContext('2d');
-                    const gradient = context.createRadialGradient(64, 64, 20, 64, 64, 64);
-                    gradient.addColorStop(0, 'rgba(255,255,255,0.2)');
-                    gradient.addColorStop(1, 'rgba(255,255,255,0)');
-                    context.fillStyle = gradient;
-                    context.fillRect(0, 0, 128, 128);
-                    return new THREE.CanvasTexture(canvas);
-                }
-
-                const starTexture = createStarTexture();
-                const nebulaTexture = createNebulaTexture();
-
-                function createParticleSystem(count, size, colors, opacity, texture) {
-                    const geometry = new THREE.BufferGeometry();
-                    const positions = new Float32Array(count * 3);
-                    const colorsAttribute = new Float32Array(count * 3);
-                    for (let i = 0; i < count; i++) {
-                        const x = (Math.random() - 0.5) * 3000; 
-                        const y = (Math.random() - 0.5) * 3000;
-                        const z = (Math.random() - 0.5) * 3000;
-                        positions.set([x, y, z], i * 3);
-                        const color = colors[Math.floor(Math.random() * colors.length)];
-                        colorsAttribute.set([color.r, color.g, color.b], i * 3);
-                    }
-                    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-                    geometry.setAttribute('color', new THREE.BufferAttribute(colorsAttribute, 3));
-                    const material = new THREE.PointsMaterial({
-                        size: size,
-                        map: texture,
-                        blending: THREE.AdditiveBlending,
-                        depthWrite: false,
-                        transparent: true,
-                        vertexColors: true,
-                        opacity: opacity
-                    });
-                    return new THREE.Points(geometry, material);
-                }
-
-                const brightStars = createParticleSystem(12000, 3, [new THREE.Color(0.8, 0.8, 1), new THREE.Color(1, 1, 0.8)], 0.9, starTexture);
-                const mediumStars = createParticleSystem(25000, 2, [new THREE.Color(0.5, 0.5, 1)], 0.6, starTexture);
-                const nebulae = createParticleSystem(600, 200, [new THREE.Color(0.3, 0.1, 0.4), new THREE.Color(0.1, 0.1, 0.3)], 0.15, nebulaTexture);
-
-                scene.add(brightStars);
-                scene.add(mediumStars);
-                scene.add(nebulae);
-                
-                camera.position.z = 1500; 
-
-                function animate() {
-                    requestAnimationFrame(animate);
-                    brightStars.rotation.y += 0.00008;
-                    mediumStars.rotation.y += 0.00005;
-                    nebulae.rotation.y += 0.0001;
-                    camera.position.z -= 0.05;
-                    if (camera.position.z < -500) {
-                        camera.position.z = 1500;
-                    }
-                    renderer.render(scene, camera);
-                }
-                animate();
-                
-                window.addEventListener('resize', () => {
-                    camera.aspect = window.innerWidth / window.innerHeight;
-                    camera.updateProjectionMatrix();
-                    renderer.setSize(window.innerWidth, window.innerHeight);
-                });
-            } else {
-                // Mobile Fallback
-                document.getElementById('bg-canvas').style.display = 'none';
-                document.body.style.background = 'linear-gradient(to bottom, #0f172a, #000000)';
+            function createStarTexture() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 32;
+                canvas.height = 32;
+                const context = canvas.getContext('2d');
+                const gradient = context.createRadialGradient(16, 16, 0, 16, 16, 16);
+                gradient.addColorStop(0, 'rgba(255,255,255,1)');
+                gradient.addColorStop(0.2, 'rgba(255,255,255,0.8)');
+                gradient.addColorStop(0.4, 'rgba(255,255,255,0.2)');
+                gradient.addColorStop(1, 'rgba(255,255,255,0)');
+                context.fillStyle = gradient;
+                context.fillRect(0, 0, 32, 32);
+                return new THREE.CanvasTexture(canvas);
             }
+
+            function createNebulaTexture() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 128;
+                canvas.height = 128;
+                const context = canvas.getContext('2d');
+                const gradient = context.createRadialGradient(64, 64, 20, 64, 64, 64);
+                gradient.addColorStop(0, 'rgba(255,255,255,0.2)');
+                gradient.addColorStop(1, 'rgba(255,255,255,0)');
+                context.fillStyle = gradient;
+                context.fillRect(0, 0, 128, 128);
+                return new THREE.CanvasTexture(canvas);
+            }
+
+            const starTexture = createStarTexture();
+            const nebulaTexture = createNebulaTexture();
+
+            function createParticleSystem(count, size, colors, opacity, texture) {
+                const geometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(count * 3);
+                const colorsAttribute = new Float32Array(count * 3);
+                for (let i = 0; i < count; i++) {
+                    const x = (Math.random() - 0.5) * 3000; 
+                    const y = (Math.random() - 0.5) * 3000;
+                    const z = (Math.random() - 0.5) * 3000;
+                    positions.set([x, y, z], i * 3);
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    colorsAttribute.set([color.r, color.g, color.b], i * 3);
+                }
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('color', new THREE.BufferAttribute(colorsAttribute, 3));
+                const material = new THREE.PointsMaterial({
+                    size: size,
+                    map: texture,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false,
+                    transparent: true,
+                    vertexColors: true,
+                    opacity: opacity
+                });
+                return new THREE.Points(geometry, material);
+            }
+
+            const brightStars = createParticleSystem(12000, 3, [new THREE.Color(0.8, 0.8, 1), new THREE.Color(1, 1, 0.8)], 0.9, starTexture);
+            const mediumStars = createParticleSystem(25000, 2, [new THREE.Color(0.5, 0.5, 1)], 0.6, starTexture);
+            const nebulae = createParticleSystem(600, 200, [new THREE.Color(0.3, 0.1, 0.4), new THREE.Color(0.1, 0.1, 0.3)], 0.15, nebulaTexture);
+
+            scene.add(brightStars);
+            scene.add(mediumStars);
+            scene.add(nebulae);
             
-            gsap.from("main > div", { opacity: 0, y: 20, duration: 0.6, ease: "power2.out", delay: 0.1 });
-        });
+            camera.position.z = 1500; 
+
+            function animate() {
+                requestAnimationFrame(animate);
+                brightStars.rotation.y += 0.00008;
+                mediumStars.rotation.y += 0.00005;
+                nebulae.rotation.y += 0.0001;
+                camera.position.z -= 0.05;
+                if (camera.position.z < -500) {
+                    camera.position.z = 1500;
+                }
+                renderer.render(scene, camera);
+            }
+            animate();
+            
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        } else {
+            // Mobile Fallback
+            document.getElementById('bg-canvas').style.display = 'none';
+            document.body.style.background = 'linear-gradient(to bottom, #0f172a, #000000)';
+        }
+        
+        gsap.from("main > div", { opacity: 0, y: 20, duration: 0.6, ease: "power2.out", delay: 0.1 });
     </script>
 </body>
 </html>

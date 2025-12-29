@@ -10,6 +10,7 @@ from werkzeug.utils import secure_filename
 import csv
 from io import TextIOWrapper
 import openpyxl 
+import traceback 
 
 admin_commerce_bp = Blueprint('admin_commerce', __name__, url_prefix='/admin/commerce')
 
@@ -232,7 +233,9 @@ def approve_stock_request(req_id):
     
     try:
         send_email(to=req.seller.email, subject=f"Stock Request Approved: {req.product.name}", template="mail/request_status_update.html", request=req, product=req.product, status="Approved")
-    except Exception: pass
+    except Exception as e:
+        print(f"Error sending stock approval email: {e}")
+        traceback.print_exc()
     
     flash('Request approved.', 'success')
     return redirect(url_for('admin_commerce.manage_stock_requests'))
@@ -248,7 +251,9 @@ def reject_stock_request(req_id):
     
     try:
         send_email(to=req.seller.email, subject=f"Stock Request Rejected: {req.product.name}", template="mail/request_status_update.html", request=req, product=req.product, status="Rejected")
-    except Exception: pass
+    except Exception as e:
+        print(f"Error sending stock rejection email: {e}")
+        traceback.print_exc()
     
     flash('Request rejected.', 'warning')
     return redirect(url_for('admin_commerce.manage_stock_requests'))
@@ -259,7 +264,16 @@ def reject_stock_request(req_id):
 @role_required('admin')
 def manage_orders():
     orders = Order.query.order_by(Order.created_at.desc()).all()
-    return render_template('manage_orders.html', orders=orders)
+    
+    total_revenue = sum(order.total_amount for order in orders)
+    pending_count = sum(1 for order in orders if order.status == 'Order Placed')
+    completed_count = sum(1 for order in orders if order.status in ['Order Delivered', 'Order Dispatched'])
+
+    return render_template('manage_orders.html', 
+                           orders=orders,
+                           total_revenue=total_revenue,
+                           pending_count=pending_count,
+                           completed_count=completed_count)
 
 @admin_commerce_bp.route('/orders/update/<int:order_id>', methods=['POST'])
 @login_required
@@ -270,9 +284,79 @@ def update_order_status(order_id):
     order.status = new_status
     db.session.commit()
     
+    # --- AUTOMATIC INVOICE GENERATION LOGIC ---
+    attachments = None
+    if new_status == 'Order Accepted':
+        try:
+            # 1. Check if invoice already exists to avoid duplicates
+            invoice = Invoice.query.filter_by(order_id=order.order_number).first()
+            
+            # 2. If not, create a new invoice based on the order
+            if not invoice:
+                invoice = Invoice(
+                    invoice_number=f"INV-{order.order_number}",
+                    recipient_name=order.buyer.username,
+                    recipient_email=order.buyer.email,
+                    bill_to_address=order.billing_address,
+                    ship_to_address=order.shipping_address, # Using the column we fixed earlier
+                    order_id=order.order_number,
+                    subtotal=order.total_amount, # Assuming inclusive tax for simplicity
+                    tax=0.00,
+                    total_amount=order.total_amount,
+                    status='Unpaid',
+                    admin_id=current_user.id,
+                    created_at=datetime.utcnow(),
+                    due_date=datetime.utcnow()
+                )
+                db.session.add(invoice)
+                db.session.flush() # Flush to get ID for items
+                
+                # 3. Create Invoice Items from Order Items
+                for order_item in order.items:
+                    inv_item = InvoiceItem(
+                        invoice_id=invoice.id,
+                        description=order_item.product_name,
+                        quantity=order_item.quantity,
+                        price=order_item.price_at_purchase
+                    )
+                    db.session.add(inv_item)
+                db.session.commit()
+            
+            # 4. Generate the PDF
+            generator = InvoiceGenerator(invoice)
+            pdf_bytes = generator.generate_pdf()
+            
+            # 5. Prepare Attachment
+            attachments = [{
+                'filename': f'Invoice_{invoice.invoice_number}.pdf',
+                'data': pdf_bytes
+            }]
+            print(f"Invoice generated and attached for Order {order.order_number}")
+            
+        except Exception as e:
+            print(f"Error generating invoice for Order {order.order_number}: {e}")
+            traceback.print_exc()
+
+    # --- EMAIL NOTIFICATION ---
+    print(f"Attempting to send email to: {order.buyer.email}")
     try:
-        send_email(to=order.buyer.email, subject=f'Order Update: {new_status}', template='mail/order_status_update.html', buyer_name=order.buyer.username, order_number=order.order_number, status=new_status, order_date=order.created_at.strftime('%Y-%m-%d'), total_amount=order.total_amount)
-    except Exception: pass
+        send_email(
+            to=order.buyer.email, 
+            subject=f'Order Update: {new_status}', 
+            template='mail/order_status_update.html', 
+            buyer_name=order.buyer.username, 
+            order_number=order.order_number, 
+            status=new_status, 
+            order_date=order.created_at.strftime('%Y-%m-%d'), 
+            total_amount=order.total_amount,
+            shipping_address=order.shipping_address,
+            now=datetime.utcnow(),
+            attachments=attachments  # Pass the PDF attachment here
+        )
+        print("Email sent successfully.")
+    except Exception as e:
+        print(f"CRITICAL: Failed to send order status email. Error: {e}")
+        traceback.print_exc() 
     
     flash(f'Order {order.order_number} status updated to {new_status}.', 'success')
     return redirect(url_for('admin_commerce.manage_orders'))
