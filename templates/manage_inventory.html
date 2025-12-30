@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}My Inventory{% endblock %}
+{% block title %}Master Inventory{% endblock %}
 {% block content %}
 
 <div class="space-y-8 animate-fade-in pb-20">
@@ -7,7 +7,7 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div class="glass-panel p-6 rounded-2xl border border-white/5 relative overflow-hidden group">
             <h3 class="text-3xl font-extrabold text-white">{{ total_products_count }} <span class="text-sm font-medium text-gray-400">Items</span></h3>
-            <p class="text-xs font-bold text-indigo-300 uppercase tracking-widest mt-2">My Catalog</p>
+            <p class="text-xs font-bold text-indigo-300 uppercase tracking-widest mt-2">Master Catalog</p>
         </div>
         <div class="glass-panel p-6 rounded-2xl border border-white/5 relative overflow-hidden group">
             <h3 class="text-3xl font-extrabold text-white">₹{{ "{:,.2f}".format(total_inventory_value) }}</h3>
@@ -19,26 +19,24 @@
         </div>
     </div>
 
-    <div class="flex flex-col md:flex-row justify-between items-center bg-white/5 border border-white/5 rounded-2xl p-4 backdrop-blur-xl shadow-lg">
+    <div class="flex flex-col md:flex-row justify-between items-center bg-white/5 border border-white/5 rounded-2xl p-4 backdrop-blur-xl shadow-lg gap-4">
         <h1 class="text-xl font-bold text-white flex items-center gap-3">
             <span class="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center border border-white/10 text-indigo-400">
                 <i class="fas fa-warehouse"></i>
             </span>
-            My Assigned Inventory
+            Master Inventory
         </h1>
         
-        <div class="flex flex-col md:flex-row gap-4 w-full md:w-auto mt-4 md:mt-0">
-            <div class="relative group w-full md:w-80">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i class="fas fa-search text-gray-500 group-focus-within:text-indigo-400 transition-colors"></i>
-                </div>
-                <input type="text" id="searchInput" placeholder="Search SKU, Name..." 
-                    class="w-full bg-black/20 border border-white/10 text-white text-sm rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder-gray-600">
-            </div>
-            
-            <button id="openRequestStockBtn" 
-                    class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center">
-                <i class="fas fa-plus-circle mr-2"></i> Request Stock
+        <div class="flex flex-wrap gap-3 w-full md:w-auto">
+             <form action="{{ url_for('admin_commerce.import_inventory') }}" method="POST" enctype="multipart/form-data" class="flex gap-2">
+                 <label class="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-xl cursor-pointer border border-white/10 transition-colors text-sm font-bold flex items-center">
+                    <i class="fas fa-file-upload mr-2"></i> Import CSV/XLSX
+                    <input type="file" name="file" class="hidden" onchange="this.form.submit()">
+                </label>
+            </form>
+             <button onclick="openModal('modalAddProduct')" 
+                    class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center text-sm">
+                <i class="fas fa-plus-circle mr-2"></i> Add Product
             </button>
         </div>
     </div>
@@ -47,7 +45,7 @@
         <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-2 text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-white/5 pb-2">
             <div class="col-span-5">Product Details</div>
             <div class="col-span-2">Category</div>
-            <div class="col-span-2 text-center">My Quantity</div>
+            <div class="col-span-2 text-center">Master Stock</div>
             <div class="col-span-1 text-right">Price</div>
             <div class="col-span-2 text-right">Actions</div>
         </div>
@@ -68,7 +66,7 @@
                         <div>
                             <h3 class="text-sm font-bold text-white product-name leading-tight">{{ product.name }}</h3>
                             <div class="flex items-center gap-2 mt-1">
-                                <span class="text-[10px] font-mono text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">{{ product.code }}</span>
+                                <span class="text-[10px] font-mono text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">{{ product.product_code }}</span>
                             </div>
                         </div>
                     </div>
@@ -78,17 +76,17 @@
                     </div>
 
                     <div class="col-span-2 flex justify-center">
-                        {% if product.my_stock == 0 %}
+                        {% if product.stock == 0 %}
                             <span class="px-3 py-1 rounded-full text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20 flex items-center shadow-[0_0_10px_rgba(239,68,68,0.2)]">
                                 <span class="w-1.5 h-1.5 rounded-full bg-red-500 mr-2"></span> Out of Stock
                             </span>
-                        {% elif product.my_stock < 10 %}
+                        {% elif product.stock < 10 %}
                             <span class="px-3 py-1 rounded-full text-xs font-bold bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 flex items-center animate-pulse">
-                                <span class="w-1.5 h-1.5 rounded-full bg-yellow-500 mr-2"></span> Low: {{ product.my_stock }}
+                                <span class="w-1.5 h-1.5 rounded-full bg-yellow-500 mr-2"></span> Low: {{ product.stock }}
                             </span>
                         {% else %}
                             <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span> {{ product.my_stock }} Units
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span> {{ product.stock }} Units
                             </span>
                         {% endif %}
                     </div>
@@ -98,291 +96,186 @@
                     </div>
 
                     <div class="col-span-2 flex justify-end gap-2">
-                        <button type="button" 
-                                class="p-2 rounded-lg bg-white/5 hover:bg-emerald-500/20 text-gray-400 hover:text-emerald-400 transition-all view-details-btn border border-white/10" 
+                         <button type="button" 
+                                class="p-2 rounded-lg bg-white/5 hover:bg-purple-500/20 text-gray-400 hover:text-purple-400 transition-all assign-btn border border-white/10" 
+                                data-id="{{ product.id }}" 
                                 data-name="{{ product.name }}"
-                                data-code="{{ product.code }}"
-                                data-brand="{{ product.brand }}"
-                                data-desc="{{ product.description }}"
-                                data-warranty="{{ product.warranty }}"
-                                data-return="{{ product.return_policy }}"
-                                title="View Details">
-                            <i class="fas fa-eye"></i>
+                                title="Assign to Seller">
+                            <i class="fas fa-dolly"></i>
                         </button>
-
+                        
                         <button type="button"
                                 class="p-2 rounded-lg bg-white/5 hover:bg-blue-500/20 text-gray-400 hover:text-blue-400 transition-all edit-product-btn border border-white/10" 
                                 data-id="{{ product.id }}" 
-                                data-invid="{{ product.inventory_id }}"
-                                data-code="{{ product.code }}"
+                                data-code="{{ product.product_code }}"
                                 data-name="{{ product.name }}"
-                                data-stock="{{ product.my_stock }}" 
+                                data-stock="{{ product.stock }}" 
                                 data-price="{{ product.price }}"
-                                title="Update Stock Level">
+                                title="Edit Product">
                             <i class="fas fa-pen"></i>
                         </button>
+                        
+                         <a href="#" 
+                           data-url="{{ url_for('admin_commerce.delete_product', product_id=product.id) }}"
+                           onclick="handleAjaxUrl(event, this.dataset.url, 'Delete this product permanently?')"
+                           class="p-2 rounded-lg bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-all border border-white/10"
+                           title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </a>
                     </div>
                 </div>
             </div>
             {% else %}
-            <div class="glass-panel p-16 rounded-xl text-center border-dashed border-2 border-white/10 flex flex-col items-center justify-center">
-                <div class="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6 text-gray-500">
-                    <i class="fas fa-box-open text-4xl opacity-50"></i>
-                </div>
-                <h3 class="text-xl font-bold text-white mb-2">No Inventory Assigned</h3>
-                <p class="text-gray-400 text-sm max-w-md mx-auto">It looks like the Administrator hasn't assigned any products to your account yet.</p>
-                <button id="openRequestStockBtnEmpty" class="mt-4 text-indigo-400 hover:text-indigo-300 font-bold underline">Request Stock Now</button>
+            <div class="glass-panel p-16 rounded-xl text-center border-dashed border-2 border-white/10">
+                <p class="text-gray-400">No products in master inventory.</p>
             </div>
             {% endfor %}
         </div>
     </div>
-
 </div>
 
-<div id="modalRequestStock" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+<div id="modalAddProduct" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity close-modal-trigger"></div>
     <div class="fixed inset-0 z-10 overflow-y-auto">
-        <div class="flex min-h-full items-center justify-center p-4 text-center sm:block sm:p-0">
-            <div class="relative transform overflow-hidden rounded-2xl bg-[#0f172a] border border-white/10 text-left shadow-2xl transition-all sm:my-8 sm:max-w-lg sm:w-full inline-block align-middle">
-                
-                <form action="{{ url_for('seller.request_stock') }}" method="POST" class="p-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                            <i class="fas fa-cart-plus text-emerald-400"></i> Request New Stock
-                        </h3>
-                        <button type="button" class="text-gray-400 hover:text-white transition-colors close-modal-trigger">
-                            <i class="fas fa-times"></i>
-                        </button>
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-2xl bg-[#0f172a] border border-white/10 text-left shadow-2xl transition-all sm:w-full sm:max-w-lg">
+                <form action="{{ url_for('admin_commerce.manage_inventory') }}" method="POST" class="p-6">
+                    <h3 class="text-lg font-bold text-white mb-4">Add New Product</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 uppercase">Product Code (Unique)</label>
+                            <input type="text" name="product_code" required class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 uppercase">Name</label>
+                            <input type="text" name="name" required class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">Initial Stock</label>
+                                <input type="number" name="stock" required min="0" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">Price</label>
+                                <input type="number" name="price" required min="0" step="0.01" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white">
+                            </div>
+                        </div>
                     </div>
+                    <div class="mt-6 flex justify-end gap-3">
+                        <button type="button" class="px-4 py-2 text-gray-400 close-modal-trigger">Cancel</button>
+                        <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold">Add Product</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="modalAssign" class="fixed z-50 inset-0 overflow-y-auto hidden">
+    <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity close-modal-trigger"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+             <div class="relative transform overflow-hidden rounded-2xl bg-[#0f172a] border border-white/10 text-left shadow-2xl sm:w-full sm:max-w-md">
+                <form action="{{ url_for('admin_commerce.assign_inventory') }}" method="POST" class="p-6">
+                    <input type="hidden" name="product_id" id="assign_product_id">
+                    <h3 class="text-lg font-bold text-white mb-2">Assign Stock to Seller</h3>
+                    <p class="text-xs text-gray-400 mb-4">Distribute <span id="assign_product_name" class="text-white font-bold"></span> from Master to Seller.</p>
                     
                     <div class="space-y-4">
-                        <div x-data="{
-                            open: false,
-                            search: '',
-                            selectedId: '',
-                            selectedName: 'Select Product...',
-                            products: [
-                                {% for p in all_products %}
-                                {
-                                    id: '{{ p.id }}',
-                                    name: `{{ p.name }}`,
-                                    code: '{{ p.product_code }}'
-                                },
-                                {% endfor %}
-                            ],
-                            get filtered() {
-                                return this.products.filter(p => 
-                                    p.name.toLowerCase().includes(this.search.toLowerCase()) || 
-                                    p.code.toLowerCase().includes(this.search.toLowerCase())
-                                );
-                            }
-                        }" class="relative">
-                            <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Product</label>
-                            <input type="hidden" name="product_id" :value="selectedId" required>
-                            
-                            <div @click="open = !open" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white cursor-pointer flex justify-between items-center">
-                                <span x-text="selectedName" :class="selectedId ? 'text-white' : 'text-gray-500'"></span>
-                                <i class="fas fa-chevron-down text-xs text-gray-500"></i>
-                            </div>
-
-                            <div x-show="open" @click.outside="open = false" class="absolute z-50 w-full mt-2 bg-[#1e293b] border border-white/10 rounded-xl shadow-xl max-h-60 overflow-y-auto">
-                                <div class="p-2 sticky top-0 bg-[#1e293b] border-b border-white/5">
-                                    <input x-model="search" type="text" placeholder="Search..." class="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-500">
-                                </div>
-                                <template x-for="p in filtered" :key="p.id">
-                                    <div @click="selectedId = p.id; selectedName = p.name; open = false" class="px-4 py-2 hover:bg-white/5 cursor-pointer text-sm text-gray-300 hover:text-white flex justify-between">
-                                        <span x-text="p.name" class="font-medium truncate pr-2"></span>
-                                        <span x-text="p.code" class="text-xs text-gray-500 font-mono flex-shrink-0"></span>
-                                    </div>
-                                </template>
-                                <div x-show="filtered.length === 0" class="p-4 text-center text-xs text-gray-500">No products found.</div>
-                            </div>
-                        </div>
-
                         <div>
-                            <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Quantity</label>
-                            <input type="number" name="quantity" min="1" required class="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 font-bold text-lg">
+                             <label class="text-xs font-bold text-gray-500 uppercase">Select Seller</label>
+                             <select name="seller_id" required class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white">
+                                 {% for seller in sellers %}
+                                    <option value="{{ seller.id }}">{{ seller.username }} ({{ seller.email }})</option>
+                                 {% endfor %}
+                             </select>
+                        </div>
+                         <div>
+                            <label class="text-xs font-bold text-gray-500 uppercase">Quantity to Transfer</label>
+                            <input type="number" name="quantity" required min="1" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white">
                         </div>
                     </div>
-
-                    <div class="mt-6 flex justify-end gap-3 pt-4 border-t border-white/5">
-                        <button type="button" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 text-sm font-medium close-modal-trigger">Cancel</button>
-                        <button type="submit" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-emerald-500/20 transform hover:scale-105 transition-all">Submit Request</button>
+                     <div class="mt-6 flex justify-end gap-3">
+                        <button type="button" class="px-4 py-2 text-gray-400 close-modal-trigger">Cancel</button>
+                        <button type="submit" class="px-6 py-2 bg-purple-600 text-white rounded-lg font-bold">Transfer</button>
                     </div>
                 </form>
-            </div>
+             </div>
         </div>
     </div>
 </div>
 
-<div id="modalUpdateStock" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+<div id="modalUpdate" class="fixed z-50 inset-0 overflow-y-auto hidden">
     <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity close-modal-trigger"></div>
     <div class="fixed inset-0 z-10 overflow-y-auto">
-        <div class="flex min-h-full items-center justify-center p-4 text-center">
-            <div class="relative transform overflow-hidden rounded-2xl bg-[#0f172a] border border-white/10 text-left shadow-2xl transition-all sm:w-full sm:max-w-sm">
-                <form action="{{ url_for('seller.update_product') }}" method="POST" class="p-6">
-                    <h3 class="text-lg font-bold text-white mb-2">Update Local Stock</h3>
-                    <p class="text-xs text-gray-400 mb-4">Manually adjust count for <span id="update_product_name" class="text-pink-400 font-bold"></span>.</p>
+        <div class="flex min-h-full items-center justify-center p-4">
+             <div class="relative transform overflow-hidden rounded-2xl bg-[#0f172a] border border-white/10 text-left shadow-2xl sm:w-full sm:max-w-md">
+                <form action="{{ url_for('admin_commerce.update_product') }}" method="POST" class="p-6">
+                    <input type="hidden" name="product_id" id="edit_product_id">
+                    <h3 class="text-lg font-bold text-white mb-4">Edit Master Product</h3>
                     
-                    <input type="hidden" name="inventory_id" id="edit_inventory_id">
-                    
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">New Count</label>
-                        <input type="number" name="stock" id="edit_stock" required min="0" 
-                               class="w-full px-4 py-2.5 bg-black/20 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-pink-500">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 uppercase">Name</label>
+                            <input type="text" name="name" id="edit_name" required class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white">
+                        </div>
+                         <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">Stock</label>
+                                <input type="number" name="stock" id="edit_stock" required min="0" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">Price</label>
+                                <input type="number" name="price" id="edit_price" required min="0" step="0.01" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white">
+                            </div>
+                        </div>
                     </div>
-
-                    <div class="mt-6 flex justify-end gap-3">
-                        <button type="button" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 text-sm close-modal-trigger">Cancel</button>
-                        <button type="submit" class="px-6 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-pink-500/20">Update</button>
+                     <div class="mt-6 flex justify-end gap-3">
+                        <button type="button" class="px-4 py-2 text-gray-400 close-modal-trigger">Cancel</button>
+                        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold">Update</button>
                     </div>
                 </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div id="modalDetails" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity close-modal-trigger"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-        
-        <div class="inline-block align-middle bg-[#0f172a] rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-2xl sm:w-full border border-white/10 relative">
-            <div class="px-6 py-4 border-b border-white/10 flex justify-between items-center bg-white/5">
-                <h3 class="text-lg font-bold text-white">Product Details</h3>
-                <button type="button" class="close-modal-btn text-gray-400 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg close-modal-trigger"><i class="fas fa-times"></i></button>
-            </div>
-            
-            <div class="px-6 py-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div class="space-y-4">
-                    <div>
-                        <h4 class="text-xs font-bold text-gray-500 uppercase mb-1">Product Name</h4>
-                        <p class="text-white font-medium" id="detail_name">--</p>
-                    </div>
-                    <div>
-                        <h4 class="text-xs font-bold text-gray-500 uppercase mb-1">SKU / Code</h4>
-                        <p class="text-indigo-400 font-mono text-sm" id="detail_code">--</p>
-                    </div>
-                    <div>
-                        <h4 class="text-xs font-bold text-gray-500 uppercase mb-1">Brand</h4>
-                        <p class="text-white" id="detail_brand">--</p>
-                    </div>
-                </div>
-                <div class="space-y-4">
-                    <div>
-                        <h4 class="text-xs font-bold text-gray-500 uppercase mb-1">Description</h4>
-                        <p class="text-gray-300 text-sm leading-relaxed" id="detail_desc">--</p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <h4 class="text-xs font-bold text-gray-500 uppercase mb-1">Warranty</h4>
-                            <p class="text-white text-sm" id="detail_warranty">--</p>
-                        </div>
-                        <div>
-                            <h4 class="text-xs font-bold text-gray-500 uppercase mb-1">Return Policy</h4>
-                            <p class="text-white text-sm" id="detail_return">--</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="px-6 py-4 bg-black/20 border-t border-white/10 text-right">
-                <button type="button" class="px-6 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold transition-all close-modal-trigger">Close</button>
-            </div>
+             </div>
         </div>
     </div>
 </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
         
-        // --- Modal Helper Functions ---
-        function openModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if(modal) {
-                modal.classList.remove('hidden');
-                // Animation
-                setTimeout(() => {
-                    const panel = modal.querySelector('.transform');
-                    if(panel) {
-                        panel.classList.add('scale-100', 'opacity-100');
-                        panel.classList.remove('scale-95', 'opacity-0');
-                    }
-                }, 10);
-            }
-        }
+        window.openModal = openModal; // Expose globally
 
-        function closeModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if(modal) {
-                const panel = modal.querySelector('.transform');
-                if(panel) {
-                    panel.classList.remove('scale-100', 'opacity-100');
-                    panel.classList.add('scale-95', 'opacity-0');
-                }
-                setTimeout(() => modal.classList.add('hidden'), 300);
-            }
-        }
+        document.querySelectorAll('.close-modal-trigger').forEach(el => {
+            el.addEventListener('click', function() {
+                this.closest('.fixed.z-50').classList.add('hidden');
+            });
+        });
 
-        // --- Event Listeners ---
-
-        // 1. Open Request Stock (Main Button)
-        const btnOpenRequest = document.getElementById('openRequestStockBtn');
-        if(btnOpenRequest) {
-            btnOpenRequest.addEventListener('click', () => openModal('modalRequestStock'));
-        }
-
-        // 2. Open Request Stock (Empty State Button)
-        const btnOpenRequestEmpty = document.getElementById('openRequestStockBtnEmpty');
-        if(btnOpenRequestEmpty) {
-            btnOpenRequestEmpty.addEventListener('click', () => openModal('modalRequestStock'));
-        }
-
-        // 3. Open Update Stock (Table Buttons)
+        // Edit Button Logic
         document.querySelectorAll('.edit-product-btn').forEach(btn => {
             btn.addEventListener('click', function() {
-                document.getElementById('edit_inventory_id').value = this.dataset.invid;
-                document.getElementById('edit_product_name').textContent = this.dataset.name;
-                document.getElementById('edit_product_code').textContent = this.dataset.code;
+                document.getElementById('edit_product_id').value = this.dataset.id;
+                document.getElementById('edit_name').value = this.dataset.name;
                 document.getElementById('edit_stock').value = this.dataset.stock;
-                openModal('modalUpdateStock');
+                document.getElementById('edit_price').value = this.dataset.price;
+                openModal('modalUpdate');
             });
         });
-
-        // 4. Open Details (Table Buttons)
-        document.querySelectorAll('.view-details-btn').forEach(btn => {
+        
+        // Assign Button Logic
+        document.querySelectorAll('.assign-btn').forEach(btn => {
             btn.addEventListener('click', function() {
-                document.getElementById('detail_name').textContent = this.dataset.name;
-                document.getElementById('detail_code').textContent = this.dataset.code;
-                document.getElementById('detail_brand').textContent = this.dataset.brand;
-                document.getElementById('detail_desc').textContent = this.dataset.desc;
-                document.getElementById('detail_warranty').textContent = this.dataset.warranty;
-                document.getElementById('detail_return').textContent = this.dataset.return;
-                openModal('modalDetails');
+                 document.getElementById('assign_product_id').value = this.dataset.id;
+                 document.getElementById('assign_product_name').textContent = this.dataset.name;
+                 openModal('modalAssign');
             });
         });
-
-        // 5. Global Close Trigger (Background click or X button)
-        document.querySelectorAll('.close-modal-trigger').forEach(trigger => {
-            trigger.addEventListener('click', function(e) {
-                // Find closest parent modal
-                const modal = this.closest('.fixed.z-50');
-                if(modal) closeModal(modal.id);
-            });
-        });
-
-        // --- Search Logic ---
-        const searchInput = document.getElementById('searchInput');
-        if(searchInput) {
-            searchInput.addEventListener('keyup', function() {
-                const query = this.value.toLowerCase().trim();
-                document.querySelectorAll('.product-row').forEach(row => {
-                    const name = row.querySelector('.product-name').textContent.toLowerCase();
-                    const code = row.querySelector('.font-mono') ? row.querySelector('.font-mono').textContent.toLowerCase() : '';
-                    if (name.includes(query) || code.includes(query)) row.style.display = '';
-                    else row.style.display = 'none';
-                });
-            });
-        }
     });
 </script>
 {% endblock %}

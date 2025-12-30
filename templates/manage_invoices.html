@@ -38,7 +38,7 @@
             </span>
             Invoice History
         </h1>
-        <a href="{{ url_for('admin.create_invoice') }}" class="w-full md:w-auto px-6 py-2.5 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl shadow-lg shadow-green-500/20 transition-all transform hover:scale-[1.02] flex items-center justify-center">
+        <a href="{{ url_for('admin_commerce.create_invoice') }}" class="w-full md:w-auto px-6 py-2.5 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl shadow-lg shadow-green-500/20 transition-all transform hover:scale-[1.02] flex items-center justify-center">
             <i class="fas fa-plus mr-2"></i> Create New Invoice
         </a>
     </div>
@@ -89,7 +89,7 @@
                         <button type="button" 
                                 class="p-2 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500 hover:text-white transition-all text-xs font-bold uppercase tracking-wide pay-btn"
                                 title="Mark as Paid"
-                                data-url="{{ url_for('admin.mark_invoice_paid', invoice_id=invoice.id) }}"
+                                data-url="{{ url_for('admin_commerce.mark_invoice_paid', invoice_id=invoice.id) }}"
                                 onclick="event.stopPropagation(); markInvoiceAsPaid(event, this)">
                             Pay
                         </button>
@@ -103,7 +103,7 @@
                         <i class="fas fa-paper-plane"></i>
                     </button>
 
-                    <form action="{{ url_for('admin.send_invoice_reminder', invoice_id=invoice.id) }}" method="POST" class="inline" onclick="event.stopPropagation();" onsubmit="handleAjaxForm(event, 'Send payment reminder?')">
+                    <form action="{{ url_for('admin_commerce.send_invoice_reminder', invoice_id=invoice.id) }}" method="POST" class="inline" onclick="event.stopPropagation();" onsubmit="handleAjaxForm(event, 'Send payment reminder?')">
                         <button type="submit" class="p-2 text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/10 rounded-lg transition-colors" title="Remind">
                             <i class="fas fa-bell"></i>
                         </button>
@@ -111,7 +111,7 @@
 
                     <a href="#" 
                        class="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                       data-url="{{ url_for('admin.delete_invoice', invoice_id=invoice.id) }}"
+                       data-url="{{ url_for('admin_commerce.delete_invoice', invoice_id=invoice.id) }}"
                        onclick="event.stopPropagation(); handleAjaxUrl(event, this.dataset.url, 'Delete this invoice permanently?')"
                        title="Delete">
                         <i class="fas fa-trash"></i>
@@ -188,7 +188,7 @@
         <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"></div>
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
         <div class="inline-block align-middle bg-[#0f172a] rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-lg sm:w-full border border-white/10">
-            <form id="resendInvoiceForm" action="{{ url_for('admin.resend_invoice') }}" method="POST">
+            <form id="resendInvoiceForm" action="{{ url_for('admin_commerce.resend_invoice') }}" method="POST">
                 <input type="hidden" name="invoice_id" id="modal_invoice_id">
                 <div class="px-6 py-6 border-b border-white/10 bg-white/5">
                     <h3 class="text-lg font-bold text-white flex items-center gap-2">
@@ -285,9 +285,11 @@
             });
         });
 
-        cancelResendBtn.addEventListener('click', () => resendModal.classList.add('hidden'));
+        if(cancelResendBtn)
+             cancelResendBtn.addEventListener('click', () => resendModal.classList.add('hidden'));
 
         // Handle Resend Form Submission via AJAX
+        if(resendForm)
         resendForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = this.querySelector('button[type="submit"]');

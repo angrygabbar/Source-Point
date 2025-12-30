@@ -15,10 +15,10 @@
             <p class="text-gray-400 pl-16 max-w-xl">Monitor stock distribution, adjust allocation levels, and manage seller-specific inventory.</p>
         </div>
         <div class="flex gap-3">
-            <a href="{{ url_for('admin.manage_inventory') }}" class="group flex items-center px-5 py-3 bg-[#1a1f36] hover:bg-[#252b48] border border-white/10 text-gray-300 hover:text-white rounded-xl text-sm font-bold transition-all">
+            <a href="{{ url_for('admin_commerce.manage_inventory') }}" class="group flex items-center px-5 py-3 bg-[#1a1f36] hover:bg-[#252b48] border border-white/10 text-gray-300 hover:text-white rounded-xl text-sm font-bold transition-all">
                 <i class="fas fa-boxes mr-2 text-indigo-400 group-hover:text-indigo-300"></i> Master Catalog
             </a>
-            <a href="{{ url_for('admin.admin_commerce_dashboard') }}" class="flex items-center px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all transform hover:-translate-y-0.5">
+            <a href="{{ url_for('admin_commerce.admin_commerce_dashboard') }}" class="flex items-center px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all transform hover:-translate-y-0.5">
                 <i class="fas fa-arrow-left mr-2"></i> Dashboard
             </a>
         </div>
@@ -32,9 +32,9 @@
             <div class="relative group">
                 <select onchange="if(this.value) window.location.href=this.value;" 
                         class="w-full bg-[#0a0a0a] border border-white/10 text-white rounded-xl pl-12 pr-10 py-4 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 appearance-none outline-none cursor-pointer transition-all hover:border-indigo-500/50 shadow-inner font-medium text-lg">
-                    <option value="{{ url_for('admin.manage_seller_inventory') }}">-- Choose Seller --</option>
+                    <option value="{{ url_for('admin_commerce.manage_seller_inventory') }}">-- Choose Seller --</option>
                     {% for s in sellers %}
-                    <option value="{{ url_for('admin.manage_seller_inventory', seller_id=s.id) }}" 
+                    <option value="{{ url_for('admin_commerce.manage_seller_inventory', seller_id=s.id) }}" 
                             {% if selected_seller and selected_seller.id == s.id %}selected{% endif %}>
                         {{ s.username }}
                     </option>
@@ -63,7 +63,6 @@
         {% if selected_seller %}
             {% set total_stock = allocations | sum(attribute='stock') %}
             {% set total_items = allocations | length %}
-            {% set total_value = allocations | map(attribute='product') | map(attribute='price') | sum %} 
             
             <div class="bg-gradient-to-br from-[#0f172a]/80 to-[#1e293b]/80 border border-white/10 p-6 rounded-2xl flex items-center gap-5 relative overflow-hidden group">
                 <div class="absolute right-0 top-0 opacity-5 group-hover:opacity-10 transition-opacity"><i class="fas fa-box-open text-8xl text-blue-400"></i></div>
@@ -176,7 +175,7 @@
                                         title="Adjust Stock">
                                     <i class="fas fa-sliders-h text-xs"></i>
                                 </button>
-                                <a href="{{ url_for('admin.delete_seller_allocation', allocation_id=item.id) }}" 
+                                <a href="{{ url_for('admin_commerce.delete_seller_allocation', allocation_id=item.id) }}" 
                                    onclick="return confirm('WARNING: This will remove {{ item.product.name }} from {{ selected_seller.username }}\'s inventory entirely.')"
                                    class="w-8 h-8 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white border border-red-500/20 transition-all flex items-center justify-center shadow-lg"
                                    title="Revoke Allocation">
@@ -193,7 +192,7 @@
                             </div>
                             <h3 class="text-xl font-bold text-white">No Inventory Allocated</h3>
                             <p class="text-gray-400 mt-2 text-sm max-w-md mx-auto">This seller has no products assigned yet. Use the Master Catalog to allocate stock.</p>
-                            <a href="{{ url_for('admin.manage_inventory') }}" class="inline-block mt-6 px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold text-sm transition-colors shadow-lg shadow-indigo-500/25">
+                            <a href="{{ url_for('admin_commerce.manage_inventory') }}" class="inline-block mt-6 px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold text-sm transition-colors shadow-lg shadow-indigo-500/25">
                                 Go to Master Catalog
                             </a>
                         </td>
@@ -229,7 +228,7 @@
                 </button>
             </div>
 
-            <form action="{{ url_for('admin.update_seller_stock') }}" method="POST" class="p-6">
+            <form action="{{ url_for('admin_commerce.update_seller_stock') }}" method="POST" class="p-6">
                 <input type="hidden" name="allocation_id" id="modal_allocation_id">
                 
                 <div class="mb-6">
