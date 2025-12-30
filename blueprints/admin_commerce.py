@@ -422,6 +422,7 @@ def mark_invoice_paid(invoice_id):
     invoice = Invoice.query.get_or_404(invoice_id)
     invoice.status = 'Paid'
     
+    # Update linked order status if it exists
     if invoice.order_id:
         order = Order.query.filter_by(order_number=invoice.order_id).first()
         if order and order.status != 'Order Delivered':
@@ -429,6 +430,21 @@ def mark_invoice_paid(invoice_id):
     
     db.session.commit()
     
+    # --- ADDED: Send Payment Received Email ---
+    try:
+        send_email(
+            to=invoice.recipient_email,
+            subject=f"Payment Received: Invoice #{invoice.invoice_number}",
+            template="mail/payment_received.html",
+            recipient_name=invoice.recipient_name,
+            invoice=invoice,
+            total_amount=invoice.total_amount
+        )
+    except Exception as e:
+        print(f"Error sending payment confirmation email: {e}")
+        traceback.print_exc()
+    # ------------------------------------------
+
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'success': True, 'message': 'Invoice marked as Paid.'})
     
