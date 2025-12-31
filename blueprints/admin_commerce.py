@@ -403,17 +403,116 @@ def manage_invoices():
     invoices = Invoice.query.order_by(Invoice.created_at.desc()).all()
     return render_template('manage_invoices.html', invoices=invoices)
 
+# ... (Previous code remains the same)
+
 @admin_commerce_bp.route('/invoices/create', methods=['GET', 'POST'])
 @login_required
 @role_required('admin')
 def create_invoice():
     if request.method == 'POST':
-        flash('Invoice created (Feature available in full version).', 'info')
-        return redirect(url_for('admin_commerce.manage_invoices'))
-    
+        try:
+            # 1. Extract Basic Data
+            recipient_name = request.form.get('recipient_name')
+            recipient_email = request.form.get('recipient_email')
+            due_date_str = request.form.get('due_date')
+            order_id = request.form.get('order_id')
+            bill_to = request.form.get('bill_to_address')
+            ship_to = request.form.get('ship_to_address')
+            notes = request.form.get('notes')
+            payment_details = request.form.get('payment_details')
+            tax_rate = float(request.form.get('tax', 0))
+
+            # 2. Process Items
+            descriptions = request.form.getlist('item_description[]')
+            quantities = request.form.getlist('item_quantity[]')
+            prices = request.form.getlist('item_price[]')
+
+            subtotal = 0
+            invoice_items_data = []
+
+            for d, q, p in zip(descriptions, quantities, prices):
+                if d and q and p:
+                    qty = int(q)
+                    price = float(p)
+                    total = qty * price
+                    subtotal += total
+                    invoice_items_data.append({
+                        'description': d,
+                        'quantity': qty,
+                        'price': price
+                    })
+            
+            tax_amount = subtotal * (tax_rate / 100)
+            total_amount = subtotal + tax_amount
+
+            # 3. Create Database Record
+            # Generate a temporary unique ID, loop until unique
+            import uuid
+            invoice_num = f"INV-{uuid.uuid4().hex[:6].upper()}"
+            
+            new_invoice = Invoice(
+                invoice_number=invoice_num,
+                recipient_name=recipient_name,
+                recipient_email=recipient_email,
+                bill_to_address=bill_to,
+                ship_to_address=ship_to,
+                order_id=order_id,
+                subtotal=subtotal,
+                tax=tax_amount,
+                total_amount=total_amount,
+                status='Unpaid',
+                due_date=datetime.strptime(due_date_str, '%Y-%m-%d').date() if due_date_str else None,
+                notes=notes,
+                payment_details=payment_details,
+                admin_id=current_user.id
+            )
+            db.session.add(new_invoice)
+            db.session.flush() # Get ID
+
+            for item in invoice_items_data:
+                db.session.add(InvoiceItem(
+                    invoice_id=new_invoice.id,
+                    description=item['description'],
+                    quantity=item['quantity'],
+                    price=item['price']
+                ))
+
+            db.session.commit()
+
+            # 4. Generate PDF
+            generator = InvoiceGenerator(new_invoice)
+            pdf_bytes = generator.generate_pdf()
+            
+            # 5. Send Email
+            attachments = [{
+                'filename': f'Invoice_{new_invoice.invoice_number}.pdf',
+                'data': pdf_bytes
+            }]
+            
+            send_email(
+                to=recipient_email,
+                subject=f"New Invoice #{new_invoice.invoice_number} from Source Point",
+                template="mail/invoice_email.html",
+                invoice=new_invoice,
+                attachments=attachments
+            )
+
+            flash(f'Invoice {new_invoice.invoice_number} generated and sent successfully.', 'success')
+            return redirect(url_for('admin_commerce.manage_invoices'))
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error creating invoice: {e}")
+            traceback.print_exc()
+            flash(f"Error creating invoice: {str(e)}", 'danger')
+            return redirect(url_for('admin_commerce.create_invoice'))
+
+    # GET Request
     products = Product.query.filter(Product.stock > 0).all()
-    products_js = [{'id': p.id, 'name': p.name, 'price': p.price} for p in products]
+    products_js = [{'id': p.id, 'name': p.name, 'price': float(p.price), 'code': p.product_code} for p in products]
     return render_template('create_invoice.html', products=products_js)
+
+# ... (Rest of code)
 
 @admin_commerce_bp.route('/invoices/mark_paid/<int:invoice_id>', methods=['POST'])
 @login_required
