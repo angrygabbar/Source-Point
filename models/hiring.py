@@ -1,6 +1,7 @@
 from extensions import db
 from datetime import datetime
 import uuid
+from enums import ApplicationStatus  # IMPORT NEW ENUM
 
 class JobOpening(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -16,7 +17,10 @@ class JobApplication(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     job_id = db.Column(db.Integer, db.ForeignKey('job_opening.id'), nullable=False)
-    status = db.Column(db.String(20), default='pending', nullable=False)
+    
+    # UPDATED: Use Enum value
+    status = db.Column(db.String(20), default=ApplicationStatus.PENDING.value, nullable=False)
+    
     resume_url = db.Column(db.String(500), nullable=True) 
     applied_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)
 
@@ -64,7 +68,6 @@ class Feedback(db.Model):
     moderator = db.relationship('User', foreign_keys=[moderator_id], backref='feedback_given')
     candidate = db.relationship('User', foreign_keys=[candidate_id], backref='feedback_received')
 
-    # NEW: Calculated Property for the Template
     @property
     def rating(self):
         """Calculates average rating from the 5 parameters."""
@@ -86,5 +89,4 @@ class ModeratorAssignmentHistory(db.Model):
     candidate = db.relationship('User', foreign_keys=[candidate_id], backref='candidate_assignments')
     moderator = db.relationship('User', foreign_keys=[moderator_id], backref='moderator_assignments')
     
-    # Use back_populates to avoid conflicts with learning.py
     problem = db.relationship('ProblemStatement', foreign_keys=[problem_statement_id], back_populates='assignment_history')

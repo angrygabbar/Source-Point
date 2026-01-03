@@ -1,35 +1,21 @@
-Flask==2.3.3
-Flask-Bcrypt==1.0.1
+Flask==3.0.0
+Flask-SQLAlchemy==3.1.1
 Flask-Login==0.6.3
-Flask-Mail==0.9.1
-Flask-SQLAlchemy==3.0.5
+Flask-Bcrypt==1.0.1
 Flask-Migrate==4.0.5
-SQLAlchemy==2.0.23
-gunicorn==21.2.0
-Werkzeug==2.3.8
-blinker==1.7.0
-click==8.1.7
-itsdangerous==2.1.2
-Jinja2==3.1.3
-MarkupSafe==2.1.3
+Flask-WTF==1.2.1
+Flask-Caching==2.1.0
+Flask-Limiter==3.5.0
+email_validator==2.1.0.post1
+psycopg2-binary==2.9.9
+python-dotenv==1.0.0
 requests==2.31.0
-APScheduler==3.10.4
-fpdf2==2.7.9
-psycopg2-binary
-python-dotenv
-beautifulsoup4==4.12.3
-sib-api-v3-sdk
-cloudinary
-Flask-Caching
-Flask-Limiter
-rich
+gunicorn==21.2.0
+# --- NEW DEPENDENCIES ---
+cloudinary==1.36.0
+sib-api-v3-sdk==7.6.0
 pypdf==3.17.1
-openpyxl
-
-# --- AI & FIXES ---
-# New Google AI SDK (Replaces google-generativeai)
-google-genai
-
-# CRITICAL FIX: google-api-core 2.28.0+ crashes on Python 3.9
-# We pin it to a safe version until you upgrade to Python 3.10+
-google-api-core<2.28.0
+openpyxl==3.1.2
+google-genai==0.3.0
+redis==5.0.1
+celery==5.3.6

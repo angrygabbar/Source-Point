@@ -1,13 +1,12 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from extensions import db
-# --- CORRECTED IMPORTS BELOW ---
 from models.auth import User
 from models.learning import ProblemStatement
 from models.hiring import CodeTestSubmission
-# -------------------------------
 from utils import role_required, log_user_action, send_email
 from datetime import datetime, timedelta
+from enums import UserRole
 import requests
 import os
 
@@ -16,11 +15,19 @@ events_bp = Blueprint('events', __name__)
 JDOODLE_CLIENT_ID = os.environ.get('JDOODLE_CLIENT_ID')
 JDOODLE_CLIENT_SECRET = os.environ.get('JDOODLE_CLIENT_SECRET')
 
+# Define authorized roles for event management
+EVENT_MANAGERS = [
+    UserRole.ADMIN.value, 
+    UserRole.DEVELOPER.value, 
+    UserRole.MODERATOR.value, 
+    UserRole.RECRUITER.value
+]
+
 @events_bp.route('/events')
 @login_required
-@role_required(['admin', 'developer', 'moderator', 'recruiter'])
+@role_required(EVENT_MANAGERS)
 def events():
-    candidates = User.query.filter_by(role='candidate').all()
+    candidates = User.query.filter_by(role=UserRole.CANDIDATE.value).all()
     problems = ProblemStatement.query.all()
     scheduled_events = User.query.filter(User.problem_statement_id != None, User.test_completed == False).all()
     completed_events = User.query.filter(User.problem_statement_id != None, User.test_completed == True).all()
@@ -38,7 +45,7 @@ def events():
 
 @events_bp.route('/create_problem', methods=['POST'])
 @login_required
-@role_required(['admin', 'developer', 'moderator', 'recruiter'])
+@role_required(EVENT_MANAGERS)
 def create_problem():
     title = request.form.get('problem_title')
     description = request.form.get('problem_description')
@@ -54,7 +61,7 @@ def create_problem():
 
 @events_bp.route('/assign_problem', methods=['POST'])
 @login_required
-@role_required(['admin', 'developer', 'moderator', 'recruiter'])
+@role_required(EVENT_MANAGERS)
 def assign_problem():
     candidate_id = request.form.get('candidate_id')
     problem_id = request.form.get('problem_id')
@@ -98,7 +105,7 @@ def assign_problem():
 
 @events_bp.route('/reschedule_event/<int:user_id>', methods=['POST'])
 @login_required
-@role_required(['admin', 'developer', 'moderator', 'recruiter'])
+@role_required(EVENT_MANAGERS)
 def reschedule_event(user_id):
     candidate = User.query.get_or_404(user_id)
     problem_title = candidate.assigned_problem.title if candidate.assigned_problem else "your assigned problem"
@@ -131,13 +138,13 @@ def reschedule_event(user_id):
     log_user_action("Reschedule Event", f"Rescheduled test for {candidate.username}")
     flash(f'Event for {candidate.username} has been rescheduled.', 'success')
 
-    if current_user.role == 'moderator': return redirect(url_for('moderator.moderator_dashboard'))
-    elif current_user.role == 'recruiter': return redirect(url_for('recruiter.recruiter_dashboard'))
+    if current_user.role == UserRole.MODERATOR.value: return redirect(url_for('moderator.moderator_dashboard'))
+    elif current_user.role == UserRole.RECRUITER.value: return redirect(url_for('recruiter.recruiter_dashboard'))
     else: return redirect(url_for('events.events'))
 
 @events_bp.route('/cancel_event/<int:user_id>')
 @login_required
-@role_required(['admin', 'developer', 'moderator', 'recruiter'])
+@role_required(EVENT_MANAGERS)
 def cancel_event(user_id):
     candidate = User.query.get_or_404(user_id)
     problem_title = candidate.assigned_problem.title if candidate.assigned_problem else "your assigned problem"
@@ -153,16 +160,16 @@ def cancel_event(user_id):
     log_user_action("Cancel Event", f"Cancelled test for {candidate.username}")
     flash(f'Event for {candidate.username} has been canceled.', 'success')
 
-    if current_user.role == 'moderator': return redirect(url_for('moderator.moderator_dashboard'))
-    elif current_user.role == 'recruiter': return redirect(url_for('recruiter.recruiter_dashboard'))
+    if current_user.role == UserRole.MODERATOR.value: return redirect(url_for('moderator.moderator_dashboard'))
+    elif current_user.role == UserRole.RECRUITER.value: return redirect(url_for('recruiter.recruiter_dashboard'))
     else: return redirect(url_for('events.events'))
 
 @events_bp.route('/mark_event_completed/<int:user_id>')
 @login_required
-@role_required(['admin', 'developer', 'moderator', 'recruiter'])
+@role_required(EVENT_MANAGERS)
 def mark_event_completed(user_id):
     candidate = User.query.get_or_404(user_id)
-    if candidate.role != 'candidate':
+    if candidate.role != UserRole.CANDIDATE.value:
         flash('Cannot mark event completed for non-candidate users.', 'danger')
         return redirect(url_for('events.events'))
     
@@ -178,15 +185,15 @@ def mark_event_completed(user_id):
         moderator = User.query.get(candidate.moderator_id)
         if moderator: recipient_emails.append(moderator.email)
     else:
-        admins = User.query.filter_by(role='admin').all()
+        admins = User.query.filter_by(role=UserRole.ADMIN.value).all()
         recipient_emails = [admin.email for admin in admins]
 
     if recipient_emails:
-        admin_user = User.query.filter_by(role='admin').first()
+        admin_user = User.query.filter_by(role=UserRole.ADMIN.value).first()
         send_email(to=recipient_emails, subject=f"Coding Test Completed: {candidate.username}", template="mail/test_completed_admin.html", admin=admin_user, candidate=candidate, problem_title=problem_title)
 
-    if current_user.role == 'moderator': return redirect(url_for('moderator.moderator_dashboard'))
-    elif current_user.role == 'recruiter': return redirect(url_for('recruiter.recruiter_dashboard'))
+    if current_user.role == UserRole.MODERATOR.value: return redirect(url_for('moderator.moderator_dashboard'))
+    elif current_user.role == UserRole.RECRUITER.value: return redirect(url_for('recruiter.recruiter_dashboard'))
     else: return redirect(url_for('events.events'))
 
 @events_bp.route('/run_code', methods=['POST'])

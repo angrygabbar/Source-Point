@@ -1,10 +1,11 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, logout_user, login_required, current_user
-from models.auth import User
+from services.auth_service import AuthService
 from extensions import db, bcrypt
 from utils import send_email
 from datetime import datetime
-import traceback  # Added for better error logging
+from enums import UserRole
+import traceback
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -17,7 +18,7 @@ def login_register():
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
-    """Handles the Login form submission."""
+    """Handles the Login form submission using AuthService."""
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
 
@@ -25,46 +26,39 @@ def login():
     password = request.form.get('password')
     remember = True if request.form.get('remember-me') else False
 
-    user = User.query.filter_by(email=email).first()
+    # --- REFACTOR: Logic moved to AuthService ---
+    # This handles checking password, is_active, and is_approved
+    user, message = AuthService.authenticate_user(email, password)
 
-    if user and bcrypt.check_password_hash(user.password_hash, password):
-        # CHECK 1: Is user active? (Blocked users)
-        if not user.is_active:
-            flash('Your account has been deactivated. Please contact support.', 'danger')
-            return redirect(url_for('auth.login_register'))
-        
-        # CHECK 2: Is user approved? (Pending users)
-        if not user.is_approved:
-            flash('Your account is pending approval by an admin.', 'warning')
-            return redirect(url_for('auth.login_register'))
-
+    if user:
         login_user(user, remember=remember)
         
-        # Role-based Redirection Map
+        # Role-based Redirection Map using Enums
         role_map = {
-            'admin': 'admin_core.admin_dashboard',
-            'developer': 'developer.developer_dashboard',
-            'moderator': 'moderator.moderator_dashboard',
-            'candidate': 'candidate.candidate_dashboard',
-            'buyer': 'buyer.buyer_dashboard',
-            'seller': 'seller.seller_dashboard',
-            'recruiter': 'recruiter.recruiter_dashboard'
+            UserRole.ADMIN.value: 'admin_core.admin_dashboard',
+            UserRole.DEVELOPER.value: 'developer.developer_dashboard',
+            UserRole.MODERATOR.value: 'moderator.moderator_dashboard',
+            UserRole.CANDIDATE.value: 'candidate.candidate_dashboard',
+            UserRole.BUYER.value: 'buyer.buyer_dashboard',
+            UserRole.SELLER.value: 'seller.seller_dashboard',
+            UserRole.RECRUITER.value: 'recruiter.recruiter_dashboard'
         }
         
-        # Handle 'next' URL safely
+        # Handle 'next' URL safely to prevent open redirects
         next_page = request.args.get('next')
         if next_page and not next_page.startswith('/'):
-            next_page = None # Prevent open redirects
+            next_page = None 
             
         target = role_map.get(user.role, 'main.dashboard')
         return redirect(next_page) if next_page else redirect(url_for(target))
     else:
-        flash('Login failed. Check your email and password.', 'danger')
+        # Message contains specific error (e.g., "Account blocked", "Pending approval")
+        flash(message, 'danger')
         return redirect(url_for('auth.login_register'))
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
-    """Handles the Registration form submission with extended fields."""
+    """Handles the Registration form submission."""
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
 
@@ -73,109 +67,82 @@ def register():
     email = request.form.get('email')
     password = request.form.get('password')
     confirm_password = request.form.get('confirm_password')
-    role = request.form.get('role', 'candidate')
+    role = request.form.get('role', UserRole.CANDIDATE.value)
     
     # Extended Profile Fields
     mobile_number = request.form.get('mobile_number')
     secret_question = request.form.get('secret_question')
     secret_answer = request.form.get('secret_answer')
     
-    # Skill Fields (Optional, mostly for Candidates/Devs)
+    # Skill Fields
     primary_skill = request.form.get('primary_skill')
     primary_skill_experience = request.form.get('primary_skill_experience')
 
-    # 2. Validation
+    # 2. Basic Validation
     if password != confirm_password:
         flash('Passwords do not match.', 'danger')
         return redirect(url_for('auth.login_register'))
 
-    if User.query.filter_by(email=email).first():
-        flash('Email already registered.', 'danger')
-        return redirect(url_for('auth.login_register'))
-    
-    if User.query.filter_by(username=username).first():
-        flash('Username already taken.', 'danger')
-        return redirect(url_for('auth.login_register'))
-
-    # 3. Secure Data
-    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-    secret_hash = bcrypt.generate_password_hash(secret_answer).decode('utf-8') if secret_answer else None
-    
-    # Generate default avatar
-    avatar_url = f"https://api.dicebear.com/7.x/initials/svg?seed={username}"
-
-    # --- APPROVAL LOGIC ---
-    # Default: User is NOT approved (must wait for admin)
-    is_approved = False
-    
-    # EXCEPTION: If this is the FIRST user in the system, make them Admin & Approved
-    if User.query.count() == 0:
-        is_approved = True
-        role = 'admin'
-
-    # 4. Create User
-    new_user = User(
+    # 3. Call Service to create the base user
+    user, message = AuthService.register_user(
         username=username, 
         email=email, 
-        password_hash=hashed_password, 
-        role=role, 
-        mobile_number=mobile_number,
-        is_approved=is_approved,
-        avatar_url=avatar_url,
-        secret_question=secret_question,
-        secret_answer_hash=secret_hash,
-        primary_skill=primary_skill,
-        primary_skill_experience=primary_skill_experience
+        password=password, 
+        role=role,
+        mobile_number=mobile_number
     )
-    
-    try:
-        db.session.add(new_user)
-        db.session.commit()
 
-        # --- EMAIL NOTIFICATION BLOCK ---
+    if user:
+        # 4. Update Extended Fields (Not handled by Service basic registration)
         try:
-            # Only notify if they need approval (Regular users)
-            if not is_approved: 
-                # STEP 1: Try to get admin email from Config
-                admin_email = current_app.config.get('ADMIN_EMAIL')
-                
-                # STEP 2: If not in config, find the first Admin user in the Database
-                if not admin_email:
-                    admin_user = User.query.filter_by(role='admin').first()
-                    if admin_user:
-                        admin_email = admin_user.email
-                
-                # STEP 3: Fallback
-                if not admin_email:
-                    # Provide a generic fallback or log a warning
-                    admin_email = 'admin@sourcepoint.com'
-                    print("WARNING: No Admin email found. Defaulting to placeholder.")
+            # Handle Security Question Hashing
+            if secret_answer:
+                user.secret_question = secret_question
+                user.secret_answer_hash = bcrypt.generate_password_hash(secret_answer).decode('utf-8')
+            
+            # Handle Skills
+            user.primary_skill = primary_skill
+            user.primary_skill_experience = primary_skill_experience
+            db.session.commit()
 
-                send_email(
-                    to=[admin_email],
-                    subject=f"New User Registration Request: {username}",
-                    template='mail/new_user_admin_notification.html',
-                    new_user=new_user, 
-                    now=datetime.utcnow()
-                )
+            # 5. RESTORED: Email Notification Logic
+            # Only notify admins if the user is NOT auto-approved
+            if not user.is_approved: 
+                try:
+                    # Find an Admin to notify
+                    from models.auth import User # Local import to avoid circular dependency
+                    admin_email = current_app.config.get('ADMIN_EMAIL')
+                    
+                    if not admin_email:
+                        admin_user = User.query.filter_by(role=UserRole.ADMIN.value).first()
+                        if admin_user:
+                            admin_email = admin_user.email
+                    
+                    if admin_email:
+                        send_email(
+                            to=[admin_email],
+                            subject=f"New User Registration Request: {username}",
+                            template='mail/new_user_admin_notification.html',
+                            new_user=user, 
+                            now=datetime.utcnow()
+                        )
+                except Exception as e:
+                    print(f"WARNING: Failed to send Admin Notification Email: {e}")
+                    traceback.print_exc()
+
+            if user.is_approved:
+                flash(message, 'success') # "Account created... you are Admin"
+            else:
+                flash(message, 'info') # "Wait for approval"
+
         except Exception as e:
-            # IMPROVED LOGGING: Print the full error so you can debug it
-            print("--------------------------------------------------")
-            print(f"CRITICAL ERROR: Failed to send Admin Notification Email.")
-            print(f"Exception: {e}")
-            traceback.print_exc() 
-            print("--------------------------------------------------")
-            # We do NOT rollback here because the user was successfully created.
+            db.session.rollback()
+            flash(f"Error updating profile details: {e}", 'danger')
+            return redirect(url_for('auth.login_register'))
 
-        if is_approved:
-            flash('Account created! Since you are the first user, you are now Admin.', 'success')
-        else:
-            flash('Account created successfully! Please wait for admin approval.', 'info')
-
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error creating account: {str(e)}', 'danger')
-        print(f"Database Error: {e}")
+    else:
+        # Registration failed (Duplicate user, etc.)
+        flash(message, 'danger')
 
     return redirect(url_for('auth.login_register'))
 
@@ -188,10 +155,8 @@ def logout():
 
 @auth_bp.route('/reset_password_request')
 def reset_password_request():
-    """Route linked from the Login page 'Forgot Password?' link."""
     return render_template('forgot_password.html')
 
 @auth_bp.route('/forgot_password')
 def forgot_password():
-    """Legacy route for backward compatibility."""
     return render_template('forgot_password.html')

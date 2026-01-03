@@ -13,6 +13,7 @@ from sqlalchemy import or_
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import cloudinary.uploader
+from enums import UserRole
 
 main_bp = Blueprint('main', __name__)
 
@@ -28,14 +29,13 @@ SECRET_QUESTIONS = [
 # @cache.cached(timeout=600) 
 def home(): 
     if current_user.is_authenticated:
-        if current_user.role == 'seller': return redirect(url_for('seller.seller_dashboard'))
-        # FIXED: admin -> admin_core
-        elif current_user.role == 'admin': return redirect(url_for('admin_core.admin_dashboard'))
-        elif current_user.role == 'developer': return redirect(url_for('developer.developer_dashboard'))
-        elif current_user.role == 'moderator': return redirect(url_for('moderator.moderator_dashboard'))
-        elif current_user.role == 'recruiter': return redirect(url_for('recruiter.recruiter_dashboard'))
-        elif current_user.role == 'buyer': return redirect(url_for('buyer.buyer_dashboard'))
-        elif current_user.role == 'candidate': return redirect(url_for('candidate.candidate_dashboard'))
+        if current_user.role == UserRole.SELLER.value: return redirect(url_for('seller.seller_dashboard'))
+        elif current_user.role == UserRole.ADMIN.value: return redirect(url_for('admin_core.admin_dashboard'))
+        elif current_user.role == UserRole.DEVELOPER.value: return redirect(url_for('developer.developer_dashboard'))
+        elif current_user.role == UserRole.MODERATOR.value: return redirect(url_for('moderator.moderator_dashboard'))
+        elif current_user.role == UserRole.RECRUITER.value: return redirect(url_for('recruiter.recruiter_dashboard'))
+        elif current_user.role == UserRole.BUYER.value: return redirect(url_for('buyer.buyer_dashboard'))
+        elif current_user.role == UserRole.CANDIDATE.value: return redirect(url_for('candidate.candidate_dashboard'))
     return render_template('home.html')
 
 @main_bp.route('/offers')
@@ -67,13 +67,13 @@ def submit_contact():
     <p>{query}</p>
     """
     
-    admin_email = "admin@sourcepoint.in"
-    admin_user = User.query.filter_by(role='admin').first()
+    admin_user = User.query.filter_by(role=UserRole.ADMIN.value).first()
     
     if not admin_user:
+        # Fallback if no admin exists
         class DummyUser:
             username = "Admin"
-            email = admin_email
+            email = "admin@sourcepoint.in"
         admin_user = DummyUser()
 
     try:
@@ -90,14 +90,13 @@ def dashboard():
     """
     Central Dashboard Router
     """
-    if current_user.role == 'seller': return redirect(url_for('seller.seller_dashboard'))
-    # FIXED: admin -> admin_core
-    elif current_user.role == 'admin': return redirect(url_for('admin_core.admin_dashboard'))
-    elif current_user.role == 'developer': return redirect(url_for('developer.developer_dashboard'))
-    elif current_user.role == 'moderator': return redirect(url_for('moderator.moderator_dashboard'))
-    elif current_user.role == 'recruiter': return redirect(url_for('recruiter.recruiter_dashboard'))
-    elif current_user.role == 'buyer': return redirect(url_for('buyer.buyer_dashboard'))
-    elif current_user.role == 'candidate': return redirect(url_for('candidate.candidate_dashboard'))
+    if current_user.role == UserRole.SELLER.value: return redirect(url_for('seller.seller_dashboard'))
+    elif current_user.role == UserRole.ADMIN.value: return redirect(url_for('admin_core.admin_dashboard'))
+    elif current_user.role == UserRole.DEVELOPER.value: return redirect(url_for('developer.developer_dashboard'))
+    elif current_user.role == UserRole.MODERATOR.value: return redirect(url_for('moderator.moderator_dashboard'))
+    elif current_user.role == UserRole.RECRUITER.value: return redirect(url_for('recruiter.recruiter_dashboard'))
+    elif current_user.role == UserRole.BUYER.value: return redirect(url_for('buyer.buyer_dashboard'))
+    elif current_user.role == UserRole.CANDIDATE.value: return redirect(url_for('candidate.candidate_dashboard'))
     else: return redirect(url_for('main.home'))
 
 @main_bp.route('/messages')
@@ -106,9 +105,9 @@ def messages():
     messageable_users_dict = {}
     now = datetime.utcnow()
 
-    # Define who can message whom
-    if current_user.role == 'candidate':
-        admins = User.query.filter_by(role='admin').all()
+    # Define who can message whom using Enums
+    if current_user.role == UserRole.CANDIDATE.value:
+        admins = User.query.filter_by(role=UserRole.ADMIN.value).all()
         for admin in admins:
             messageable_users_dict[admin.id] = admin
         if current_user.test_start_time and current_user.test_end_time and \
@@ -118,8 +117,8 @@ def messages():
             if moderator:
                 messageable_users_dict[moderator.id] = moderator
 
-    elif current_user.role == 'moderator':
-        admins = User.query.filter_by(role='admin').all()
+    elif current_user.role == UserRole.MODERATOR.value:
+        admins = User.query.filter_by(role=UserRole.ADMIN.value).all()
         for admin in admins:
             messageable_users_dict[admin.id] = admin
         assigned_candidates = User.query.filter(
@@ -130,12 +129,12 @@ def messages():
         for candidate in assigned_candidates:
             messageable_users_dict[candidate.id] = candidate
 
-    elif current_user.role in ['seller', 'buyer', 'recruiter']:
-        admins = User.query.filter_by(role='admin').all()
+    elif current_user.role in [UserRole.SELLER.value, UserRole.BUYER.value, UserRole.RECRUITER.value]:
+        admins = User.query.filter_by(role=UserRole.ADMIN.value).all()
         for admin in admins:
             messageable_users_dict[admin.id] = admin
 
-    elif current_user.role in ['admin', 'developer']:
+    elif current_user.role in [UserRole.ADMIN.value, UserRole.DEVELOPER.value]:
         users = User.query.filter(User.id != current_user.id).all()
         for user in users:
             messageable_users_dict[user.id] = user
@@ -258,14 +257,16 @@ def change_password():
 
 @main_bp.route('/learning')
 @login_required
-@role_required(['candidate', 'admin', 'developer', 'recruiter', 'moderator', 'seller', 'buyer'])
+@role_required([UserRole.CANDIDATE.value, UserRole.ADMIN.value, UserRole.DEVELOPER.value, 
+                UserRole.RECRUITER.value, UserRole.MODERATOR.value, UserRole.SELLER.value, UserRole.BUYER.value])
 @cache.cached(timeout=600) 
 def learning():
     return render_template('learning.html')
 
 @main_bp.route('/learn/<language>')
 @login_required
-@role_required(['candidate', 'admin', 'developer', 'recruiter', 'moderator', 'seller', 'buyer'])
+@role_required([UserRole.CANDIDATE.value, UserRole.ADMIN.value, UserRole.DEVELOPER.value, 
+                UserRole.RECRUITER.value, UserRole.MODERATOR.value, UserRole.SELLER.value, UserRole.BUYER.value])
 @cache.cached(timeout=300) 
 def learn_language(language):
     supported_languages = ['java', 'cpp', 'c', 'sql', 'dbms', 'plsql', 'mysql']
@@ -303,7 +304,7 @@ def ask_learning_ai():
         The user is asking: "{question}"
         Keep your answer concise (under 150 words) and helpful for a student.
         """
-        response = client.models.generate_content(model='gemini-flash-latest', contents=prompt)
+        response = client.models.generate_content(model='gemini-1.5-flash', contents=prompt)
         return jsonify({'answer': response.text})
 
     except Exception as e:

@@ -5,36 +5,43 @@ from models.auth import User
 from models.hiring import JobApplication, JobOpening, CodeSnippet, Feedback, CodeTestSubmission, ModeratorAssignmentHistory
 from utils import role_required, log_user_action, send_email
 from datetime import datetime, timedelta
+from enums import UserRole, ApplicationStatus # --- IMPORT ENUMS ---
 
 admin_hiring_bp = Blueprint('admin_hiring', __name__, url_prefix='/admin/hiring')
 
 @admin_hiring_bp.route('/dashboard')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value) # --- USE ENUM ---
 def admin_hiring_dashboard():
-    pending_apps_count = JobApplication.query.filter_by(status='pending').count()
+    pending_apps_count = JobApplication.query.filter_by(status=ApplicationStatus.PENDING.value).count()
     
+    hiring_roles = [
+        UserRole.CANDIDATE.value, 
+        UserRole.DEVELOPER.value, 
+        UserRole.MODERATOR.value, 
+        UserRole.RECRUITER.value
+    ]
     pending_hiring_users = User.query.filter(
         User.is_approved == False,
-        User.role.in_(['candidate', 'developer', 'moderator', 'recruiter'])
+        User.role.in_(hiring_roles)
     ).all()
     
     applications = JobApplication.query.order_by(JobApplication.applied_at.desc()).limit(20).all()
     
     scheduled_candidates = User.query.filter(
-        User.role == 'candidate',
+        User.role == UserRole.CANDIDATE.value,
         User.problem_statement_id != None,
         User.moderator_id == None
     ).all()
 
     assigned_candidates = User.query.filter(
-        User.role == 'candidate',
+        User.role == UserRole.CANDIDATE.value,
         User.moderator_id.isnot(None)
     ).order_by(User.test_start_time.asc()).limit(20).all()
     
     mod_ids = list(set([c.moderator_id for c in assigned_candidates if c.moderator_id]))
     moderators_map = {m.id: m for m in User.query.filter(User.id.in_(mod_ids)).all()}
-    all_moderators = User.query.filter_by(role='moderator').all()
+    all_moderators = User.query.filter_by(role=UserRole.MODERATOR.value).all()
 
     received_snippets = CodeSnippet.query.filter_by(recipient_id=current_user.id)\
         .order_by(CodeSnippet.timestamp.desc()).limit(5).all()
@@ -51,7 +58,7 @@ def admin_hiring_dashboard():
 
 @admin_hiring_bp.route('/job/post', methods=['POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def post_job():
     title = request.form.get('job_title')
     description = request.form.get('job_description')
@@ -67,10 +74,10 @@ def post_job():
 
 @admin_hiring_bp.route('/application/accept/<int:app_id>')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def accept_application(app_id):
     application = JobApplication.query.get_or_404(app_id)
-    application.status = 'accepted'
+    application.status = ApplicationStatus.ACCEPTED.value # --- USE ENUM ---
     db.session.commit()
 
     send_email(
@@ -86,10 +93,10 @@ def accept_application(app_id):
 
 @admin_hiring_bp.route('/application/reject/<int:app_id>')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def reject_application(app_id):
     application = JobApplication.query.get_or_404(app_id)
-    application.status = 'rejected'
+    application.status = ApplicationStatus.REJECTED.value # --- USE ENUM ---
     db.session.commit()
 
     send_email(
@@ -105,13 +112,14 @@ def reject_application(app_id):
 
 @admin_hiring_bp.route('/candidate/add_contact', methods=['POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def add_contact_for_candidate():
     candidate_id = request.form.get('candidate_id')
     developer_id = request.form.get('developer_id')
     candidate = User.query.get(candidate_id)
     developer = User.query.get(developer_id)
-    if candidate and developer and developer.role == 'developer':
+    
+    if candidate and developer and developer.role == UserRole.DEVELOPER.value:
         candidate.allowed_contacts.append(developer)
         db.session.commit()
         log_user_action("Link Contacts", f"Linked developer {developer.username} to {candidate.username}")
@@ -122,7 +130,7 @@ def add_contact_for_candidate():
 
 @admin_hiring_bp.route('/moderator/assign', methods=['POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def assign_moderator():
     candidate_id = request.form.get('candidate_id')
     moderator_id = request.form.get('moderator_id')
@@ -130,7 +138,7 @@ def assign_moderator():
     candidate = User.query.get(candidate_id)
     moderator = User.query.get(moderator_id)
 
-    if not candidate or not moderator or moderator.role != 'moderator':
+    if not candidate or not moderator or moderator.role != UserRole.MODERATOR.value:
         flash("Invalid user selection.", 'danger')
         return redirect(url_for('admin_core.admin_dashboard'))
 
@@ -166,7 +174,7 @@ def assign_moderator():
 
 @admin_hiring_bp.route('/records')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def manage_records():
     jobs = JobOpening.query.order_by(JobOpening.created_at.desc()).all()
     feedback = Feedback.query.order_by(Feedback.created_at.desc()).all()
@@ -183,7 +191,7 @@ def manage_records():
 # --- Delete Routes for Records ---
 @admin_hiring_bp.route('/job/delete/<int:job_id>')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def delete_job_opening(job_id):
     job = JobOpening.query.get_or_404(job_id)
     db.session.delete(job)
@@ -194,7 +202,7 @@ def delete_job_opening(job_id):
 
 @admin_hiring_bp.route('/feedback/delete/<int:feedback_id>')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def delete_feedback(feedback_id):
     feedback = Feedback.query.get_or_404(feedback_id)
     db.session.delete(feedback)
@@ -205,7 +213,7 @@ def delete_feedback(feedback_id):
 
 @admin_hiring_bp.route('/submission/delete/<int:submission_id>')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def delete_submission_record(submission_id):
     submission = CodeTestSubmission.query.get_or_404(submission_id)
     db.session.delete(submission)
@@ -216,7 +224,7 @@ def delete_submission_record(submission_id):
 
 @admin_hiring_bp.route('/history/delete/<int:history_id>')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def delete_assignment_history(history_id):
     history_record = ModeratorAssignmentHistory.query.get_or_404(history_id)
     db.session.delete(history_record)
@@ -227,7 +235,7 @@ def delete_assignment_history(history_id):
 
 @admin_hiring_bp.route('/event/delete/<int:user_id>')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def delete_coding_event(user_id):
     candidate = User.query.get_or_404(user_id)
     candidate.problem_statement_id = None

@@ -1,6 +1,7 @@
 from extensions import db, bcrypt
 from models.auth import User
 from datetime import datetime
+from enums import UserRole  # --- IMPORT ENUM ---
 
 class AuthService:
     @staticmethod
@@ -31,7 +32,7 @@ class AuthService:
 
         # 5. Business Rule: First user is always Admin & Approved
         if User.query.count() == 0:
-            new_user.role = 'admin'
+            new_user.role = UserRole.ADMIN.value # --- USE ENUM ---
             new_user.is_approved = True
 
         # 6. Persistence: Save to DB

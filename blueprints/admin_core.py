@@ -15,6 +15,7 @@ import csv
 from io import TextIOWrapper
 import re
 import pypdf
+from enums import UserRole, ApplicationStatus, OrderStatus  # --- IMPORT ENUMS ---
 
 admin_core_bp = Blueprint('admin_core', __name__, url_prefix='/admin')
 
@@ -24,7 +25,7 @@ admin_core_bp = Blueprint('admin_core', __name__, url_prefix='/admin')
 
 @admin_core_bp.route('/')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value) # --- USE ENUM ---
 def admin_dashboard():
     # 1. Pending Users
     pending_users_count = User.query.filter_by(is_approved=False).count()
@@ -36,28 +37,30 @@ def admin_dashboard():
 
     # 3. Applications
     applications = JobApplication.query.order_by(JobApplication.applied_at.desc()).limit(10).all()
-    pending_apps_count = JobApplication.query.filter_by(status='pending').count()
+    
+    # Use Enum for status check
+    pending_apps_count = JobApplication.query.filter_by(status=ApplicationStatus.PENDING.value).count()
 
     # 4. Activity Logs
     recent_logs = ActivityLog.query.order_by(ActivityLog.timestamp.desc()).limit(20).all()
     
-    # 5. Directories
-    candidates = User.query.filter_by(role='candidate').limit(50).all()
-    developers = User.query.filter_by(role='developer').limit(50).all()
-    moderators = User.query.filter_by(role='moderator').limit(50).all()
-    sellers = User.query.filter_by(role='seller').limit(50).all()
-    buyers = User.query.filter_by(role='buyer').limit(50).all()
-    recruiters = User.query.filter_by(role='recruiter').limit(50).all()
+    # 5. Directories (Use Enums)
+    candidates = User.query.filter_by(role=UserRole.CANDIDATE.value).limit(50).all()
+    developers = User.query.filter_by(role=UserRole.DEVELOPER.value).limit(50).all()
+    moderators = User.query.filter_by(role=UserRole.MODERATOR.value).limit(50).all()
+    sellers = User.query.filter_by(role=UserRole.SELLER.value).limit(50).all()
+    buyers = User.query.filter_by(role=UserRole.BUYER.value).limit(50).all()
+    recruiters = User.query.filter_by(role=UserRole.RECRUITER.value).limit(50).all()
     
     # 6. Scheduling
     scheduled_candidates = User.query.filter(
-        User.role == 'candidate',
+        User.role == UserRole.CANDIDATE.value,
         User.problem_statement_id != None,
         User.moderator_id == None
     ).all()
 
     assigned_candidates_with_moderators = User.query.filter(
-        User.role == 'candidate',
+        User.role == UserRole.CANDIDATE.value,
         User.moderator_id.isnot(None)
     ).order_by(User.test_start_time.asc()).limit(20).all()
     
@@ -65,8 +68,9 @@ def admin_dashboard():
     moderators_for_assignments = User.query.filter(User.id.in_(moderator_ids)).all()
     moderators_map = {m.id: m for m in moderators_for_assignments}
     
-    # 7. Orders & Stock Stats
-    pending_orders_count = Order.query.filter_by(status='Order Placed').count()
+    # 7. Orders & Stock Stats (Use Enums)
+    pending_orders_count = Order.query.filter_by(status=OrderStatus.PLACED.value).count()
+    # StockRequest status "Pending" matches our standard, we can use string or add to Enums later
     pending_requests_count = StockRequest.query.filter_by(status='Pending').count()
 
     return render_template('admin_dashboard.html',
@@ -90,7 +94,7 @@ def admin_dashboard():
 
 @admin_core_bp.route('/analytics')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def admin_analytics():
     start_date_str = request.args.get('start_date')
     end_date_str = request.args.get('end_date')
@@ -118,9 +122,9 @@ def admin_analytics():
     accepted_apps = 0
     rejected_apps = 0
     for count, status in app_query:
-        if status == 'pending': pending_apps = count
-        elif status == 'accepted': accepted_apps = count
-        elif status == 'rejected': rejected_apps = count
+        if status == ApplicationStatus.PENDING.value: pending_apps = count
+        elif status == ApplicationStatus.ACCEPTED.value: accepted_apps = count
+        elif status == ApplicationStatus.REJECTED.value: rejected_apps = count
     
     project_status_counts = db.session.query(Project.status, func.count(Project.id)).filter(
         Project.start_date >= start_date,
@@ -146,7 +150,7 @@ def admin_analytics():
 
 @admin_core_bp.route('/activity_logs')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def admin_activity_logs():
     filter_user = request.args.get('user')
     filter_action = request.args.get('action')
@@ -171,7 +175,7 @@ def admin_activity_logs():
 
 @admin_core_bp.route('/broadcast_email', methods=['GET', 'POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def broadcast_email():
     if request.method == 'POST':
         subject = request.form.get('subject')
@@ -208,7 +212,7 @@ def broadcast_email():
 
 @admin_core_bp.route('/send_specific_email', methods=['GET', 'POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def send_specific_email():
     if request.method == 'POST':
         user_ids = request.form.getlist('user_ids')
@@ -252,7 +256,7 @@ def send_specific_email():
 
 @admin_core_bp.route('/update_learning_content', methods=['POST'])
 @login_required
-@role_required(['admin', 'developer'])
+@role_required([UserRole.ADMIN.value, UserRole.DEVELOPER.value])
 def update_learning_content():
     language_id = request.form.get('language_id')
     content = request.form.get('content')
@@ -274,20 +278,20 @@ def update_learning_content():
 
 @admin_core_bp.route('/projects')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def projects():
     return render_template('projects_hub.html')
 
 @admin_core_bp.route('/manage_projects')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def manage_projects():
     projects = Project.query.order_by(Project.start_date.desc()).all()
     return render_template('manage_projects.html', projects=projects)
 
 @admin_core_bp.route('/create_project', methods=['GET', 'POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def create_project():
     if request.method == 'POST':
         name = request.form.get('name')
@@ -310,14 +314,14 @@ def create_project():
 
 @admin_core_bp.route('/project/<int:project_id>')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def project_detail(project_id):
     project = Project.query.get_or_404(project_id)
     return render_template('project_detail.html', project=project)
 
 @admin_core_bp.route('/project/<int:project_id>/add_transaction', methods=['POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def add_transaction(project_id):
     project = Project.query.get_or_404(project_id)
     description = request.form.get('description')
@@ -335,7 +339,7 @@ def add_transaction(project_id):
 
 @admin_core_bp.route('/edit_transaction/<int:transaction_id>', methods=['GET', 'POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def edit_transaction(transaction_id):
     transaction = Transaction.query.get_or_404(transaction_id)
     if request.method == 'POST':
@@ -351,7 +355,7 @@ def edit_transaction(transaction_id):
 
 @admin_core_bp.route('/delete_transaction/<int:transaction_id>')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def delete_transaction(transaction_id):
     transaction = Transaction.query.get_or_404(transaction_id)
     project_id = transaction.project_id
@@ -363,7 +367,7 @@ def delete_transaction(transaction_id):
 
 @admin_core_bp.route('/project/<int:project_id>/update_status', methods=['POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def update_project_status(project_id):
     project = Project.query.get_or_404(project_id)
     new_status = request.form.get('status')
@@ -375,14 +379,14 @@ def update_project_status(project_id):
 
 @admin_core_bp.route('/project/<int:project_id>/brd')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def view_brd(project_id):
     project = Project.query.get_or_404(project_id)
     return render_template('brd_details.html', project=project)
 
 @admin_core_bp.route('/project/<int:project_id>/brd/edit', methods=['GET', 'POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def edit_brd(project_id):
     project = Project.query.get_or_404(project_id)
     brd = project.brd or BRD(project_id=project_id)
@@ -407,7 +411,7 @@ def edit_brd(project_id):
 
 @admin_core_bp.route('/project/<int:project_id>/brd/share', methods=['POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def share_brd(project_id):
     project = Project.query.get_or_404(project_id)
     recipient_email = request.form.get('recipient_email')
@@ -431,15 +435,16 @@ def share_brd(project_id):
 
 @admin_core_bp.route('/emi_manager')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def emi_manager():
     plans = EMIPlan.query.order_by(EMIPlan.created_at.desc()).all()
-    users = User.query.filter(User.role != 'admin').order_by(User.username).all()
+    # Filter by not admin using Enum value (if consistent with model data)
+    users = User.query.filter(User.role != UserRole.ADMIN.value).order_by(User.username).all()
     return render_template('emi_manager.html', plans=plans, users=users)
 
 @admin_core_bp.route('/emi_manager/import', methods=['POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def import_emi_schedule():
     borrower_id = request.form.get('borrower_id')
     lender_id = request.form.get('lender_id')
@@ -591,7 +596,7 @@ def import_emi_schedule():
 
 @admin_core_bp.route('/emi_manager/update_payment', methods=['POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def update_emi_payment():
     payment_id = request.form.get('payment_id')
     amount = request.form.get('amount')
@@ -617,7 +622,7 @@ def update_emi_payment():
 
 @admin_core_bp.route('/emi_manager/mark_paid/<int:payment_id>', methods=['GET', 'POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def mark_emi_paid(payment_id):
     payment = EMIPayment.query.get_or_404(payment_id)
     
@@ -654,7 +659,7 @@ def mark_emi_paid(payment_id):
 
 @admin_core_bp.route('/emi_manager/delete_plan/<int:plan_id>')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def delete_emi_plan(plan_id):
     plan = EMIPlan.query.get_or_404(plan_id)
     title = plan.title

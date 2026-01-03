@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_file
 from flask_login import login_required, current_user
 from extensions import db
 from models.auth import User
@@ -8,9 +8,10 @@ from invoice_service import InvoiceGenerator
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import csv
-from io import TextIOWrapper
+from io import TextIOWrapper, BytesIO
 import openpyxl 
 import traceback 
+from enums import UserRole, OrderStatus, InvoiceStatus
 
 admin_commerce_bp = Blueprint('admin_commerce', __name__, url_prefix='/admin/commerce')
 
@@ -18,17 +19,25 @@ GST_RATES = {'Electronics': 18.0, 'Apparel': 12.0, 'Home & Office': 12.0, 'Books
 
 @admin_commerce_bp.route('/dashboard')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def admin_commerce_dashboard():
-    pending_orders_count = Order.query.filter_by(status='Order Placed').count()
+    # Use Enum values for filtering
+    pending_orders_count = Order.query.filter_by(status=OrderStatus.PLACED.value).count()
     pending_requests_count = StockRequest.query.filter_by(status='Pending').count()
     low_stock_count = Product.query.filter(Product.stock < 10).count()
+    
     recent_orders = Order.query.order_by(Order.created_at.desc()).limit(10).all()
     pending_requests = StockRequest.query.filter_by(status='Pending').order_by(StockRequest.request_date.desc()).all()
     recent_invoices = Invoice.query.order_by(Invoice.created_at.desc()).limit(5).all()
-    pending_commerce_users = User.query.filter(User.is_approved == False, User.role.in_(['seller', 'buyer'])).all()
-    sellers = User.query.filter_by(role='seller').limit(20).all()
-    buyers = User.query.filter_by(role='buyer').limit(20).all()
+    
+    # Filter pending users by Role Enums
+    pending_commerce_users = User.query.filter(
+        User.is_approved == False, 
+        User.role.in_([UserRole.SELLER.value, UserRole.BUYER.value])
+    ).all()
+    
+    sellers = User.query.filter_by(role=UserRole.SELLER.value).limit(20).all()
+    buyers = User.query.filter_by(role=UserRole.BUYER.value).limit(20).all()
 
     return render_template('admin_commerce_dashboard.html',
                            pending_orders_count=pending_orders_count,
@@ -43,7 +52,7 @@ def admin_commerce_dashboard():
 # --- ADS ---
 @admin_commerce_bp.route('/ads/manage', methods=['GET', 'POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def manage_ads():
     if request.method == 'POST':
         ad_name = request.form.get('ad_name')
@@ -63,7 +72,7 @@ def manage_ads():
 
 @admin_commerce_bp.route('/ads/delete/<int:ad_id>')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def delete_ad(ad_id):
     ad = AffiliateAd.query.get_or_404(ad_id)
     db.session.delete(ad)
@@ -75,7 +84,7 @@ def delete_ad(ad_id):
 # --- INVENTORY ---
 @admin_commerce_bp.route('/inventory', methods=['GET', 'POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def manage_inventory():
     if request.method == 'POST':
         product_code = request.form.get('product_code')
@@ -93,7 +102,7 @@ def manage_inventory():
         return redirect(url_for('admin_commerce.manage_inventory'))
     
     products = Product.query.order_by(Product.name).all()
-    sellers = User.query.filter_by(role='seller').all()
+    sellers = User.query.filter_by(role=UserRole.SELLER.value).all()
     total_inventory_value = sum(int(p.stock) * float(p.price) for p in products)
     low_stock_count = sum(1 for p in products if int(p.stock) < 10)
 
@@ -102,7 +111,7 @@ def manage_inventory():
 
 @admin_commerce_bp.route('/inventory/import', methods=['POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def import_inventory():
     file = request.files.get('file')
     if not file or file.filename == '':
@@ -156,7 +165,7 @@ def import_inventory():
 
 @admin_commerce_bp.route('/inventory/update', methods=['POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def update_product():
     product_id = request.form.get('product_id')
     product = Product.query.get_or_404(product_id)
@@ -171,7 +180,7 @@ def update_product():
 
 @admin_commerce_bp.route('/inventory/delete/<int:product_id>')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def delete_product(product_id):
     product = Product.query.get_or_404(product_id)
     db.session.delete(product)
@@ -182,7 +191,7 @@ def delete_product(product_id):
 
 @admin_commerce_bp.route('/inventory/assign', methods=['POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def assign_inventory():
     product_id = request.form.get('product_id')
     seller_id = request.form.get('seller_id')
@@ -203,13 +212,13 @@ def assign_inventory():
     flash(f"Assigned {quantity} units to seller.", "success")
     return redirect(url_for('admin_commerce.manage_inventory'))
 
-# --- SELLER INVENTORY MANAGEMENT (NEW MISSING ROUTES) ---
+# --- SELLER INVENTORY MANAGEMENT ---
 @admin_commerce_bp.route('/inventory/seller', defaults={'seller_id': None})
 @admin_commerce_bp.route('/inventory/seller/<int:seller_id>')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def manage_seller_inventory(seller_id):
-    sellers = User.query.filter_by(role='seller').all()
+    sellers = User.query.filter_by(role=UserRole.SELLER.value).all()
     selected_seller = None
     allocations = []
     if seller_id:
@@ -219,7 +228,7 @@ def manage_seller_inventory(seller_id):
 
 @admin_commerce_bp.route('/inventory/seller/update', methods=['POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def update_seller_stock():
     allocation_id = request.form.get('allocation_id')
     try:
@@ -235,7 +244,7 @@ def update_seller_stock():
 
 @admin_commerce_bp.route('/inventory/seller/delete/<int:allocation_id>')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def delete_seller_allocation(allocation_id):
     allocation = SellerInventory.query.get_or_404(allocation_id)
     seller_id = allocation.seller_id
@@ -247,20 +256,20 @@ def delete_seller_allocation(allocation_id):
 # --- STOCK REQUESTS ---
 @admin_commerce_bp.route('/inventory/requests')
 @login_required
-@role_required('admin')
-def manage_stock_requests():
+@role_required(UserRole.ADMIN.value)
+def manage_stock_requests_page():
     requests = StockRequest.query.filter_by(status='Pending').order_by(StockRequest.request_date.desc()).all()
     history = StockRequest.query.filter(StockRequest.status != 'Pending').order_by(StockRequest.response_date.desc()).limit(20).all()
     return render_template('manage_stock_requests.html', requests=requests, history=history)
 
 @admin_commerce_bp.route('/inventory/requests/approve/<int:req_id>', methods=['POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def approve_stock_request(req_id):
     req = StockRequest.query.get_or_404(req_id)
     if req.product.stock < req.quantity:
         flash(f'Insufficient Master Stock (Available: {req.product.stock}).', 'danger')
-        return redirect(url_for('admin_commerce.manage_stock_requests'))
+        return redirect(url_for('admin_commerce.manage_stock_requests_page'))
 
     req.product.stock -= req.quantity
     seller_inv = SellerInventory.query.filter_by(seller_id=req.seller_id, product_id=req.product_id).first()
@@ -278,11 +287,11 @@ def approve_stock_request(req_id):
         traceback.print_exc()
     
     flash('Request approved.', 'success')
-    return redirect(url_for('admin_commerce.manage_stock_requests'))
+    return redirect(url_for('admin_commerce.manage_stock_requests_page'))
 
 @admin_commerce_bp.route('/inventory/requests/reject/<int:req_id>', methods=['POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def reject_stock_request(req_id):
     req = StockRequest.query.get_or_404(req_id)
     req.status = 'Rejected'
@@ -296,18 +305,21 @@ def reject_stock_request(req_id):
         traceback.print_exc()
     
     flash('Request rejected.', 'warning')
-    return redirect(url_for('admin_commerce.manage_stock_requests'))
+    return redirect(url_for('admin_commerce.manage_stock_requests_page'))
 
 # --- ORDERS ---
 @admin_commerce_bp.route('/orders')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def manage_orders():
     orders = Order.query.order_by(Order.created_at.desc()).all()
     
     total_revenue = sum(order.total_amount for order in orders)
-    pending_count = sum(1 for order in orders if order.status == 'Order Placed')
-    completed_count = sum(1 for order in orders if order.status in ['Order Delivered', 'Order Dispatched'])
+    pending_count = sum(1 for order in orders if order.status == OrderStatus.PLACED.value)
+    
+    # Check against Enum values or list of completed statuses
+    completed_statuses = [OrderStatus.DELIVERED.value, OrderStatus.SHIPPED.value]
+    completed_count = sum(1 for order in orders if order.status in completed_statuses)
 
     return render_template('manage_orders.html', 
                            orders=orders,
@@ -317,7 +329,7 @@ def manage_orders():
 
 @admin_commerce_bp.route('/orders/update/<int:order_id>', methods=['POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def update_order_status(order_id):
     order = Order.query.get_or_404(order_id)
     new_status = request.form.get('status')
@@ -326,10 +338,13 @@ def update_order_status(order_id):
     
     # --- AUTOMATIC INVOICE GENERATION LOGIC ---
     attachments = None
-    if new_status == 'Order Accepted':
+    
+    # Check if 'Order Accepted' or 'Confirmed' maps to our Enum
+    if new_status == OrderStatus.CONFIRMED.value or new_status == 'Order Accepted':
         try:
             invoice = Invoice.query.filter_by(order_id=order.order_number).first()
             if not invoice:
+                # Create Invoice if it doesn't exist
                 invoice = Invoice(
                     invoice_number=f"INV-{order.order_number}",
                     recipient_name=order.buyer.username,
@@ -340,7 +355,7 @@ def update_order_status(order_id):
                     subtotal=order.total_amount, 
                     tax=0.00,
                     total_amount=order.total_amount,
-                    status='Unpaid',
+                    status=InvoiceStatus.UNPAID.value,
                     admin_id=current_user.id,
                     created_at=datetime.utcnow(),
                     due_date=datetime.utcnow()
@@ -348,6 +363,7 @@ def update_order_status(order_id):
                 db.session.add(invoice)
                 db.session.flush() 
                 
+                # Copy items from Order to Invoice
                 for order_item in order.items:
                     inv_item = InvoiceItem(
                         invoice_id=invoice.id,
@@ -358,6 +374,7 @@ def update_order_status(order_id):
                     db.session.add(inv_item)
                 db.session.commit()
             
+            # Generate PDF
             generator = InvoiceGenerator(invoice)
             pdf_bytes = generator.generate_pdf()
             
@@ -372,7 +389,6 @@ def update_order_status(order_id):
             traceback.print_exc()
 
     # --- EMAIL NOTIFICATION ---
-    print(f"Attempting to send email to: {order.buyer.email}")
     try:
         send_email(
             to=order.buyer.email, 
@@ -387,9 +403,8 @@ def update_order_status(order_id):
             now=datetime.utcnow(),
             attachments=attachments  
         )
-        print("Email sent successfully.")
     except Exception as e:
-        print(f"CRITICAL: Failed to send order status email. Error: {e}")
+        print(f"Failed to send order status email. Error: {e}")
         traceback.print_exc() 
     
     flash(f'Order {order.order_number} status updated to {new_status}.', 'success')
@@ -398,16 +413,14 @@ def update_order_status(order_id):
 # --- INVOICES ---
 @admin_commerce_bp.route('/invoices')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def manage_invoices():
     invoices = Invoice.query.order_by(Invoice.created_at.desc()).all()
     return render_template('manage_invoices.html', invoices=invoices)
 
-# ... (Previous code remains the same)
-
 @admin_commerce_bp.route('/invoices/create', methods=['GET', 'POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def create_invoice():
     if request.method == 'POST':
         try:
@@ -446,7 +459,6 @@ def create_invoice():
             total_amount = subtotal + tax_amount
 
             # 3. Create Database Record
-            # Generate a temporary unique ID, loop until unique
             import uuid
             invoice_num = f"INV-{uuid.uuid4().hex[:6].upper()}"
             
@@ -460,7 +472,7 @@ def create_invoice():
                 subtotal=subtotal,
                 tax=tax_amount,
                 total_amount=total_amount,
-                status='Unpaid',
+                status=InvoiceStatus.UNPAID.value,
                 due_date=datetime.strptime(due_date_str, '%Y-%m-%d').date() if due_date_str else None,
                 notes=notes,
                 payment_details=payment_details,
@@ -479,11 +491,10 @@ def create_invoice():
 
             db.session.commit()
 
-            # 4. Generate PDF
+            # 4. Generate PDF & Send
             generator = InvoiceGenerator(new_invoice)
             pdf_bytes = generator.generate_pdf()
             
-            # 5. Send Email
             attachments = [{
                 'filename': f'Invoice_{new_invoice.invoice_number}.pdf',
                 'data': pdf_bytes
@@ -512,24 +523,22 @@ def create_invoice():
     products_js = [{'id': p.id, 'name': p.name, 'price': float(p.price), 'code': p.product_code} for p in products]
     return render_template('create_invoice.html', products=products_js)
 
-# ... (Rest of code)
-
 @admin_commerce_bp.route('/invoices/mark_paid/<int:invoice_id>', methods=['POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def mark_invoice_paid(invoice_id):
     invoice = Invoice.query.get_or_404(invoice_id)
-    invoice.status = 'Paid'
+    invoice.status = InvoiceStatus.PAID.value
     
     # Update linked order status if it exists
     if invoice.order_id:
         order = Order.query.filter_by(order_number=invoice.order_id).first()
-        if order and order.status != 'Order Delivered':
+        if order and order.status != OrderStatus.DELIVERED.value:
              order.status = 'Payment Received'
     
     db.session.commit()
     
-    # --- ADDED: Send Payment Received Email ---
+    # Send Payment Received Email
     try:
         send_email(
             to=invoice.recipient_email,
@@ -542,7 +551,6 @@ def mark_invoice_paid(invoice_id):
     except Exception as e:
         print(f"Error sending payment confirmation email: {e}")
         traceback.print_exc()
-    # ------------------------------------------
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'success': True, 'message': 'Invoice marked as Paid.'})
@@ -552,7 +560,7 @@ def mark_invoice_paid(invoice_id):
 
 @admin_commerce_bp.route('/invoices/delete/<int:invoice_id>')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def delete_invoice(invoice_id):
     invoice = Invoice.query.get_or_404(invoice_id)
     db.session.delete(invoice)
@@ -566,9 +574,8 @@ def delete_invoice(invoice_id):
 
 @admin_commerce_bp.route('/invoices/resend', methods=['POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def resend_invoice():
-    # Determine ID from form
     invoice_id = request.form.get('invoice_id')
     recipients = request.form.get('recipient_emails')
     
@@ -613,7 +620,7 @@ def resend_invoice():
 
 @admin_commerce_bp.route('/invoices/remind/<int:invoice_id>', methods=['POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def send_invoice_reminder(invoice_id):
     invoice = Invoice.query.get_or_404(invoice_id)
     

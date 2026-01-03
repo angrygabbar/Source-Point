@@ -2,35 +2,38 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from extensions import db
 from models.auth import User, Message
-from models.hiring import JobOpening, JobApplication, CodeTestSubmission
+from models.hiring import JobOpening, JobApplication, CodeTestSubmission, ModeratorAssignmentHistory
 from utils import role_required, log_user_action, send_email
 from datetime import datetime, timedelta
+from enums import UserRole, ApplicationStatus  # --- IMPORT ENUMS ---
 
 recruiter_bp = Blueprint('recruiter', __name__)
 
 @recruiter_bp.route('/recruiter')
 @login_required
-@role_required('recruiter')
+@role_required(UserRole.RECRUITER.value) # --- USE ENUM ---
 def recruiter_dashboard():
     # 1. Fetch Job Stats
     jobs = JobOpening.query.order_by(JobOpening.created_at.desc()).all()
     
     # 2. Fetch Applications
     applications = JobApplication.query.order_by(JobApplication.applied_at.desc()).all()
-    pending_apps = [app for app in applications if app.status == 'pending']
+    
+    # Use Enum value for comparison
+    pending_apps = [app for app in applications if app.status == ApplicationStatus.PENDING.value]
     
     # 3. Fetch Candidates & Event Status
-    candidates = User.query.filter_by(role='candidate').all()
+    candidates = User.query.filter_by(role=UserRole.CANDIDATE.value).all()
     
     # Filter for active testing events
     scheduled_candidates = User.query.filter(
-        User.role == 'candidate',
+        User.role == UserRole.CANDIDATE.value,
         User.problem_statement_id != None,
         User.test_completed == False
     ).all()
     
     # 4. Fetch Moderators for Assignment
-    moderators = User.query.filter_by(role='moderator').all()
+    moderators = User.query.filter_by(role=UserRole.MODERATOR.value).all()
 
     return render_template('recruiter_dashboard.html',
                            jobs=jobs,
@@ -40,18 +43,16 @@ def recruiter_dashboard():
                            scheduled_candidates=scheduled_candidates,
                            moderators=moderators)
 
-# --- THIS WAS THE MISSING ROUTE ---
 @recruiter_bp.route('/view_profile/<int:user_id>')
 @login_required
-@role_required('recruiter')
+@role_required(UserRole.RECRUITER.value)
 def view_candidate_profile(user_id):
     user = User.query.get_or_404(user_id)
     return render_template('view_user_profile.html', user=user)
-# ----------------------------------
 
 @recruiter_bp.route('/post_job', methods=['POST'])
 @login_required
-@role_required('recruiter')
+@role_required(UserRole.RECRUITER.value)
 def post_job():
     title = request.form.get('job_title')
     description = request.form.get('job_description')
@@ -69,7 +70,7 @@ def post_job():
 
 @recruiter_bp.route('/delete_job/<int:job_id>')
 @login_required
-@role_required('recruiter')
+@role_required(UserRole.RECRUITER.value)
 def delete_job(job_id):
     job = JobOpening.query.get_or_404(job_id)
     db.session.delete(job)
@@ -80,16 +81,19 @@ def delete_job(job_id):
 
 @recruiter_bp.route('/application/<int:app_id>/<string:action>')
 @login_required
-@role_required('recruiter')
+@role_required(UserRole.RECRUITER.value)
 def manage_application(app_id, action):
     application = JobApplication.query.get_or_404(app_id)
     
-    if action not in ['accept', 'reject']:
+    if action == 'accept':
+        new_status = ApplicationStatus.ACCEPTED.value
+    elif action == 'reject':
+        new_status = ApplicationStatus.REJECTED.value
+    else:
         flash('Invalid action.', 'danger')
         return redirect(url_for('recruiter.recruiter_dashboard'))
     
-    status = 'accepted' if action == 'accept' else 'rejected'
-    application.status = status
+    application.status = new_status
     db.session.commit()
 
     # Notify Candidate
@@ -99,17 +103,17 @@ def manage_application(app_id, action):
         template="mail/application_status_update.html",
         candidate=application.candidate,
         job=application.job,
-        status=status.capitalize(),
+        status=new_status,
         now=datetime.utcnow()
     )
     
-    log_user_action(f"{status.capitalize()} Application", f"Recruiter processed application for {application.candidate.username}")
-    flash(f"Application for {application.candidate.username} has been {status}.", 'success')
+    log_user_action(f"{action.capitalize()} Application", f"Recruiter processed application for {application.candidate.username}")
+    flash(f"Application for {application.candidate.username} has been {new_status}.", 'success')
     return redirect(url_for('recruiter.recruiter_dashboard'))
 
 @recruiter_bp.route('/assign_moderator', methods=['POST'])
 @login_required
-@role_required('recruiter')
+@role_required(UserRole.RECRUITER.value)
 def assign_moderator():
     candidate_id = request.form.get('candidate_id')
     moderator_id = request.form.get('moderator_id')

@@ -1,18 +1,21 @@
 import os
 from dotenv import load_dotenv
-from flask import Flask, render_template
+from flask import Flask, render_template, flash, redirect, request
 from extensions import db, bcrypt, login_manager, migrate, cache, limiter
 from models.auth import User, Message
 from models.learning import LearningContent
 from bs4 import BeautifulSoup
 from flask_login import current_user
 from config import DevelopmentConfig, ProductionConfig
+from errors import BusinessValidationError, ResourceNotFoundError, PermissionDeniedError
+from enums import UserRole, OrderStatus, InvoiceStatus, ApplicationStatus, JobStatus, PaymentStatus
 
 load_dotenv()
 
 def create_app(config_class=DevelopmentConfig):
     app = Flask(__name__)
     
+    # Detect environment
     if os.environ.get('FLASK_ENV') == 'production':
         app.config.from_object(ProductionConfig)
     else:
@@ -20,6 +23,7 @@ def create_app(config_class=DevelopmentConfig):
 
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+    # Initialize Extensions
     db.init_app(app)
     bcrypt.init_app(app)
     login_manager.init_app(app)
@@ -31,7 +35,6 @@ def create_app(config_class=DevelopmentConfig):
     from blueprints.auth import auth_bp
     from blueprints.main import main_bp
     
-    # NEW: Split Admin Blueprints
     from blueprints.admin_core import admin_core_bp
     from blueprints.admin_users import admin_users_bp
     from blueprints.admin_hiring import admin_hiring_bp
@@ -48,7 +51,6 @@ def create_app(config_class=DevelopmentConfig):
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
     
-    # Register Admin Modules
     app.register_blueprint(admin_core_bp)
     app.register_blueprint(admin_users_bp)
     app.register_blueprint(admin_hiring_bp)
@@ -62,14 +64,46 @@ def create_app(config_class=DevelopmentConfig):
     app.register_blueprint(recruiter_bp)
     app.register_blueprint(seller_bp)
 
+    # --- CONTEXT PROCESSORS (Global Variables for Templates) ---
+    
     @app.context_processor
     def inject_messages():
+        """Makes messages available to all templates."""
         if current_user.is_authenticated:
             messages = Message.query.filter(
                 (Message.sender_id == current_user.id) | (Message.recipient_id == current_user.id)
             ).order_by(Message.timestamp.desc()).all()
             return dict(messages=messages)
         return dict(messages=[])
+
+    @app.context_processor
+    def inject_enums():
+        """Makes Enums available to all templates for type-safe checks."""
+        return dict(
+            UserRole=UserRole,
+            OrderStatus=OrderStatus,
+            InvoiceStatus=InvoiceStatus,
+            ApplicationStatus=ApplicationStatus,
+            JobStatus=JobStatus,
+            PaymentStatus=PaymentStatus
+        )
+
+    # --- GLOBAL ERROR HANDLERS ---
+    
+    @app.errorhandler(BusinessValidationError)
+    def handle_business_error(e):
+        flash(str(e), 'danger')
+        return redirect(request.referrer or '/')
+
+    @app.errorhandler(ResourceNotFoundError)
+    def handle_not_found_error(e):
+        flash(str(e), 'warning')
+        return render_template('404.html'), 404
+
+    @app.errorhandler(PermissionDeniedError)
+    def handle_permission_error(e):
+        flash(str(e), 'danger')
+        return redirect('/')
 
     @app.errorhandler(404)
     def page_not_found(e): return render_template('404.html'), 404
@@ -91,6 +125,7 @@ def register_commands(app):
 
     @app.cli.command("populate-db")
     def populate_db():
+        # ... (Same as your original populate logic) ...
         supported_languages = ['java', 'cpp', 'c', 'sql', 'dbms', 'plsql', 'mysql']
         for lang in supported_languages:
             existing_content = LearningContent.query.get(lang)
@@ -111,7 +146,7 @@ def register_commands(app):
                 print(f"Error populating {lang}: {e}")
                 db.session.add(LearningContent(id=lang, content=f"<h1>{lang.upper()}</h1><p>Coming soon.</p>"))
         db.session.commit()
-        print("Database populated with learning content.")
+        print("Database populated.")
 
 app = create_app()
 

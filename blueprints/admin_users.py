@@ -6,12 +6,13 @@ from utils import role_required, log_user_action, send_email
 from datetime import datetime
 from sqlalchemy import or_
 import cloudinary.uploader
+from enums import UserRole  # --- IMPORT ENUM ---
 
 admin_users_bp = Blueprint('admin_users', __name__, url_prefix='/admin/users')
 
 @admin_users_bp.route('/manage')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value) # --- USE ENUM ---
 def manage_users():
     page = request.args.get('page', 1, type=int)
     search_query = request.args.get('search', '').strip()
@@ -43,7 +44,7 @@ def manage_users():
 
 @admin_users_bp.route('/create', methods=['POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def create_user():
     username = request.form.get('username')
     email = request.form.get('email')
@@ -73,7 +74,7 @@ def create_user():
 
 @admin_users_bp.route('/toggle_status/<int:user_id>')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def toggle_user_status(user_id):
     user_to_toggle = User.query.get_or_404(user_id)
     if user_to_toggle.id == current_user.id:
@@ -98,7 +99,7 @@ def toggle_user_status(user_id):
 
 @admin_users_bp.route('/approve/<int:user_id>')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def approve_user(user_id):
     user = User.query.get_or_404(user_id)
     user.is_approved = True
@@ -118,7 +119,7 @@ def approve_user(user_id):
 
 @admin_users_bp.route('/reject/<int:user_id>')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def reject_user(user_id):
     user_to_reject = User.query.filter_by(id=user_id, is_approved=False).first_or_404() 
     username = user_to_reject.username
@@ -130,21 +131,21 @@ def reject_user(user_id):
 
 @admin_users_bp.route('/profile/view/<int:user_id>')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def view_profile(user_id):
     user = User.query.get_or_404(user_id)
     return render_template('view_user_profile.html', user=user)
 
 @admin_users_bp.route('/profile/edit/<int:user_id>')
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def edit_user_profile(user_id):
     user = User.query.get_or_404(user_id)
     return render_template('edit_user_profile.html', user=user)
 
 @admin_users_bp.route('/profile/update/<int:user_id>', methods=['POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def update_user_profile(user_id):
     user_to_update = User.query.get_or_404(user_id)
 
@@ -178,7 +179,7 @@ def update_user_profile(user_id):
 
 @admin_users_bp.route('/password/change/<int:user_id>', methods=['POST'])
 @login_required
-@role_required('admin')
+@role_required(UserRole.ADMIN.value)
 def admin_change_user_password(user_id):
     user_to_update = User.query.get_or_404(user_id)
     new_password = request.form.get('new_password')

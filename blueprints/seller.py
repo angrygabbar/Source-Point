@@ -7,6 +7,7 @@ from utils import role_required, log_user_action, send_email
 from datetime import datetime
 from invoice_service import InvoiceGenerator
 import os 
+from enums import UserRole, OrderStatus, InvoiceStatus
 
 seller_bp = Blueprint('seller', __name__, url_prefix='/seller')
 
@@ -16,7 +17,7 @@ seller_bp = Blueprint('seller', __name__, url_prefix='/seller')
 
 @seller_bp.route('/dashboard')
 @login_required
-@role_required('seller')
+@role_required(UserRole.SELLER.value)
 def seller_dashboard():
     # Fetch inventory specifically assigned to this seller
     inventory_items = db.session.query(SellerInventory, Product)\
@@ -36,11 +37,11 @@ def seller_dashboard():
         if inv.stock < 10:
             low_stock_count += 1
     
-    # Revenue from MY paid invoices
-    total_revenue = sum(inv.total_amount for inv in my_invoices if inv.status == 'Paid')
+    # Revenue from MY paid invoices (Use Enum)
+    total_revenue = sum(inv.total_amount for inv in my_invoices if inv.status == InvoiceStatus.PAID.value)
     
     # Pending orders assigned to ME
-    pending_orders_count = Order.query.filter_by(seller_id=current_user.id, status='Order Placed').count()
+    pending_orders_count = Order.query.filter_by(seller_id=current_user.id, status=OrderStatus.PLACED.value).count()
     
     recent_orders = Order.query.filter_by(seller_id=current_user.id).order_by(Order.created_at.desc()).limit(5).all()
 
@@ -57,7 +58,7 @@ def seller_dashboard():
 
 @seller_bp.route('/inventory', methods=['GET', 'POST'])
 @login_required
-@role_required('seller')
+@role_required(UserRole.SELLER.value)
 def manage_inventory():
     # 1. Get My Inventory (Assigned Items)
     inventory_items = db.session.query(SellerInventory, Product)\
@@ -96,7 +97,7 @@ def manage_inventory():
 
 @seller_bp.route('/inventory/request', methods=['POST'])
 @login_required
-@role_required('seller')
+@role_required(UserRole.SELLER.value)
 def request_stock():
     product_id = request.form.get('product_id')
     quantity = request.form.get('quantity')
@@ -123,13 +124,11 @@ def request_stock():
         product = Product.query.get(product_id)
         
         # --- DIAGNOSTIC EMAIL LOGIC ---
-        admins = User.query.filter_by(role='admin').all()
+        admins = User.query.filter_by(role=UserRole.ADMIN.value).all()
         
         if not admins:
-            # Warn user if no admins exist to receive the email
             flash('Stock request saved, but NO ADMINS found to notify.', 'warning')
         elif not os.environ.get('BREVO_API_KEY'):
-            # Warn user if API key is missing
             flash('Stock request saved, but Email API Key is missing in .env', 'warning')
         else:
             success_count = 0
@@ -163,7 +162,7 @@ def request_stock():
 
 @seller_bp.route('/inventory/update', methods=['POST'])
 @login_required
-@role_required('seller')
+@role_required(UserRole.SELLER.value)
 def update_product():
     inventory_id = request.form.get('inventory_id')
     new_stock = request.form.get('stock')
@@ -189,10 +188,10 @@ def update_product():
 
 @seller_bp.route('/orders')
 @login_required
-@role_required('seller')
+@role_required(UserRole.SELLER.value)
 def manage_orders():
     orders = Order.query.filter_by(seller_id=current_user.id).order_by(Order.created_at.desc()).all()
-    buyers = User.query.filter_by(role='buyer').all()
+    buyers = User.query.filter_by(role=UserRole.BUYER.value).all()
     
     my_inventory = db.session.query(SellerInventory, Product)\
         .join(Product, SellerInventory.product_id == Product.id)\
@@ -208,7 +207,7 @@ def manage_orders():
 
 @seller_bp.route('/orders/create', methods=['POST'])
 @login_required
-@role_required('seller')
+@role_required(UserRole.SELLER.value)
 def create_order():
     buyer_id = request.form.get('buyer_id')
     shipping_address = request.form.get('shipping_address')
@@ -250,7 +249,7 @@ def create_order():
 
         new_order = Order(
             order_number=order_number, user_id=buyer_id, seller_id=current_user.id,
-            total_amount=total_amount, status='Order Placed',
+            total_amount=total_amount, status=OrderStatus.PLACED.value,
             shipping_address=shipping_address, billing_address=billing_address
         )
         new_order.items = order_items
@@ -267,7 +266,7 @@ def create_order():
 
 @seller_bp.route('/orders/update/<int:order_id>', methods=['POST'])
 @login_required
-@role_required('seller')
+@role_required(UserRole.SELLER.value)
 def update_order_status(order_id):
     order = Order.query.get_or_404(order_id)
     if order.seller_id != current_user.id:
@@ -304,14 +303,14 @@ def update_order_status(order_id):
 
 @seller_bp.route('/invoices')
 @login_required
-@role_required('seller')
+@role_required(UserRole.SELLER.value)
 def manage_invoices():
     invoices = Invoice.query.filter_by(admin_id=current_user.id).order_by(Invoice.created_at.desc()).all()
     return render_template('seller/manage_invoices.html', invoices=invoices)
 
 @seller_bp.route('/invoices/create', methods=['GET', 'POST'])
 @login_required
-@role_required('seller')
+@role_required(UserRole.SELLER.value)
 def create_invoice():
     if request.method == 'POST':
         last_invoice = Invoice.query.order_by(Invoice.id.desc()).first()
@@ -348,7 +347,8 @@ def create_invoice():
         invoice = Invoice(
             invoice_number=invoice_number, recipient_name=recipient_name, recipient_email=recipient_email,
             bill_to_address=bill_to, ship_to_address=ship_to, subtotal=subtotal, total_amount=subtotal,
-            due_date=due_date, admin_id=current_user.id
+            due_date=due_date, admin_id=current_user.id,
+            status=InvoiceStatus.UNPAID.value
         )
         invoice.items = items
         db.session.add(invoice)
@@ -378,7 +378,7 @@ def create_invoice():
 
 @seller_bp.route('/invoices/delete/<int:invoice_id>')
 @login_required
-@role_required('seller')
+@role_required(UserRole.SELLER.value)
 def delete_invoice(invoice_id):
     invoice = Invoice.query.get_or_404(invoice_id)
     if invoice.admin_id != current_user.id:
@@ -394,14 +394,14 @@ def delete_invoice(invoice_id):
 
 @seller_bp.route('/invoices/mark_paid/<int:invoice_id>', methods=['POST'])
 @login_required
-@role_required('seller')
+@role_required(UserRole.SELLER.value)
 def mark_invoice_paid(invoice_id):
     invoice = Invoice.query.get_or_404(invoice_id)
     if invoice.admin_id != current_user.id:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
         
-    if invoice.status != 'Paid':
-        invoice.status = 'Paid'
+    if invoice.status != InvoiceStatus.PAID.value:
+        invoice.status = InvoiceStatus.PAID.value
         db.session.commit()
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({'success': True, 'message': 'Invoice marked as Paid.'})
@@ -410,7 +410,7 @@ def mark_invoice_paid(invoice_id):
 
 @seller_bp.route('/invoices/resend', methods=['POST'])
 @login_required
-@role_required('seller')
+@role_required(UserRole.SELLER.value)
 def resend_invoice():
     invoice_id = request.form.get('invoice_id')
     invoice = Invoice.query.get_or_404(invoice_id)
@@ -443,7 +443,7 @@ def resend_invoice():
 
 @seller_bp.route('/invoices/remind/<int:invoice_id>', methods=['POST'])
 @login_required
-@role_required('seller')
+@role_required(UserRole.SELLER.value)
 def send_invoice_reminder(invoice_id):
     invoice = Invoice.query.get_or_404(invoice_id)
     if invoice.admin_id != current_user.id:

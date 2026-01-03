@@ -6,19 +6,20 @@ from models.hiring import (CodeTestSubmission, Feedback, ModeratorAssignmentHist
                            JobApplication)
 from models.learning import ProblemStatement
 from utils import role_required, log_user_action, send_email
+from enums import UserRole # --- IMPORT ENUM ---
 
 moderator_bp = Blueprint('moderator', __name__)
 
 @moderator_bp.route('/moderator')
 @login_required
-@role_required('moderator')
+@role_required(UserRole.MODERATOR.value) # --- USE ENUM ---
 def moderator_dashboard():
     moderated_candidates = User.query.filter_by(moderator_id=current_user.id).all()
     return render_template('moderator_dashboard.html', moderated_candidates=moderated_candidates)
 
 @moderator_bp.route('/submit_feedback', methods=['POST'])
 @login_required
-@role_required('moderator')
+@role_required(UserRole.MODERATOR.value) # --- USE ENUM ---
 def submit_feedback():
     candidate_id = request.form.get('candidate_id')
     if not candidate_id:

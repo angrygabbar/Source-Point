@@ -10,6 +10,8 @@ from models.hiring import JobOpening, JobApplication, CodeTestSubmission, CodeSn
 from models.auth import User
 from utils import send_email
 from datetime import datetime
+from errors import BusinessValidationError, ResourceNotFoundError
+from enums import UserRole
 
 class HiringService:
     @staticmethod
@@ -21,11 +23,11 @@ class HiringService:
         # 1. Validation
         job = JobOpening.query.get(job_id)
         if not job:
-            return False, "Job not found."
+            raise ResourceNotFoundError("Job", job_id)
             
         existing_application = JobApplication.query.filter_by(user_id=user.id, job_id=job.id).first()
         if existing_application:
-            return False, "You have already applied for this job."
+            raise BusinessValidationError("You have already applied for this job.")
 
         # 2. Resume Upload (Cloudinary)
         resume_url = None
@@ -39,13 +41,13 @@ class HiringService:
                 # Try to read the PDF structure
                 reader = PdfReader(file_stream)
                 if len(reader.pages) == 0:
-                    raise Exception("Empty PDF")
+                    raise BusinessValidationError("Uploaded PDF is empty.")
                     
                 # IMPORTANT: Reset pointer for Cloudinary upload
                 resume_file.seek(0) 
             except Exception as e:
                 print(f"PDF Validation Error: {e}")
-                return False, "Invalid file format. Please upload a valid PDF."
+                raise BusinessValidationError("Invalid file format. Please upload a valid PDF.")
             # --------------------------------------------------
 
             try:
@@ -57,14 +59,15 @@ class HiringService:
                 )
                 resume_url = upload_result['secure_url']
             except Exception as e:
-                return False, f"Resume upload failed: {str(e)}"
+                print(f"Upload failed: {e}")
+                raise BusinessValidationError("Failed to upload resume. Please try again.")
         
         # Fallback to existing profile resume
         if not resume_url and user.resume_filename:
             resume_url = user.resume_filename
 
         if not resume_url:
-            return False, "Please upload a resume to apply."
+            raise BusinessValidationError("Please upload a resume to apply.")
 
         # 3. Create Application Record
         try:
@@ -73,15 +76,16 @@ class HiringService:
             db.session.commit()
         except Exception as e:
             db.session.rollback()
-            return False, "Database error while saving application."
+            raise Exception(f"Database error: {e}")
 
         # 4. Notifications
-        admins = User.query.filter_by(role='admin').all()
-        recruiters = User.query.filter_by(role='recruiter').all()
+        # Use Enums for role lookup
+        admins = User.query.filter_by(role=UserRole.ADMIN.value).all()
+        recruiters = User.query.filter_by(role=UserRole.RECRUITER.value).all()
         recipient_emails = [u.email for u in admins + recruiters]
         
         if recipient_emails:
-            admin_user = User.query.filter_by(role='admin').first()
+            admin_user = User.query.filter_by(role=UserRole.ADMIN.value).first()
             send_email(
                 to=recipient_emails, 
                 subject=f"New Job Application: {job.title}", 
@@ -111,9 +115,9 @@ class HiringService:
         ENHANCEMENT: Uses new Google Gen AI SDK.
         """
         if not recipient_id or not code.strip():
-            return False, "Please select a recipient and provide code."
+            raise BusinessValidationError("Please select a recipient and provide code.")
             
-        # --- AI ENHANCEMENT: Automated Grading (Migrated to google-genai) ---
+        # --- AI ENHANCEMENT: Automated Grading (google-genai) ---
         ai_feedback = "AI Grading unavailable."
         
         if os.environ.get('GEMINI_API_KEY'):
@@ -129,7 +133,7 @@ class HiringService:
                     f"and any potential bugs. Keep it under 150 words."
                 )
                 
-                # Call the model (New SDK method signature)
+                # Call the model
                 response = client.models.generate_content(
                     model='gemini-1.5-flash', 
                     contents=prompt
@@ -158,11 +162,17 @@ class HiringService:
         except Exception as e:
             db.session.rollback()
             print(f"DB Error: {e}")
-            return False, "Error saving submission."
+            raise Exception("Error saving submission.")
 
         # Notification
         recipient = User.query.get(recipient_id)
-        problem_title = candidate.assigned_problem.title if candidate.assigned_problem else "Unknown Problem"
+        if not recipient:
+             raise ResourceNotFoundError("Recipient", recipient_id)
+             
+        # Check if the candidate has a problem assigned
+        problem_title = "General Assessment"
+        if hasattr(candidate, 'assigned_problem') and candidate.assigned_problem:
+             problem_title = candidate.assigned_problem.title
 
         send_email(
             to=recipient.email, 
@@ -184,7 +194,7 @@ class HiringService:
     @staticmethod
     def share_code_snippet(sender_id, recipient_id, code):
         if not recipient_id or not code or not code.strip():
-            return False, "Please select a recipient and provide code."
+            raise BusinessValidationError("Please select a recipient and provide code.")
 
         try:
             new_snippet = CodeSnippet(
@@ -197,6 +207,6 @@ class HiringService:
             db.session.commit()
         except Exception:
             db.session.rollback()
-            return False, "Error saving code snippet."
+            raise Exception("Error saving code snippet.")
         
         return True, "Code snippet shared successfully!"

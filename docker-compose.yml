@@ -1,13 +1,38 @@
 version: '3.8'
 
 services:
+  # 1. The Flask App (Your Code)
   web:
     build: .
     container_name: sourcepoint_local
     restart: always
     ports:
-      - "5000:5000"  # Maps localhost:5000 to container:5000
+      - "5000:5000"
+    depends_on:
+      - db  # Wait for DB to start before starting App
+    environment:
+      # OVERRIDE the .env file just for Docker
+      # Connects to the 'db' service defined below
+      - DATABASE_URL=postgresql://dev_user:dev_password@db:5432/sourcepoint_dev_db
     env_file:
-      - .env         # Loads your local API keys automatically
+      - .env  # Loads other keys (API keys, etc.)
     volumes:
-      - .:/app       # SYNC: Any code change you make on Mac updates instantly in Docker!
+      - .:/app
+
+  # 2. The Development Database (Isolated)
+  db:
+    image: postgres:15
+    container_name: sourcepoint_db_dev
+    restart: always
+    environment:
+      POSTGRES_USER: dev_user
+      POSTGRES_PASSWORD: dev_password
+      POSTGRES_DB: sourcepoint_dev_db
+    ports:
+      - "5434:5432" # Maps Docker DB (5432) to Mac Localhost (5434)
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+
+# Persist dev data so it doesn't vanish when you restart docker
+volumes:
+  postgres_data_dev:

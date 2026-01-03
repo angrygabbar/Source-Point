@@ -2,16 +2,17 @@
 from extensions import db
 from datetime import datetime
 from sqlalchemy import Numeric
+from enums import OrderStatus, InvoiceStatus # IMPORT NEW ENUMS
 
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     product_code = db.Column(db.String(50), unique=True, nullable=False)
     name = db.Column(db.String(150), nullable=False)
-    stock = db.Column(db.Integer, default=0, nullable=False)
+    stock = db.Column(db.Integer, default=0, nullable=False, index=True)
     price = db.Column(Numeric(10, 2), nullable=False, default=0.00)
     description = db.Column(db.Text, nullable=True)
     image_url = db.Column(db.Text, nullable=True)
-    category = db.Column(db.String(50), nullable=True)
+    category = db.Column(db.String(50), nullable=True, index=True)
     brand = db.Column(db.String(100), nullable=True)
     mrp = db.Column(Numeric(10, 2), nullable=True) 
     warranty = db.Column(db.String(200), nullable=True)
@@ -32,9 +33,10 @@ class Order(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     total_amount = db.Column(Numeric(10, 2), nullable=False)
-    status = db.Column(db.String(20), default='Order Placed') 
     
-    # --- FIX: Restored shipping_address column to satisfy NotNullViolation ---
+    # UPDATED: Use Enum value
+    status = db.Column(db.String(20), default=OrderStatus.PLACED.value, index=True) 
+    
     shipping_address = db.Column(db.Text, nullable=False)
     
     # We keep these as nullable=True so they don't cause errors if they exist in DB
@@ -45,7 +47,7 @@ class Order(db.Model):
     shipping_country = db.Column(db.String(100), nullable=True)
     
     billing_address = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     
     items = db.relationship('OrderItem', backref='order', lazy=True, cascade="all, delete-orphan")
 
@@ -79,7 +81,10 @@ class Invoice(db.Model):
     subtotal = db.Column(Numeric(10, 2), nullable=False)
     tax = db.Column(Numeric(10, 2), nullable=False, default=0.00)
     total_amount = db.Column(Numeric(10, 2), nullable=False)
-    status = db.Column(db.String(20), default='Unpaid', nullable=False) 
+    
+    # UPDATED: Use Enum value
+    status = db.Column(db.String(20), default=InvoiceStatus.UNPAID.value, nullable=False) 
+    
     due_date = db.Column(db.Date, nullable=True)
     notes = db.Column(db.Text, nullable=True)
     payment_details = db.Column(db.Text, nullable=True)
