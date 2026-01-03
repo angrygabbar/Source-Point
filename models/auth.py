@@ -55,8 +55,13 @@ class User(UserMixin, db.Model):
                                        secondaryjoin=(candidate_contacts.c.developer_id == id),
                                        backref=db.backref('contact_for', lazy='dynamic'), lazy='dynamic')
 
+    # Relationship for problems created by an admin
     created_problems = db.relationship('ProblemStatement', foreign_keys='ProblemStatement.created_by_id', backref='creator', lazy=True)
     
+    # --- FIX: Relationship for problems assigned to a candidate ---
+    assigned_problem = db.relationship('ProblemStatement', foreign_keys=[problem_statement_id], backref='assigned_candidates', lazy=True)
+    # -------------------------------------------------------------
+
     sent_messages = db.relationship('Message', foreign_keys='Message.sender_id', backref='sender', lazy=True)
     received_messages = db.relationship('Message', foreign_keys='Message.recipient_id', backref='recipient', lazy=True)
     
@@ -68,7 +73,13 @@ class User(UserMixin, db.Model):
     orders = db.relationship('Order', foreign_keys='Order.user_id', backref='buyer', lazy=True)
     sales = db.relationship('Order', foreign_keys='Order.seller_id', backref='seller', lazy=True)
     
+    # --- HELPER METHODS ---
+
     def has_role(self, role_enum):
+        """
+        Checks if the user has a specific role using the Enum.
+        Usage: if user.has_role(UserRole.ADMIN): ...
+        """
         return self.role == role_enum.value
 
 class Message(db.Model):
