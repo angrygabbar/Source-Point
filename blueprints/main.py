@@ -1,4 +1,4 @@
-from google import genai
+import google.generativeai as genai  # <--- THIS IS CORRECT
 import os
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, current_app
 from flask_login import login_required, current_user

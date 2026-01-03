@@ -3,7 +3,7 @@ import os
 from io import BytesIO
 from pypdf import PdfReader
 # --- NEW SDK IMPORT ---
-from google import genai
+import google.generativeai as genai  # <--- THIS IS CORRECT
 # ----------------------
 from extensions import db
 from models.hiring import JobOpening, JobApplication, CodeTestSubmission, CodeSnippet
