@@ -11,13 +11,16 @@ psycopg2-binary==2.9.9
 python-dotenv==1.0.0
 requests==2.31.0
 gunicorn==21.2.0
-# --- NEW DEPENDENCIES ---
 cloudinary==1.36.0
 sib-api-v3-sdk==7.6.0
 pypdf==3.17.1
 openpyxl==3.1.2
-google-genai==0.3.0
+# Use the correct Google AI library
+google-generativeai==0.8.3
 redis==5.0.1
 celery==5.3.6
+
+# --- FIXES FOR YOUR CRASHES ---
+Werkzeug==2.3.7
 beautifulsoup4==4.12.2
 fpdf==1.7.2
