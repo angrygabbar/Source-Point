@@ -1,37 +1,47 @@
-name: Deploy to Laptop
+name: Deploy to Production (Docker)
 
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch:  # Manual run button
+  workflow_dispatch:  # Allows you to click a button in GitHub to run manually
 
 jobs:
   deploy:
-    runs-on: self-hosted  # Runs on your laptop
+    runs-on: self-hosted  # Runs directly on your server/laptop
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # --- THIS IS THE MISSING STEP ---
-      - name: Copy Files to Web Server
+      - name: Update Code on Server
         run: |
-          # Copy all new files from the runner to your live website folder
-          # -r: recursive, -u: update only new files, -v: verbose
-          cp -rf . /var/www/sourcepoint/Source-Point/
-
-      - name: Install Dependencies
-        run: |
-          # Install libraries (e.g. google-generativeai) into the virtual env
-          /var/www/sourcepoint/venv/bin/pip install -r /var/www/sourcepoint/Source-Point/requirements.txt
-
-      - name: Apply Database Migrations
-        run: |
-          export FLASK_APP=app.py
+          # 1. Go to project folder
           cd /var/www/sourcepoint/Source-Point
-          /var/www/sourcepoint/venv/bin/flask db upgrade || echo "No migrations needed"
+          
+          # 2. Pull latest changes from GitHub
+          # We use fetch + reset to ensure the server matches GitHub exactly
+          git fetch origin main
+          git reset --hard origin/main
 
-      - name: Restart Application
+      - name: Rebuild Application
         run: |
-          # Restart the service to load the new Python code
-          sudo systemctl restart sourcepoint
+          cd /var/www/sourcepoint/Source-Point
+          
+          # 3. Rebuild the Flask container with new code
+          # --build: Forces a rebuild of the image
+          # --no-deps: Don't restart the database (since we use Host DB)
+          # web: Only restart the app service
+          docker compose up -d --build --no-deps web
+
+      - name: Run Database Migrations
+        run: |
+          cd /var/www/sourcepoint/Source-Point
+          
+          # 4. Apply any changes to database structure (new tables/columns)
+          # -T tells Docker not to expect an interactive terminal
+          docker compose exec -T web flask db upgrade
+
+      - name: Cleanup
+        run: |
+          # 5. Remove unused images to save disk space
+          docker image prune -f
