@@ -1,3 +1,5 @@
+import traceback
+import sys
 import os
 from dotenv import load_dotenv
 from flask import Flask, render_template, flash, redirect, request
@@ -109,7 +111,13 @@ def create_app():
     def page_not_found(e): return render_template('404.html'), 404
 
     @app.errorhandler(500)
-    def internal_server_error(e): return render_template('500.html'), 500
+    def internal_server_error(e):
+        # --- ADD THESE 3 LINES TO SEE THE ERROR IN LOGS ---
+        print("CRITICAL SERVER ERROR:", file=sys.stderr)
+        traceback.print_exc()  # This prints the actual crash details
+        print("------------------------------------------------", file=sys.stderr)
+        # --------------------------------------------------
+        return render_template('500.html'), 500
     
     @app.errorhandler(429)
     def ratelimit_handler(e): return render_template('404.html'), 429 

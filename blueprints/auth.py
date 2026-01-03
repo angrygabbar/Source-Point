@@ -5,20 +5,21 @@ from extensions import db, bcrypt
 from utils import send_email
 from datetime import datetime
 from enums import UserRole
+import sys
 import traceback
 
 auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/login_register', methods=['GET'])
 def login_register():
-    """Renders the combined Login/Register page."""
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
     return render_template('login_register.html')
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
-    """Handles the Login form submission."""
+    print("DEBUG: /login route hit. Processing form data...", file=sys.stderr)
+    
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
 
@@ -26,13 +27,20 @@ def login():
     password = request.form.get('password')
     remember = True if request.form.get('remember-me') else False
 
+    # Authenticate via Service
     user, message = AuthService.authenticate_user(email, password)
 
     if user:
-        login_user(user, remember=remember)
+        print(f"DEBUG: Logging in user {user.id}...", file=sys.stderr)
+        try:
+            login_user(user, remember=remember)
+        except Exception as e:
+            print(f"CRITICAL ERROR: login_user() failed: {e}", file=sys.stderr)
+            traceback.print_exc()
+            flash('Internal system error during login session creation.', 'danger')
+            return redirect(url_for('auth.login_register'))
         
         # Role-based Redirection Map
-        # Note: Ensure these blueprint routes exist in your other files!
         role_map = {
             UserRole.ADMIN.value: 'admin_core.admin_dashboard',
             UserRole.DEVELOPER.value: 'developer.developer_dashboard',
@@ -43,19 +51,24 @@ def login():
             UserRole.RECRUITER.value: 'recruiter.recruiter_dashboard'
         }
         
+        target = role_map.get(user.role, 'main.dashboard')
+        print(f"DEBUG: Redirecting user to {target}...", file=sys.stderr)
+        
         next_page = request.args.get('next')
         if next_page and not next_page.startswith('/'):
             next_page = None 
             
-        target = role_map.get(user.role, 'main.dashboard')
         return redirect(next_page) if next_page else redirect(url_for(target))
     else:
+        print(f"DEBUG: Auth failed. Message: {message}", file=sys.stderr)
         flash(message, 'danger')
         return redirect(url_for('auth.login_register'))
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
-    """Handles the Registration form submission."""
+    # ... (Keep existing code unchanged or replace with your local file if needed) ...
+    # For debugging login, we don't strictly need to modify register right now.
+    # Paste your original register code here if you overwrite this file entirely.
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
 
@@ -97,10 +110,8 @@ def register():
             # Email Notification Logic
             if not user.is_approved: 
                 try:
-                    # Avoid circular import by importing locally
                     from models.auth import User 
                     admin_email = current_app.config.get('ADMIN_EMAIL')
-                    
                     if not admin_email:
                         admin_user = User.query.filter_by(role=UserRole.ADMIN.value).first()
                         if admin_user:
