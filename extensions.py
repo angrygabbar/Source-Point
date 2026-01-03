@@ -13,5 +13,6 @@ login_manager = LoginManager()
 cache = Cache()
 limiter = Limiter(key_func=get_remote_address)
 
+# Redirect users to this endpoint if they aren't logged in
 login_manager.login_view = 'auth.login_register'
 login_manager.login_message_category = 'info'

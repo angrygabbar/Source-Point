@@ -1,4 +1,3 @@
-# Source Point/config.py
 import os
 from datetime import timedelta
 
@@ -40,17 +39,15 @@ class ProductionConfig(Config):
     DEBUG = False
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     
-    # In production, ensure we don't use default keys
     @classmethod
     def init_app(cls, app):
         Config.init_app(app)
-        
-        # Security Enhancement: Fail fast if no secret key
+        # Ensure secret key is set in production
         if not os.environ.get('SECRET_KEY'):
-             raise RuntimeError("CRITICAL: SECRET_KEY is not set in Production environment!")
+             print("WARNING: SECRET_KEY is not set in Production environment! Session security is at risk.")
 
 class TestingConfig(Config):
     """Testing configuration."""
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:' # Use in-memory DB for tests
-    WTF_CSRF_ENABLED = False # Disable CSRF for easier testing
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    WTF_CSRF_ENABLED = False

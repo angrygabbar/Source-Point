@@ -12,7 +12,7 @@ from enums import UserRole, OrderStatus, InvoiceStatus, ApplicationStatus, JobSt
 
 load_dotenv()
 
-def create_app(config_class=DevelopmentConfig):
+def create_app():
     app = Flask(__name__)
     
     # Detect environment
@@ -21,7 +21,9 @@ def create_app(config_class=DevelopmentConfig):
     else:
         app.config.from_object(DevelopmentConfig)
 
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    # Ensure upload folder exists
+    if app.config.get('UPLOAD_FOLDER'):
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
     # Initialize Extensions
     db.init_app(app)
@@ -64,11 +66,10 @@ def create_app(config_class=DevelopmentConfig):
     app.register_blueprint(recruiter_bp)
     app.register_blueprint(seller_bp)
 
-    # --- CONTEXT PROCESSORS (Global Variables for Templates) ---
+    # --- CONTEXT PROCESSORS ---
     
     @app.context_processor
     def inject_messages():
-        """Makes messages available to all templates."""
         if current_user.is_authenticated:
             messages = Message.query.filter(
                 (Message.sender_id == current_user.id) | (Message.recipient_id == current_user.id)
@@ -78,7 +79,6 @@ def create_app(config_class=DevelopmentConfig):
 
     @app.context_processor
     def inject_enums():
-        """Makes Enums available to all templates for type-safe checks."""
         return dict(
             UserRole=UserRole,
             OrderStatus=OrderStatus,
@@ -125,7 +125,6 @@ def register_commands(app):
 
     @app.cli.command("populate-db")
     def populate_db():
-        # ... (Same as your original populate logic) ...
         supported_languages = ['java', 'cpp', 'c', 'sql', 'dbms', 'plsql', 'mysql']
         for lang in supported_languages:
             existing_content = LearningContent.query.get(lang)

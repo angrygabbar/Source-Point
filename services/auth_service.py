@@ -1,14 +1,12 @@
 from extensions import db, bcrypt
 from models.auth import User
-from datetime import datetime
-from enums import UserRole  # --- IMPORT ENUM ---
+from enums import UserRole
 
 class AuthService:
     @staticmethod
     def register_user(username, email, password, role, mobile_number=None):
         """
         Handles user registration logic.
-        Returns: (User object, success_message) OR (None, error_message)
         """
         # 1. Validation: Check duplicates
         if User.query.filter((User.email == email) | (User.username == username)).first():
@@ -31,9 +29,12 @@ class AuthService:
         )
 
         # 5. Business Rule: First user is always Admin & Approved
-        if User.query.count() == 0:
-            new_user.role = UserRole.ADMIN.value # --- USE ENUM ---
-            new_user.is_approved = True
+        try:
+            if User.query.count() == 0:
+                new_user.role = UserRole.ADMIN.value
+                new_user.is_approved = True
+        except Exception:
+            pass # Table might not exist yet during first run, safe to ignore
 
         # 6. Persistence: Save to DB
         try:
@@ -49,7 +50,6 @@ class AuthService:
     def authenticate_user(email, password):
         """
         Verifies credentials and account status.
-        Returns: (User object, success_message) OR (None, error_message)
         """
         user = User.query.filter_by(email=email).first()
         

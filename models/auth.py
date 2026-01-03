@@ -1,7 +1,7 @@
 from extensions import db
 from flask_login import UserMixin
 from datetime import datetime
-from enums import UserRole  # Ensure enums.py is created in the root folder
+from enums import UserRole
 
 # Association table for Candidate-Developer contacts
 candidate_contacts = db.Table('candidate_contacts',
@@ -18,7 +18,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     
-    # UPDATED: Use Enum value as default for type safety
+    # Role - Defaults to CANDIDATE
     role = db.Column(db.String(20), nullable=False, default=UserRole.CANDIDATE.value)
     
     is_approved = db.Column(db.Boolean, default=False, nullable=False)
@@ -68,13 +68,7 @@ class User(UserMixin, db.Model):
     orders = db.relationship('Order', foreign_keys='Order.user_id', backref='buyer', lazy=True)
     sales = db.relationship('Order', foreign_keys='Order.seller_id', backref='seller', lazy=True)
     
-    # --- HELPER METHODS ---
-
     def has_role(self, role_enum):
-        """
-        Checks if the user has a specific role using the Enum.
-        Usage: if user.has_role(UserRole.ADMIN): ...
-        """
         return self.role == role_enum.value
 
 class Message(db.Model):
