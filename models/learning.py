@@ -17,7 +17,7 @@ class ProblemStatement(db.Model):
     # Relationships
     # 1. Users working on this problem (candidates)
     # We use string reference 'User' to avoid circular imports
-    users = db.relationship('User', foreign_keys='User.problem_statement_id', backref='assigned_problem', lazy=True)
+    users = db.relationship('User', foreign_keys='User.problem_statement_id', back_populates='assigned_problem', lazy=True)
     
     # 2. History of moderator assignments
     # FIX: Changed 'backref' to 'back_populates' to match hiring.py

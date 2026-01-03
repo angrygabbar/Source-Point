@@ -59,7 +59,7 @@ class User(UserMixin, db.Model):
     created_problems = db.relationship('ProblemStatement', foreign_keys='ProblemStatement.created_by_id', backref='creator', lazy=True)
     
     # --- FIX: Relationship for problems assigned to a candidate ---
-    assigned_problem = db.relationship('ProblemStatement', foreign_keys=[problem_statement_id], backref='assigned_candidates', lazy=True)
+    assigned_problem = db.relationship('ProblemStatement', foreign_keys=[problem_statement_id], back_populates='users', lazy=True)
     # -------------------------------------------------------------
 
     sent_messages = db.relationship('Message', foreign_keys='Message.sender_id', backref='sender', lazy=True)
