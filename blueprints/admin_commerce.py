@@ -49,7 +49,7 @@ def admin_commerce_dashboard():
                            pending_commerce_users=pending_commerce_users,
                            sellers=sellers, buyers=buyers)
 
-# --- ADS ---
+# --- ADS MANAGEMENT ---
 @admin_commerce_bp.route('/ads/manage', methods=['GET', 'POST'])
 @login_required
 @role_required(UserRole.ADMIN.value)
@@ -81,11 +81,13 @@ def delete_ad(ad_id):
         return jsonify({'success': True, 'message': 'Ad deleted.', 'remove_row_id': f'ad-{ad_id}'})
     return redirect(url_for('admin_commerce.manage_ads'))
 
-# --- INVENTORY ---
+# --- INVENTORY MANAGEMENT ---
 @admin_commerce_bp.route('/inventory', methods=['GET', 'POST'])
 @login_required
 @role_required(UserRole.ADMIN.value)
 def manage_inventory():
+    # Note: Main logic for adding is now in add_product_page, but keeping POST 
+    # here ensures backward compatibility if any old modals are still triggering it.
     if request.method == 'POST':
         product_code = request.form.get('product_code')
         name = request.form.get('name')
@@ -108,6 +110,94 @@ def manage_inventory():
 
     return render_template('manage_inventory.html', products=products, sellers=sellers, 
                            total_inventory_value=total_inventory_value, total_products_count=len(products), low_stock_count=low_stock_count)
+
+# --- NEW: FULL ADD PRODUCT PAGE ---
+@admin_commerce_bp.route('/inventory/add', methods=['GET', 'POST'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def add_product_page():
+    if request.method == 'POST':
+        product_code = request.form.get('product_code')
+        name = request.form.get('name')
+        stock = request.form.get('stock')
+        price = request.form.get('price')
+        description = request.form.get('description')
+        image_urls = request.form.getlist('image_urls[]')
+        category = request.form.get('category')
+        brand = request.form.get('brand')
+        mrp = request.form.get('mrp')
+        warranty = request.form.get('warranty')
+        return_policy = request.form.get('return_policy')
+        
+        # Validation
+        if Product.query.filter_by(product_code=product_code).first():
+            flash(f'Product ID {product_code} already exists.', 'danger')
+            return redirect(url_for('admin_commerce.add_product_page'))
+        
+        # Determine Primary Image
+        primary_image = image_urls[0].strip() if image_urls and image_urls[0].strip() else None
+        
+        new_product = Product(
+            product_code=product_code, name=name, stock=int(stock), price=float(price),
+            description=description, image_url=primary_image, category=category,
+            brand=brand, mrp=float(mrp) if mrp else None, warranty=warranty, return_policy=return_policy,
+            seller_id=None
+        )
+        db.session.add(new_product)
+        db.session.commit()
+        
+        # Add Extra Images
+        for url in image_urls:
+            if url.strip():
+                img = ProductImage(product_id=new_product.id, image_url=url.strip())
+                db.session.add(img)
+        db.session.commit()
+        
+        flash(f'Product "{name}" added to catalog successfully.', 'success')
+        return redirect(url_for('admin_commerce.manage_inventory'))
+    
+    return render_template('add_product.html')
+
+# --- NEW: FULL EDIT PRODUCT PAGE ---
+@admin_commerce_bp.route('/inventory/edit/<int:product_id>', methods=['GET', 'POST'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def edit_product_page(product_id):
+    product = Product.query.get_or_404(product_id)
+    
+    if request.method == 'POST':
+        product.name = request.form.get('name')
+        product.stock = int(request.form.get('stock'))
+        product.price = float(request.form.get('price'))
+        product.description = request.form.get('description')
+        product.category = request.form.get('category')
+        product.brand = request.form.get('brand')
+        
+        mrp = request.form.get('mrp')
+        if mrp: product.mrp = float(mrp)
+        else: product.mrp = None
+        
+        product.warranty = request.form.get('warranty')
+        product.return_policy = request.form.get('return_policy')
+
+        # Update Images logic
+        image_urls = request.form.getlist('image_urls[]')
+        
+        # Update Primary Image
+        if image_urls and image_urls[0].strip():
+            product.image_url = image_urls[0].strip()
+        
+        # Reset and re-add extra images
+        ProductImage.query.filter_by(product_id=product.id).delete()
+        for url in image_urls:
+            if url.strip():
+                db.session.add(ProductImage(product_id=product.id, image_url=url.strip()))
+        
+        db.session.commit()
+        flash(f'Product "{product.name}" updated successfully.', 'success')
+        return redirect(url_for('admin_commerce.manage_inventory'))
+
+    return render_template('edit_product.html', product=product)
 
 @admin_commerce_bp.route('/inventory/import', methods=['POST'])
 @login_required
@@ -167,6 +257,7 @@ def import_inventory():
 @login_required
 @role_required(UserRole.ADMIN.value)
 def update_product():
+    # Helper route for "Quick Edit" modal (if still used)
     product_id = request.form.get('product_id')
     product = Product.query.get_or_404(product_id)
     
@@ -307,7 +398,7 @@ def reject_stock_request(req_id):
     flash('Request rejected.', 'warning')
     return redirect(url_for('admin_commerce.manage_stock_requests_page'))
 
-# --- ORDERS ---
+# --- ORDER MANAGEMENT ---
 @admin_commerce_bp.route('/orders')
 @login_required
 @role_required(UserRole.ADMIN.value)
@@ -410,7 +501,7 @@ def update_order_status(order_id):
     flash(f'Order {order.order_number} status updated to {new_status}.', 'success')
     return redirect(url_for('admin_commerce.manage_orders'))
 
-# --- INVOICES ---
+# --- INVOICES MANAGEMENT ---
 @admin_commerce_bp.route('/invoices')
 @login_required
 @role_required(UserRole.ADMIN.value)
@@ -625,16 +716,39 @@ def send_invoice_reminder(invoice_id):
     invoice = Invoice.query.get_or_404(invoice_id)
     
     try:
+        # 1. Generate the PDF (This was missing)
+        generator = InvoiceGenerator(invoice)
+        pdf_bytes = generator.generate_pdf()
+        
+        attachments = [{
+            'filename': f'Invoice_{invoice.invoice_number}.pdf',
+            'data': pdf_bytes
+        }]
+
+        # 2. Prepare formatted dates
+        created_date = invoice.created_at.strftime('%d %b %Y')
+        due_date_str = invoice.due_date.strftime('%d %b %Y') if invoice.due_date else "Immediate"
+
+        # 3. Send Email WITH attachments
         send_email(
             to=invoice.recipient_email,
             subject=f"Payment Reminder: Invoice #{invoice.invoice_number}",
             template="mail/reminder_invoice_email.html",
-            invoice=invoice
+            recipient_name=invoice.recipient_name,
+            invoice_number=invoice.invoice_number,
+            created_at=created_date,
+            total_amount=invoice.total_amount,
+            due_date=due_date_str,
+            invoice=invoice,
+            attachments=attachments  # <--- CRITICAL ADDITION
         )
+        
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({'success': True, 'message': 'Reminder sent.'})
         flash("Reminder sent.", "success")
+        
     except Exception as e:
+         print(f"Error sending reminder: {e}") # Debug log
          if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({'success': False, 'message': str(e)})
          flash(f"Error: {e}", "danger")
