@@ -89,12 +89,22 @@
                             <p class="text-[10px] text-gray-500">{{ app.applied_at.strftime('%b %d, %Y') }}</p>
                         </div>
                         <div class="flex-shrink-0 ml-2">
-                            {% if app.status == 'accepted' %}
-                                <i class="fas fa-check-circle text-emerald-400 text-lg" title="Accepted"></i>
-                            {% elif app.status == 'rejected' %}
-                                <i class="fas fa-times-circle text-red-400 text-lg" title="Rejected"></i>
+                            {% if app.status == 'Selected' %}
+                                <div class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
+                                    <i class="fas fa-check-circle"></i> Selected
+                                </div>
+                            {% elif app.status == 'Rejected' %}
+                                <div class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-bold uppercase tracking-wider">
+                                    <i class="fas fa-times-circle"></i> Rejected
+                                </div>
+                            {% elif app.status == 'Under Review' %}
+                                <div class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-bold uppercase tracking-wider">
+                                    <i class="fas fa-search"></i> Reviewing
+                                </div>
                             {% else %}
-                                <div class="w-4 h-4 rounded-full border-2 border-yellow-500 border-t-transparent animate-spin" title="Pending"></div>
+                                <div class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-[10px] font-bold uppercase tracking-wider">
+                                    <div class="w-2 h-2 rounded-full border border-yellow-500 border-t-transparent animate-spin"></div> Pending
+                                </div>
                             {% endif %}
                         </div>
                     </div>

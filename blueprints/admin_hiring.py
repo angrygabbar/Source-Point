@@ -70,7 +70,9 @@ def post_job():
         flash('New job opening has been posted.', 'success')
     else:
         flash('Job title and description are required.', 'danger')
-    return redirect(url_for('admin_core.admin_dashboard'))
+    
+    # IMPROVEMENT: Redirect back to Hiring Dashboard
+    return redirect(url_for('admin_hiring.admin_hiring_dashboard'))
 
 @admin_hiring_bp.route('/application/accept/<int:app_id>')
 @login_required
@@ -89,7 +91,9 @@ def accept_application(app_id):
     
     log_user_action("Accept Application", f"Accepted application for {application.candidate.username}")
     flash(f"Application from {application.candidate.username} for '{application.job.title}' has been accepted.", 'success')
-    return redirect(url_for('admin_core.admin_dashboard'))
+    
+    # IMPROVEMENT: Redirect back to Hiring Dashboard
+    return redirect(url_for('admin_hiring.admin_hiring_dashboard'))
 
 @admin_hiring_bp.route('/application/reject/<int:app_id>')
 @login_required
@@ -108,7 +112,9 @@ def reject_application(app_id):
     
     log_user_action("Reject Application", f"Rejected application for {application.candidate.username}")
     flash(f"Application from {application.candidate.username} for '{application.job.title}' has been rejected.", 'warning')
-    return redirect(url_for('admin_core.admin_dashboard'))
+    
+    # IMPROVEMENT: Redirect back to Hiring Dashboard
+    return redirect(url_for('admin_hiring.admin_hiring_dashboard'))
 
 @admin_hiring_bp.route('/candidate/add_contact', methods=['POST'])
 @login_required
@@ -126,7 +132,9 @@ def add_contact_for_candidate():
         flash(f'Developer {developer.username} added to {candidate.username}\'s contacts.', 'success')
     else:
         flash('Invalid selection. Please try again.', 'danger')
-    return redirect(url_for('admin_core.admin_dashboard'))
+        
+    # IMPROVEMENT: Redirect back to Hiring Dashboard
+    return redirect(url_for('admin_hiring.admin_hiring_dashboard'))
 
 @admin_hiring_bp.route('/moderator/assign', methods=['POST'])
 @login_required
@@ -140,11 +148,11 @@ def assign_moderator():
 
     if not candidate or not moderator or moderator.role != UserRole.MODERATOR.value:
         flash("Invalid user selection.", 'danger')
-        return redirect(url_for('admin_core.admin_dashboard'))
+        return redirect(url_for('admin_hiring.admin_hiring_dashboard'))
 
     if not all([candidate.assigned_problem, candidate.test_start_time, candidate.test_end_time]):
         flash(f"Error: Candidate {candidate.username} does not have a complete test schedule.", 'danger')
-        return redirect(url_for('admin_core.admin_dashboard'))
+        return redirect(url_for('admin_hiring.admin_hiring_dashboard'))
 
     candidate.moderator_id = moderator_id
     db.session.commit()
@@ -170,7 +178,9 @@ def assign_moderator():
     )
 
     flash(f'Moderator assigned. Notification sent.', 'success')
-    return redirect(url_for('admin_core.admin_dashboard'))
+    
+    # IMPROVEMENT: Redirect back to Hiring Dashboard
+    return redirect(url_for('admin_hiring.admin_hiring_dashboard'))
 
 @admin_hiring_bp.route('/records')
 @login_required

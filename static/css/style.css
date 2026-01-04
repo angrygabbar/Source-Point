@@ -3,21 +3,27 @@
    ========================================= */
 :root {
     --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-bg: rgba(13, 13, 15, 0.7); 
+    --glass-bg: rgba(13, 13, 15, 0.6); /* Slightly more transparent for cleaner look */
     --primary-glow: rgba(99, 102, 241, 0.5);
     
-    /* UPDATED: Increased visibility for orbits (0.1 is 10% opacity) */
+    /* NOISE PATTERN REMOVED COMPLETELY */
+    
+    /* Orbits visibility (0.1 = 10% opacity) */
     --orbit-line: rgba(255, 255, 255, 0.1);
     
     --planet-color: #6366f1;
 }
 
-body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+/* Prevent scrolling on the main page body */
+html, body {
+    width: 100%;
+    max-width: 100%;
     overflow-x: hidden;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     color: #e2e8f0;
     background-color: #00000a;
     margin: 0;
+    padding: 0;
 }
 
 /* =========================================
@@ -33,11 +39,12 @@ body {
     height: 100%;
     z-index: -20;
     background: radial-gradient(circle at center, #0b0f19 0%, #000000 100%);
+    pointer-events: none;
 }
 
 /* The Solar System Container */
 .solar-system {
-    position: absolute;
+    position: fixed; 
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) perspective(1000px) rotateX(20deg) scale(1.2);
@@ -45,7 +52,7 @@ body {
     height: 1000px;
     z-index: -10;
     pointer-events: none;
-    opacity: 0.8; /* Increased slightly so lines are clearer */
+    opacity: 0.8;
 }
 
 /* Common Orbit Style */
@@ -56,7 +63,7 @@ body {
     border: 1px solid var(--orbit-line);
     border-radius: 50%;
     transform: translate(-50%, -50%);
-    box-shadow: 0 0 30px rgba(99, 102, 241, 0.05); /* Slight glow */
+    box-shadow: 0 0 30px rgba(99, 102, 241, 0.05);
 }
 
 /* The Planet Dot */
@@ -81,17 +88,17 @@ body {
     box-shadow: 0 0 10px var(--planet-color), 0 0 20px var(--planet-color);
 }
 
-/* Specific Orbit Sizes & SPEEDS (UPDATED: Much Slower) */
+/* Specific Orbit Sizes & SPEEDS */
 .orbit-1 { width: 300px; height: 300px; }
-.planet-1 { animation-duration: 60s; } /* Was 40s */
+.planet-1 { animation-duration: 60s; }
 .planet-1::after { width: 6px; height: 6px; background: #818cf8; }
 
 .orbit-2 { width: 500px; height: 500px; }
-.planet-2 { animation-duration: 100s; animation-direction: reverse; } /* Was 70s */
+.planet-2 { animation-duration: 100s; animation-direction: reverse; }
 .planet-2::after { width: 10px; height: 10px; background: #c084fc; }
 
 .orbit-3 { width: 750px; height: 750px; }
-.planet-3 { animation-duration: 180s; } /* Was 120s */
+.planet-3 { animation-duration: 180s; }
 .planet-3::after { width: 8px; height: 8px; background: #22d3ee; }
 
 /* The Central Sun Glow */
@@ -112,11 +119,12 @@ body {
 }
 
 /* =========================================
-   3. Realistic Glassmorphism
+   3. Realistic Glassmorphism (PURE GLASS)
    ========================================= */
 
 .glass-panel {
     background: var(--glass-bg);
+    /* No background-image here, so no squares */
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid var(--glass-border);
@@ -127,6 +135,13 @@ body {
 .glass-panel:hover {
     border-color: rgba(255, 255, 255, 0.2);
     transform: translateY(-2px);
+}
+
+/* Sidebar Glass */
+.glass-sidebar {
+    background: rgba(5, 5, 8, 0.85);
+    backdrop-filter: blur(24px);
+    border-right: 1px solid var(--glass-border);
 }
 
 /* =========================================
@@ -189,3 +204,27 @@ body {
     pointer-events: none;
 }
 .spotlight-group:hover .spotlight-card::before { opacity: 1; }
+
+/* =========================================
+   5. Utilities
+   ========================================= */
+[x-cloak] { display: none !important; }
+
+.htmx-indicator-bar {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #6366f1, #22d3ee);
+    z-index: 9999;
+    box-shadow: 0 0 10px #6366f1;
+    width: 100%;
+    animation: progress 1s infinite ease-in-out;
+}
+.htmx-request .htmx-indicator-bar { display: block; }
+
+.custom-scrollbar::-webkit-scrollbar { width: 5px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
