@@ -3,130 +3,143 @@
    ========================================= */
 :root {
     --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-bg: rgba(10, 10, 12, 0.6);
+    --glass-bg: rgba(13, 13, 15, 0.7); /* Slightly darker for better contrast */
     --glass-shine: rgba(255, 255, 255, 0.03);
-    --primary-glow: rgba(99, 102, 241, 0.4);
+    --primary-glow: rgba(99, 102, 241, 0.5);
+    
+    /* Noise Texture for Realism */
+    --noise-pattern: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
 }
 
 body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     overflow-x: hidden;
     color: #e2e8f0;
-    /* The layout.html handles the background canvas */
+    background-color: #00000a;
 }
 
 /* =========================================
-   2. Premium Glassmorphism
+   2. Realistic Glassmorphism (Frosted Noise)
    ========================================= */
 
-/* The base glass container */
 .glass-panel {
     background: var(--glass-bg);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    /* The noise texture makes it feel like physical material */
+    background-image: var(--noise-pattern);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid var(--glass-border);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), border-color 0.3s ease;
 }
 
-/* Hover effect for cards */
 .glass-panel:hover {
-    border-color: rgba(99, 102, 241, 0.3); /* Indigo tint on hover */
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.1), inset 0 0 20px var(--glass-shine);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
 }
 
-/* Premium Input Fields */
-.input-premium {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--glass-border);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.input-premium:focus {
-    background: rgba(0, 0, 0, 0.5);
-    border-color: #6366f1; /* Indigo-500 */
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-    outline: none;
+/* Sidebar Glass */
+.glass-sidebar {
+    background: rgba(5, 5, 8, 0.85);
+    background-image: var(--noise-pattern);
+    backdrop-filter: blur(24px);
+    border-right: 1px solid var(--glass-border);
 }
 
 /* =========================================
-   3. Animations & Micro-Interactions
+   3. Spotlight Card Effect (New)
+   ========================================= */
+.spotlight-group {
+    position: relative;
+}
+
+.spotlight-card {
+    background-color: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+/* The glowing border following mouse */
+.spotlight-card::before {
+    content: "";
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    top: 0;
+    left: 0;
+    background: radial-gradient(
+        800px circle at var(--mouse-x) var(--mouse-y),
+        rgba(255, 255, 255, 0.06),
+        transparent 40%
+    );
+    opacity: 0;
+    transition: opacity 0.5s;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.spotlight-group:hover .spotlight-card::before {
+    opacity: 1;
+}
+
+/* =========================================
+   4. Typography & Animations
    ========================================= */
 
-/* Smooth Fade In */
-@keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in {
-    animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* Text Gradient Flow */
-@keyframes textShine {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
 .text-gradient-animated {
-    background: linear-gradient(to right, #818cf8, #c084fc, #f472b6, #818cf8);
-    background-size: 200% auto;
+    background: linear-gradient(to right, #818cf8, #22d3ee, #c084fc, #818cf8);
+    background-size: 300% auto;
     color: transparent;
     -webkit-background-clip: text;
     background-clip: text;
-    animation: textShine 4s linear infinite;
+    animation: textShine 6s linear infinite;
 }
 
-/* Button Glow on Hover */
+@keyframes textShine {
+    to { background-position: 200% center; }
+}
+
 .btn-glow {
     position: relative;
-    overflow: hidden;
     transition: all 0.3s ease;
+    background-size: 200% auto;
+    background-image: linear-gradient(to right, #4f46e5, #7c3aed, #4f46e5);
 }
-.btn-glow::after {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 60%);
-    opacity: 0;
-    transform: scale(0.5);
-    transition: transform 0.5s ease, opacity 0.5s ease;
-}
-.btn-glow:hover::after {
-    opacity: 1;
-    transform: scale(1);
-}
+
 .btn-glow:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 20px -5px var(--primary-glow);
+    background-position: right center;
+    box-shadow: 0 0 20px rgba(79, 70, 229, 0.4);
+}
+
+.animate-fade-in {
+    animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* =========================================
-   4. HTMX & Utilities
+   5. Utilities
    ========================================= */
-
-/* Top Loading Bar */
 .htmx-indicator-bar {
     display: none;
     position: fixed;
     top: 0;
     left: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
+    height: 2px;
+    background: linear-gradient(90deg, #6366f1, #22d3ee);
     z-index: 9999;
+    box-shadow: 0 0 10px #6366f1;
     width: 100%;
-    animation: progress 1.5s infinite ease-in-out;
+    animation: progress 1s infinite ease-in-out;
 }
 .htmx-request .htmx-indicator-bar { display: block; }
-@keyframes progress {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-}
 
-/* Scrollbar */
-.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar { width: 5px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
