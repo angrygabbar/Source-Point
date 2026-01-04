@@ -59,7 +59,7 @@ def role_required(roles):
 
 # --- EMAIL SERVICE ---
 
-def _send_via_brevo_api(to_list, subject, html_content, cc_list=None, attachments=None):
+def _send_via_brevo_api(to_list, subject, html_content, cc_list=None, bcc_list=None, attachments=None):
     """
     Internal function that strictly handles the Brevo API call.
     Independent of Flask Context to allow for Celery extraction later.
@@ -92,6 +92,8 @@ def _send_via_brevo_api(to_list, subject, html_content, cc_list=None, attachment
     }
     if cc_list:
         smtp_email_data["cc"] = cc_list
+    if bcc_list:
+        smtp_email_data["bcc"] = bcc_list
     if email_attachments:
         smtp_email_data["attachment"] = email_attachments
 
@@ -103,14 +105,14 @@ def _send_via_brevo_api(to_list, subject, html_content, cc_list=None, attachment
     except Exception as e:
         print(f"An error occurred while sending email: {e}")
 
-def send_async_email_thread(app, to_list, subject, html_content, cc_list, attachments):
+def send_async_email_thread(app, to_list, subject, html_content, cc_list, bcc_list, attachments):
     """
     Wrapper for threading. Needs app context because it might access config (though Brevo logic is separated).
     """
     with app.app_context():
-        _send_via_brevo_api(to_list, subject, html_content, cc_list, attachments)
+        _send_via_brevo_api(to_list, subject, html_content, cc_list, bcc_list, attachments)
 
-def send_email(to, subject, template, cc=None, attachments=None, **kwargs):
+def send_email(to, subject, template, cc=None, bcc=None, attachments=None, **kwargs):
     """
     Public interface to send emails.
     Renders template and offloads sending to a background thread.
@@ -139,6 +141,14 @@ def send_email(to, subject, template, cc=None, attachments=None, **kwargs):
     final_cc_emails = cc_emails - primary_recipients_emails
     cc_list = [{"email": email} for email in final_cc_emails] if final_cc_emails else None
 
+    # BCC Logic (New)
+    bcc_list = None
+    if bcc:
+        if isinstance(bcc, str):
+            bcc_list = [{"email": bcc}]
+        elif isinstance(bcc, list):
+            bcc_list = [{"email": email} for email in bcc if email]
+
     # Render Template (Must be done in Request Context)
     html_content = render_template(template, **kwargs)
 
@@ -151,7 +161,7 @@ def send_email(to, subject, template, cc=None, attachments=None, **kwargs):
     app = current_app._get_current_object()
     thread = threading.Thread(
         target=send_async_email_thread,
-        args=(app, to_list, subject, html_content, cc_list, attachments)
+        args=(app, to_list, subject, html_content, cc_list, bcc_list, attachments)
     )
     thread.start()
 

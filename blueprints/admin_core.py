@@ -6,7 +6,8 @@ from models.hiring import JobApplication, CodeSnippet
 from models.commerce import Order, StockRequest
 from models.finance import Project, Transaction, BRD, EMIPlan, EMIPayment
 from models.learning import LearningContent
-from utils import role_required, log_user_action, send_email
+# Updated Import: Added MAIL_DEFAULT_SENDER_EMAIL
+from utils import role_required, log_user_action, send_email, MAIL_DEFAULT_SENDER_EMAIL
 from invoice_service import BrdGenerator
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -15,7 +16,7 @@ import csv
 from io import TextIOWrapper
 import re
 import pypdf
-from enums import UserRole, ApplicationStatus, OrderStatus  # --- IMPORT ENUMS ---
+from enums import UserRole, ApplicationStatus, OrderStatus
 
 admin_core_bp = Blueprint('admin_core', __name__, url_prefix='/admin')
 
@@ -25,7 +26,7 @@ admin_core_bp = Blueprint('admin_core', __name__, url_prefix='/admin')
 
 @admin_core_bp.route('/')
 @login_required
-@role_required(UserRole.ADMIN.value) # --- USE ENUM ---
+@role_required(UserRole.ADMIN.value)
 def admin_dashboard():
     # 1. Pending Users
     pending_users_count = User.query.filter_by(is_approved=False).count()
@@ -38,13 +39,12 @@ def admin_dashboard():
     # 3. Applications
     applications = JobApplication.query.order_by(JobApplication.applied_at.desc()).limit(10).all()
     
-    # Use Enum for status check
     pending_apps_count = JobApplication.query.filter_by(status=ApplicationStatus.PENDING.value).count()
 
     # 4. Activity Logs
     recent_logs = ActivityLog.query.order_by(ActivityLog.timestamp.desc()).limit(20).all()
     
-    # 5. Directories (Use Enums)
+    # 5. Directories
     candidates = User.query.filter_by(role=UserRole.CANDIDATE.value).limit(50).all()
     developers = User.query.filter_by(role=UserRole.DEVELOPER.value).limit(50).all()
     moderators = User.query.filter_by(role=UserRole.MODERATOR.value).limit(50).all()
@@ -68,9 +68,8 @@ def admin_dashboard():
     moderators_for_assignments = User.query.filter(User.id.in_(moderator_ids)).all()
     moderators_map = {m.id: m for m in moderators_for_assignments}
     
-    # 7. Orders & Stock Stats (Use Enums)
+    # 7. Orders & Stock Stats
     pending_orders_count = Order.query.filter_by(status=OrderStatus.PLACED.value).count()
-    # StockRequest status "Pending" matches our standard, we can use string or add to Enums later
     pending_requests_count = StockRequest.query.filter_by(status='Pending').count()
 
     return render_template('admin_dashboard.html',
@@ -198,15 +197,36 @@ def broadcast_email():
         signature = """<br><br>...Source Point Team...""" 
         final_body = body + signature
 
+        # --- UPDATED LOGIC: SEND WITH BCC ---
         users = User.query.all()
-        count = 0
-        for user in users:
-            if user.email:
-                send_email(to=user.email, subject=subject, template="mail/broadcast.html", user=user, body=final_body, attachments=attachments)
-                count += 1
+        # Collect all valid emails
+        bcc_recipients = [u.email for u in users if u.email]
         
-        log_user_action("Broadcast Email", f"Sent broadcast email with subject: {subject}")
-        flash(f'Broadcast sent successfully to {count} users.', 'success')
+        # FIX: Set the "To" address to the System Sender (e.g., admin@sourcepoint.in)
+        # This prevents the specific admin's personal email from showing in the "To" field.
+        # Everyone else remains hidden in BCC.
+        to_email = MAIL_DEFAULT_SENDER_EMAIL
+        
+        # Ensure the 'To' email is not also in the 'BCC' list to avoid duplicate delivery
+        if to_email in bcc_recipients:
+            bcc_recipients.remove(to_email)
+
+        if bcc_recipients or to_email:
+            send_email(
+                to=to_email,
+                bcc=bcc_recipients,
+                subject=subject,
+                template="mail/broadcast.html",
+                user=current_user,
+                body=final_body,
+                attachments=attachments
+            )
+            count = len(bcc_recipients)
+            log_user_action("Broadcast Email", f"Sent broadcast email with subject: {subject} to {count} users (BCC)")
+            flash(f'Broadcast sent successfully to {count} users (via BCC).', 'success')
+        else:
+            flash('No recipients found to broadcast to.', 'warning')
+
         return redirect(url_for('admin_core.admin_dashboard'))
     return render_template('broadcast_email.html')
 

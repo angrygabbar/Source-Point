@@ -2,7 +2,7 @@
 from extensions import db
 from datetime import datetime
 from sqlalchemy import Numeric
-from enums import OrderStatus, InvoiceStatus # IMPORT NEW ENUMS
+from enums import OrderStatus, InvoiceStatus
 
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -34,7 +34,7 @@ class Order(db.Model):
     seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     total_amount = db.Column(Numeric(10, 2), nullable=False)
     
-    # UPDATED: Use Enum value
+    # Use Enum value
     status = db.Column(db.String(20), default=OrderStatus.PLACED.value, index=True) 
     
     shipping_address = db.Column(db.Text, nullable=False)
@@ -69,6 +69,9 @@ class CartItem(db.Model):
     cart_id = db.Column(db.Integer, db.ForeignKey('cart.id'), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
     quantity = db.Column(db.Integer, nullable=False, default=1)
+    
+    # FIXED: Added missing relationship to Product
+    product = db.relationship('Product')
 
 class Invoice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -82,7 +85,7 @@ class Invoice(db.Model):
     tax = db.Column(Numeric(10, 2), nullable=False, default=0.00)
     total_amount = db.Column(Numeric(10, 2), nullable=False)
     
-    # UPDATED: Use Enum value
+    # Use Enum value
     status = db.Column(db.String(20), default=InvoiceStatus.UNPAID.value, nullable=False) 
     
     due_date = db.Column(db.Date, nullable=True)
