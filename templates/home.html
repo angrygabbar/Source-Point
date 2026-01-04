@@ -2,11 +2,23 @@
 {% block title %}SourcePoint - The Future of Development{% endblock %}
 {% block content %}
 
-<div class="relative min-h-[90vh] flex flex-col justify-center items-center text-center overflow-hidden px-4">
-    
-    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-600/10 rounded-full blur-[120px] -z-10 animate-pulse"></div>
-    <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-violet-600/10 rounded-full blur-[100px] -z-10"></div>
+<canvas id="star-canvas"></canvas>
 
+<div class="solar-system">
+    <div class="sun-glow"></div>
+    
+    <div class="orbit orbit-1"></div>
+    <div class="planet planet-1"></div>
+    
+    <div class="orbit orbit-2"></div>
+    <div class="planet planet-2"></div>
+    
+    <div class="orbit orbit-3"></div>
+    <div class="planet planet-3"></div>
+</div>
+
+<div class="relative min-h-[90vh] flex flex-col justify-center items-center text-center overflow-hidden px-4 z-10">
+    
     <div class="relative z-10 max-w-5xl mx-auto animate-fade-in">
         
         <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8 hover:bg-white/10 transition-colors cursor-default shadow-lg shadow-indigo-500/10">
@@ -95,19 +107,86 @@
 </div>
 
 <script>
-    // JavaScript for Spotlight Effect
+    // 1. Spotlight Effect (Existing)
     const grid = document.getElementById('spotlight-grid');
     const cards = document.querySelectorAll('.spotlight-card');
-
     grid.onmousemove = e => {
         for (const card of cards) {
             const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
-            card.style.setProperty('--mouse-x', `${x}px`);
-            card.style.setProperty('--mouse-y', `${y}px`);
+            card.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+            card.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
         }
     };
+
+    // 2. Starfield Animation (New)
+    const canvas = document.getElementById('star-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let stars = [];
+    
+    const STAR_COUNT = 200;
+    const SPEED = 0.05;
+
+    function init() {
+        resize();
+        window.addEventListener('resize', resize);
+        createStars();
+        animate();
+    }
+
+    function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+    }
+
+    function createStars() {
+        stars = [];
+        for(let i = 0; i < STAR_COUNT; i++) {
+            stars.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                z: Math.random() * width, // depth
+                o: Math.random(), // opacity
+                s: Math.random() * 1.5 // size
+            });
+        }
+    }
+
+    function animate() {
+        ctx.fillStyle = "#00000a"; // Clear with dark background color (optional if transparent)
+        ctx.clearRect(0, 0, width, height);
+        
+        stars.forEach(star => {
+            // Move star towards screen (z decreases)
+            star.z -= SPEED * 10;
+            if (star.z <= 0) {
+                star.z = width;
+                star.x = Math.random() * width;
+                star.y = Math.random() * height;
+            }
+
+            // Project 3D position to 2D
+            const k = 128.0 / star.z;
+            const px = (star.x - width / 2) * k + width / 2;
+            const py = (star.y - height / 2) * k + height / 2;
+            
+            // Draw star
+            if (px >= 0 && px <= width && py >= 0 && py <= height) {
+                const size = (1 - star.z / width) * star.s * 2;
+                const opacity = (1 - star.z / width) * star.o;
+                
+                ctx.beginPath();
+                ctx.arc(px, py, size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+                ctx.fill();
+            }
+        });
+
+        requestAnimationFrame(animate);
+    }
+
+    init();
 </script>
 {% endblock %}

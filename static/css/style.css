@@ -3,12 +3,13 @@
    ========================================= */
 :root {
     --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-bg: rgba(13, 13, 15, 0.7); /* Slightly darker for better contrast */
-    --glass-shine: rgba(255, 255, 255, 0.03);
+    --glass-bg: rgba(13, 13, 15, 0.7); 
     --primary-glow: rgba(99, 102, 241, 0.5);
     
-    /* Noise Texture for Realism */
-    --noise-pattern: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+    /* UPDATED: Increased visibility for orbits (0.1 is 10% opacity) */
+    --orbit-line: rgba(255, 255, 255, 0.1);
+    
+    --planet-color: #6366f1;
 }
 
 body {
@@ -16,16 +17,106 @@ body {
     overflow-x: hidden;
     color: #e2e8f0;
     background-color: #00000a;
+    margin: 0;
 }
 
 /* =========================================
-   2. Realistic Glassmorphism (Frosted Noise)
+   2. Space Background System
+   ========================================= */
+
+/* The Canvas for Stars */
+#star-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -20;
+    background: radial-gradient(circle at center, #0b0f19 0%, #000000 100%);
+}
+
+/* The Solar System Container */
+.solar-system {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) perspective(1000px) rotateX(20deg) scale(1.2);
+    width: 1000px;
+    height: 1000px;
+    z-index: -10;
+    pointer-events: none;
+    opacity: 0.8; /* Increased slightly so lines are clearer */
+}
+
+/* Common Orbit Style */
+.orbit {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border: 1px solid var(--orbit-line);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 30px rgba(99, 102, 241, 0.05); /* Slight glow */
+}
+
+/* The Planet Dot */
+.planet {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    transform: translate(-50%, -50%);
+    animation: orbit-spin infinite linear;
+}
+
+.planet::after {
+    content: '';
+    position: absolute;
+    top: 0; 
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 0 10px var(--planet-color), 0 0 20px var(--planet-color);
+}
+
+/* Specific Orbit Sizes & SPEEDS (UPDATED: Much Slower) */
+.orbit-1 { width: 300px; height: 300px; }
+.planet-1 { animation-duration: 60s; } /* Was 40s */
+.planet-1::after { width: 6px; height: 6px; background: #818cf8; }
+
+.orbit-2 { width: 500px; height: 500px; }
+.planet-2 { animation-duration: 100s; animation-direction: reverse; } /* Was 70s */
+.planet-2::after { width: 10px; height: 10px; background: #c084fc; }
+
+.orbit-3 { width: 750px; height: 750px; }
+.planet-3 { animation-duration: 180s; } /* Was 120s */
+.planet-3::after { width: 8px; height: 8px; background: #22d3ee; }
+
+/* The Central Sun Glow */
+.sun-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 150px;
+    height: 150px;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+    filter: blur(40px);
+}
+
+@keyframes orbit-spin {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* =========================================
+   3. Realistic Glassmorphism
    ========================================= */
 
 .glass-panel {
     background: var(--glass-bg);
-    /* The noise texture makes it feel like physical material */
-    background-image: var(--noise-pattern);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid var(--glass-border);
@@ -36,52 +127,6 @@ body {
 .glass-panel:hover {
     border-color: rgba(255, 255, 255, 0.2);
     transform: translateY(-2px);
-}
-
-/* Sidebar Glass */
-.glass-sidebar {
-    background: rgba(5, 5, 8, 0.85);
-    background-image: var(--noise-pattern);
-    backdrop-filter: blur(24px);
-    border-right: 1px solid var(--glass-border);
-}
-
-/* =========================================
-   3. Spotlight Card Effect (New)
-   ========================================= */
-.spotlight-group {
-    position: relative;
-}
-
-.spotlight-card {
-    background-color: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    position: relative;
-    overflow: hidden;
-    z-index: 1;
-}
-
-/* The glowing border following mouse */
-.spotlight-card::before {
-    content: "";
-    position: absolute;
-    height: 100%;
-    width: 100%;
-    top: 0;
-    left: 0;
-    background: radial-gradient(
-        800px circle at var(--mouse-x) var(--mouse-y),
-        rgba(255, 255, 255, 0.06),
-        transparent 40%
-    );
-    opacity: 0;
-    transition: opacity 0.5s;
-    z-index: -1;
-    pointer-events: none;
-}
-
-.spotlight-group:hover .spotlight-card::before {
-    opacity: 1;
 }
 
 /* =========================================
@@ -122,24 +167,25 @@ body {
     to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* =========================================
-   5. Utilities
-   ========================================= */
-.htmx-indicator-bar {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 2px;
-    background: linear-gradient(90deg, #6366f1, #22d3ee);
-    z-index: 9999;
-    box-shadow: 0 0 10px #6366f1;
-    width: 100%;
-    animation: progress 1s infinite ease-in-out;
+/* Spotlight Effect */
+.spotlight-group { position: relative; }
+.spotlight-card {
+    background-color: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
 }
-.htmx-request .htmx-indicator-bar { display: block; }
-
-.custom-scrollbar::-webkit-scrollbar { width: 5px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+.spotlight-card::before {
+    content: "";
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    top: 0; left: 0;
+    background: radial-gradient(800px circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.06), transparent 40%);
+    opacity: 0;
+    transition: opacity 0.5s;
+    z-index: -1;
+    pointer-events: none;
+}
+.spotlight-group:hover .spotlight-card::before { opacity: 1; }

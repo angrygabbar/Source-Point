@@ -2,15 +2,15 @@
 {% block title %}Learn {{ language|upper }}{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 py-8 animate-fade-in">
+<div class="max-w-7xl mx-auto px-4 py-8 animate-fade-in relative min-h-screen">
     
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-white/10 pb-6">
         <div>
             <div class="flex items-center gap-3 mb-2">
-                <a href="{{ url_for('main.learning') }}" class="text-gray-400 hover:text-white transition-colors">
-                    <i class="fas fa-arrow-left"></i>
+                <a href="{{ url_for('main.learning') }}" class="text-gray-400 hover:text-white transition-colors group">
+                    <i class="fas fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
                 </a>
-                <div class="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
                     <i class="devicon-{{ language }}-plain text-white text-xl"></i>
                 </div>
                 <h1 class="text-3xl font-bold text-white tracking-tight">
@@ -21,8 +21,8 @@
         </div>
 
         {% if current_user.role in ['admin', 'developer'] %}
-        <button onclick="toggleEditMode()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all flex items-center gap-2">
-            <i class="fas fa-edit"></i> Edit Content
+        <button onclick="toggleEditMode()" class="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg text-sm font-medium transition-all flex items-center gap-2">
+            <i class="fas fa-edit text-indigo-400"></i> Edit Content
         </button>
         {% endif %}
     </div>
@@ -30,8 +30,8 @@
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
         
         <div class="hidden lg:block lg:col-span-1 space-y-6">
-            <div class="glass-panel p-5 rounded-xl sticky top-24">
-                <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">On This Page</h3>
+            <div class="glass-panel p-5 rounded-xl sticky top-24 border border-white/5 bg-white/5 backdrop-blur-md">
+                <h3 class="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-4">On This Page</h3>
                 <nav id="toc" class="space-y-1 border-l border-white/10 ml-1">
                     </nav>
             </div>
@@ -39,7 +39,7 @@
 
         <div class="lg:col-span-3">
             
-            <div id="view-content" class="glass-panel p-8 rounded-2xl min-h-[600px] prose prose-invert prose-indigo max-w-none shadow-2xl">
+            <div id="view-content" class="glass-panel p-8 rounded-2xl min-h-[600px] prose prose-invert prose-indigo max-w-none shadow-2xl border border-white/5">
                 {{ page_content|safe }}
             </div>
 
@@ -47,13 +47,10 @@
             <div id="edit-content" class="hidden animate-fade-in">
                 <form action="{{ url_for('admin_core.update_learning_content') }}" method="POST" class="glass-panel p-6 rounded-2xl border border-white/10">
                     <input type="hidden" name="language_id" value="{{ language }}">
-                    
                     <div class="mb-4 flex justify-between items-center">
                         <h3 class="text-lg font-bold text-white">Editor Mode</h3>
                     </div>
-
                     <textarea id="editor" name="content" class="w-full h-[500px] bg-black/30 text-white p-4 font-mono text-sm rounded-xl">{{ page_content }}</textarea>
-
                     <div class="flex justify-end gap-3 pt-4 border-t border-white/10 mt-4">
                         <button type="button" onclick="toggleEditMode()" class="px-5 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 font-medium transition-colors">Cancel</button>
                         <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-2">
@@ -63,85 +60,276 @@
                 </form>
             </div>
             {% endif %}
-
         </div>
     </div>
 </div>
 
-<div x-data="{ open: false, question: '', loading: false, chatHistory: [] }" class="fixed bottom-6 right-6 z-50 flex flex-col items-end" x-cloak>
-    <div x-show="open" x-transition.scale.origin.bottom.right class="mb-4 w-[350px] sm:w-[400px] h-[500px] bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-        
-        <div class="p-4 bg-gradient-to-r from-indigo-600 to-purple-600 flex justify-between items-center shadow-md shrink-0">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm"><i class="fas fa-robot text-white text-sm"></i></div>
-                <div>
-                    <h3 class="font-bold text-white text-sm">AI Tutor</h3>
-                    <p class="text-[10px] text-indigo-100 font-medium opacity-90">{{ language|title }} Expert</p>
-                </div>
-            </div>
-            <button @click="open = false" class="text-white/70 hover:text-white"><i class="fas fa-times"></i></button>
-        </div>
-
-        <div x-ref="chatContainer" class="flex-1 p-4 overflow-y-auto custom-scrollbar space-y-4 bg-[#0b1120]">
-            <div class="flex justify-start"><div class="bg-white/10 text-gray-200 text-sm p-3 rounded-2xl rounded-tl-none border border-white/5">👋 Hi! Ask me anything about {{ language|title }}.</div></div>
-            
-            <template x-for="(msg, index) in chatHistory" :key="index">
-                <div :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
-                    <div :class="msg.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white/10 text-gray-200 border border-white/5'" class="text-sm p-3 rounded-2xl max-w-[85%] leading-relaxed" x-html="msg.text"></div>
-                </div>
-            </template>
-            
-            <div x-show="loading" class="flex justify-start"><div class="bg-white/5 px-4 py-2 rounded-2xl flex gap-1"><span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></span><span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce delay-75"></span><span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce delay-150"></span></div></div>
-        </div>
-
-        <form @submit.prevent="if(!question.trim()) return; chatHistory.push({role:'user', text:question}); loading=true; const q=question; question=''; $nextTick(()=>$refs.chatContainer.scrollTop=$refs.chatContainer.scrollHeight); fetch('{{ url_for('main.ask_learning_ai') }}', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({question:q, subject:'{{ language }}'})}).then(r=>r.json()).then(d=>{loading=false; chatHistory.push({role:'ai', text:d.answer}); $nextTick(()=>$refs.chatContainer.scrollTop=$refs.chatContainer.scrollHeight)}).catch(()=>{loading=false; chatHistory.push({role:'ai', text:'Error connecting.'})})" class="p-4 bg-[#0f172a] border-t border-white/10 relative">
-            <input x-model="question" type="text" placeholder="Ask a question..." class="w-full bg-[#1e293b] border border-white/10 rounded-xl pl-4 pr-12 py-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500" :disabled="loading">
-            <button type="submit" :disabled="loading" class="absolute right-6 top-5 text-indigo-400 hover:text-white"><i class="fas fa-paper-plane"></i></button>
-        </form>
+<div x-data="aiTutor()" x-init="initChat()" class="fixed inset-y-0 right-0 z-50 flex flex-col pointer-events-none">
+    
+    <div class="absolute bottom-8 right-8 pointer-events-auto">
+        <button @click="toggleChat()" 
+            class="group h-14 w-14 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-2xl shadow-indigo-500/40 hover:scale-110 transition-all duration-300 flex items-center justify-center relative overflow-hidden">
+            <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+            <i class="fas fa-sparkles text-xl" x-show="!isOpen"></i>
+            <i class="fas fa-times text-xl" x-show="isOpen" x-cloak></i>
+        </button>
     </div>
 
-    <button @click="open = !open" class="h-14 w-14 rounded-full bg-indigo-600 text-white shadow-xl hover:scale-105 transition-transform flex items-center justify-center text-2xl z-50">
-        <i class="fas" :class="open ? 'fa-times' : 'fa-robot'"></i>
-    </button>
+    <div x-show="isOpen" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="translate-x-full opacity-0"
+         x-transition:enter-end="translate-x-0 opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="translate-x-0 opacity-100"
+         x-transition:leave-end="translate-x-full opacity-0"
+         class="pointer-events-auto w-full sm:w-[450px] h-full bg-[#0b0f19]/95 backdrop-blur-xl border-l border-white/10 shadow-2xl flex flex-col absolute right-0 top-0">
+
+        <div class="p-5 border-b border-white/5 flex justify-between items-center bg-white/5">
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-full bg-gradient-to-tr from-blue-500 via-indigo-500 to-purple-500 p-[2px]">
+                    <div class="h-full w-full rounded-full bg-[#0b0f19] flex items-center justify-center">
+                        <i class="fas fa-gem text-indigo-400 text-sm"></i>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-bold text-white text-base">Gemini Tutor</h3>
+                    <p class="text-xs text-indigo-300 font-medium">Expert in {{ language|title }}</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <div class="relative" x-data="{ menuOpen: false }">
+                    <button @click="menuOpen = !menuOpen" class="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors" title="Options">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <div x-show="menuOpen" @click.away="menuOpen = false" class="absolute right-0 mt-2 w-48 bg-[#1e293b] border border-white/10 rounded-xl shadow-xl py-1 z-50">
+                        <button @click="clearHistory(); menuOpen = false" class="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-white/5 flex items-center gap-3 transition-colors">
+                            <i class="fas fa-trash-alt"></i> Clear Chat History
+                        </button>
+                    </div>
+                </div>
+
+                <button @click="toggleChat()" class="text-gray-400 hover:text-white hover:bg-red-500/20 hover:text-red-400 p-2 rounded-lg transition-all duration-200" title="Close Chat">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+        </div>
+
+        <div x-ref="chatContainer" class="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar scroll-smooth">
+            
+            <div class="flex gap-4">
+                <div class="w-8 h-8 rounded-full bg-indigo-500/20 flex-shrink-0 flex items-center justify-center border border-indigo-500/30">
+                    <i class="fas fa-robot text-indigo-400 text-xs"></i>
+                </div>
+                <div class="flex flex-col gap-1 max-w-[85%]">
+                    <span class="text-xs text-gray-500 ml-1">Gemini</span>
+                    <div class="p-4 rounded-2xl rounded-tl-none bg-white/5 border border-white/5 text-gray-200 text-sm leading-relaxed shadow-sm">
+                        Hello! I'm your AI tutor for {{ language|title }}. Ask me to explain code, debug errors, or generate examples! 🚀
+                    </div>
+                </div>
+            </div>
+
+            <template x-for="(msg, index) in chatHistory" :key="index">
+                <div :class="msg.role === 'user' ? 'flex flex-row-reverse gap-4' : 'flex gap-4'">
+                    
+                    <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center border"
+                         :class="msg.role === 'user' ? 'bg-purple-500/20 border-purple-500/30' : 'bg-indigo-500/20 border-indigo-500/30'">
+                        <i class="fas" :class="msg.role === 'user' ? 'fa-user text-purple-400 text-xs' : 'fa-robot text-indigo-400 text-xs'"></i>
+                    </div>
+
+                    <div class="flex flex-col gap-1 max-w-[85%]" :class="msg.role === 'user' ? 'items-end' : 'items-start'">
+                        <span class="text-[10px] text-gray-500 mx-1" x-text="msg.role === 'user' ? 'You' : 'Gemini'"></span>
+                        <div class="p-4 rounded-2xl text-sm leading-relaxed shadow-sm break-words"
+                             :class="msg.role === 'user' ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-tr-none' : 'bg-white/5 border border-white/5 text-gray-200 rounded-tl-none'"
+                             x-html="msg.text">
+                        </div>
+                        <span class="text-[10px] text-gray-600 mx-1" x-text="msg.time"></span>
+                    </div>
+                </div>
+            </template>
+
+            <div x-show="loading" class="flex gap-4">
+                <div class="w-8 h-8 rounded-full bg-indigo-500/20 flex-shrink-0 flex items-center justify-center border border-indigo-500/30">
+                    <i class="fas fa-robot text-indigo-400 text-xs"></i>
+                </div>
+                <div class="p-4 rounded-2xl rounded-tl-none bg-white/5 border border-white/5 flex items-center gap-2">
+                    <div class="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"></div>
+                    <div class="w-2 h-2 bg-indigo-400 rounded-full animate-bounce delay-75"></div>
+                    <div class="w-2 h-2 bg-indigo-400 rounded-full animate-bounce delay-150"></div>
+                </div>
+            </div>
+            
+            <div x-show="error" class="flex justify-center">
+                <div class="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-2 rounded-lg text-xs flex items-center gap-2">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span x-text="error"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-5 border-t border-white/5 bg-[#0b0f19]">
+            <form @submit.prevent="sendMessage()" class="relative">
+                <input x-model="question" 
+                    type="text" 
+                    placeholder="Ask anything about {{ language }}..." 
+                    class="w-full bg-[#1e293b] border border-white/10 rounded-xl pl-4 pr-12 py-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all shadow-inner"
+                    :disabled="loading">
+                
+                <button type="submit" 
+                    :disabled="loading || !question.trim()"
+                    class="absolute right-3 top-3 p-1.5 rounded-lg text-indigo-400 hover:text-white hover:bg-indigo-600 transition-all disabled:opacity-50 disabled:hover:bg-transparent">
+                    <i class="fas fa-paper-plane text-lg"></i>
+                </button>
+            </form>
+            <p class="text-[10px] text-center text-gray-600 mt-3">
+                <i class="fas fa-shield-alt mr-1"></i> AI can make mistakes. Check important info.
+            </p>
+        </div>
+    </div>
 </div>
 
 <script>
-    // Toggle Editor
-    function toggleEditMode() {
-        const viewDiv = document.getElementById('view-content');
-        const editDiv = document.getElementById('edit-content');
-        if (editDiv.classList.contains('hidden')) {
-            viewDiv.classList.add('hidden');
-            editDiv.classList.remove('hidden');
-            if (typeof tinymce !== 'undefined' && !tinymce.get('editor')) {
-                tinymce.init({
-                    selector: '#editor', height: 500, menubar: false, skin: "oxide-dark", content_css: "dark",
-                    plugins: 'lists link code', toolbar: 'undo redo | bold italic | bullist numlist | code'
-                });
+function aiTutor() {
+    return {
+        isOpen: false,
+        question: '',
+        loading: false,
+        error: null,
+        chatHistory: [],
+
+        initChat() {
+            this.fetchHistory();
+        },
+
+        toggleChat() {
+            this.isOpen = !this.isOpen;
+            if (this.isOpen) {
+                this.$nextTick(() => this.scrollToBottom());
             }
-        } else {
-            editDiv.classList.add('hidden');
-            viewDiv.classList.remove('hidden');
+        },
+
+        async fetchHistory() {
+            try {
+                const res = await fetch("{{ url_for('main.get_chat_history', subject=language) }}");
+                if (!res.ok) throw new Error('Failed to load history');
+                const data = await res.json();
+                this.chatHistory = data;
+                this.$nextTick(() => this.scrollToBottom());
+            } catch (err) {
+                console.error("Failed to load history:", err);
+            }
+        },
+
+        async sendMessage() {
+            if (!this.question.trim()) return;
+
+            const userText = this.question;
+            this.question = '';
+            this.error = null;
+            
+            // Optimistic UI Update
+            this.chatHistory.push({
+                role: 'user', 
+                text: userText, 
+                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            });
+            this.loading = true;
+            this.scrollToBottom();
+
+            try {
+                const res = await fetch("{{ url_for('main.ask_learning_ai') }}", {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ question: userText, subject: '{{ language }}' })
+                });
+                
+                const data = await res.json();
+                this.loading = false;
+
+                if (data.error) {
+                    this.error = data.error;
+                } else {
+                    this.chatHistory.push({
+                        role: 'ai', 
+                        text: data.answer,
+                        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                    });
+                }
+                this.$nextTick(() => this.scrollToBottom());
+
+            } catch (err) {
+                this.loading = false;
+                this.error = "Connection error. Please try again.";
+            }
+        },
+
+        async clearHistory() {
+            if(!confirm("Are you sure you want to delete all chat history for this subject?")) return;
+            
+            try {
+                const res = await fetch("{{ url_for('main.delete_chat_history') }}", {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ subject: '{{ language }}' })
+                });
+                if (res.ok) {
+                    this.chatHistory = [];
+                }
+            } catch (err) {
+                alert("Failed to delete history");
+            }
+        },
+
+        scrollToBottom() {
+            const container = this.$refs.chatContainer;
+            if(container) container.scrollTop = container.scrollHeight;
         }
     }
+}
 
-    // Generate Sidebar TOC
-    document.addEventListener('DOMContentLoaded', () => {
-        const content = document.getElementById('view-content');
-        const toc = document.getElementById('toc');
-        const headers = content.querySelectorAll('h2');
-        if (headers.length > 0) {
-            headers.forEach((header, index) => {
-                header.id = 'section-' + index;
-                const link = document.createElement('a');
-                link.href = '#section-' + index;
-                link.className = 'block pl-4 py-1.5 text-sm text-gray-500 hover:text-white hover:border-l-2 hover:border-indigo-500 border-l-2 border-transparent transition-all truncate';
-                link.innerText = header.innerText;
-                toc.appendChild(link);
+// Editor & TOC Logic (Existing)
+function toggleEditMode() {
+    const viewDiv = document.getElementById('view-content');
+    const editDiv = document.getElementById('edit-content');
+    if (editDiv.classList.contains('hidden')) {
+        viewDiv.classList.add('hidden');
+        editDiv.classList.remove('hidden');
+        if (typeof tinymce !== 'undefined' && !tinymce.get('editor')) {
+            tinymce.init({
+                selector: '#editor', height: 500, menubar: false, skin: "oxide-dark", content_css: "dark",
+                plugins: 'lists link code', toolbar: 'undo redo | bold italic | bullist numlist | code'
             });
-        } else {
-            toc.innerHTML = '<p class="pl-4 text-xs text-gray-600 italic">No sections found</p>';
         }
-    });
+    } else {
+        editDiv.classList.add('hidden');
+        viewDiv.classList.remove('hidden');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const content = document.getElementById('view-content');
+    const toc = document.getElementById('toc');
+    const headers = content.querySelectorAll('h2, h3');
+    
+    if (headers.length > 0) {
+        headers.forEach((header, index) => {
+            header.id = 'section-' + index;
+            const link = document.createElement('a');
+            link.href = '#section-' + index;
+            link.className = 'block pl-4 py-1.5 text-sm text-gray-500 hover:text-white hover:border-l-2 hover:border-indigo-500 border-l-2 border-transparent transition-all truncate cursor-pointer';
+            link.innerText = header.innerText;
+            
+            // Smooth scroll
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                header.scrollIntoView({behavior: 'smooth'});
+            });
+            
+            toc.appendChild(link);
+        });
+    } else {
+        toc.innerHTML = '<p class="pl-4 text-xs text-gray-600 italic">No sections found</p>';
+    }
+});
 </script>
 {% endblock %}
