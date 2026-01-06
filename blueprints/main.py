@@ -1,5 +1,6 @@
 import google.generativeai as genai
 import os
+from threading import Thread
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, current_app
 from flask_login import login_required, current_user
 from extensions import db, bcrypt, cache
@@ -318,6 +319,40 @@ def delete_chat_history():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+# --- BACKGROUND AI WORKER ---
+def background_ai_task(app, user_id, subject, question, api_key):
+    """
+    Runs in a separate thread so it doesn't block the website.
+    """
+    with app.app_context():
+        try:
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-2.5-flash')
+            
+            prompt = f"""
+            You are an expert technical tutor for {subject}.
+            The user is asking: "{question}"
+            Keep your answer concise (under 200 words) and helpful.
+            Format your response with simple HTML (e.g., use <b> for bold, <br> for new lines, <code> for code snippets).
+            Do not include Markdown blocks like ```html.
+            """
+            
+            response = model.generate_content(prompt)
+            answer_text = response.text
+
+            # Save AI Response to DB
+            ai_msg = ChatHistory(
+                user_id=user_id,
+                subject=subject,
+                role='ai',
+                message=answer_text
+            )
+            db.session.add(ai_msg)
+            db.session.commit()
+            
+        except Exception as e:
+            print(f"Background AI Error: {str(e)}")
+
 @main_bp.route('/ask_learning_ai', methods=['POST'])
 @login_required
 def ask_learning_ai():
@@ -332,7 +367,7 @@ def ask_learning_ai():
     if not api_key:
         return jsonify({'error': 'Server configuration error (Missing API Key)'}), 500
 
-    # 1. Save User Question to DB
+    # 1. Save User Question to DB Immediately
     try:
         user_msg = ChatHistory(
             user_id=current_user.id,
@@ -344,35 +379,24 @@ def ask_learning_ai():
         db.session.commit()
     except Exception as e:
         print(f"Error saving user chat: {e}")
+        return jsonify({'error': 'Database error saving question'}), 500
 
-    try:
-        genai.configure(api_key=api_key)
-        # Using the model available to your key
-        model = genai.GenerativeModel('gemini-2.5-flash') 
-        
-        prompt = f"""
-        You are an expert technical tutor for {subject}.
-        The user is asking: "{question}"
-        Keep your answer concise (under 200 words) and helpful.
-        Format your response with simple HTML (e.g., use <b> for bold, <br> for new lines, <code> for code snippets).
-        Do not include Markdown blocks like ```html.
-        """
-        
-        response = model.generate_content(prompt)
-        answer_text = response.text
+    # 2. Start AI processing in a background thread
+    # We pass 'current_app._get_current_object()' because standard 'current_app' proxy 
+    # doesn't work well inside threads.
+    thread = Thread(target=background_ai_task, args=(
+        current_app._get_current_object(),
+        current_user.id,
+        subject,
+        question,
+        api_key
+    ))
+    thread.start()
 
-        # 2. Save AI Response to DB
-        ai_msg = ChatHistory(
-            user_id=current_user.id,
-            subject=subject,
-            role='ai',
-            message=answer_text
-        )
-        db.session.add(ai_msg)
-        db.session.commit()
-
-        return jsonify({'answer': answer_text})
-
-    except Exception as e:
-        # Fallback diagnostic
-        return jsonify({'error': f"AI Error: {str(e)}"}), 500
+    # 3. Return immediately! 
+    # The frontend will see this and can poll 'get_chat_history' every few seconds 
+    # to check if the answer has arrived.
+    return jsonify({
+        'status': 'processing', 
+        'message': 'AI is thinking... The answer will appear in your history shortly.'
+    })

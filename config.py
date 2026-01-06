@@ -11,18 +11,21 @@ class Config:
     UPLOAD_FOLDER = os.path.join('static', 'resumes')
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024
     
-    # Cache (Simple for Dev, Redis for Prod recommended)
-    CACHE_TYPE = 'SimpleCache'
+    # --- REDIS CACHE CONFIGURATION (UPDATED) ---
+    # Switch from 'SimpleCache' to 'RedisCache' for high concurrency
+    CACHE_TYPE = 'RedisCache'
+    CACHE_REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379/0')
     CACHE_DEFAULT_TIMEOUT = 300
-    CACHE_THRESHOLD = 200
+    CACHE_THRESHOLD = 500  # Stores more items now that we have a dedicated server
 
-    # DB Pooling (Stability)
+    # --- DATABASE POOLING OPTIMIZATION (UPDATED) ---
+    # Optimized for 12GB RAM server (High Throughput)
     SQLALCHEMY_ENGINE_OPTIONS = {
-        "pool_pre_ping": True,
-        "pool_recycle": 280,
-        "pool_size": 2,
-        "max_overflow": 1,
-        "pool_timeout": 30
+        "pool_pre_ping": True,  # Auto-detect and remove dead connections
+        "pool_recycle": 280,    # Recycle connections before database timeout
+        "pool_size": 20,        # Base number of connections (Increased from 2)
+        "max_overflow": 10,     # Max extra connections during spikes (Increased from 1)
+        "pool_timeout": 30      # Wait 30s for a connection before failing
     }
     
     @classmethod
@@ -32,6 +35,7 @@ class Config:
 class DevelopmentConfig(Config):
     """Development configuration."""
     DEBUG = True
+    # Fallback to sqlite if no URL is present (local testing outside docker)
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///site.db')
 
 class ProductionConfig(Config):

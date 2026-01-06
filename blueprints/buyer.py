@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask_login import login_required, current_user
-from extensions import db
+from extensions import db, cache  # Added cache import
 from models.commerce import Product, Cart, CartItem, Order 
 from services.commerce_service import CommerceService      
 from utils import role_required
@@ -12,23 +12,34 @@ buyer_bp = Blueprint('buyer', __name__)
 @role_required('buyer')
 def buyer_dashboard():
     category_filter = request.args.get('category')
-    # This query is already decent, but the index we added to models/commerce.py 
-    # will make it much faster.
+    
+    # 1. Fetch Products (Dynamic - hard to cache whole list due to filters)
     query = Product.query.filter(Product.stock > 0)
     if category_filter:
         query = query.filter_by(category=category_filter)
     
     products = query.all()
     
-    # distinct() is expensive; in a real app, cache this list.
-    categories_query = db.session.query(Product.category).distinct().all()
-    categories = [c[0] for c in categories_query if c[0]]
+    # 2. Fetch Categories (OPTIMIZED WITH REDIS)
+    # We use a unique key 'all_product_categories' to store this list
+    categories = cache.get('all_product_categories')
+    
+    if categories is None:
+        # Data not in Redis, fetch from DB (The expensive part)
+        categories_query = db.session.query(Product.category).distinct().all()
+        categories = [c[0] for c in categories_query if c[0]]
+        
+        # Save to Redis for 1 hour (3600 seconds)
+        # This means the DB is hit only once per hour for this query!
+        cache.set('all_product_categories', categories, timeout=3600)
     
     return render_template('buyer_dashboard.html', products=products, categories=categories, current_category=category_filter)
 
 @buyer_bp.route('/product/<int:product_id>')
 @login_required
 @role_required('buyer')
+# Optional: Cache product details for 5 minutes since they rarely change
+# @cache.cached(timeout=300, key_prefix='product_detail')
 def product_detail_page(product_id):
     product = Product.query.get_or_404(product_id)
     return render_template('product_detail_buyer.html', product=product)
@@ -37,7 +48,7 @@ def product_detail_page(product_id):
 @login_required
 @role_required('buyer')
 def view_cart():
-    # --- REFACTORED: Use Service for Performance ---
+    # Service layer handles logic
     cart_items, total, _ = CommerceService.get_cart_details(current_user.id)
     return render_template('cart.html', cart_items=cart_items, total=total)
 
@@ -58,7 +69,6 @@ def add_to_cart(product_id):
 @login_required
 @role_required('buyer')
 def remove_from_cart(item_id):
-    # --- REFACTORED: Use Service ---
     success, msg = CommerceService.remove_item(current_user.id, item_id)
     if success:
         flash(msg, 'info')
@@ -71,7 +81,6 @@ def remove_from_cart(item_id):
 @login_required
 @role_required('buyer')
 def checkout():
-    # Quick check for empty cart before rendering page
     _, total, cart = CommerceService.get_cart_details(current_user.id)
     
     if not cart or not cart.items:
@@ -98,8 +107,8 @@ def checkout():
 @login_required
 @role_required('buyer')
 def my_orders():
-    # Added eager loading for items to speed up order history view
     from sqlalchemy.orm import joinedload
+    # Optimized Eager Loading
     orders = Order.query.options(joinedload(Order.items))\
                 .filter_by(user_id=current_user.id)\
                 .order_by(Order.created_at.desc()).all()

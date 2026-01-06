@@ -154,9 +154,10 @@
                     <i class="fas fa-robot text-indigo-400 text-xs"></i>
                 </div>
                 <div class="p-4 rounded-2xl rounded-tl-none bg-white/5 border border-white/5 flex items-center gap-2">
-                    <div class="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"></div>
-                    <div class="w-2 h-2 bg-indigo-400 rounded-full animate-bounce delay-75"></div>
-                    <div class="w-2 h-2 bg-indigo-400 rounded-full animate-bounce delay-150"></div>
+                    <span class="text-xs text-indigo-300">Thinking</span>
+                    <div class="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></div>
+                    <div class="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce delay-75"></div>
+                    <div class="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce delay-150"></div>
                 </div>
             </div>
             
@@ -197,6 +198,7 @@ function aiTutor() {
         loading: false,
         error: null,
         chatHistory: [],
+        pollInterval: null,
 
         initChat() {
             this.fetchHistory();
@@ -216,6 +218,7 @@ function aiTutor() {
                 const data = await res.json();
                 this.chatHistory = data;
                 this.$nextTick(() => this.scrollToBottom());
+                return data;
             } catch (err) {
                 console.error("Failed to load history:", err);
             }
@@ -228,7 +231,7 @@ function aiTutor() {
             this.question = '';
             this.error = null;
             
-            // Optimistic UI Update
+            // 1. Optimistic UI Update: Show user message immediately
             this.chatHistory.push({
                 role: 'user', 
                 text: userText, 
@@ -238,6 +241,7 @@ function aiTutor() {
             this.scrollToBottom();
 
             try {
+                // 2. Send request to backend
                 const res = await fetch("{{ url_for('main.ask_learning_ai') }}", {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -245,16 +249,24 @@ function aiTutor() {
                 });
                 
                 const data = await res.json();
-                this.loading = false;
 
                 if (data.error) {
+                    this.loading = false;
                     this.error = data.error;
+                } 
+                else if (data.status === 'processing') {
+                    // 3. Backend accepted it! Start polling for the answer
+                    this.pollForAnswer();
                 } else {
-                    this.chatHistory.push({
-                        role: 'ai', 
-                        text: data.answer,
-                        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-                    });
+                    // Fallback in case we switch back to sync mode later
+                    this.loading = false;
+                    if(data.answer) {
+                        this.chatHistory.push({
+                            role: 'ai', 
+                            text: data.answer,
+                            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                        });
+                    }
                 }
                 this.$nextTick(() => this.scrollToBottom());
 
@@ -262,6 +274,39 @@ function aiTutor() {
                 this.loading = false;
                 this.error = "Connection error. Please try again.";
             }
+        },
+
+        pollForAnswer() {
+            // Check every 2 seconds for the new message
+            let attempts = 0;
+            const maxAttempts = 30; // Timeout after 60 seconds
+
+            if (this.pollInterval) clearInterval(this.pollInterval);
+
+            this.pollInterval = setInterval(async () => {
+                attempts++;
+                
+                // Fetch full history
+                const currentData = await this.fetchHistory();
+                
+                // Logic: If the last message is from 'ai', we got our answer!
+                if (currentData && currentData.length > 0) {
+                    const lastMsg = currentData[currentData.length - 1];
+                    
+                    if (lastMsg.role === 'ai') {
+                        // Success!
+                        this.loading = false;
+                        clearInterval(this.pollInterval);
+                        this.scrollToBottom();
+                    }
+                }
+
+                if (attempts >= maxAttempts) {
+                    clearInterval(this.pollInterval);
+                    this.loading = false;
+                    this.error = "AI is taking too long. Please refresh the page.";
+                }
+            }, 2000);
         },
 
         async clearHistory() {
@@ -288,7 +333,7 @@ function aiTutor() {
     }
 }
 
-// Editor & TOC Logic (Existing)
+// Editor & TOC Logic
 function toggleEditMode() {
     const viewDiv = document.getElementById('view-content');
     const editDiv = document.getElementById('edit-content');
@@ -320,7 +365,6 @@ document.addEventListener('DOMContentLoaded', () => {
             link.className = 'block pl-4 py-1.5 text-sm text-gray-500 hover:text-white hover:border-l-2 hover:border-indigo-500 border-l-2 border-transparent transition-all truncate cursor-pointer';
             link.innerText = header.innerText;
             
-            // Smooth scroll
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 header.scrollIntoView({behavior: 'smooth'});
