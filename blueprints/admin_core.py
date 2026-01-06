@@ -6,7 +6,6 @@ from models.hiring import JobApplication, CodeSnippet
 from models.commerce import Order, StockRequest
 from models.finance import Project, Transaction, BRD, EMIPlan, EMIPayment
 from models.learning import LearningContent
-# Updated Import: Added MAIL_DEFAULT_SENDER_EMAIL
 from utils import role_required, log_user_action, send_email, MAIL_DEFAULT_SENDER_EMAIL
 from invoice_service import BrdGenerator
 from datetime import datetime, timedelta
@@ -38,7 +37,6 @@ def admin_dashboard():
 
     # 3. Applications
     applications = JobApplication.query.order_by(JobApplication.applied_at.desc()).limit(10).all()
-    
     pending_apps_count = JobApplication.query.filter_by(status=ApplicationStatus.PENDING.value).count()
 
     # 4. Activity Logs
@@ -156,7 +154,6 @@ def admin_activity_logs():
     filter_date = request.args.get('date')
 
     query = ActivityLog.query
-
     if filter_user:
         query = query.join(User).filter(User.username.ilike(f"%{filter_user}%"))
     if filter_action:
@@ -197,17 +194,10 @@ def broadcast_email():
         signature = """<br><br>...Source Point Team...""" 
         final_body = body + signature
 
-        # --- UPDATED LOGIC: SEND WITH BCC ---
         users = User.query.all()
-        # Collect all valid emails
         bcc_recipients = [u.email for u in users if u.email]
-        
-        # FIX: Set the "To" address to the System Sender (e.g., admin@sourcepoint.in)
-        # This prevents the specific admin's personal email from showing in the "To" field.
-        # Everyone else remains hidden in BCC.
         to_email = MAIL_DEFAULT_SENDER_EMAIL
         
-        # Ensure the 'To' email is not also in the 'BCC' list to avoid duplicate delivery
         if to_email in bcc_recipients:
             bcc_recipients.remove(to_email)
 
@@ -222,10 +212,10 @@ def broadcast_email():
                 attachments=attachments
             )
             count = len(bcc_recipients)
-            log_user_action("Broadcast Email", f"Sent broadcast email with subject: {subject} to {count} users (BCC)")
-            flash(f'Broadcast sent successfully to {count} users (via BCC).', 'success')
+            log_user_action("Broadcast Email", f"Sent broadcast email to {count} users")
+            flash(f'Broadcast sent successfully to {count} users.', 'success')
         else:
-            flash('No recipients found to broadcast to.', 'warning')
+            flash('No recipients found.', 'warning')
 
         return redirect(url_for('admin_core.admin_dashboard'))
     return render_template('broadcast_email.html')
@@ -280,7 +270,6 @@ def send_specific_email():
 def update_learning_content():
     language_id = request.form.get('language_id')
     content = request.form.get('content')
-
     learning_content = LearningContent.query.get(language_id)
     if learning_content:
         learning_content.content = content
@@ -289,7 +278,6 @@ def update_learning_content():
         flash(f'The {language_id.upper()} learning page has been updated.', 'success')
     else:
         flash(f'Could not find the learning page for {language_id.upper()}.', 'danger')
-
     return redirect(url_for('main.learn_language', language=language_id))
 
 # =========================================================
@@ -412,6 +400,7 @@ def edit_brd(project_id):
     brd = project.brd or BRD(project_id=project_id)
 
     if request.method == 'POST':
+        # Save Content
         brd.executive_summary = request.form.get('executive_summary')
         brd.project_objectives = request.form.get('project_objectives')
         brd.project_scope = request.form.get('project_scope')
@@ -419,6 +408,15 @@ def edit_brd(project_id):
         brd.key_stakeholders = request.form.get('key_stakeholders')
         brd.project_constraints = request.form.get('project_constraints')
         brd.cost_benefit_analysis = request.form.get('cost_benefit_analysis')
+
+        # Save Labels
+        brd.executive_summary_label = request.form.get('executive_summary_label')
+        brd.project_objectives_label = request.form.get('project_objectives_label')
+        brd.project_scope_label = request.form.get('project_scope_label')
+        brd.business_requirements_label = request.form.get('business_requirements_label')
+        brd.key_stakeholders_label = request.form.get('key_stakeholders_label')
+        brd.project_constraints_label = request.form.get('project_constraints_label')
+        brd.cost_benefit_analysis_label = request.form.get('cost_benefit_analysis_label')
 
         if not project.brd:
             db.session.add(brd)
@@ -435,7 +433,6 @@ def edit_brd(project_id):
 def share_brd(project_id):
     project = Project.query.get_or_404(project_id)
     recipient_email = request.form.get('recipient_email')
-
     if not recipient_email:
         flash('Recipient email is required.', 'danger')
         return redirect(url_for('admin_core.view_brd', project_id=project.id))
@@ -458,7 +455,6 @@ def share_brd(project_id):
 @role_required(UserRole.ADMIN.value)
 def emi_manager():
     plans = EMIPlan.query.order_by(EMIPlan.created_at.desc()).all()
-    # Filter by not admin using Enum value (if consistent with model data)
     users = User.query.filter(User.role != UserRole.ADMIN.value).order_by(User.username).all()
     return render_template('emi_manager.html', plans=plans, users=users)
 
@@ -505,21 +501,14 @@ def import_emi_schedule():
                     
                     if amount > 0 and due_date:
                         total_amount += amount
-                        payments_to_add.append({
-                            'due_date': due_date, 
-                            'amount': amount, 
-                            'description': description
-                        })
-                except Exception as e:
-                    print(f"Skipping CSV row error: {e}")
-                    continue
+                        payments_to_add.append({'due_date': due_date, 'amount': amount, 'description': description})
+                except Exception: continue
         
         elif filename.endswith('.pdf'):
             try:
                 pdf_reader = pypdf.PdfReader(file)
                 text = ""
-                for page in pdf_reader.pages: 
-                    text += page.extract_text() + "\n"
+                for page in pdf_reader.pages: text += page.extract_text() + "\n"
                 
                 lines = text.split('\n')
                 date_pattern_num = re.compile(r'\b(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})\b')
@@ -528,57 +517,45 @@ def import_emi_schedule():
 
                 for line in lines:
                     line = line.strip()
-                    if not line: continue
-                    if 'txn date' in line.lower() or 'transaction date' in line.lower(): continue
-
+                    if not line or 'txn date' in line.lower() or 'transaction date' in line.lower(): continue
                     fee_match = fee_pattern.search(line)
                     if fee_match:
                         try:
-                            fee_val = float(fee_match.group(1).replace(',', ''))
-                            processing_fee += fee_val
+                            processing_fee += float(fee_match.group(1).replace(',', ''))
                         except ValueError: pass
                         continue
-
+                    
                     due_date = None
-                    end_of_date_index = 0
-
+                    end_idx = 0
                     text_match = date_pattern_text.search(line)
                     if text_match:
                         try:
-                            day, month, year = text_match.groups()
-                            date_str = f"{day}-{month}-{year}"
-                            due_date = datetime.strptime(date_str, '%d-%b-%Y').date()
-                            end_of_date_index = text_match.end()
+                            d, m, y = text_match.groups()
+                            due_date = datetime.strptime(f"{d}-{m}-{y}", '%d-%b-%Y').date()
+                            end_idx = text_match.end()
                         except ValueError: pass
                     
                     if not due_date:
                         num_match = date_pattern_num.search(line)
                         if num_match:
                             try:
-                                day, month, year = num_match.groups()
-                                if len(year) == 2: year = "20" + year
-                                due_date = datetime(int(year), int(month), int(day)).date()
-                                end_of_date_index = num_match.end()
+                                d, m, y = num_match.groups()
+                                if len(y) == 2: y = "20" + y
+                                due_date = datetime(int(y), int(m), int(d)).date()
+                                end_idx = num_match.end()
                             except ValueError: pass
-
+                    
                     if due_date:
-                        remaining_text = line[end_of_date_index:]
-                        amount_matches = re.findall(r'(\d{1,3}(?:,\d{3})*\.\d{2})', remaining_text)
-                        
-                        if amount_matches:
-                            amount_str = amount_matches[0].replace(',', '')
+                        rem = line[end_idx:]
+                        amts = re.findall(r'(\d{1,3}(?:,\d{3})*\.\d{2})', rem)
+                        if amts:
                             try:
-                                amount = float(amount_str)
-                                if amount > 0:
-                                    payments_to_add.append({
-                                        'due_date': due_date, 
-                                        'amount': amount, 
-                                        'description': f'Installment for {title}'
-                                    })
-                                    total_amount += amount
+                                a = float(amts[0].replace(',', ''))
+                                if a > 0:
+                                    payments_to_add.append({'due_date': due_date, 'amount': a, 'description': f'Installment for {title}'})
+                                    total_amount += a
                             except ValueError: continue
-
-            except Exception as e:
+            except Exception:
                 flash('Error reading PDF file.', 'danger')
                 return redirect(url_for('admin_core.emi_manager'))
 
@@ -587,7 +564,6 @@ def import_emi_schedule():
             return redirect(url_for('admin_core.emi_manager'))
 
         payments_to_add.sort(key=lambda x: x['due_date'])
-
         if processing_fee > 0 and payments_to_add:
             payments_to_add[0]['amount'] += processing_fee
             payments_to_add[0]['description'] += f" + Proc. Fee ({processing_fee})"
@@ -597,21 +573,16 @@ def import_emi_schedule():
         db.session.add(new_plan)
         db.session.commit()
 
-        for index, pay in enumerate(payments_to_add, start=1):
-            payment = EMIPayment(
-                plan_id=new_plan.id, installment_number=index, due_date=pay['due_date'],
-                amount=pay['amount'], description=pay['description'], reminder_days_before=reminder_days
-            )
+        for i, pay in enumerate(payments_to_add, start=1):
+            payment = EMIPayment(plan_id=new_plan.id, installment_number=i, due_date=pay['due_date'], amount=pay['amount'], description=pay['description'], reminder_days_before=reminder_days)
             db.session.add(payment)
         
         db.session.commit()
         log_user_action("Create EMI Plan", f"Created plan '{title}' for Borrower {borrower_id}")
         flash(f'EMI Schedule imported successfully ({len(payments_to_add)} installments).', 'success')
-
     except Exception as e:
         db.session.rollback()
         flash(f'Failed to process file: {str(e)}', 'danger')
-
     return redirect(url_for('admin_core.emi_manager'))
 
 @admin_core_bp.route('/emi_manager/update_payment', methods=['POST'])
@@ -619,24 +590,17 @@ def import_emi_schedule():
 @role_required(UserRole.ADMIN.value)
 def update_emi_payment():
     payment_id = request.form.get('payment_id')
-    amount = request.form.get('amount')
-    due_date_str = request.form.get('due_date')
-    description = request.form.get('description')
-    status = request.form.get('status')
-
     payment = EMIPayment.query.get_or_404(payment_id)
-    
-    if amount: payment.amount = float(amount)
-    if due_date_str: payment.due_date = datetime.strptime(due_date_str, '%Y-%m-%d').date()
-    if description: payment.description = description
+    if request.form.get('amount'): payment.amount = float(request.form.get('amount'))
+    if request.form.get('due_date'): payment.due_date = datetime.strptime(request.form.get('due_date'), '%Y-%m-%d').date()
+    if request.form.get('description'): payment.description = request.form.get('description')
+    status = request.form.get('status')
     if status:
         payment.status = status
         if status == 'Pending': payment.payment_date = None
         elif status == 'Paid' and not payment.payment_date: payment.payment_date = datetime.utcnow()
-        
-    db.session.commit()
-    log_user_action("Update EMI Payment", f"Updated installment #{payment.installment_number} for plan {payment.plan.title}")
     
+    db.session.commit()
     flash('Payment details updated successfully.', 'success')
     return redirect(url_for('admin_core.emi_manager'))
 
@@ -645,36 +609,20 @@ def update_emi_payment():
 @role_required(UserRole.ADMIN.value)
 def mark_emi_paid(payment_id):
     payment = EMIPayment.query.get_or_404(payment_id)
-    
     if payment.status == 'Paid':
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'success': False, 'message': 'Payment already marked as Paid.'})
-        flash('Payment is already paid.', 'warning')
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest': return jsonify({'success': False, 'message': 'Already paid.'})
         return redirect(url_for('admin_core.emi_manager'))
 
     payment.status = 'Paid'
     payment.payment_date = datetime.utcnow()
     db.session.commit()
-
+    
     try:
-        send_email(
-            to=payment.plan.lender.email,
-            subject=f"Payment Received: {payment.description}",
-            template="mail/emi_paid_notification_lender.html",
-            lender=payment.plan.lender, borrower=payment.plan.borrower, payment=payment, paid_date=datetime.utcnow()
-        )
+        send_email(to=payment.plan.lender.email, subject=f"Payment Received: {payment.description}", template="mail/emi_paid_notification_lender.html", lender=payment.plan.lender, borrower=payment.plan.borrower, payment=payment, paid_date=datetime.utcnow())
     except Exception: pass
-
-    log_user_action("Mark EMI Paid", f"Marked installment #{payment.installment_number} as paid")
-
+    
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return jsonify({
-            'success': True, 
-            'message': f'Installment marked as Paid.',
-            'payment_date': payment.payment_date.strftime('%d/%m')
-        })
-
-    flash(f'Installment marked as paid.', 'success')
+        return jsonify({'success': True, 'message': 'Marked as Paid.', 'payment_date': payment.payment_date.strftime('%d/%m')})
     return redirect(url_for('admin_core.emi_manager'))
 
 @admin_core_bp.route('/emi_manager/delete_plan/<int:plan_id>')
@@ -682,13 +630,7 @@ def mark_emi_paid(payment_id):
 @role_required(UserRole.ADMIN.value)
 def delete_emi_plan(plan_id):
     plan = EMIPlan.query.get_or_404(plan_id)
-    title = plan.title
     db.session.delete(plan)
     db.session.commit()
-    log_user_action("Delete EMI Plan", f"Deleted EMI plan: {title}")
-
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return jsonify({'success': True, 'message': f'EMI Plan "{title}" has been deleted.', 'remove_row_id': f'plan-{plan_id}'})
-
-    flash(f'EMI Plan "{title}" has been deleted.', 'success')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest': return jsonify({'success': True, 'message': 'Plan deleted.', 'remove_row_id': f'plan-{plan_id}'})
     return redirect(url_for('admin_core.emi_manager'))

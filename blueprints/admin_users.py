@@ -6,13 +6,13 @@ from utils import role_required, log_user_action, send_email
 from datetime import datetime
 from sqlalchemy import or_
 import cloudinary.uploader
-from enums import UserRole  # --- IMPORT ENUM ---
+from enums import UserRole
 
 admin_users_bp = Blueprint('admin_users', __name__, url_prefix='/admin/users')
 
 @admin_users_bp.route('/manage')
 @login_required
-@role_required(UserRole.ADMIN.value) # --- USE ENUM ---
+@role_required(UserRole.ADMIN.value)
 def manage_users():
     page = request.args.get('page', 1, type=int)
     search_query = request.args.get('search', '').strip()
