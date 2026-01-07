@@ -28,4 +28,4 @@ EXPOSE 5000
 # OPTIMIZATION: Increased workers from 3 to 12
 # Formula: (2 x CPUs) + 1. Assuming 4+ vCPUs on a 12GB server, 9-12 workers is safe.
 # This allows 12 concurrent requests to be processed instantly.
-CMD ["gunicorn", "--workers", "12", "--bind", "0.0.0.0:5000", "app:app"]
+CMD ["gunicorn", "--workers", "8", "--bind", "0.0.0.0:5000", "app:app"]
