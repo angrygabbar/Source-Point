@@ -2,6 +2,29 @@
 {% block title %}Candidate Portal{% endblock %}
 {% block content %}
 
+<style>
+    .rich-text-content ul {
+        list-style-type: disc;
+        padding-left: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .rich-text-content ol {
+        list-style-type: decimal;
+        padding-left: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .rich-text-content li {
+        margin-bottom: 0.25rem;
+    }
+    .rich-text-content p {
+        margin-bottom: 0.75rem;
+    }
+    .rich-text-content strong {
+        color: #e2e8f0; /* Light gray for dark mode */
+        font-weight: 700;
+    }
+</style>
+
 <div class="space-y-8 animate-dynamic">
 
     <div class="flex flex-col md:flex-row justify-between items-end gap-4">
@@ -41,9 +64,19 @@
                     {% for job in open_jobs %}
                     <div class="group relative bg-black/20 hover:bg-white/5 border border-white/5 hover:border-emerald-500/30 rounded-xl p-5 transition-all duration-300">
                         <div class="flex justify-between items-start">
-                            <div>
-                                <h3 class="text-lg font-bold text-white group-hover:text-emerald-300 transition-colors">{{ job.title }}</h3>
-                                <p class="text-sm text-gray-400 mt-1 line-clamp-2">{{ job.description }}</p>
+                            <div class="flex-1 pr-4">
+                                <h3 onclick="toggleDescription('{{ job.id }}')" 
+                                    class="cursor-pointer text-lg font-bold text-white group-hover:text-emerald-300 transition-colors flex items-center gap-2 select-none">
+                                    {{ job.title }}
+                                    <i id="icon-{{ job.id }}" class="fas fa-chevron-down text-xs text-gray-500 transition-transform duration-300"></i>
+                                </h3>
+                                
+                                <div id="desc-{{ job.id }}" 
+                                   class="rich-text-content text-sm text-gray-400 mt-1 line-clamp-2 transition-all duration-300 cursor-pointer"
+                                   onclick="toggleDescription('{{ job.id }}')">
+                                    {{ job.description | safe }}
+                                </div>
+
                                 <div class="flex items-center gap-4 mt-3 text-xs text-gray-500 font-mono">
                                     <span><i class="fas fa-hashtag mr-1"></i>{{ job.job_id[:8] }}</span>
                                     <span><i class="far fa-clock mr-1"></i>{{ job.created_at.strftime('%b %d') }}</span>
@@ -207,6 +240,24 @@
         setTimeout(() => {
             modal.classList.add('hidden');
         }, 200);
+    }
+
+    function toggleDescription(jobId) {
+        const descElement = document.getElementById(`desc-${jobId}`);
+        const iconElement = document.getElementById(`icon-${jobId}`);
+        
+        // Toggle the truncation class
+        if (descElement.classList.contains('line-clamp-2')) {
+            // Expand
+            descElement.classList.remove('line-clamp-2');
+            iconElement.classList.add('rotate-180');
+            iconElement.classList.add('text-emerald-400');
+        } else {
+            // Collapse
+            descElement.classList.add('line-clamp-2');
+            iconElement.classList.remove('rotate-180');
+            iconElement.classList.remove('text-emerald-400');
+        }
     }
 </script>
 {% endblock %}
