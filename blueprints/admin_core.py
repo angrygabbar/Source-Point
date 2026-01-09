@@ -1,3 +1,4 @@
+import os
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, jsonify
 from flask_login import login_required, current_user
 from extensions import db
@@ -6,7 +7,7 @@ from models.hiring import JobApplication, CodeSnippet
 from models.commerce import Order, StockRequest
 from models.finance import Project, Transaction, BRD, EMIPlan, EMIPayment
 from models.learning import LearningContent
-from utils import role_required, log_user_action, send_email, MAIL_DEFAULT_SENDER_EMAIL
+from utils import role_required, log_user_action, send_email
 from invoice_service import BrdGenerator
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -196,7 +197,7 @@ def broadcast_email():
 
         users = User.query.all()
         bcc_recipients = [u.email for u in users if u.email]
-        to_email = MAIL_DEFAULT_SENDER_EMAIL
+        to_email = os.environ.get('MAIL_DEFAULT_SENDER_EMAIL', 'admin@sourcepoint.in')
         
         if to_email in bcc_recipients:
             bcc_recipients.remove(to_email)

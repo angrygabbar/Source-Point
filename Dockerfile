@@ -14,18 +14,15 @@ RUN apt-get update && apt-get install -y \
 
 # 4. Copy requirements first (optimizes build speed)
 COPY requirements.txt .
-
 # 5. Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 6. Copy the rest of the application code
 COPY . .
-
 # 7. Expose the port used by Flask/Gunicorn
 EXPOSE 5000
 
 # 8. Command to run the app using Gunicorn
-# OPTIMIZATION: Increased workers from 3 to 12
-# Formula: (2 x CPUs) + 1. Assuming 4+ vCPUs on a 12GB server, 9-12 workers is safe.
-# This allows 12 concurrent requests to be processed instantly.
-CMD ["gunicorn", "--workers", "8", "--bind", "0.0.0.0:5000", "app:app"]
+# OPTIMIZATION: Switched to 'gevent' workers for high concurrency.
+# Reduced workers to 4 (sufficient with gevent) to save RAM for Redis/Postgres.
+CMD ["gunicorn", "--worker-class", "gevent", "--workers", "4", "--bind", "0.0.0.0:5000", "app:app"]

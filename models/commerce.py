@@ -17,7 +17,8 @@ class Product(db.Model):
     mrp = db.Column(Numeric(10, 2), nullable=True) 
     warranty = db.Column(db.String(200), nullable=True)
     return_policy = db.Column(db.String(200), nullable=True)
-    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    # OPTIMIZATION: Added index=True
+    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
     
     images = db.relationship('ProductImage', backref='product', lazy=True, cascade="all, delete-orphan")
 

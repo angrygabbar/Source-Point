@@ -1,96 +1,141 @@
-# Source Point/worker.py
-from app import app, check_completed_tests
-from apscheduler.schedulers.blocking import BlockingScheduler
-from models import EMIPayment
-from utils import send_email
+from extensions import db, celery
+import sib_api_v3_sdk
+import os
+import base64
 from datetime import datetime
-import time
+from flask import render_template
 
-scheduler = BlockingScheduler()
-BATCH_SIZE = 100  # Process 100 emails at a time to save RAM
+# --- EMAIL BACKEND LOGIC ---
+def _send_via_brevo_api(to_list, subject, html_content, cc_list=None, bcc_list=None, attachments=None):
+    api_key = os.environ.get('BREVO_API_KEY')
+    sender_email = os.environ.get('MAIL_USERNAME', 'admin@sourcepoint.in')
+    sender_name = 'Source Point'
 
-def process_emi_reminders():
-    """
-    Scalable worker task that processes reminders in batches.
-    """
-    with app.app_context():
-        today = datetime.utcnow().date()
-        print(f"[Worker] Starting EMI Check for {today}...")
+    if not api_key:
+        print("Brevo API key is not set. Email skipped.")
+        return
 
-        processed_count = 0
-        
-        while True:
-            # Fetch a batch of pending reminders
-            # We check reminder_sent=False so the list shrinks as we process
-            batch = EMIPayment.query.filter(
-                EMIPayment.status == 'Pending',
-                EMIPayment.reminder_sent == False
-            ).limit(BATCH_SIZE).all()
+    configuration = sib_api_v3_sdk.Configuration()
+    configuration.api_key['api-key'] = api_key
+    api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
 
-            if not batch:
-                break  # No more records to process
+    sender = {"name": sender_name, "email": sender_email}
 
-            for payment in batch:
-                try:
-                    days_remaining = (payment.due_date - today).days
-                    
-                    # Only send if within the reminder window (e.g., 3 days before)
-                    if 0 <= days_remaining <= payment.reminder_days_before:
-                        borrower = payment.plan.borrower
-                        lender = payment.plan.lender
-                        
-                        # 1. Notify Borrower
-                        if borrower and borrower.email:
-                            send_email(
-                                to=borrower.email,
-                                subject=f"Payment Reminder: {payment.description}",
-                                template="mail/emi_reminder_borrower.html",
-                                user=borrower,
-                                lender=lender,
-                                payment=payment,
-                                days_remaining=days_remaining
-                            )
+    email_attachments = []
+    if attachments:
+        for attachment_data in attachments:
+            encoded_content = base64.b64encode(attachment_data['data']).decode()
+            email_attachments.append({
+                "content": encoded_content,
+                "name": attachment_data['filename']
+            })
 
-                        # 2. Notify Lender
-                        if lender and lender.email:
-                            send_email(
-                                to=lender.email,
-                                subject=f"Incoming Payment Reminder: {payment.description}",
-                                template="mail/emi_reminder_lender.html",
-                                user=lender,
-                                borrower=borrower,
-                                payment=payment,
-                                days_remaining=days_remaining
-                            )
-                        
-                        # Mark as sent so it doesn't get picked up in the next loop/run
-                        payment.reminder_sent = True
-                        processed_count += 1
-                
-                except Exception as e:
-                    print(f"[Worker Error] ID {payment.id}: {e}")
-                    # Continue to next payment even if one fails
+    smtp_email_data = {
+        "to": to_list,
+        "sender": sender,
+        "subject": subject,
+        "html_content": html_content
+    }
+    if cc_list: smtp_email_data["cc"] = cc_list
+    if bcc_list: smtp_email_data["bcc"] = bcc_list
+    if email_attachments: smtp_email_data["attachment"] = email_attachments
 
-            # Commit the batch
-            db.session.commit()
-            print(f"[Worker] Batch processed. Total so far: {processed_count}")
-            
-            # Small sleep to yield CPU if running heavy loads
-            time.sleep(0.5)
+    send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(**smtp_email_data)
 
-        if processed_count > 0:
-            print(f"[Worker] Job Complete. Sent {processed_count} reminders.")
-
-# Schedule Jobs
-# Misfire grace time ensures a missed job will still run if it's not too late
-scheduler.add_job(check_completed_tests, 'interval', minutes=15, misfire_grace_time=60)
-scheduler.add_job(process_emi_reminders, 'interval', hours=24) # Run once daily
-
-print("Worker started (Batch Mode)...")
-
-if __name__ == "__main__":
-    # The app context is needed for the database connection
     try:
-        scheduler.start()
-    except (KeyboardInterrupt, SystemExit):
-        pass
+        api_instance.send_transac_email(send_smtp_email)
+        print(f"[Celery] Email sent successfully to {[t['email'] for t in to_list]}")
+    except Exception as e:
+        print(f"[Celery] Error sending email: {e}")
+
+# --- CELERY TASKS ---
+
+@celery.task
+def send_email_task(to_list, subject, html_content, cc_list, bcc_list, attachments):
+    """Async task to send emails via Brevo."""
+    _send_via_brevo_api(to_list, subject, html_content, cc_list, bcc_list, attachments)
+
+@celery.task
+def send_single_reminder_task(payment_id):
+    """
+    Worker task: Processes a single EMI reminder.
+    Fetching inside the task ensures data freshness and isolation.
+    """
+    from utils import send_email
+    from models import EMIPayment
+    
+    # Re-fetch payment to ensure we have fresh data
+    payment = EMIPayment.query.get(payment_id)
+    if not payment:
+        return
+        
+    # Double check status to prevent race conditions
+    if payment.reminder_sent:
+        return
+
+    try:
+        today = datetime.utcnow().date()
+        days_remaining = (payment.due_date - today).days
+        
+        borrower = payment.plan.borrower
+        lender = payment.plan.lender
+        
+        if borrower and borrower.email:
+            send_email(
+                to=borrower.email,
+                subject=f"Payment Reminder: {payment.description if payment.description else 'EMI'}",
+                template="mail/emi_reminder_borrower.html",
+                user=borrower,
+                lender=lender,
+                payment=payment,
+                days_remaining=days_remaining
+            )
+
+        if lender and lender.email:
+            send_email(
+                to=lender.email,
+                subject=f"Incoming Payment Reminder: {payment.description if payment.description else 'EMI'}",
+                template="mail/emi_reminder_lender.html",
+                user=lender,
+                borrower=borrower,
+                payment=payment,
+                days_remaining=days_remaining
+            )
+        
+        # Update and Commit
+        payment.reminder_sent = True
+        db.session.commit()
+        print(f"[Celery Worker] Reminder sent for Payment ID {payment.id}")
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"[Worker Error] Failed to send reminder for ID {payment.id}: {e}")
+
+@celery.task
+def process_emi_reminders_task():
+    """
+    Dispatcher task: Finds pending reminders and queues individual tasks.
+    This runs quickly and delegates the heavy lifting.
+    """
+    from models import EMIPayment
+    
+    today = datetime.utcnow().date()
+    print(f"[Celery Dispatcher] Checking EMI Check for {today}...")
+
+    # Fetch pending payments
+    batch = EMIPayment.query.filter(
+        EMIPayment.status == 'Pending',
+        EMIPayment.reminder_sent == False
+    ).limit(100).all()
+
+    queued_count = 0
+    for payment in batch:
+        # Check logic here to avoid queuing unnecessary tasks
+        days_remaining = (payment.due_date - today).days
+        
+        # Only queue if the payment plan exists and it's time to remind
+        if payment.plan and 0 <= days_remaining <= payment.reminder_days_before:
+            send_single_reminder_task.delay(payment.id)
+            queued_count += 1
+
+    print(f"[Celery Dispatcher] Queued {queued_count} reminder tasks.")
