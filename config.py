@@ -1,5 +1,6 @@
 import os
 from datetime import timedelta
+from celery.schedules import crontab
 
 class Config:
     """Base configuration."""
@@ -11,19 +12,40 @@ class Config:
     UPLOAD_FOLDER = os.path.join('static', 'resumes')
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024
     
-    # --- REDIS & CELERY CONFIGURATION (UPDATED) ---
+    # --- REDIS & CELERY CONFIGURATION ---
     CACHE_TYPE = 'RedisCache'
-    # Use a single Redis URL source for consistency
     REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379/0')
     
     CACHE_REDIS_URL = REDIS_URL
     CACHE_DEFAULT_TIMEOUT = 300
     CACHE_THRESHOLD = 500
 
-    # Celery Config
+    # Celery Configuration
     CELERY_BROKER_URL = REDIS_URL
     CELERY_RESULT_BACKEND = REDIS_URL
-    CELERY_TIMEZONE = 'UTC'
+    
+    # Timezone: India Standard Time
+    CELERY_TIMEZONE = 'Asia/Kolkata'
+
+    # --- SCHEDULED TASKS (Celery Beat) ---
+    CELERY_BEAT_SCHEDULE = {
+        # 1. Invoice Reminders (9 AM & 5 PM IST)
+        'send-invoice-reminders-twice-daily': {
+            'task': 'worker.send_invoice_reminders_task',
+            'schedule': crontab(hour='9,17', minute=0),
+        },
+        # 2. Finance EMI Reminders (10 AM IST Daily)
+        'send-emi-reminders-daily': {
+            'task': 'worker.process_emi_reminders_task',
+            'schedule': crontab(hour=10, minute=0),
+        },
+        # 3. NEW: Hiring Event Checks (Every 15 Minutes)
+        # Checks for upcoming tests (2hr reminder) AND expired tests (auto-complete)
+        'check-hiring-events': {
+            'task': 'worker.check_hiring_events_task',
+            'schedule': crontab(minute='*/15'),
+        },
+    }
 
     # --- DATABASE POOLING OPTIMIZATION ---
     SQLALCHEMY_ENGINE_OPTIONS = {

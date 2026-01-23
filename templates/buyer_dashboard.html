@@ -1,129 +1,131 @@
 {% extends "layout.html" %}
-{% block title %}Product Catalog{% endblock %}
-{% block content %}
+{% block title %}Marketplace{% endblock %}
 
-<div class="space-y-8 animate-fade-in">
-    
-    <div class="flex flex-col md:flex-row justify-between items-end gap-4">
+{% block content %}
+<div class="max-w-7xl mx-auto animate-dynamic">
+    <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
         <div>
-            <h1 class="text-3xl font-bold text-white tracking-tight">Marketplace</h1>
-            <p class="text-gray-400 text-sm mt-1">Browse premium developer gear and software.</p>
+            <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
+                Marketplace
+            </h1>
+            <p class="text-gray-400 text-sm mt-1">Explore premium components and templates</p>
         </div>
-        <div class="flex space-x-3">
+        
+        <div class="flex items-center gap-3">
             <a hx-get="{{ url_for('buyer.my_orders') }}" 
                hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
-               class="glass-panel px-4 py-2 rounded-lg text-gray-300 hover:text-white text-sm font-medium transition-all cursor-pointer">
-                Orders
+               class="glass-panel px-4 py-2 rounded-xl text-gray-300 hover:text-white flex items-center gap-2 transition-all cursor-pointer">
+               <i class="fas fa-box"></i> Orders
             </a>
+
             <a hx-get="{{ url_for('buyer.view_cart') }}" 
                hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
-               class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg shadow-lg shadow-indigo-500/20 text-sm font-bold transition-all flex items-center cursor-pointer">
-                <i class="fas fa-shopping-cart mr-2"></i> View Cart
-            </a>
-        </div>
-    </div>
-
-    <div class="relative group">
-        <div class="flex space-x-3 overflow-x-auto pb-2 custom-scrollbar mask-fade-right">
-            <a hx-get="{{ url_for('buyer.buyer_dashboard') }}" 
-               hx-target="#main-content" hx-select="#main-content" hx-push-url="true"
-               class="whitespace-nowrap px-5 py-2 rounded-full text-sm font-medium transition-all border cursor-pointer {{ 'bg-white text-black border-white' if not current_category else 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white' }}">
-               All Products
-            </a>
-            {% for cat in categories %}
-            <a hx-get="{{ url_for('buyer.buyer_dashboard', category=cat) }}" 
-               hx-target="#main-content" hx-select="#main-content" hx-push-url="true"
-               class="whitespace-nowrap px-5 py-2 rounded-full text-sm font-medium transition-all border cursor-pointer {{ 'bg-white text-black border-white' if current_category == cat else 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white' }}">
-               {{ cat }}
-            </a>
-            {% endfor %}
-        </div>
-        <div class="absolute right-0 top-0 bottom-2 w-12 bg-gradient-to-l from-[#0f172a] to-transparent pointer-events-none md:hidden"></div>
-    </div>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {% for product in products %}
-        <div class="group relative glass-panel rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-500/10 border border-white/5 hover:border-indigo-500/30">
-            
-            <a hx-get="{{ url_for('buyer.product_detail_page', product_id=product.id) }}" 
-               hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
-               class="block relative aspect-square bg-gray-800/50 overflow-hidden cursor-pointer">
-               
-                {% if product.image_url %}
-                    <img src="{{ product.image_url }}" alt="{{ product.name }}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
-                {% else %}
-                    <div class="w-full h-full flex items-center justify-center text-gray-600">
-                        <i class="fas fa-cube text-4xl opacity-30"></i>
-                    </div>
-                {% endif %}
-                
-                <div class="absolute top-3 left-3 flex flex-col gap-2">
-                    {% if product.category %}
-                        <span class="px-2 py-1 rounded-md bg-black/60 backdrop-blur-sm text-[10px] font-bold uppercase tracking-wider text-white border border-white/10">
-                            {{ product.category }}
-                        </span>
+               class="glass-panel px-4 py-2 rounded-xl text-gray-300 hover:text-white flex items-center gap-2 transition-all group cursor-pointer">
+                <div class="relative">
+                    <i class="fas fa-shopping-cart group-hover:text-indigo-400 transition-colors"></i>
+                    {% if cart_count and cart_count > 0 %}
+                    <span class="absolute -top-2 -right-2 bg-indigo-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/50">
+                        {{ cart_count }}
+                    </span>
                     {% endif %}
                 </div>
-                
-                {% if product.stock < 5 %}
-                    <span class="absolute top-3 right-3 px-2 py-1 rounded-md bg-red-600 text-white text-[10px] font-bold shadow-lg animate-pulse">
-                        Low Stock
-                    </span>
-                {% endif %}
-
-                <div class="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out bg-gradient-to-t from-black/90 via-black/60 to-transparent pt-10">
-                    <form action="{{ url_for('buyer.add_to_cart', product_id=product.id) }}" method="POST"
-                          hx-post="{{ url_for('buyer.add_to_cart', product_id=product.id) }}"
-                          hx-target="#main-content"
-                          hx-select="#main-content"
-                          hx-swap="outerHTML">
-                        <button type="submit" class="w-full py-2.5 bg-white text-black font-bold rounded-lg hover:bg-gray-200 transition-colors text-sm flex items-center justify-center shadow-lg">
-                            <i class="fas fa-plus mr-2"></i> Quick Add
-                        </button>
-                    </form>
-                </div>
+                <span class="text-sm font-medium">Cart</span>
             </a>
-
-            <div class="p-5">
-                <div class="flex justify-between items-start mb-2">
-                    <h3 class="text-base font-bold text-white leading-tight group-hover:text-indigo-400 transition-colors">
-                        <a hx-get="{{ url_for('buyer.product_detail_page', product_id=product.id) }}" 
-                           hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
-                           class="cursor-pointer">
-                            {{ product.name }}
-                        </a>
-                    </h3>
-                </div>
-                
-                <p class="text-xs text-gray-400 line-clamp-2 mb-4 h-8">{{ product.description or 'Premium quality item for developers.' }}</p>
-                
-                <div class="flex items-center justify-between border-t border-white/5 pt-3">
-                    <span class="text-lg font-bold text-emerald-400">₹{{ "{:,.2f}".format(product.price) }}</span>
-                    <span class="text-[10px] text-gray-500 font-mono">{{ product.product_code }}</span>
-                </div>
-            </div>
         </div>
-        {% else %}
-        <div class="col-span-full py-16 text-center">
-            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/5 mb-4 text-gray-500">
-                <i class="fas fa-box-open text-3xl"></i>
+    </div>
+
+    <div class="flex overflow-x-auto pb-4 gap-2 custom-scrollbar mb-6">
+        <a hx-get="{{ url_for('buyer.buyer_dashboard') }}" 
+           hx-target="#product-grid-container" 
+           hx-select="#product-grid-container"
+           hx-push-url="true"
+           class="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all border cursor-pointer {{ 'bg-indigo-600/20 border-indigo-500 text-white' if not current_category else 'bg-white/5 border-white/5 text-gray-400 hover:bg-white/10' }}">
+           All
+        </a>
+        
+        {% for cat in categories %}
+        <a hx-get="{{ url_for('buyer.buyer_dashboard', category=cat) }}" 
+           hx-target="#product-grid-container" 
+           hx-select="#product-grid-container"
+           hx-push-url="true"
+           class="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all border cursor-pointer {{ 'bg-indigo-600/20 border-indigo-500 text-white' if current_category == cat else 'bg-white/5 border-white/5 text-gray-400 hover:bg-white/10' }}">
+           {{ cat }}
+        </a>
+        {% endfor %}
+    </div>
+
+    <div id="skeleton-loader" class="htmx-indicator-content grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {% for i in range(8) %}
+        <div class="glass-panel rounded-2xl overflow-hidden p-3 h-[320px] flex flex-col gap-3">
+            <div class="skeleton w-full h-40 rounded-xl"></div>
+            <div class="skeleton w-3/4 h-6 rounded"></div>
+            <div class="skeleton w-1/2 h-4 rounded"></div>
+            <div class="mt-auto flex justify-between items-center">
+                <div class="skeleton w-1/3 h-8 rounded"></div>
+                <div class="skeleton w-10 h-10 rounded-full"></div>
             </div>
-            <h3 class="text-xl font-bold text-white">No Products Found</h3>
-            <p class="text-gray-400 mt-2">Check back later or try a different category.</p>
-            <a hx-get="{{ url_for('buyer.buyer_dashboard') }}" 
-               hx-target="#main-content" hx-select="#main-content" hx-push-url="true"
-               class="inline-block mt-6 px-6 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm font-medium transition-all cursor-pointer">
-               Clear Filters
-            </a>
         </div>
         {% endfor %}
     </div>
-</div>
 
-<style>
-    .mask-fade-right {
-        -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%);
-        mask-image: linear-gradient(to right, black 90%, transparent 100%);
-    }
-</style>
+    <div id="product-grid-container" class="htmx-request:hidden">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {% for product in products %}
+            <div class="glass-panel group rounded-2xl overflow-hidden hover:border-indigo-500/30 transition-all duration-300 relative flex flex-col h-full">
+                
+                <a hx-get="{{ url_for('buyer.product_detail_page', product_id=product.id) }}" 
+                   hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                   class="relative h-48 overflow-hidden bg-gray-900/50 block cursor-pointer">
+                    
+                    <img src="{{ product.image_url or 'https://placehold.co/400x300/1a1a1f/6366f1?text=No+Image' }}" 
+                         alt="{{ product.name }}" 
+                         loading="lazy"
+                         class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                    
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                        <span class="text-white text-sm font-medium hover:text-indigo-400">View Details <i class="fas fa-arrow-right ml-1"></i></span>
+                    </div>
+
+                    {% if product.stock < 5 %}
+                    <span class="absolute top-2 right-2 px-2 py-1 rounded bg-red-500/80 text-white text-[10px] font-bold backdrop-blur-sm shadow-lg">
+                        Low Stock
+                    </span>
+                    {% endif %}
+                </a>
+
+                <div class="p-4 flex flex-col flex-1">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase tracking-wide">{{ product.category or 'General' }}</span>
+                    </div>
+                    
+                    <h3 class="text-lg font-bold text-white leading-tight mb-1 group-hover:text-indigo-400 transition-colors">
+                        <a hx-get="{{ url_for('buyer.product_detail_page', product_id=product.id) }}" 
+                           hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true">
+                            {{ product.name }}
+                        </a>
+                    </h3>
+                    
+                    <p class="text-gray-500 text-xs line-clamp-2 mb-4">{{ product.description }}</p>
+                    
+                    <div class="mt-auto flex items-center justify-between pt-4 border-t border-white/5">
+                        <span class="text-xl font-bold text-white">${{ product.price }}</span>
+                        
+                        <form action="{{ url_for('buyer.add_to_cart', product_id=product.id) }}" method="POST" onsubmit="window.handleAjaxForm(event)">
+                            <button type="submit" class="w-9 h-9 rounded-lg bg-white/5 hover:bg-indigo-600 text-gray-400 hover:text-white flex items-center justify-center transition-all shadow-lg hover:shadow-indigo-500/25" title="Quick Add">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-span-full flex flex-col items-center justify-center py-20 text-gray-500">
+                <i class="fas fa-box-open text-4xl mb-4 opacity-50"></i>
+                <h3 class="text-lg font-medium mt-2">No products found</h3>
+                <p class="text-sm">Try selecting a different category.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
 {% endblock %}

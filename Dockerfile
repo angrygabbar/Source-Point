@@ -1,28 +1,31 @@
-# 1. Use the same Python version as your server
-FROM python:3.12-slim
+# --- USE FULL IMAGE (Pre-includes gcc & build tools to save RAM) ---
+FROM python:3.11
 
-# 2. Set the working directory inside the container
-WORKDIR /app
-
-# 3. Install system dependencies (required for some Python packages like Postgres/Pillow)
-# Added 'libmagic1' which is often needed for file type detection in Python
+# 1. Install runtime dependencies only
+# (gcc and libpq-dev are already in this image, so we only need libmagic)
 RUN apt-get update && apt-get install -y \
-    gcc \
-    libpq-dev \
     libmagic1 \
     && rm -rf /var/lib/apt/lists/*
 
-# 4. Copy requirements first (optimizes build speed)
+# 2. Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# 3. Set work directory
+WORKDIR /app
+
+# 4. Copy requirements file
 COPY requirements.txt .
+
 # 5. Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Increased timeout to prevent network hangups on slow connections
+RUN pip install --no-cache-dir --default-timeout=100 -r requirements.txt
 
 # 6. Copy the rest of the application code
 COPY . .
-# 7. Expose the port used by Flask/Gunicorn
+
+# 7. Expose the port the app runs on
 EXPOSE 5000
 
-# 8. Command to run the app using Gunicorn
-# OPTIMIZATION: Switched to 'gevent' workers for high concurrency.
-# Reduced workers to 4 (sufficient with gevent) to save RAM for Redis/Postgres.
-CMD ["gunicorn", "--worker-class", "gevent", "--workers", "4", "--bind", "0.0.0.0:5000", "app:app"]
+# 8. Define the command to run the application
+CMD ["gunicorn", "--worker-class", "gevent", "--workers", "1", "--bind", "0.0.0.0:5000", "app:app"]

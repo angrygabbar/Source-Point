@@ -17,10 +17,15 @@ class Product(db.Model):
     mrp = db.Column(Numeric(10, 2), nullable=True) 
     warranty = db.Column(db.String(200), nullable=True)
     return_policy = db.Column(db.String(200), nullable=True)
-    # OPTIMIZATION: Added index=True
+    
     seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
     
     images = db.relationship('ProductImage', backref='product', lazy=True, cascade="all, delete-orphan")
+
+    # --- OPTIMIZATION: Composite Index for Filters ---
+    __table_args__ = (
+        db.Index('idx_product_category_price', 'category', 'price'),
+    )
 
 class ProductImage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -71,7 +76,6 @@ class CartItem(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
     quantity = db.Column(db.Integer, nullable=False, default=1)
     
-    # FIXED: Added missing relationship to Product
     product = db.relationship('Product')
 
 class Invoice(db.Model):
@@ -86,7 +90,6 @@ class Invoice(db.Model):
     tax = db.Column(Numeric(10, 2), nullable=False, default=0.00)
     total_amount = db.Column(Numeric(10, 2), nullable=False)
     
-    # Use Enum value
     status = db.Column(db.String(20), default=InvoiceStatus.UNPAID.value, nullable=False) 
     
     due_date = db.Column(db.Date, nullable=True)
