@@ -95,6 +95,15 @@ def manage_inventory():
                            total_products_count=len(products_display), 
                            low_stock_count=low_stock)
 
+@seller_bp.route('/inventory/view/<int:product_id>')
+@login_required
+@role_required(UserRole.SELLER.value)
+def view_product(product_id):
+    product = Product.query.get_or_404(product_id)
+    # Fetch seller's specific inventory record for this product
+    my_inventory = SellerInventory.query.filter_by(seller_id=current_user.id, product_id=product.id).first()
+    return render_template('product_detail_manage.html', product=product, my_inventory=my_inventory)
+
 @seller_bp.route('/inventory/request', methods=['POST'])
 @login_required
 @role_required(UserRole.SELLER.value)
@@ -102,9 +111,14 @@ def request_stock():
     product_id = request.form.get('product_id')
     quantity = request.form.get('quantity')
     
-    if not product_id or not quantity:
-        flash('Please select a product and quantity.', 'danger')
+    # Fallback if ID is missing
+    if not product_id:
+        flash('System Error: Product ID missing.', 'danger')
         return redirect(url_for('seller.manage_inventory'))
+
+    if not quantity:
+        flash('Please enter a valid quantity.', 'danger')
+        return redirect(url_for('seller.view_product', product_id=product_id))
         
     try:
         qty = int(quantity)
@@ -123,17 +137,18 @@ def request_stock():
         # 2. Prepare for Email
         product = Product.query.get(product_id)
         
-        # --- DIAGNOSTIC EMAIL LOGIC ---
+        # --- EMAIL NOTIFICATION LOGIC ---
         admins = User.query.filter_by(role=UserRole.ADMIN.value).all()
         
         if not admins:
-            flash('Stock request saved, but NO ADMINS found to notify.', 'warning')
+             flash('Stock request saved, but no Admin found to notify.', 'warning')
         elif not os.environ.get('BREVO_API_KEY'):
-            flash('Stock request saved, but Email API Key is missing in .env', 'warning')
+             flash('Stock request saved. (Email disabled: API Key missing)', 'warning')
         else:
-            success_count = 0
+            email_sent_count = 0
             for admin in admins:
                 try:
+                    # SYNC=TRUE forces immediate sending so we catch errors
                     send_email(
                         to=admin.email,
                         subject=f"New Stock Request: {product.name}",
@@ -141,24 +156,27 @@ def request_stock():
                         request=req,
                         seller=current_user,
                         product=product,
-                        now=datetime.utcnow()
+                        now=datetime.utcnow(),
+                        sync=True 
                     )
-                    success_count += 1
+                    email_sent_count += 1
                 except Exception as e:
-                    print(f"EMAIL ERROR for {admin.username}: {e}")
+                    print(f"EMAIL ERROR for {admin.email}: {e}")
             
-            if success_count > 0:
-                flash(f'Stock request sent! Notified {success_count} admin(s).', 'success')
+            if email_sent_count > 0:
+                flash(f'Stock request submitted and Admin notified!', 'success')
             else:
-                flash('Stock request saved, but email sending failed. Check logs.', 'warning')
+                flash('Stock request saved, but email notification failed.', 'warning')
         
+        return redirect(url_for('seller.view_product', product_id=product_id))
+
     except ValueError:
         flash('Invalid quantity.', 'danger')
+        return redirect(url_for('seller.view_product', product_id=product_id))
     except Exception as e:
         db.session.rollback()
         flash(f'Error submitting request: {e}', 'danger')
-
-    return redirect(url_for('seller.manage_inventory'))
+        return redirect(url_for('seller.view_product', product_id=product_id))
 
 @seller_bp.route('/inventory/update', methods=['POST'])
 @login_required
@@ -167,20 +185,35 @@ def update_product():
     inventory_id = request.form.get('inventory_id')
     new_stock = request.form.get('stock')
     
-    if inventory_id:
-        inv_item = SellerInventory.query.get(inventory_id)
-        if inv_item and inv_item.seller_id == current_user.id:
+    if not inventory_id:
+        flash('System Error: Inventory ID missing.', 'danger')
+        return redirect(url_for('seller.manage_inventory'))
+
+    inv_item = SellerInventory.query.get(inventory_id)
+    if not inv_item:
+        flash('Inventory item not found.', 'danger')
+        return redirect(url_for('seller.manage_inventory'))
+        
+    product_id = inv_item.product_id
+
+    try:
+        if inv_item.seller_id == current_user.id:
             if new_stock:
                 inv_item.stock = int(new_stock)
-            db.session.commit()
-            log_user_action("Update Inventory", f"Seller updated stock for {inv_item.product.name}")
-            flash('Inventory stock updated.', 'success')
+                db.session.commit()
+                log_user_action("Update Inventory", f"Seller updated stock for {inv_item.product.name}")
+                flash('Stock count updated.', 'success')
+            else:
+                flash('Please enter a valid stock number.', 'warning')
         else:
             flash('Unauthorized update action.', 'danger')
-    else:
-        flash('Invalid request data.', 'danger')
+            
+        return redirect(url_for('seller.view_product', product_id=product_id))
 
-    return redirect(url_for('seller.manage_inventory'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error updating stock: {str(e)}', 'danger')
+        return redirect(url_for('seller.view_product', product_id=product_id))
 
 # =========================================================
 # 3. ORDERS

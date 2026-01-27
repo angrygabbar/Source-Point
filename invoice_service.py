@@ -222,7 +222,7 @@ class InvoiceGenerator:
 
     def _add_totals_and_notes(self):
         self.pdf.set_font('helvetica', 'B', 9)
-        self.pdf.cell(165, 8, "Sub Total", 1, 0, 'R')
+        self.pdf.cell(165, 8, "Sub Total (Base)", 1, 0, 'R')
         self.pdf.cell(25, 8, f"{self.invoice.subtotal:,.2f}", 1, 1, 'R')
         
         self.pdf.ln(5)
@@ -249,8 +249,10 @@ class InvoiceGenerator:
         self.pdf.set_xy(125, y_start + 2)
         self.pdf.set_font('helvetica', 'B', 9)
         self.pdf.set_text_color(0, 0, 0)
-        self.pdf.cell(40, 6, f"Tax Rate", 0, 0, 'L')
-        self.pdf.cell(30, 6, f"{self.invoice.tax}%", 0, 1, 'R')
+        
+        # --- FIXED TAX DISPLAY ---
+        self.pdf.cell(40, 6, f"Total Tax", 0, 0, 'L')
+        self.pdf.cell(30, 6, f"{self.invoice.tax:,.2f}", 0, 1, 'R') # Removed % and added number formatting
         
         self.pdf.set_x(125)
         self.pdf.cell(40, 6, "Total", 0, 0, 'L')
@@ -264,7 +266,6 @@ class InvoiceGenerator:
         self.pdf.set_font('helvetica', 'I', 10)
         self.pdf.set_text_color(*self.c_gray_text)
         self.pdf.cell(0, 10, "Thanks for shopping with us.", 0, 1, 'C')
-
 
 class BrdGenerator:
     def __init__(self, project):

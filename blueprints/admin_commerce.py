@@ -188,7 +188,8 @@ def edit_product_page(product_id):
         db.session.commit()
         log_user_action("Update Product", f"Updated product {product.name}")
         flash(f'Product "{product.name}" updated successfully.', 'success')
-        return redirect(url_for('admin_commerce.manage_inventory'))
+        # Redirect to the product detail view instead of the inventory list
+        return redirect(url_for('admin_commerce.view_product', product_id=product.id))
 
     return render_template('edit_product.html', product=product)
 
@@ -257,7 +258,9 @@ def update_product():
     db.session.commit()
     log_user_action("Quick Update", f"Quick updated product {product.name}")
     flash(f'Product "{product.name}" updated.', 'success')
-    return redirect(url_for('admin_commerce.manage_inventory'))
+    
+    # Redirect to the product detail view
+    return redirect(url_for('admin_commerce.view_product', product_id=product.id))
 
 @admin_commerce_bp.route('/inventory/delete/<int:product_id>')
 @login_required
@@ -280,9 +283,13 @@ def assign_inventory():
     quantity = int(request.form.get('quantity'))
 
     product = Product.query.get_or_404(product_id)
+    
+    # Redirect target
+    redirect_target = redirect(url_for('admin_commerce.view_product', product_id=product.id))
+    
     if product.stock < quantity:
         flash(f"Insufficient stock (Available: {product.stock}).", "danger")
-        return redirect(url_for('admin_commerce.manage_inventory'))
+        return redirect_target
 
     product.stock -= quantity
     seller_inv = SellerInventory.query.filter_by(seller_id=seller_id, product_id=product.id).first()
@@ -293,7 +300,7 @@ def assign_inventory():
     db.session.commit()
     log_user_action("Assign Inventory", f"Assigned {quantity} of {product.name} to seller {seller_id}")
     flash(f"Assigned {quantity} units to seller.", "success")
-    return redirect(url_for('admin_commerce.manage_inventory'))
+    return redirect_target
 
 # --- SELLER INVENTORY ---
 @admin_commerce_bp.route('/inventory/seller', defaults={'seller_id': None})
@@ -413,13 +420,35 @@ def update_order_status(order_id):
     order.status = new_status
     db.session.commit()
     
-    # Auto Invoice
+    # Auto Invoice Generation when Accepted
     attachments = None
     if new_status == OrderStatus.CONFIRMED.value or new_status == 'Order Accepted':
         try:
             invoice = Invoice.query.filter_by(order_id=order.order_number).first()
             if not invoice:
-                # Create Invoice
+                # --- NEW TAX CALCULATION LOGIC ---
+                total_tax_amount = 0
+                total_base_amount = 0
+                
+                # Iterate order items to determine category-based tax
+                for item in order.items:
+                    # Find Product to get category
+                    product = Product.query.filter_by(name=item.product_name).first()
+                    category = product.category if product else 'Other'
+                    
+                    # Get Tax Rate from Config
+                    rate = GST_RATES.get(category, GST_RATES['Other'])
+                    
+                    # Back-calculate Tax from Inclusive Price
+                    # Formula: Tax = (Price * Rate) / (100 + Rate)
+                    item_total_inclusive = float(item.price_at_purchase) * item.quantity
+                    tax_component = (item_total_inclusive * rate) / (100 + rate)
+                    base_component = item_total_inclusive - tax_component
+                    
+                    total_tax_amount += tax_component
+                    total_base_amount += base_component
+
+                # Create Invoice with Segregated Tax
                 invoice = Invoice(
                     invoice_number=f"INV-{order.order_number}",
                     recipient_name=order.buyer.username,
@@ -427,8 +456,8 @@ def update_order_status(order_id):
                     bill_to_address=order.billing_address,
                     ship_to_address=order.shipping_address, 
                     order_id=order.order_number,
-                    subtotal=order.total_amount, 
-                    tax=0.00,
+                    subtotal=total_base_amount, 
+                    tax=total_tax_amount, # Stores the AMOUNT now
                     total_amount=order.total_amount,
                     status=InvoiceStatus.UNPAID.value,
                     admin_id=current_user.id,
@@ -447,6 +476,7 @@ def update_order_status(order_id):
             attachments = [{'filename': f'Invoice_{invoice.invoice_number}.pdf', 'data': pdf_bytes}]
         except Exception as e:
             print(f"Error generating invoice: {e}")
+            traceback.print_exc()
 
     try:
         send_email(
@@ -561,7 +591,7 @@ def mark_invoice_paid(invoice_id):
     flash('Invoice marked as Paid.', 'success')
     return redirect(url_for('admin_commerce.manage_invoices'))
 
-@admin_commerce_bp.route('/invoices/delete/<int:invoice_id>')
+@admin_commerce_bp.route('/invoices/delete/<int:invoice_id>', methods=['GET', 'POST'])
 @login_required
 @role_required(UserRole.ADMIN.value)
 def delete_invoice(invoice_id):
@@ -608,3 +638,13 @@ def send_invoice_reminder(invoice_id):
          if request.headers.get('X-Requested-With') == 'XMLHttpRequest': return jsonify({'success': False, 'message': str(e)})
          flash(f"Error: {e}", "danger")
     return redirect(url_for('admin_commerce.manage_invoices'))
+
+# --- VIEW PRODUCT DETAILS ROUTE ---
+@admin_commerce_bp.route('/inventory/view/<int:product_id>')
+@login_required
+@role_required(UserRole.ADMIN.value)
+def view_product(product_id):
+    product = Product.query.get_or_404(product_id)
+    # Admin wants to see who has this product
+    allocations = SellerInventory.query.filter_by(product_id=product.id).all()
+    return render_template('product_detail_manage.html', product=product, allocations=allocations)

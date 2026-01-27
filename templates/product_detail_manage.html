@@ -2,121 +2,252 @@
 {% block title %}Manage: {{ product.name }} | SourcePoint{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-fade-in">
+<div id="main-content" class="min-h-screen pb-12 animate-fade-in relative bg-[#00000a]">
     
-    <nav class="flex mb-8 text-sm text-gray-400" aria-label="Breadcrumb">
-        <ol class="inline-flex items-center space-x-1 md:space-x-3">
-            <li class="inline-flex items-center">
-                {% if current_user.role == 'admin' %}
-                <a href="{{ url_for('admin_commerce.manage_inventory') }}" class="hover:text-white transition-colors">
-                    <i class="fas fa-warehouse mr-2"></i>Master Inventory
-                </a>
-                {% elif current_user.role == 'seller' %}
-                <a href="{{ url_for('seller.manage_inventory') }}" class="hover:text-white transition-colors">
-                    <i class="fas fa-warehouse mr-2"></i>My Inventory
-                </a>
-                {% endif %}
-            </li>
-            <li><i class="fas fa-chevron-right text-xs mx-2"></i></li>
-            <li>
-                <span class="text-indigo-400 font-medium">Product Details</span>
-            </li>
-        </ol>
-    </nav>
+    <div class="fixed top-0 right-0 w-[600px] h-[600px] bg-indigo-600/5 rounded-full blur-[120px] pointer-events-none z-0"></div>
+    <div class="fixed bottom-0 left-0 w-[500px] h-[500px] bg-emerald-600/5 rounded-full blur-[100px] pointer-events-none z-0"></div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
         
-        <div class="relative group">
-            <div class="relative w-full min-h-[500px] rounded-3xl overflow-hidden glass-panel border border-white/10 shadow-2xl flex items-center justify-center bg-[#050508]">
-                <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-emerald-500/5 z-0 pointer-events-none"></div>
-                
-                <img src="{{ product.image_url or 'https://placehold.co/800x600/1a1a1f/6366f1?text=' ~ product.name }}" 
-                     alt="{{ product.name }}" 
-                     class="relative z-10 max-w-full max-h-full object-contain p-2"
-                     style="transform-origin: center center; width: auto; height: auto;">
-                
-                <div class="absolute top-4 left-4 z-20">
-                    <span class="px-3 py-1 rounded-full bg-black/60 text-white text-xs font-bold border border-white/10 backdrop-blur-md">
-                        ID: #{{ product.id }}
-                    </span>
-                </div>
-            </div>
-        </div>
+        <nav class="flex items-center gap-3 mb-8 text-sm font-medium text-gray-500">
+            {% if current_user.role == 'admin' %}
+            <a href="{{ url_for('admin_commerce.manage_inventory') }}" class="hover:text-white transition-colors flex items-center gap-2">
+                <i class="fas fa-warehouse"></i> Master Inventory
+            </a>
+            {% else %}
+            <a href="{{ url_for('seller.manage_inventory') }}" class="hover:text-white transition-colors flex items-center gap-2">
+                <i class="fas fa-boxes"></i> My Inventory
+            </a>
+            {% endif %}
+            <i class="fas fa-chevron-right text-[10px] opacity-50"></i>
+            <span class="text-indigo-400">{{ product.product_code }}</span>
+        </nav>
 
-        <div class="flex flex-col space-y-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-start">
             
-            <div>
-                <div class="flex items-center gap-3 mb-4">
-                    <span class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-gray-300 text-xs font-bold uppercase tracking-wider">
-                        {{ product.category or 'Uncategorized' }}
-                    </span>
-                    <span class="px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold uppercase tracking-wider">
-                        Code: {{ product.product_code or 'N/A' }}
-                    </span>
-                </div>
-                
-                <h1 class="text-3xl md:text-4xl font-extrabold text-white leading-tight mb-2 tracking-tight">
-                    {{ product.name }}
-                </h1>
-                <p class="text-xl text-gray-400 font-medium">Price: <span class="text-white">₹{{ "{:,.2f}".format(product.price) }}</span></p>
-            </div>
-
-            <div class="glass-panel p-6 rounded-2xl border border-white/10 relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none"></div>
-                
-                <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                    <i class="fas fa-chart-pie text-emerald-400"></i> Stock Overview
-                </h3>
-
-                <div class="grid grid-cols-2 gap-6 mb-6">
-                    <div class="p-4 rounded-xl bg-black/40 border border-white/5">
-                        <p class="text-xs text-gray-500 uppercase font-bold mb-1">Current Stock</p>
-                        <p class="text-2xl font-bold {{ 'text-red-400' if product.stock < 10 else 'text-emerald-400' }}">
-                            {{ product.stock }} <span class="text-sm text-gray-500">units</span>
-                        </p>
-                    </div>
-                    <div class="p-4 rounded-xl bg-black/40 border border-white/5">
-                        <p class="text-xs text-gray-500 uppercase font-bold mb-1">Stock Value</p>
-                        <p class="text-2xl font-bold text-white">
-                            ₹{{ "{:,.0f}".format(product.price * product.stock) }}
-                        </p>
-                    </div>
-                </div>
-
-                <div class="flex gap-3">
-                    {% if current_user.role == 'admin' %}
-                    <a href="{{ url_for('admin_commerce.edit_product_page', product_id=product.id) }}" 
-                       class="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-center transition-all shadow-lg shadow-indigo-500/20">
-                        <i class="fas fa-pen mr-2"></i> Edit Product
-                    </a>
-                    {% endif %}
+            <div class="lg:col-span-5 space-y-6">
+                <div class="relative group rounded-[2.5rem] overflow-hidden bg-[#0a0a0f] border border-white/5 shadow-2xl shadow-black/50 aspect-[4/3] flex items-center justify-center p-8">
+                    <div class="absolute inset-0 bg-gradient-to-tr from-indigo-500/5 to-emerald-500/5 opacity-50"></div>
                     
-                    <a href="javascript:history.back()" 
-                       class="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 font-bold text-center border border-white/10 transition-all">
-                        Back to List
-                    </a>
+                    <img src="{{ product.image_url or 'https://placehold.co/800x600/1a1a1f/6366f1?text=No+Image' }}" 
+                         alt="{{ product.name }}" 
+                         class="relative z-10 w-full h-full object-contain drop-shadow-2xl transition-transform duration-700 group-hover:scale-105">
+                    
+                    <div class="absolute top-6 left-6 z-20">
+                         <span class="px-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-white text-[10px] font-mono backdrop-blur-md">
+                            ID: #{{ product.id }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="bg-[#13131a]/50 backdrop-blur-xl border border-white/10 rounded-3xl p-6 relative overflow-hidden">
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <i class="fas fa-chart-pie text-indigo-400"></i> Stock Overview
+                    </h3>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        {% if current_user.role == 'admin' %}
+                        <div class="p-4 rounded-2xl bg-black/40 border border-white/5">
+                            <p class="text-[10px] text-gray-500 uppercase font-bold mb-1">Master Stock</p>
+                            <div class="flex items-baseline gap-1">
+                                <span class="text-2xl font-bold {{ 'text-red-400' if product.stock < 10 else 'text-white' }}">
+                                    {{ product.stock }}
+                                </span>
+                                <span class="text-xs text-gray-500">units</span>
+                            </div>
+                        </div>
+                        <div class="p-4 rounded-2xl bg-black/40 border border-white/5">
+                            <p class="text-[10px] text-gray-500 uppercase font-bold mb-1">Total Value</p>
+                            <span class="text-2xl font-bold text-emerald-400">
+                                ₹{{ "{:,.0f}".format(product.stock * product.price) }}
+                            </span>
+                        </div>
+                        {% else %}
+                        <div class="p-4 rounded-2xl bg-black/40 border border-white/5">
+                            <p class="text-[10px] text-gray-500 uppercase font-bold mb-1">My Stock</p>
+                            <div class="flex items-baseline gap-1">
+                                <span class="text-2xl font-bold {{ 'text-red-400' if (my_inventory.stock if my_inventory else 0) < 10 else 'text-white' }}">
+                                    {{ my_inventory.stock if my_inventory else 0 }}
+                                </span>
+                                <span class="text-xs text-gray-500">units</span>
+                            </div>
+                        </div>
+                        <div class="p-4 rounded-2xl bg-black/40 border border-white/5">
+                            <p class="text-[10px] text-gray-500 uppercase font-bold mb-1">Master Availability</p>
+                            {% if product.stock > 0 %}
+                                <span class="text-lg font-bold text-emerald-400 flex items-center gap-2 mt-1">
+                                    <i class="fas fa-check-circle"></i> In Stock
+                                </span>
+                            {% else %}
+                                <span class="text-lg font-bold text-red-400 flex items-center gap-2 mt-1">
+                                    <i class="fas fa-times-circle"></i> Sold Out
+                                </span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 
-            <div class="prose prose-invert max-w-none">
-                <h3 class="text-lg font-bold text-white mb-3">Description</h3>
-                <div class="p-4 rounded-xl bg-white/5 border border-white/5 text-gray-300 text-sm leading-relaxed">
-                    {{ product.description or 'No description provided.' }}
+            <div class="lg:col-span-7 space-y-8">
+                
+                <div class="bg-[#13131a]/80 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 md:p-10 shadow-xl relative overflow-hidden">
+                    
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="flex gap-2">
+                            <span class="px-3 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-xs font-bold text-indigo-300 uppercase tracking-widest">
+                                {{ product.category or 'General' }}
+                            </span>
+                            <span class="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-xs font-bold text-gray-400 uppercase tracking-widest font-mono">
+                                {{ product.product_code }}
+                            </span>
+                        </div>
+                        
+                        {% if current_user.role == 'admin' %}
+                        <a href="{{ url_for('admin_commerce.edit_product_page', product_id=product.id) }}" 
+                           class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all border border-white/10"
+                           title="Edit Product">
+                            <i class="fas fa-pen text-sm"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                    
+                    <h1 class="text-3xl md:text-5xl font-black text-white mb-2 leading-tight tracking-tight">
+                        {{ product.name }}
+                    </h1>
+                    
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="text-2xl font-bold text-white">₹{{ "{:,.2f}".format(product.price) }}</span>
+                    </div>
+
+                    <div class="prose prose-invert prose-sm max-w-none mb-10">
+                        <h4 class="text-gray-500 text-xs uppercase font-bold tracking-widest mb-2">Description</h4>
+                        <p class="text-gray-300 leading-relaxed text-base">
+                            {{ product.description or 'No description available for this product.' }}
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-6 pt-8 border-t border-white/5">
+                        <div>
+                            <p class="text-[10px] text-gray-500 uppercase font-bold mb-1">Brand</p>
+                            <p class="text-white font-medium">{{ product.brand or 'N/A' }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-gray-500 uppercase font-bold mb-1">Warranty</p>
+                            <p class="text-white font-medium">{{ product.warranty or 'N/A' }}</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-10 pt-6 border-t border-white/5 flex gap-4 flex-wrap">
+                        {% if current_user.role == 'admin' %}
+                            <a href="{{ url_for('admin_commerce.edit_product_page', product_id=product.id) }}" 
+                               class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-4 rounded-xl font-bold text-center transition-all shadow-lg shadow-indigo-500/20">
+                                Edit Product
+                            </a>
+                        {% else %}
+                            <button onclick="openModal('requestModal')" 
+                                    class="flex-1 bg-white text-black hover:bg-gray-200 py-4 rounded-xl font-bold transition-all shadow-lg shadow-white/5 flex items-center justify-center gap-2">
+                                <i class="fas fa-plus-circle"></i> Request More Stock
+                            </button>
+                            
+                            {% if my_inventory %}
+                            <button onclick="openModal('updateModal')"
+                                    class="flex-1 bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 border border-indigo-500/20 py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2">
+                                <i class="fas fa-sync-alt"></i> Update My Count
+                            </button>
+                            {% endif %}
+                        {% endif %}
+                    </div>
                 </div>
             </div>
-
-             <div class="grid grid-cols-2 gap-4 text-sm">
-                <div class="flex justify-between p-3 rounded-lg bg-white/5">
-                    <span class="text-gray-500">Brand</span>
-                    <span class="text-white font-medium">{{ product.brand or '--' }}</span>
-                </div>
-                <div class="flex justify-between p-3 rounded-lg bg-white/5">
-                    <span class="text-gray-500">Warranty</span>
-                    <span class="text-white font-medium">{{ product.warranty or '--' }}</span>
-                </div>
-            </div>
-
         </div>
     </div>
 </div>
+
+{% if current_user.role == 'seller' %}
+
+<div id="requestModal" class="fixed z-50 inset-0 overflow-y-auto hidden">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onclick="closeModal('requestModal')"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+        
+        <div class="inline-block align-middle bg-[#0f172a] rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-md sm:w-full border border-white/10 relative">
+            <div class="px-6 py-4 border-b border-white/10 flex justify-between items-center bg-white/5">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fas fa-cart-plus text-emerald-400"></i> Request Stock
+                </h3>
+                <button type="button" onclick="closeModal('requestModal')" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <form action="{{ url_for('seller.request_stock') }}" method="POST" class="p-6">
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                
+                <div class="mb-4">
+                    <p class="text-sm text-gray-300 mb-2">Requesting stock for: <strong class="text-white">{{ product.name }}</strong></p>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Quantity Needed</label>
+                    <input type="number" name="quantity" required min="1" 
+                           class="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all font-bold text-lg">
+                </div>
+
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="closeModal('requestModal')" class="px-5 py-2.5 rounded-xl border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm font-bold">Cancel</button>
+                    <button type="submit" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-500/20 transition-all text-sm">Submit Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% if my_inventory %}
+<div id="updateModal" class="fixed z-50 inset-0 overflow-y-auto hidden">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onclick="closeModal('updateModal')"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+        
+        <div class="inline-block align-middle bg-[#0f172a] rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-md sm:w-full border border-white/10 relative">
+            <div class="px-6 py-4 border-b border-white/10 flex justify-between items-center bg-white/5">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fas fa-boxes text-indigo-400"></i> Update Count
+                </h3>
+                <button type="button" onclick="closeModal('updateModal')" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <form action="{{ url_for('seller.update_product') }}" method="POST" class="p-6">
+                <input type="hidden" name="inventory_id" value="{{ my_inventory.id }}">
+                
+                <div class="mb-6">
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-2">My Current Quantity</label>
+                    <input type="number" name="stock" required min="0" value="{{ my_inventory.stock }}"
+                           class="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all font-bold text-lg">
+                    <p class="text-[10px] text-gray-500 mt-2">Update this only if you found damaged items or sold offline.</p>
+                </div>
+
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="closeModal('updateModal')" class="px-5 py-2.5 rounded-xl border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm font-bold">Cancel</button>
+                    <button type="submit" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-lg shadow-indigo-500/20 transition-all text-sm">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+
+<script>
+    function openModal(id) {
+        document.getElementById(id).classList.remove('hidden');
+    }
+    function closeModal(id) {
+        document.getElementById(id).classList.add('hidden');
+    }
+</script>
+
+<style>
+    .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
 {% endblock %}

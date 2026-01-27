@@ -39,9 +39,11 @@ def role_required(roles):
 
 # --- EMAIL SERVICE (UPDATED) ---
 
-def send_email(to, subject, template, cc=None, bcc=None, attachments=None, **kwargs):
+def send_email(to, subject, template, cc=None, bcc=None, attachments=None, sync=False, **kwargs):
     """
-    Renders the email template and offloads the sending to a Celery task.
+    Renders the email template and sends it.
+    Args:
+        sync (bool): If True, sends immediately (blocking). If False, sends via Celery (background).
     """
     # Avoid circular import
     from worker import send_email_task
@@ -73,9 +75,19 @@ def send_email(to, subject, template, cc=None, bcc=None, attachments=None, **kwa
         elif isinstance(bcc, list): bcc_list = [{"email": email} for email in bcc if email]
 
     # Render Template (Needs Request/App Context)
-    html_content = render_template(template, **kwargs)
+    try:
+        html_content = render_template(template, **kwargs)
+    except Exception as e:
+        print(f"Template Rendering Error: {e}")
+        raise e
 
-    # Dispatch to Celery
-    send_email_task.delay(to_list, subject, html_content, cc_list, bcc_list, attachments)
+    # Dispatch
+    if sync:
+        # Run immediately in this thread (Blocking)
+        # We call the underlying function or the task directly
+        send_email_task(to_list, subject, html_content, cc_list, bcc_list, attachments)
+    else:
+        # Send to Queue
+        send_email_task.delay(to_list, subject, html_content, cc_list, bcc_list, attachments)
 
     return True
