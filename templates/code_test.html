@@ -1,85 +1,103 @@
 {% extends "layout.html" %}
-{% block title %}Java Code Test{% endblock %}
-{% block content %}
+{% block title %}Developer Assessment | SourcePoint IDE{% endblock %}
 
-<div class="space-y-6 animate-dynamic h-[calc(100vh-8rem)] flex flex-col">
+{% block content %}
+<div class="flex flex-col h-[calc(100vh-6rem)] -mt-4 animate-fade-in bg-[#0d1117] border-t border-white/5">
     
-    <div class="flex flex-col md:flex-row justify-between items-end gap-4 flex-shrink-0">
-        <div>
-            <h1 class="text-3xl font-bold text-white tracking-tight">Live Coding Environment</h1>
-            <p class="text-gray-400 text-sm mt-1">
-                {% if current_user.assigned_problem %}
-                    Solving: <span class="text-indigo-400 font-semibold">{{ current_user.assigned_problem.title }}</span>
-                {% else %}
-                    Sandbox Mode (No active test assigned)
-                {% endif %}
-            </p>
-        </div>
-        
-        <div class="flex items-center gap-3">
-            <div class="glass-panel px-3 py-1.5 rounded-lg flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-orange-500"></span>
-                <span class="text-xs text-gray-300 font-mono">Java SE 17</span>
+    <div class="h-14 bg-[#161b22] border-b border-white/5 flex items-center justify-between px-4 flex-shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-code text-indigo-500 text-lg"></i>
+                <h1 class="text-sm font-bold text-gray-200 tracking-wide">JAVA ASSESSMENT</h1>
             </div>
-            <button type="button" id="runCodeBtn" class="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center">
-                <i class="fas fa-play mr-2"></i> Run Code
+            <div class="h-4 w-px bg-white/10"></div>
+            {% if current_user.assigned_problem %}
+                <span class="text-xs text-gray-400 flex items-center gap-2">
+                    <i class="fas fa-file-alt"></i> {{ current_user.assigned_problem.title }}
+                </span>
+            {% else %}
+                <span class="text-xs text-amber-400 flex items-center gap-2">
+                    <i class="fas fa-exclamation-triangle"></i> Sandbox Mode
+                </span>
+            {% endif %}
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 px-3 py-1.5 bg-[#0d1117] border border-white/10 rounded-md">
+                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg" class="w-4 h-4" alt="Java">
+                <span class="text-xs font-mono text-gray-300">Java SE 17</span>
+            </div>
+
+            <select id="recipient-select" class="bg-[#0d1117] border border-white/10 text-xs text-gray-400 rounded-md px-2 py-1.5 focus:border-indigo-500 outline-none">
+                <option value="" disabled selected>Submit To...</option>
+                {% for user in messageable_users %}
+                    <option value="{{ user.id }}">{{ user.username }} ({{ user.role.title() }})</option>
+                {% endfor %}
+            </select>
+
+            <button type="button" id="runCodeBtn" class="group flex items-center gap-2 px-4 py-1.5 bg-[#238636] hover:bg-[#2ea043] text-white text-xs font-bold rounded-md transition-all border border-[rgba(240,246,252,0.1)]">
+                <i class="fas fa-play text-[10px]"></i> Run
             </button>
-            <button type="button" id="submit-test-trigger" class="px-5 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white text-sm font-bold shadow-lg shadow-green-500/20 transition-all flex items-center">
-                <i class="fas fa-paper-plane mr-2"></i> Submit
+            
+            <button type="button" id="submit-test-trigger" class="flex items-center gap-2 px-4 py-1.5 bg-[#1f6feb] hover:bg-[#388bfd] text-white text-xs font-bold rounded-md transition-all border border-[rgba(240,246,252,0.1)]">
+                <i class="fas fa-cloud-upload-alt"></i> Submit
             </button>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
+    <div class="flex-1 flex min-h-0 relative">
         
-        <div class="lg:col-span-2 flex flex-col gap-4 h-full min-h-[500px]">
-            
-            {% if current_user.assigned_problem %}
-            <div x-data="{ expanded: true }" class="glass-panel rounded-xl overflow-hidden flex-shrink-0 border border-white/5">
-                <div @click="expanded = !expanded" class="px-4 py-2 bg-white/5 flex justify-between items-center cursor-pointer hover:bg-white/10 transition-colors">
-                    <h3 class="text-xs font-bold text-gray-300 uppercase tracking-wide"><i class="fas fa-file-alt mr-2"></i> Problem Statement</h3>
-                    <i :class="expanded ? 'fa-chevron-up' : 'fa-chevron-down'" class="fas text-xs text-gray-500"></i>
-                </div>
-                <div x-show="expanded" class="p-4 text-sm text-gray-300 leading-relaxed border-t border-white/5 max-h-32 overflow-y-auto custom-scrollbar">
-                    {{ current_user.assigned_problem.description }}
-                </div>
+        <div class="w-1/4 min-w-[300px] border-r border-white/5 flex flex-col bg-[#0d1117]">
+            <div class="px-4 py-2 border-b border-white/5 bg-[#161b22] flex justify-between items-center">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Problem Statement</span>
+                <i class="fas fa-book-open text-gray-600 text-xs"></i>
             </div>
-            {% endif %}
-
-            <div class="glass-panel rounded-xl overflow-hidden flex-1 border border-white/5 flex flex-col relative group">
-                <div class="absolute top-0 right-0 p-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span class="text-[10px] text-gray-500 bg-black/50 px-2 py-1 rounded">Editor Active</span>
-                </div>
-                <div id="monaco-editor-container" class="w-full h-full"></div>
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-5 prose prose-invert prose-sm max-w-none">
+                {% if current_user.assigned_problem %}
+                    <h3 class="text-white font-bold mb-2">{{ current_user.assigned_problem.title }}</h3>
+                    <div class="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap font-sans">
+                        {{ current_user.assigned_problem.description }}
+                    </div>
+                {% else %}
+                    <div class="text-center mt-10 text-gray-500">
+                        <i class="fas fa-wind text-4xl mb-3 opacity-30"></i>
+                        <p>No active problem assigned.</p>
+                    </div>
+                {% endif %}
             </div>
         </div>
 
-        <div class="lg:col-span-1 flex flex-col gap-4 h-full min-h-[500px]">
-            
-            <div class="glass-panel rounded-xl p-4 border border-white/5">
-                <label class="block text-xs font-medium text-gray-400 uppercase mb-2">Submit To</label>
-                <select id="recipient-select" class="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-indigo-500">
-                    {% for user in messageable_users %}
-                        <option value="{{ user.id }}">{{ user.username }} ({{ user.role.title() }})</option>
-                    {% endfor %}
-                </select>
+        <div class="flex-1 flex flex-col min-w-0 relative">
+            <div id="monaco-editor-container" class="absolute inset-0"></div>
+        </div>
+
+        <div class="w-1/3 min-w-[300px] border-l border-white/5 flex flex-col bg-[#0d1117]">
+            <div class="flex border-b border-white/5 bg-[#161b22]" x-data="{ tab: 'output' }">
+                <button @click="document.getElementById('terminal-view').classList.remove('hidden'); document.getElementById('input-view').classList.add('hidden');" 
+                        class="px-4 py-2 text-xs font-bold text-gray-300 border-b-2 border-indigo-500 bg-[#0d1117] transition-colors">
+                    <i class="fas fa-terminal mr-1"></i> Output
+                </button>
+                <button @click="document.getElementById('terminal-view').classList.add('hidden'); document.getElementById('input-view').classList.remove('hidden');" 
+                        class="px-4 py-2 text-xs font-bold text-gray-500 hover:text-gray-300 border-b-2 border-transparent hover:border-gray-600 transition-colors">
+                    <i class="fas fa-keyboard mr-1"></i> Input (Stdin)
+                </button>
+                <div class="flex-1"></div>
+                <button onclick="document.getElementById('outputConsole').textContent = 'Ready...'" class="px-3 text-gray-500 hover:text-white transition-colors" title="Clear Console">
+                    <i class="fas fa-trash-alt text-xs"></i>
+                </button>
             </div>
 
-            <div class="glass-panel rounded-xl flex-1 overflow-hidden flex flex-col border border-white/5">
-                <div class="px-4 py-2 bg-white/5 border-b border-white/5 flex justify-between items-center">
-                    <span class="text-xs font-bold text-gray-300 uppercase">Console Output</span>
-                    <button onclick="document.getElementById('outputConsole').textContent = ''" class="text-[10px] text-gray-500 hover:text-white transition-colors">Clear</button>
-                </div>
-                <pre id="outputConsole" class="flex-1 p-4 font-mono text-xs text-green-400 bg-[#0d1117] overflow-x-auto custom-scrollbar whitespace-pre-wrap">Ready...</pre>
+            <div id="terminal-view" class="flex-1 flex flex-col bg-[#010409] relative">
+                <pre id="outputConsole" class="flex-1 p-4 font-mono text-xs text-gray-300 overflow-auto custom-scrollbar whitespace-pre-wrap leading-5">
+<span class="text-gray-500">// Console ready. Click 'Run' to execute code.</span>
+</pre>
+                <div class="absolute bottom-2 right-2 opacity-50 text-[10px] text-gray-600 select-none">SourcePoint Shell</div>
             </div>
 
-            <div class="glass-panel rounded-xl overflow-hidden flex-shrink-0 h-1/4 border border-white/5 flex flex-col">
-                <div class="px-4 py-2 bg-white/5 border-b border-white/5">
-                    <span class="text-xs font-bold text-gray-300 uppercase">Standard Input (Stdin)</span>
-                </div>
-                <textarea id="stdinInput" class="flex-1 w-full bg-[#0d1117] text-gray-300 p-4 font-mono text-xs resize-none focus:outline-none" placeholder="Input for your program..."></textarea>
+            <div id="input-view" class="flex-1 flex flex-col bg-[#0d1117] hidden">
+                <textarea id="stdinInput" class="w-full h-full bg-[#0d1117] text-gray-300 p-4 font-mono text-xs resize-none focus:outline-none placeholder-gray-600" 
+                          placeholder="Enter custom input for your program (System.in)..."></textarea>
             </div>
-
         </div>
     </div>
 
@@ -98,25 +116,89 @@
     require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs' }});
 
     require(['vs/editor/editor.main'], function() {
-        // 1. Initialize Editor
-        window.editor = monaco.editor.create(document.getElementById('monaco-editor-container'), {
+        
+        // --- 1. INTELLISENSE & AUTOCOMPLETE CONFIGURATION ---
+        // Register custom Java snippets to simulate a smarter IDE
+        monaco.languages.registerCompletionItemProvider('java', {
+            provideCompletionItems: function(model, position) {
+                var suggestions = [
+                    {
+                        label: 'sout',
+                        kind: monaco.languages.CompletionItemKind.Snippet,
+                        insertText: 'System.out.println(${1:msg});',
+                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                        documentation: 'Print to standard output'
+                    },
+                    {
+                        label: 'psvm',
+                        kind: monaco.languages.CompletionItemKind.Snippet,
+                        insertText: 'public static void main(String[] args) {\n\t${1}\n}',
+                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                        documentation: 'Public Static Void Main'
+                    },
+                    {
+                        label: 'fori',
+                        kind: monaco.languages.CompletionItemKind.Snippet,
+                        insertText: 'for (int i = 0; i < ${1:max}; i++) {\n\t${2}\n}',
+                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                        documentation: 'For Loop'
+                    },
+                    {
+                        label: 'if',
+                        kind: monaco.languages.CompletionItemKind.Keyword,
+                        insertText: 'if (${1:condition}) {\n\t${2}\n}',
+                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                        documentation: 'If Statement'
+                    },
+                    {
+                        label: 'class',
+                        kind: monaco.languages.CompletionItemKind.Keyword,
+                        insertText: 'public class ${1:Name} {\n\t${2}\n}',
+                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                        documentation: 'Class Definition'
+                    }
+                ];
+                return { suggestions: suggestions };
+            }
+        });
+
+        // --- 2. EDITOR INITIALIZATION ---
+        // Ensure container is ready before mounting
+        const container = document.getElementById('monaco-editor-container');
+        
+        window.editor = monaco.editor.create(container, {
             value: `public class Main {
     public static void main(String[] args) {
-        System.out.println("Hello from SourcePoint IDE!");
-        // Write your solution here
+        // SourcePoint IDE - Java Environment
+        System.out.println("Hello, Developer!");
+        
+        // Write your solution here...
     }
 }`,
             language: 'java',
-            theme: 'vs-dark',
-            automaticLayout: true,
-            minimap: { enabled: false },
-            fontSize: 13,
+            theme: 'vs-dark', // Professional Dark Theme
+            automaticLayout: true, // CRITICAL: Fixes the "typing not working" issue on resize
+            fontSize: 14,
             fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
+            fontLigatures: true,
+            minimap: { enabled: false }, // Cleaner look
             scrollBeyondLastLine: false,
-            padding: { top: 16, bottom: 16 }
+            roundedSelection: false,
+            cursorBlinking: "smooth",
+            contextmenu: true,
+            suggestOnTriggerCharacters: true, // Enable live suggestions
+            lineNumbers: "on",
+            renderLineHighlight: "line",
+            padding: { top: 20, bottom: 20 }
         });
 
-        // 2. Run Code Handler
+        // --- 3. RESIZE HANDLER (Safety Net) ---
+        // If flex layout shifts, force editor to re-measure
+        window.addEventListener('resize', () => {
+            window.editor.layout();
+        });
+
+        // --- 4. RUN CODE LOGIC ---
         const runBtn = document.getElementById('runCodeBtn');
         const outputConsole = document.getElementById('outputConsole');
         const stdinInput = document.getElementById('stdinInput');
@@ -125,9 +207,13 @@
             const code = window.editor.getValue();
             const stdin = stdinInput.value;
 
-            outputConsole.textContent = "> Compiling & Running...";
+            // Switch to output tab automatically
+            document.getElementById('terminal-view').classList.remove('hidden');
+            document.getElementById('input-view').classList.add('hidden');
+
+            outputConsole.innerHTML = '<span class="text-yellow-400"><i class="fas fa-cog fa-spin"></i> Compiling & Running...</span>';
             runBtn.disabled = true;
-            runBtn.classList.add('opacity-70', 'cursor-wait');
+            runBtn.classList.add('opacity-50');
 
             try {
                 const response = await fetch("{{ url_for('events.run_code') }}", {
@@ -140,44 +226,65 @@
 
                 const result = await response.json();
                 
-                let finalOutput = result.output || "Execution finished with no output.";
+                let finalOutput = "";
                 if(result.statusCode >= 400){
-                    finalOutput = `Error:\n${result.error || result.output}`;
-                    outputConsole.classList.add('text-red-400');
-                    outputConsole.classList.remove('text-green-400');
+                    finalOutput = `<span class="text-red-400 font-bold">Error:</span>\n<span class="text-red-300">${result.error || result.output}</span>`;
                 } else {
-                    outputConsole.classList.add('text-green-400');
-                    outputConsole.classList.remove('text-red-400');
+                    finalOutput = `<span class="text-green-400 font-bold">Success (Exit Code 0):</span>\n<span class="text-gray-300">${result.output || "No Output"}</span>`;
                 }
 
-                outputConsole.textContent = finalOutput;
+                // Append execution time if available (mock)
+                finalOutput += `\n\n<span class="text-gray-600 text-[10px]">Execution finished.</span>`;
+                
+                outputConsole.innerHTML = finalOutput;
 
             } catch (error) {
-                outputConsole.textContent = "System Error: " + error.message;
-                outputConsole.classList.add('text-red-400');
+                outputConsole.innerHTML = `<span class="text-red-500">System Error: ${error.message}</span>`;
             } finally {
                 runBtn.disabled = false;
-                runBtn.classList.remove('opacity-70', 'cursor-wait');
+                runBtn.classList.remove('opacity-50');
             }
         });
 
-        // 3. Submit Handler
+        // --- 5. SUBMIT LOGIC ---
         const submitTrigger = document.getElementById('submit-test-trigger');
         const realForm = document.getElementById('real-submission-form');
 
         submitTrigger.addEventListener('click', () => {
-            // Sync Data
-            document.getElementById('form-recipient').value = document.getElementById('recipient-select').value;
-            document.getElementById('form-code').value = window.editor.getValue();
-            document.getElementById('form-output').value = outputConsole.textContent;
+            const recipient = document.getElementById('recipient-select').value;
+            if(!recipient) {
+                alert("Please select a Recipient (Admin/Developer) to submit your test to.");
+                return;
+            }
 
-            // Submit
-            if(confirm("Are you sure you want to submit your final solution?")) {
+            document.getElementById('form-recipient').value = recipient;
+            document.getElementById('form-code').value = window.editor.getValue();
+            document.getElementById('form-output').value = outputConsole.innerText;
+
+            if(confirm("Are you sure you want to submit your final solution? This will notify the recruiter.")) {
                 submitTrigger.disabled = true;
-                submitTrigger.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Submitting...';
+                submitTrigger.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
                 realForm.submit();
             }
         });
     });
 </script>
+
+<style>
+    /* Professional Scrollbar for Terminal */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #0d1117; 
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #30363d; 
+        border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #484f58; 
+    }
+</style>
 {% endblock %}
