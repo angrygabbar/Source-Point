@@ -51,12 +51,15 @@ def create_app():
     app.wsgi_app = WhiteNoise(app.wsgi_app, root='static/')
 
     # --- 3. SECURITY HEADERS ---
+   # --- 3. SECURITY HEADERS ---
     csp = {
         'default-src': ["'self'", "https://cdnjs.cloudflare.com", "https://cdn.tailwindcss.com", "https://unpkg.com", "https://cdn.jsdelivr.net", "https://cdn.tiny.cloud"],
         'style-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com", "https://cdn.tailwindcss.com", "https://unpkg.com", "https://cdn.tiny.cloud", "https://cdn.jsdelivr.net"],
         'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdnjs.cloudflare.com", "https://cdn.tailwindcss.com", "https://unpkg.com", "https://cdn.jsdelivr.net", "https://cdn.tiny.cloud"],
         'font-src': ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
-        'img-src': ["'self'", "data:", "https://api.dicebear.com", "https://sp.tinymce.com", "https://res.cloudinary.com"]
+        'img-src': ["'self'", "data:", "*", "https://api.dicebear.com", "https://res.cloudinary.com"],
+        # MODIFIED: Added '*' to allow images from any domain
+        'connect-src': ["'self'", "https://api.dicebear.com", "https://res.cloudinary.com"]
     }
     
     is_https = app.config.get('ENV') == 'production'

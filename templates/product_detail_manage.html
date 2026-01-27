@@ -1,0 +1,122 @@
+{% extends "layout.html" %}
+{% block title %}Manage: {{ product.name }} | SourcePoint{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-fade-in">
+    
+    <nav class="flex mb-8 text-sm text-gray-400" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+            <li class="inline-flex items-center">
+                {% if current_user.role == 'admin' %}
+                <a href="{{ url_for('admin_commerce.manage_inventory') }}" class="hover:text-white transition-colors">
+                    <i class="fas fa-warehouse mr-2"></i>Master Inventory
+                </a>
+                {% elif current_user.role == 'seller' %}
+                <a href="{{ url_for('seller.manage_inventory') }}" class="hover:text-white transition-colors">
+                    <i class="fas fa-warehouse mr-2"></i>My Inventory
+                </a>
+                {% endif %}
+            </li>
+            <li><i class="fas fa-chevron-right text-xs mx-2"></i></li>
+            <li>
+                <span class="text-indigo-400 font-medium">Product Details</span>
+            </li>
+        </ol>
+    </nav>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+        
+        <div class="relative group">
+            <div class="relative w-full min-h-[500px] rounded-3xl overflow-hidden glass-panel border border-white/10 shadow-2xl flex items-center justify-center bg-[#050508]">
+                <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-emerald-500/5 z-0 pointer-events-none"></div>
+                
+                <img src="{{ product.image_url or 'https://placehold.co/800x600/1a1a1f/6366f1?text=' ~ product.name }}" 
+                     alt="{{ product.name }}" 
+                     class="relative z-10 max-w-full max-h-full object-contain p-2"
+                     style="transform-origin: center center; width: auto; height: auto;">
+                
+                <div class="absolute top-4 left-4 z-20">
+                    <span class="px-3 py-1 rounded-full bg-black/60 text-white text-xs font-bold border border-white/10 backdrop-blur-md">
+                        ID: #{{ product.id }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col space-y-8">
+            
+            <div>
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-gray-300 text-xs font-bold uppercase tracking-wider">
+                        {{ product.category or 'Uncategorized' }}
+                    </span>
+                    <span class="px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold uppercase tracking-wider">
+                        Code: {{ product.product_code or 'N/A' }}
+                    </span>
+                </div>
+                
+                <h1 class="text-3xl md:text-4xl font-extrabold text-white leading-tight mb-2 tracking-tight">
+                    {{ product.name }}
+                </h1>
+                <p class="text-xl text-gray-400 font-medium">Price: <span class="text-white">₹{{ "{:,.2f}".format(product.price) }}</span></p>
+            </div>
+
+            <div class="glass-panel p-6 rounded-2xl border border-white/10 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none"></div>
+                
+                <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <i class="fas fa-chart-pie text-emerald-400"></i> Stock Overview
+                </h3>
+
+                <div class="grid grid-cols-2 gap-6 mb-6">
+                    <div class="p-4 rounded-xl bg-black/40 border border-white/5">
+                        <p class="text-xs text-gray-500 uppercase font-bold mb-1">Current Stock</p>
+                        <p class="text-2xl font-bold {{ 'text-red-400' if product.stock < 10 else 'text-emerald-400' }}">
+                            {{ product.stock }} <span class="text-sm text-gray-500">units</span>
+                        </p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-black/40 border border-white/5">
+                        <p class="text-xs text-gray-500 uppercase font-bold mb-1">Stock Value</p>
+                        <p class="text-2xl font-bold text-white">
+                            ₹{{ "{:,.0f}".format(product.price * product.stock) }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    {% if current_user.role == 'admin' %}
+                    <a href="{{ url_for('admin_commerce.edit_product_page', product_id=product.id) }}" 
+                       class="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-center transition-all shadow-lg shadow-indigo-500/20">
+                        <i class="fas fa-pen mr-2"></i> Edit Product
+                    </a>
+                    {% endif %}
+                    
+                    <a href="javascript:history.back()" 
+                       class="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 font-bold text-center border border-white/10 transition-all">
+                        Back to List
+                    </a>
+                </div>
+            </div>
+
+            <div class="prose prose-invert max-w-none">
+                <h3 class="text-lg font-bold text-white mb-3">Description</h3>
+                <div class="p-4 rounded-xl bg-white/5 border border-white/5 text-gray-300 text-sm leading-relaxed">
+                    {{ product.description or 'No description provided.' }}
+                </div>
+            </div>
+
+             <div class="grid grid-cols-2 gap-4 text-sm">
+                <div class="flex justify-between p-3 rounded-lg bg-white/5">
+                    <span class="text-gray-500">Brand</span>
+                    <span class="text-white font-medium">{{ product.brand or '--' }}</span>
+                </div>
+                <div class="flex justify-between p-3 rounded-lg bg-white/5">
+                    <span class="text-gray-500">Warranty</span>
+                    <span class="text-white font-medium">{{ product.warranty or '--' }}</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
