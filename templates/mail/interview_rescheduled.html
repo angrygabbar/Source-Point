@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interview Rescheduled</title>
+</head>
+
+<body
+    style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #e2e8f0;">
+
+    <!-- Main Container -->
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0f172a;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+
+                <!-- Email Card -->
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0"
+                    style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+
+                    <!-- Header with Gradient -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%); padding: 40px 40px 50px 40px; text-align: center;">
+                            <table role="presentation" cellspacing="0" cellpadding="0"
+                                style="margin: 0 auto 20px auto;">
+                                <tr>
+                                    <td style="background: rgba(255,255,255,0.2); border-radius: 16px; padding: 16px;">
+                                        <img src="https://img.icons8.com/fluency/48/calendar.png" alt="Calendar"
+                                            width="48" height="48" style="display: block;">
+                                    </td>
+                                </tr>
+                            </table>
+                            <h1
+                                style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">
+                                Interview Rescheduled 🔄</h1>
+                            <p style="margin: 12px 0 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">Your interview
+                                has been moved to a new time</p>
+                        </td>
+                    </tr>
+
+                    <!-- Wave Divider -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%); height: 30px;">
+                            <div style="background: #1e293b; height: 30px; border-radius: 30px 30px 0 0;"></div>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 0 40px 40px 40px;">
+
+                            <!-- Greeting -->
+                            <p style="font-size: 16px; color: #e2e8f0; margin: 0 0 24px 0; line-height: 1.6;">
+                                Hello <strong style="color: #fbbf24;">{{ recipient.username }}</strong>,
+                            </p>
+                            <p style="font-size: 16px; color: #d1d5db; margin: 0 0 30px 0; line-height: 1.6;">
+                                Your interview has been rescheduled. Please review the updated details below and adjust
+                                your calendar accordingly.
+                            </p>
+
+                            <!-- Time Change Card - Most Important -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.1) 100%); border: 2px solid rgba(245, 158, 11, 0.3); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <h2
+                                            style="margin: 0 0 20px 0; font-size: 20px; color: #fbbf24; font-weight: 700; text-align: center;">
+                                            📅 Schedule Change
+                                        </h2>
+
+                                        <!-- Old Time -->
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 16px;">
+                                            <tr>
+                                                <td
+                                                    style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 12px; padding: 16px;">
+                                                    <table role="presentation" width="100%" cellspacing="0"
+                                                        cellpadding="0">
+                                                        <tr>
+                                                            <td width="50" valign="top">
+                                                                <div
+                                                                    style="background: rgba(239, 68, 68, 0.2); border-radius: 50%; width: 40px; height: 40px; text-align: center; line-height: 40px; font-size: 18px;">
+                                                                    ❌</div>
+                                                            </td>
+                                                            <td style="padding-left: 12px;">
+                                                                <p
+                                                                    style="margin: 0; font-size: 11px; color: #f87171; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">
+                                                                    Previous Time</p>
+                                                                <p
+                                                                    style="margin: 6px 0 0 0; font-size: 15px; color: #fca5a5; text-decoration: line-through;">
+                                                                    {{ old_time_ist.strftime('%A, %B %d, %Y') }}</p>
+                                                                <p
+                                                                    style="margin: 2px 0 0 0; font-size: 14px; color: #fca5a5; text-decoration: line-through;">
+                                                                    {{ old_time_ist.strftime('%I:%M %p IST') }}</p>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        <!-- Arrow -->
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 16px;">
+                                            <tr>
+                                                <td align="center">
+                                                    <div style="font-size: 24px;">⬇️</div>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        <!-- New Time -->
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td
+                                                    style="background: rgba(16, 185, 129, 0.1); border: 2px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 16px;">
+                                                    <table role="presentation" width="100%" cellspacing="0"
+                                                        cellpadding="0">
+                                                        <tr>
+                                                            <td width="50" valign="top">
+                                                                <div
+                                                                    style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 50%; width: 40px; height: 40px; text-align: center; line-height: 40px; font-size: 18px;">
+                                                                    ✅</div>
+                                                            </td>
+                                                            <td style="padding-left: 12px;">
+                                                                <p
+                                                                    style="margin: 0; font-size: 11px; color: #10b981; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">
+                                                                    New Time</p>
+                                                                <p
+                                                                    style="margin: 6px 0 0 0; font-size: 17px; color: #34d399; font-weight: 600;">
+                                                                    {{ new_time_ist.strftime('%A, %B %d, %Y') }}</p>
+                                                                <p
+                                                                    style="margin: 2px 0 0 0; font-size: 15px; color: #6ee7b7; font-weight: 500;">
+                                                                    {{ new_time_ist.strftime('%I:%M %p IST') }}</p>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            {% if reason %}
+                            <!-- Reason Card -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 20px 24px;">
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td width="40" valign="top">
+                                                    <div
+                                                        style="background: rgba(139, 92, 246, 0.2); border-radius: 8px; width: 36px; height: 36px; text-align: center; line-height: 36px;">
+                                                        💬</div>
+                                                </td>
+                                                <td style="padding-left: 12px;">
+                                                    <p
+                                                        style="margin: 0; font-size: 12px; color: #a78bfa; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">
+                                                        Reason for Rescheduling</p>
+                                                    <p
+                                                        style="margin: 8px 0 0 0; font-size: 14px; color: #e5e7eb; line-height: 1.6;">
+                                                        {{ reason }}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            <!-- Interview Details Card -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(148, 163, 184, 0.1); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <h2
+                                            style="margin: 0 0 20px 0; font-size: 18px; color: #d1d5db; font-weight: 600;">
+                                            📋 Interview Details
+                                        </h2>
+
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 12px;">
+                                            <tr>
+                                                <td width="100" style="font-size: 13px; color: #9ca3af;">Title</td>
+                                                <td style="font-size: 14px; color: #f1f5f9; font-weight: 500;">{{
+                                                    interview.title }}</td>
+                                            </tr>
+                                        </table>
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 12px;">
+                                            <tr>
+                                                <td width="100" style="font-size: 13px; color: #9ca3af;">Duration</td>
+                                                <td style="font-size: 14px; color: #f1f5f9;">{{
+                                                    interview.duration_minutes }} minutes</td>
+                                            </tr>
+                                        </table>
+                                        {% if recipient_type == 'candidate' and moderators %}
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td width="100"
+                                                    style="font-size: 13px; color: #9ca3af; vertical-align: top;">
+                                                    Interviewers</td>
+                                                <td style="font-size: 14px; color: #f1f5f9;">
+                                                    {% for mod in moderators %}{{ mod.username }}{% if not loop.last %},
+                                                    {% endif %}{% endfor %}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        {% elif recipient_type == 'moderator' and candidate %}
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td width="100" style="font-size: 13px; color: #9ca3af;">Candidate</td>
+                                                <td style="font-size: 14px; color: #f1f5f9;">{{ candidate.username }}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Join Button -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="margin-bottom: 24px;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{ meet_link }}"
+                                            style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-size: 16px; font-weight: 600; box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.4);">
+                                            🎥 Join Video Meeting
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- New Meeting Link -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(148, 163, 184, 0.1); border-radius: 12px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 16px;">
+                                        <p
+                                            style="margin: 0 0 8px 0; font-size: 12px; color: #10b981; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">
+                                            🆕 New Meeting Link</p>
+                                        <a href="{{ meet_link }}"
+                                            style="color: #fbbf24; font-size: 14px; word-break: break-all; text-decoration: none;">{{
+                                            meet_link }}</a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Important Warning -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; border-radius: 0 12px 12px 0; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 16px 20px;">
+                                        <p style="margin: 0; font-size: 14px; color: #fca5a5;">
+                                            <strong>⚠️ Important:</strong> Please update your calendar with the new
+                                            time. The previous meeting link is no longer valid.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Closing -->
+                            <p style="font-size: 14px; color: #d1d5db; margin: 0 0 16px 0; line-height: 1.6;">
+                                If you have any questions about this change, please contact us immediately.
+                            </p>
+                            <p style="font-size: 16px; color: #e2e8f0; margin: 0;">
+                                Best regards,<br>
+                                <strong style="color: #fbbf24;">The Source Point Team</strong>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background: rgba(15, 23, 42, 0.8); padding: 24px 40px; border-top: 1px solid rgba(148, 163, 184, 0.1);">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td align="center">
+                                        <p style="margin: 0 0 8px 0; font-size: 14px; color: #64748b;">
+                                            This is an automated email from Source Point Platform
+                                        </p>
+                                        <p style="margin: 0; font-size: 12px; color: #475569;">
+                                            © {{ now.year }} Source Point. All rights reserved.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>

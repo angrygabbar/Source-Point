@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Request Update</title>
+</head>
+
+<body
+    style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #e2e8f0;">
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0f172a;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0"
+                    style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+
+                    <!-- Header - Color changes based on status -->
+                    {% if status == 'Approved' %}
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%); padding: 40px 40px 50px 40px; text-align: center;">
+                            <table role="presentation" cellspacing="0" cellpadding="0"
+                                style="margin: 0 auto 20px auto;">
+                                <tr>
+                                    <td style="background: rgba(255,255,255,0.2); border-radius: 16px; padding: 16px;">
+                                        <img src="https://img.icons8.com/fluency/48/checkmark.png" alt="Approved"
+                                            width="48" height="48" style="display: block;">
+                                    </td>
+                                </tr>
+                            </table>
+                            <h1
+                                style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">
+                                Request Approved! ✅</h1>
+                            <p style="margin: 12px 0 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">Your stock
+                                request has been approved</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%); height: 30px;">
+                            <div style="background: #1e293b; height: 30px; border-radius: 30px 30px 0 0;"></div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%); padding: 40px 40px 50px 40px; text-align: center;">
+                            <table role="presentation" cellspacing="0" cellpadding="0"
+                                style="margin: 0 auto 20px auto;">
+                                <tr>
+                                    <td style="background: rgba(255,255,255,0.2); border-radius: 16px; padding: 16px;">
+                                        <img src="https://img.icons8.com/fluency/48/cancel.png" alt="Rejected"
+                                            width="48" height="48" style="display: block;">
+                                    </td>
+                                </tr>
+                            </table>
+                            <h1
+                                style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">
+                                Request Rejected</h1>
+                            <p style="margin: 12px 0 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">Your stock
+                                request was not approved</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%); height: 30px;">
+                            <div style="background: #1e293b; height: 30px; border-radius: 30px 30px 0 0;"></div>
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 0 40px 40px 40px;">
+
+                            <p style="font-size: 18px; color: #f1f5f9; margin: 0 0 24px 0; line-height: 1.6;">
+                                Hello <strong
+                                    style="color: {% if status == 'Approved' %}#10b981{% else %}#f87171{% endif %};">{{
+                                    user.username }}</strong>,
+                            </p>
+
+                            {% if status == 'Approved' %}
+                            <p style="font-size: 16px; color: #d1d5db; margin: 0 0 24px 0; line-height: 1.6;">
+                                Great news! Your stock request has been approved and is being processed.
+                            </p>
+                            {% else %}
+                            <p style="font-size: 16px; color: #d1d5db; margin: 0 0 24px 0; line-height: 1.6;">
+                                Unfortunately, your stock request has been rejected. Please contact the admin for more
+                                details.
+                            </p>
+                            {% endif %}
+
+                            <!-- Request Details Card -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: {% if status == 'Approved' %}rgba(16, 185, 129, 0.1){% else %}rgba(239, 68, 68, 0.1){% endif %}; border: 1px solid {% if status == 'Approved' %}rgba(16, 185, 129, 0.2){% else %}rgba(239, 68, 68, 0.2){% endif %}; border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <h2
+                                            style="margin: 0 0 20px 0; font-size: 18px; color: {% if status == 'Approved' %}#10b981{% else %}#f87171{% endif %}; font-weight: 600;">
+                                            📦 Request Details
+                                        </h2>
+                                        {% if request_id %}
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 12px;">
+                                            <tr>
+                                                <td width="120" style="font-size: 13px; color: #9ca3af;">Request ID</td>
+                                                <td style="font-size: 14px; color: #f1f5f9; font-family: monospace;">{{
+                                                    request_id }}</td>
+                                            </tr>
+                                        </table>
+                                        {% endif %}
+                                        {% if item_name %}
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 12px;">
+                                            <tr>
+                                                <td width="120" style="font-size: 13px; color: #9ca3af;">Item</td>
+                                                <td style="font-size: 15px; color: #f1f5f9; font-weight: 500;">{{
+                                                    item_name }}</td>
+                                            </tr>
+                                        </table>
+                                        {% endif %}
+                                        {% if quantity %}
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 12px;">
+                                            <tr>
+                                                <td width="120" style="font-size: 13px; color: #9ca3af;">Quantity</td>
+                                                <td style="font-size: 15px; color: #f1f5f9;">{{ quantity }}</td>
+                                            </tr>
+                                        </table>
+                                        {% endif %}
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td width="120" style="font-size: 13px; color: #9ca3af;">Status</td>
+                                                <td>
+                                                    {% if status == 'Approved' %}
+                                                    <span
+                                                        style="display: inline-block; background: rgba(16, 185, 129, 0.2); color: #10b981; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">✓
+                                                        Approved</span>
+                                                    {% else %}
+                                                    <span
+                                                        style="display: inline-block; background: rgba(239, 68, 68, 0.2); color: #f87171; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">✗
+                                                        Rejected</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Closing -->
+                            <p style="font-size: 16px; color: #e2e8f0; margin: 0;">
+                                Best regards,<br>
+                                <strong
+                                    style="color: {% if status == 'Approved' %}#10b981{% else %}#f87171{% endif %};">The
+                                    Source Point Team</strong>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background: rgba(15, 23, 42, 0.8); padding: 24px 40px; border-top: 1px solid rgba(148, 163, 184, 0.1);">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td align="center">
+                                        <p style="margin: 0; font-size: 12px; color: #6b7280;">
+                                            © 2025 Source Point. All rights reserved.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>

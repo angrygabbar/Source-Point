@@ -1,94 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Business Requirement Document for {{ project_name }}</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #f4f7f6;
-            font-family: 'Inter', sans-serif;
-        }
-        .container {
-            max-width: 600px;
-            margin: 40px auto;
-            background-color: #ffffff;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-        .header {
-            background: linear-gradient(135deg, #4338ca, #6d28d9);
-            color: #ffffff;
-            padding: 40px;
-            text-align: center;
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 28px;
-            font-weight: 700;
-        }
-        .content {
-            padding: 30px 40px;
-            color: #333;
-            line-height: 1.6;
-        }
-        .content h2 {
-            color: #4338ca;
-            font-size: 22px;
-        }
-        .content p {
-            margin: 0 0 20px;
-        }
-        .button-container {
-            text-align: center;
-            margin-top: 30px;
-        }
-        .button {
-            display: inline-block;
-            background-color: #4f46e5;
-            color: #ffffff;
-            padding: 14px 24px;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(79, 70, 229, 0.4);
-        }
-        .footer {
-            background-color: #eef2ff;
-            text-align: center;
-            padding: 20px;
-            font-size: 12px;
-            color: #6b7280;
-        }
-    </style>
+    <title>BRD Shared</title>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Business Requirement Document</h1>
-        </div>
-        <div class="content">
-            <h2>Hello,</h2>
-            <p>Please find the Business Requirement Document (BRD) for the project "<strong>{{ project_name }}</strong>" attached to this email.</p>
-            <p>This document outlines the project's objectives, scope, and key requirements. We encourage you to review it at your earliest convenience.</p>
-            
-            <p>If you have any questions or feedback, please don't hesitate to reach out.</p>
 
-            <p>Best regards,<br>The Source Point Team</p>
-        </div>
-        <div class="footer">
-            <p>&copy; {{ now.year }} Source Point. All rights reserved.</p>
-            <p>This is an automated notification. Please do not reply to this email.</p>
-        </div>
-    </div>
+<body
+    style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #e2e8f0;">
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0f172a;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0"
+                    style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #ec4899 0%, #db2777 50%, #be185d 100%); padding: 40px 40px 50px 40px; text-align: center;">
+                            <table role="presentation" cellspacing="0" cellpadding="0"
+                                style="margin: 0 auto 20px auto;">
+                                <tr>
+                                    <td style="background: rgba(255,255,255,0.2); border-radius: 16px; padding: 16px;">
+                                        <img src="https://img.icons8.com/fluency/48/document.png" alt="Document"
+                                            width="48" height="48" style="display: block;">
+                                    </td>
+                                </tr>
+                            </table>
+                            <h1
+                                style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">
+                                Document Shared 📄</h1>
+                            <p style="margin: 12px 0 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">Business
+                                Requirements Document</p>
+                        </td>
+                    </tr>
+
+                    <!-- Wave Divider -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #ec4899 0%, #db2777 50%, #be185d 100%); height: 30px;">
+                            <div style="background: #1e293b; height: 30px; border-radius: 30px 30px 0 0;"></div>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 0 40px 40px 40px;">
+
+                            <p style="font-size: 18px; color: #f1f5f9; margin: 0 0 24px 0; line-height: 1.6;">
+                                Hello <strong style="color: #f472b6;">{{ recipient.username }}</strong>,
+                            </p>
+
+                            <p style="font-size: 16px; color: #d1d5db; margin: 0 0 24px 0; line-height: 1.6;">
+                                A Business Requirements Document (BRD) has been shared with you. Please review the
+                                details below.
+                            </p>
+
+                            <!-- BRD Details Card -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(236, 72, 153, 0.1); border: 1px solid rgba(236, 72, 153, 0.2); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <h2
+                                            style="margin: 0 0 16px 0; font-size: 18px; color: #f472b6; font-weight: 600;">
+                                            📋 Document Details
+                                        </h2>
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 12px;">
+                                            <tr>
+                                                <td width="100" style="font-size: 13px; color: #9ca3af;">Title</td>
+                                                <td style="font-size: 15px; color: #f1f5f9; font-weight: 500;">{{
+                                                    brd.title }}</td>
+                                            </tr>
+                                        </table>
+                                        {% if brd.description %}
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 12px;">
+                                            <tr>
+                                                <td width="100"
+                                                    style="font-size: 13px; color: #9ca3af; vertical-align: top;">
+                                                    Description</td>
+                                                <td style="font-size: 14px; color: #d1d5db; line-height: 1.6;">{{
+                                                    brd.description }}</td>
+                                            </tr>
+                                        </table>
+                                        {% endif %}
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td width="100" style="font-size: 13px; color: #9ca3af;">Shared By</td>
+                                                <td style="font-size: 15px; color: #f1f5f9;">{{ sender.username }}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- CTA Button -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="margin-bottom: 24px;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{ url_for('brd.view_brd', brd_id=brd.id, _external=True) }}"
+                                            style="display: inline-block; background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-size: 16px; font-weight: 600; box-shadow: 0 10px 25px -5px rgba(236, 72, 153, 0.4);">
+                                            📖 View Document
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Closing -->
+                            <p style="font-size: 16px; color: #e2e8f0; margin: 0;">
+                                Best regards,<br>
+                                <strong style="color: #f472b6;">The Source Point Team</strong>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background: rgba(15, 23, 42, 0.8); padding: 24px 40px; border-top: 1px solid rgba(148, 163, 184, 0.1);">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td align="center">
+                                        <p style="margin: 0; font-size: 12px; color: #6b7280;">
+                                            © 2025 Source Point. All rights reserved.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
 </body>
+
 </html>

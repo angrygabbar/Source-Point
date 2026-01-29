@@ -256,9 +256,13 @@ def create_interview():
             flash('Please select at least one moderator.', 'danger')
             return redirect(url_for('admin_hiring.schedule_interview'))
         
-        # Parse datetime
+        # Parse datetime - user enters time in IST
         scheduled_datetime_str = f"{scheduled_date} {scheduled_time}"
-        scheduled_datetime = datetime.strptime(scheduled_datetime_str, '%Y-%m-%d %H:%M')
+        scheduled_datetime_ist = datetime.strptime(scheduled_datetime_str, '%Y-%m-%d %H:%M')
+        
+        # Convert to UTC for storage (IST is UTC+5:30)
+        ist_offset = timedelta(hours=5, minutes=30)
+        scheduled_datetime = scheduled_datetime_ist - ist_offset  # UTC time for DB
         
         # Get candidate and moderators
         candidate = User.query.get_or_404(candidate_id)
@@ -313,8 +317,8 @@ def create_interview():
         current_app.logger.info(f"DEBUG: Database commit successful")
         
         # Send email notifications
-        ist_offset = timedelta(hours=5, minutes=30)
-        scheduled_time_ist = scheduled_datetime + ist_offset
+        # Send email notifications - use the original IST time entered by user
+        scheduled_time_ist = scheduled_datetime_ist  # Already in IST
         
         # Email to moderators
         for moderator in moderators:
@@ -463,6 +467,112 @@ def cancel_interview(interview_id):
     except Exception as e:
         db.session.rollback()
         flash(f'Error cancelling interview: {str(e)}', 'danger')
+    
+    return redirect(url_for('admin_hiring.view_interviews'))
+
+
+@admin_hiring_bp.route('/interviews/<int:interview_id>/reschedule', methods=['GET', 'POST'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def reschedule_interview(interview_id):
+    """Reschedule an interview to a new date/time"""
+    from models.interview import Interview
+    from services.jitsi_meet_service import JitsiMeetService
+    
+    interview = Interview.query.get_or_404(interview_id)
+    
+    if interview.status == 'cancelled':
+        flash('Cannot reschedule a cancelled interview.', 'warning')
+        return redirect(url_for('admin_hiring.view_interviews'))
+    
+    if request.method == 'GET':
+        # Show reschedule form
+        ist_offset = timedelta(hours=5, minutes=30)
+        current_time_ist = interview.scheduled_time + ist_offset
+        return render_template('admin_reschedule_interview.html',
+                             interview=interview,
+                             current_time_ist=current_time_ist,
+                             now=datetime.now())
+    
+    # POST - Process reschedule
+    try:
+        new_date = request.form.get('scheduled_date')
+        new_time = request.form.get('scheduled_time')
+        new_duration = request.form.get('duration_minutes', 60)
+        reason = request.form.get('reason', '')
+        
+        if not new_date or not new_time:
+            flash('Please provide both date and time.', 'danger')
+            return redirect(url_for('admin_hiring.reschedule_interview', interview_id=interview_id))
+        
+        # Parse new datetime (IST to UTC)
+        ist_offset = timedelta(hours=5, minutes=30)
+        scheduled_datetime_ist = datetime.strptime(f"{new_date} {new_time}", '%Y-%m-%d %H:%M')
+        scheduled_datetime_utc = scheduled_datetime_ist - ist_offset
+        
+        # Store old time for notification
+        old_time_ist = interview.scheduled_time + ist_offset
+        
+        # Update interview
+        interview.scheduled_time = scheduled_datetime_utc
+        interview.duration_minutes = int(new_duration)
+        interview.updated_at = datetime.utcnow()
+        
+        # Generate new Jitsi Meet link
+        jitsi_service = JitsiMeetService()
+        meeting_data = jitsi_service.create_meeting(
+            title=interview.title,
+            interview_id=interview.id,
+            scheduled_time=scheduled_datetime_utc
+        )
+        interview.google_meet_link = meeting_data['meet_link']
+        
+        db.session.commit()
+        
+        # Send reschedule notifications
+        moderators = [p.user for p in interview.participants]
+        new_time_ist = scheduled_datetime_ist
+        
+        # Send to candidate
+        send_email(
+            to=interview.candidate.email,
+            subject=f"Interview Rescheduled - {interview.title}",
+            template="mail/interview_rescheduled.html",
+            interview=interview,
+            recipient=interview.candidate,
+            recipient_type='candidate',
+            old_time_ist=old_time_ist,
+            new_time_ist=new_time_ist,
+            reason=reason,
+            moderators=moderators,
+            meet_link=interview.google_meet_link,
+            now=datetime.utcnow()
+        )
+        
+        # Send to moderators
+        for moderator in moderators:
+            send_email(
+                to=moderator.email,
+                subject=f"Interview Rescheduled - {interview.title}",
+                template="mail/interview_rescheduled.html",
+                interview=interview,
+                recipient=moderator,
+                recipient_type='moderator',
+                old_time_ist=old_time_ist,
+                new_time_ist=new_time_ist,
+                reason=reason,
+                candidate=interview.candidate,
+                meet_link=interview.google_meet_link,
+                now=datetime.utcnow()
+            )
+        
+        log_user_action("Reschedule Interview", f"Rescheduled interview '{interview.title}' to {new_time_ist.strftime('%Y-%m-%d %H:%M')}")
+        flash(f'Interview rescheduled successfully! All participants have been notified.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error rescheduling interview: {e}")
+        flash(f'Error rescheduling interview: {str(e)}', 'danger')
     
     return redirect(url_for('admin_hiring.view_interviews'))
 

@@ -1,0 +1,136 @@
+{% extends "layout.html" %}
+
+{% block title %}Reschedule Interview{% endblock %}
+
+{% block content %}
+<div class="space-y-6 pb-10 max-w-2xl mx-auto">
+    <!-- Header -->
+    <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-indigo-500/30 pb-6">
+        <div>
+            <div class="flex items-center gap-3 mb-2">
+                <div class="p-2 bg-orange-500/20 rounded-lg text-orange-400">
+                    <i class="fas fa-calendar-alt text-2xl"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-white tracking-tight">Reschedule Interview</h1>
+            </div>
+            <p class="text-gray-400">Change the date and time for this interview</p>
+        </div>
+        <a href="{{ url_for('admin_hiring.view_interviews') }}"
+            class="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white rounded-lg text-sm font-bold transition-all">
+            <i class="fas fa-arrow-left mr-2"></i> Back
+        </a>
+    </div>
+
+    <!-- Current Interview Info -->
+    <div class="glass-panel rounded-xl border border-white/10 p-6">
+        <h2 class="text-lg font-bold text-white mb-4"><i class="fas fa-info-circle text-indigo-400 mr-2"></i>Current
+            Interview Details</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wide">Title</p>
+                <p class="text-white font-semibold">{{ interview.title }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wide">Candidate</p>
+                <p class="text-white font-semibold">{{ interview.candidate.username }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wide">Current Date & Time</p>
+                <p class="text-orange-400 font-semibold">
+                    {{ current_time_ist.strftime('%A, %B %d, %Y at %I:%M %p IST') }}
+                </p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wide">Duration</p>
+                <p class="text-white font-semibold">{{ interview.duration_minutes }} minutes</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reschedule Form -->
+    <div class="glass-panel rounded-xl border border-white/10 p-6">
+        <h2 class="text-lg font-bold text-white mb-6"><i class="fas fa-edit text-green-400 mr-2"></i>New Schedule</h2>
+
+        <form action="{{ url_for('admin_hiring.reschedule_interview', interview_id=interview.id) }}" method="POST">
+            <!-- Date and Time -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label for="scheduled_date" class="block text-sm font-semibold text-gray-300 mb-2">
+                        New Date <span class="text-red-400">*</span>
+                    </label>
+                    <input type="date" id="scheduled_date" name="scheduled_date" required
+                        value="{{ current_time_ist.strftime('%Y-%m-%d') }}" min="{{ now.strftime('%Y-%m-%d') }}"
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all">
+                </div>
+                <div>
+                    <label for="scheduled_time" class="block text-sm font-semibold text-gray-300 mb-2">
+                        New Time (IST) <span class="text-red-400">*</span>
+                    </label>
+                    <input type="time" id="scheduled_time" name="scheduled_time" required
+                        value="{{ current_time_ist.strftime('%H:%M') }}"
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all">
+                </div>
+            </div>
+
+            <!-- Duration -->
+            <div class="mb-6">
+                <label for="duration_minutes" class="block text-sm font-semibold text-gray-300 mb-2">
+                    Duration
+                </label>
+                <select id="duration_minutes" name="duration_minutes"
+                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all">
+                    <option value="30" class="bg-gray-900" {% if interview.duration_minutes==30 %}selected{% endif %}>30
+                        minutes</option>
+                    <option value="45" class="bg-gray-900" {% if interview.duration_minutes==45 %}selected{% endif %}>45
+                        minutes</option>
+                    <option value="60" class="bg-gray-900" {% if interview.duration_minutes==60 %}selected{% endif %}>1
+                        hour</option>
+                    <option value="90" class="bg-gray-900" {% if interview.duration_minutes==90 %}selected{% endif %}>
+                        1.5 hours</option>
+                    <option value="120" class="bg-gray-900" {% if interview.duration_minutes==120 %}selected{% endif %}>
+                        2 hours</option>
+                </select>
+            </div>
+
+            <!-- Reason (Optional) -->
+            <div class="mb-6">
+                <label for="reason" class="block text-sm font-semibold text-gray-300 mb-2">
+                    Reason for Rescheduling <span class="text-gray-500">(Optional - will be included in
+                        notification)</span>
+                </label>
+                <textarea id="reason" name="reason" rows="2"
+                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                    placeholder="e.g., Due to a scheduling conflict..."></textarea>
+            </div>
+
+            <!-- Info Box -->
+            <div class="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 mb-6">
+                <div class="flex items-start gap-3">
+                    <div class="p-2 bg-orange-500/20 rounded-lg">
+                        <i class="fas fa-bell text-orange-400"></i>
+                    </div>
+                    <div class="text-sm text-gray-300">
+                        <p class="font-semibold text-orange-400 mb-1">All participants will be notified</p>
+                        <p class="text-gray-400">The candidate and all moderators will receive an email with the updated
+                            schedule and a new meeting link.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex gap-4">
+                <button type="submit"
+                    class="flex-1 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold py-3 px-6 rounded-lg transition-all shadow-lg shadow-orange-500/20">
+                    <i class="fas fa-calendar-check mr-2"></i> Reschedule Interview
+                </button>
+                <a href="{{ url_for('admin_hiring.view_interviews') }}"
+                    class="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white font-semibold rounded-lg transition-all">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

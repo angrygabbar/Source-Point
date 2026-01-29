@@ -1,159 +1,327 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-            border-radius: 10px 10px 0 0;
-        }
-
-        .content {
-            background: #f9fafb;
-            padding: 30px;
-            border-radius: 0 0 10px 10px;
-        }
-
-        .info-box {
-            background: white;
-            padding: 20px;
-            margin: 20px 0;
-            border-left: 4px solid #667eea;
-            border-radius: 5px;
-        }
-
-        .button {
-            display: inline-block;
-            padding: 12px 30px;
-            background: #667eea;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            color: #6b7280;
-            font-size: 12px;
-        }
-
-        .moderator-list {
-            background: #e0e7ff;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 15px 0;
-        }
-
-        .detail-row {
-            margin: 10px 0;
-        }
-
-        .label {
-            font-weight: bold;
-            color: #4b5563;
-        }
-    </style>
+    <title>Interview Scheduled - Moderator</title>
 </head>
 
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🎯 Interview Scheduled</h1>
-            <p>You've been assigned as a moderator</p>
-        </div>
+<body
+    style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #e2e8f0;">
 
-        <div class="content">
-            <p>Hello <strong>{{ moderator.username }}</strong>,</p>
+    <!-- Main Container -->
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0f172a;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
 
-            <p>You have been assigned as a moderator for an upcoming interview. Here are the details:</p>
+                <!-- Email Card -->
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0"
+                    style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
 
-            <div class="info-box">
-                <h2 style="margin-top: 0; color: #667eea;">📋 Interview Details</h2>
+                    <!-- Header with Gradient -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%); padding: 40px 40px 50px 40px; text-align: center;">
+                            <table role="presentation" cellspacing="0" cellpadding="0"
+                                style="margin: 0 auto 20px auto;">
+                                <tr>
+                                    <td style="background: rgba(255,255,255,0.2); border-radius: 16px; padding: 16px;">
+                                        <img src="https://img.icons8.com/fluency/48/video-call.png" alt="Video"
+                                            width="48" height="48" style="display: block;">
+                                    </td>
+                                </tr>
+                            </table>
+                            <h1
+                                style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">
+                                Moderator Assignment 🎯</h1>
+                            <p style="margin: 12px 0 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">You've been
+                                assigned to conduct an interview</p>
+                        </td>
+                    </tr>
 
-                <div class="detail-row">
-                    <span class="label">Title:</span> {{ interview.title }}
-                </div>
+                    <!-- Wave Divider -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%); height: 30px;">
+                            <div style="background: #1e293b; height: 30px; border-radius: 30px 30px 0 0;"></div>
+                        </td>
+                    </tr>
 
-                {% if interview.description %}
-                <div class="detail-row">
-                    <span class="label">Description:</span> {{ interview.description }}
-                </div>
-                {% endif %}
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 0 40px 40px 40px;">
 
-                <div class="detail-row">
-                    <span class="label">📅 Date & Time:</span> {{ scheduled_time_ist.strftime('%A, %B %d, %Y at %I:%M %p
-                    IST') }}
-                </div>
+                            <!-- Greeting -->
+                            <p style="font-size: 16px; color: #e2e8f0; margin: 0 0 24px 0; line-height: 1.6;">
+                                Hello <strong style="color: #a78bfa;">{{ moderator.username }}</strong>,
+                            </p>
+                            <p style="font-size: 16px; color: #d1d5db; margin: 0 0 30px 0; line-height: 1.6;">
+                                You have been assigned as a moderator for an upcoming interview. Please review the
+                                details and prepare accordingly.
+                            </p>
 
-                <div class="detail-row">
-                    <span class="label">⏱️ Duration:</span> {{ interview.duration_minutes }} minutes
-                </div>
-            </div>
+                            <!-- Interview Details Card -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(124, 58, 237, 0.05) 100%); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <h2
+                                            style="margin: 0 0 20px 0; font-size: 18px; color: #a78bfa; font-weight: 600;">
+                                            📋 Interview Details
+                                        </h2>
 
-            <div class="info-box">
-                <h3 style="margin-top: 0; color: #667eea;">👤 Candidate Information</h3>
-                <div class="detail-row">
-                    <span class="label">Name:</span> {{ candidate.username }}
-                </div>
-                <div class="detail-row">
-                    <span class="label">Email:</span> {{ candidate.email }}
-                </div>
-            </div>
+                                        <!-- Title -->
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 16px;">
+                                            <tr>
+                                                <td width="40" valign="top">
+                                                    <div
+                                                        style="background: rgba(139, 92, 246, 0.2); border-radius: 8px; width: 36px; height: 36px; text-align: center; line-height: 36px;">
+                                                        📝</div>
+                                                </td>
+                                                <td style="padding-left: 12px;">
+                                                    <p
+                                                        style="margin: 0; font-size: 12px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px;">
+                                                        Title</p>
+                                                    <p
+                                                        style="margin: 4px 0 0 0; font-size: 16px; color: #f1f5f9; font-weight: 500;">
+                                                        {{ interview.title }}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
 
-            {% if other_moderators %}
-            <div class="moderator-list">
-                <h3 style="margin-top: 0;">👥 Other Moderators</h3>
-                <ul>
-                    {% for mod in other_moderators %}
-                    <li>{{ mod.username }} ({{ mod.email }})</li>
-                    {% endfor %}
-                </ul>
-            </div>
-            {% endif %}
+                                        {% if interview.description %}
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 16px;">
+                                            <tr>
+                                                <td width="40" valign="top">
+                                                    <div
+                                                        style="background: rgba(139, 92, 246, 0.2); border-radius: 8px; width: 36px; height: 36px; text-align: center; line-height: 36px;">
+                                                        📄</div>
+                                                </td>
+                                                <td style="padding-left: 12px;">
+                                                    <p
+                                                        style="margin: 0; font-size: 12px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px;">
+                                                        Description</p>
+                                                    <p style="margin: 4px 0 0 0; font-size: 14px; color: #e5e7eb;">{{
+                                                        interview.description }}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        {% endif %}
 
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="{{ meet_link }}" class="button">🎥 Join Video Meeting</a>
-            </div>
+                                        <!-- Date & Time -->
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 16px;">
+                                            <tr>
+                                                <td width="40" valign="top">
+                                                    <div
+                                                        style="background: rgba(139, 92, 246, 0.2); border-radius: 8px; width: 36px; height: 36px; text-align: center; line-height: 36px;">
+                                                        📅</div>
+                                                </td>
+                                                <td style="padding-left: 12px;">
+                                                    <p
+                                                        style="margin: 0; font-size: 12px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px;">
+                                                        Date & Time</p>
+                                                    <p
+                                                        style="margin: 4px 0 0 0; font-size: 16px; color: #a78bfa; font-weight: 600;">
+                                                        {{ scheduled_time_ist.strftime('%A, %B %d, %Y') }}</p>
+                                                    <p style="margin: 2px 0 0 0; font-size: 14px; color: #f1f5f9;">{{
+                                                        scheduled_time_ist.strftime('%I:%M %p') }} IST</p>
+                                                </td>
+                                            </tr>
+                                        </table>
 
-            <div style="background: #fef3c7; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <strong>📌 Important:</strong>
-                <ul style="margin: 10px 0;">
-                    <li>Please join the meeting 5 minutes early</li>
-                    <li>Ensure your camera and microphone are working</li>
-                    <li>Review the candidate's profile before the interview</li>
-                    <li>Click the meeting link at the scheduled time to join</li>
-                </ul>
-            </div>
+                                        <!-- Duration -->
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td width="40" valign="top">
+                                                    <div
+                                                        style="background: rgba(139, 92, 246, 0.2); border-radius: 8px; width: 36px; height: 36px; text-align: center; line-height: 36px;">
+                                                        ⏱️</div>
+                                                </td>
+                                                <td style="padding-left: 12px;">
+                                                    <p
+                                                        style="margin: 0; font-size: 12px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px;">
+                                                        Duration</p>
+                                                    <p
+                                                        style="margin: 4px 0 0 0; font-size: 16px; color: #f1f5f9; font-weight: 500;">
+                                                        {{ interview.duration_minutes }} minutes</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
 
-            <p><strong>Meeting Link:</strong><br>
-                <a href="{{ meet_link }}" style="color: #667eea; word-break: break-all;">{{ meet_link }}</a>
-            </p>
-        </div>
+                            <!-- Candidate Info Card -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <h2
+                                            style="margin: 0 0 16px 0; font-size: 18px; color: #60a5fa; font-weight: 600;">
+                                            👤 Candidate Information
+                                        </h2>
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td width="56" valign="top">
+                                                    <div
+                                                        style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius: 50%; width: 48px; height: 48px; text-align: center; line-height: 48px; color: white; font-weight: 600; font-size: 20px;">
+                                                        {{ candidate.username[0]|upper }}</div>
+                                                </td>
+                                                <td style="padding-left: 16px;">
+                                                    <p
+                                                        style="margin: 0; font-size: 18px; color: #f1f5f9; font-weight: 600;">
+                                                        {{ candidate.username }}</p>
+                                                    <p style="margin: 4px 0 0 0; font-size: 14px; color: #d1d5db;">{{
+                                                        candidate.email }}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
 
-        <div class="footer">
-            <p>This is an automated email from Source Point Platform</p>
-            <p>© {{ now.year }} Source Point. All rights reserved.</p>
-        </div>
-    </div>
+                            {% if other_moderators %}
+                            <!-- Other Moderators -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <h2
+                                            style="margin: 0 0 16px 0; font-size: 18px; color: #10b981; font-weight: 600;">
+                                            👥 Other Moderators
+                                        </h2>
+                                        {% for mod in other_moderators %}
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: {% if not loop.last %}12px{% else %}0{% endif %};">
+                                            <tr>
+                                                <td width="44" valign="top">
+                                                    <div
+                                                        style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 50%; width: 36px; height: 36px; text-align: center; line-height: 36px; color: white; font-weight: 600; font-size: 14px;">
+                                                        {{ mod.username[0]|upper }}</div>
+                                                </td>
+                                                <td style="padding-left: 12px;">
+                                                    <p
+                                                        style="margin: 0; font-size: 14px; color: #f1f5f9; font-weight: 500;">
+                                                        {{ mod.username }}</p>
+                                                    <p style="margin: 2px 0 0 0; font-size: 12px; color: #d1d5db;">{{
+                                                        mod.email }}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            <!-- Join Button -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="margin-bottom: 24px;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{ meet_link }}"
+                                            style="display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-size: 16px; font-weight: 600; box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.4);">
+                                            🎥 Join Video Meeting
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Meeting Link -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(148, 163, 184, 0.1); border-radius: 12px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 16px;">
+                                        <p
+                                            style="margin: 0 0 8px 0; font-size: 12px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px;">
+                                            Meeting Link</p>
+                                        <a href="{{ meet_link }}"
+                                            style="color: #a78bfa; font-size: 14px; word-break: break-all; text-decoration: none;">{{
+                                            meet_link }}</a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Important Notes -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.2); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <h2
+                                            style="margin: 0 0 16px 0; font-size: 18px; color: #fbbf24; font-weight: 600;">
+                                            📌 Important Reminders
+                                        </h2>
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <span style="color: #fbbf24; margin-right: 8px;">•</span>
+                                                    <span style="color: #e5e7eb; font-size: 14px;">Join the meeting 5
+                                                        minutes early</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <span style="color: #fbbf24; margin-right: 8px;">•</span>
+                                                    <span style="color: #e5e7eb; font-size: 14px;">Test your camera and
+                                                        microphone beforehand</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <span style="color: #fbbf24; margin-right: 8px;">•</span>
+                                                    <span style="color: #e5e7eb; font-size: 14px;">Review the
+                                                        candidate's profile before the interview</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <span style="color: #fbbf24; margin-right: 8px;">•</span>
+                                                    <span style="color: #cbd5e1; font-size: 14px;">Prepare your
+                                                        evaluation criteria</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Closing -->
+                            <p style="font-size: 16px; color: #e2e8f0; margin: 0;">
+                                Thank you,<br>
+                                <strong style="color: #a78bfa;">The Source Point Team</strong>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background: rgba(15, 23, 42, 0.8); padding: 24px 40px; border-top: 1px solid rgba(148, 163, 184, 0.1);">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td align="center">
+                                        <p style="margin: 0 0 8px 0; font-size: 14px; color: #64748b;">
+                                            This is an automated email from Source Point Platform
+                                        </p>
+                                        <p style="margin: 0; font-size: 12px; color: #475569;">
+                                            © {{ now.year }} Source Point. All rights reserved.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
 </body>
 
 </html>

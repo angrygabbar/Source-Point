@@ -1,57 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Approved</title>
-    <style>
-        /* Resets */
-        body { margin: 0; padding: 0; background-color: #f4f7f6; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-        table { border-spacing: 0; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-        img { border: 0; -ms-interpolation-mode: bicubic; }
-        
-        /* Fonts */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        
-        /* Mobile Styles */
-        @media screen and (max-width: 600px) {
-            .container { width: 100% !important; }
-            .content { padding: 20px !important; }
-        }
-    </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f4f7f6; font-family: 'Inter', Helvetica, Arial, sans-serif;">
-    <center style="width: 100%; background-color: #f4f7f6; padding-bottom: 40px;">
-        <div style="max-width: 600px; margin: 0 auto; padding-top: 40px;">
-            <table role="presentation" width="100%" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
-                <tr>
-                    <td style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 40px; text-align: center;">
-                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; letter-spacing: -0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">Welcome to the Hub</h1>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="content" style="padding: 40px; color: #374151; line-height: 1.6;">
-                        <h2 style="color: #111827; font-size: 22px; margin-top: 0; margin-bottom: 20px;">Hello, {{ user.username }}!</h2>
-                        <p style="margin: 0 0 15px; font-size: 16px;">We are pleased to confirm that your account on <strong>DevConnect Hub</strong> has been fully approved.</p>
-                        <p style="margin: 0 0 30px; font-size: 16px;">You now have unrestricted access to the developer dashboard. Start exploring opportunities, connecting with peers, and managing your projects today.</p>
-                        
-                        <table role="presentation" border="0" cellspacing="0" cellpadding="0" width="100%">
-                            <tr>
-                                <td align="center">
-                                    <a href="{{ url_for('auth.login_register', _external=True) }}" style="display: inline-block; background-color: #4f46e5; color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);">Login to Dashboard</a>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="background-color: #f9fafb; padding: 25px; text-align: center; border-top: 1px solid #e5e7eb;">
-                        <p style="margin: 5px 0; font-size: 12px; color: #9ca3af;">&copy; 2025 Source Point. All rights reserved.</p>
-                        <p style="margin: 5px 0; font-size: 12px; color: #9ca3af;">DevConnect Hub Platform</p>
-                    </td>
-                </tr>
-            </table>
-        </div>
-    </center>
+
+<body
+    style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #e2e8f0;">
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0f172a;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0"
+                    style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%); padding: 40px 40px 50px 40px; text-align: center;">
+                            <table role="presentation" cellspacing="0" cellpadding="0"
+                                style="margin: 0 auto 20px auto;">
+                                <tr>
+                                    <td style="background: rgba(255,255,255,0.2); border-radius: 16px; padding: 16px;">
+                                        <img src="https://img.icons8.com/fluency/48/checkmark.png" alt="Approved"
+                                            width="48" height="48" style="display: block;">
+                                    </td>
+                                </tr>
+                            </table>
+                            <h1
+                                style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">
+                                Account Approved! 🎉</h1>
+                            <p style="margin: 12px 0 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">Welcome to
+                                Source Point</p>
+                        </td>
+                    </tr>
+
+                    <!-- Wave Divider -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%); height: 30px;">
+                            <div style="background: #1e293b; height: 30px; border-radius: 30px 30px 0 0;"></div>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 0 40px 40px 40px;">
+
+                            <p style="font-size: 18px; color: #f1f5f9; margin: 0 0 24px 0; line-height: 1.6;">
+                                Hello <strong style="color: #10b981;">{{ user.username }}</strong>,
+                            </p>
+
+                            <p style="font-size: 16px; color: #d1d5db; margin: 0 0 24px 0; line-height: 1.6;">
+                                Great news! Your account on <strong style="color: #f1f5f9;">Source Point</strong> has
+                                been fully approved and activated.
+                            </p>
+
+                            <!-- Benefits Card -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <h2
+                                            style="margin: 0 0 16px 0; font-size: 18px; color: #10b981; font-weight: 600;">
+                                            🚀 What You Can Do Now
+                                        </h2>
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <span style="color: #10b981; margin-right: 10px;">✓</span>
+                                                    <span style="color: #e5e7eb; font-size: 15px;">Access the full
+                                                        developer dashboard</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <span style="color: #10b981; margin-right: 10px;">✓</span>
+                                                    <span style="color: #e5e7eb; font-size: 15px;">Connect with peers
+                                                        and opportunities</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <span style="color: #10b981; margin-right: 10px;">✓</span>
+                                                    <span style="color: #e5e7eb; font-size: 15px;">Manage your projects
+                                                        and portfolio</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- CTA Button -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="margin-bottom: 24px;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{ url_for('auth.login_register', _external=True) }}"
+                                            style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-size: 16px; font-weight: 600; box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.4);">
+                                            🔐 Login to Dashboard
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Closing -->
+                            <p style="font-size: 16px; color: #e2e8f0; margin: 0;">
+                                Welcome aboard! 👋<br>
+                                <strong style="color: #10b981;">The Source Point Team</strong>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background: rgba(15, 23, 42, 0.8); padding: 24px 40px; border-top: 1px solid rgba(148, 163, 184, 0.1);">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td align="center">
+                                        <p style="margin: 0 0 8px 0; font-size: 14px; color: #9ca3af;">
+                                            This is an automated email from Source Point Platform
+                                        </p>
+                                        <p style="margin: 0; font-size: 12px; color: #6b7280;">
+                                            © 2025 Source Point. All rights reserved.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
 </body>
+
 </html>
