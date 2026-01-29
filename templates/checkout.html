@@ -1,18 +1,22 @@
-{% extends "layout.html" %}
+{% if not partial %}{% extends "layout.html" %}{% endif %}
+
 {% block title %}Checkout{% endblock %}
+
 {% block content %}
-<div class="max-w-2xl mx-auto animate-dynamic">
+<div id="main-content" class="max-w-2xl mx-auto animate-dynamic">
     <div class="bg-white/5 border border-white/10 rounded-xl p-8 shadow-2xl">
         <h1 class="text-2xl font-bold text-white mb-6">Checkout</h1>
-        
+
         <form action="{{ url_for('buyer.checkout') }}" method="POST" class="space-y-6" id="checkout-form">
             {{ form.hidden_tag() }}
-            
+
             <div>
                 <label class="block text-sm font-medium text-gray-300 mb-2">{{ form.shipping_address.label }}</label>
-                {{ form.shipping_address(rows="3", class="w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 transition-all", placeholder="Enter your delivery address...") }}
+                {{ form.shipping_address(rows="3", class="w-full px-4 py-3 bg-gray-900/50 border border-gray-600
+                rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 transition-all",
+                placeholder="Enter your delivery address...") }}
                 {% if form.shipping_address.errors %}
-                    <span class="text-red-400 text-xs">{{ form.shipping_address.errors[0] }}</span>
+                <span class="text-red-400 text-xs">{{ form.shipping_address.errors[0] }}</span>
                 {% endif %}
             </div>
 
@@ -20,23 +24,28 @@
                 <div class="flex items-center justify-between mb-2">
                     <label class="block text-sm font-medium text-gray-300">{{ form.billing_address.label }}</label>
                     <div class="flex items-center">
-                        {{ form.same_as_shipping(class="h-4 w-4 text-indigo-600 border-gray-600 rounded bg-gray-700 focus:ring-indigo-500") }}
+                        {{ form.same_as_shipping(class="h-4 w-4 text-indigo-600 border-gray-600 rounded bg-gray-700
+                        focus:ring-indigo-500") }}
                         <label for="same_as_shipping" class="ml-2 text-xs text-gray-400">Same as shipping</label>
                     </div>
                 </div>
-                {{ form.billing_address(rows="3", class="w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 transition-all", placeholder="Enter your billing address...") }}
+                {{ form.billing_address(rows="3", class="w-full px-4 py-3 bg-gray-900/50 border border-gray-600
+                rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 transition-all",
+                placeholder="Enter your billing address...") }}
                 {% if form.billing_address.errors %}
-                    <span class="text-red-400 text-xs">{{ form.billing_address.errors[0] }}</span>
+                <span class="text-red-400 text-xs">{{ form.billing_address.errors[0] }}</span>
                 {% endif %}
             </div>
-            
+
             <div class="bg-blue-500/10 border border-blue-500/20 p-4 rounded-lg">
                 <p class="text-sm text-blue-200">
-                    <i class="fas fa-info-circle mr-2"></i> An invoice will be automatically generated and sent to you once your order is accepted by an admin.
+                    <i class="fas fa-info-circle mr-2"></i> An invoice will be automatically generated and sent to you
+                    once your order is accepted by an admin.
                 </p>
             </div>
 
-            <button type="submit" class="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-lg transition-all transform hover:scale-[1.02]">
+            <button type="submit"
+                class="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-lg transition-all transform hover:scale-[1.02]">
                 Place Order
             </button>
         </form>
