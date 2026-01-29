@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .content {
+            background: #f9fafb;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+        }
+
+        .info-box {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #ef4444;
+            border-radius: 5px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+        .detail-row {
+            margin: 10px 0;
+        }
+
+        .label {
+            font-weight: bold;
+            color: #4b5563;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>❌ Interview Cancelled</h1>
+            <p>Important Update</p>
+        </div>
+
+        <div class="content">
+            <p>Hello <strong>{{ user.username }}</strong>,</p>
+
+            <p>We regret to inform you that the following interview has been <strong>cancelled</strong>:</p>
+
+            <div class="info-box">
+                <h2 style="margin-top: 0; color: #ef4444;">📋 Cancelled Interview</h2>
+
+                <div class="detail-row">
+                    <span class="label">Title:</span> {{ interview.title }}
+                </div>
+
+                {% if interview.description %}
+                <div class="detail-row">
+                    <span class="label">Description:</span> {{ interview.description }}
+                </div>
+                {% endif %}
+
+                <div class="detail-row">
+                    <span class="label">📅 Was Scheduled For:</span> {{ scheduled_time_ist.strftime('%A, %B %d, %Y at
+                    %I:%M %p IST') }}
+                </div>
+
+                <div class="detail-row">
+                    <span class="label">👤 Candidate:</span> {{ candidate.username }}
+                </div>
+            </div>
+
+            <div style="background: #fee2e2; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <strong>📌 What This Means:</strong>
+                <ul style="margin: 10px 0;">
+                    <li>The Google Calendar event has been cancelled</li>
+                    <li>The Google Meet link is no longer valid</li>
+                    <li>No action is required from you</li>
+                </ul>
+            </div>
+
+            <p>If you have any questions or concerns, please contact the admin team.</p>
+
+            <p>Thank you for your understanding.</p>
+
+            <p>Best regards,<br>
+                <strong>The Source Point Team</strong>
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated email from Source Point Platform</p>
+            <p>© {{ now.year }} Source Point. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+
+</html>

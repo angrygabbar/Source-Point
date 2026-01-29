@@ -29,6 +29,12 @@ google-generativeai==0.8.3
 redis==5.0.1
 celery==5.3.6
 
+# --- GOOGLE CALENDAR API ---
+google-auth==2.27.0
+google-auth-oauthlib==1.2.0
+google-auth-httplib2==0.2.0
+google-api-python-client==2.116.0
+
 # --- PDF & HTML PARSING ---
 beautifulsoup4==4.12.2
 fpdf2==2.7.9

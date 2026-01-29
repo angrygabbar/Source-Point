@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .content {
+            background: #f9fafb;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+        }
+
+        .info-box {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+            border-radius: 5px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+        .moderator-list {
+            background: #e0e7ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+
+        .detail-row {
+            margin: 10px 0;
+        }
+
+        .label {
+            font-weight: bold;
+            color: #4b5563;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Interview Scheduled</h1>
+            <p>You've been assigned as a moderator</p>
+        </div>
+
+        <div class="content">
+            <p>Hello <strong>{{ moderator.username }}</strong>,</p>
+
+            <p>You have been assigned as a moderator for an upcoming interview. Here are the details:</p>
+
+            <div class="info-box">
+                <h2 style="margin-top: 0; color: #667eea;">📋 Interview Details</h2>
+
+                <div class="detail-row">
+                    <span class="label">Title:</span> {{ interview.title }}
+                </div>
+
+                {% if interview.description %}
+                <div class="detail-row">
+                    <span class="label">Description:</span> {{ interview.description }}
+                </div>
+                {% endif %}
+
+                <div class="detail-row">
+                    <span class="label">📅 Date & Time:</span> {{ scheduled_time_ist.strftime('%A, %B %d, %Y at %I:%M %p
+                    IST') }}
+                </div>
+
+                <div class="detail-row">
+                    <span class="label">⏱️ Duration:</span> {{ interview.duration_minutes }} minutes
+                </div>
+            </div>
+
+            <div class="info-box">
+                <h3 style="margin-top: 0; color: #667eea;">👤 Candidate Information</h3>
+                <div class="detail-row">
+                    <span class="label">Name:</span> {{ candidate.username }}
+                </div>
+                <div class="detail-row">
+                    <span class="label">Email:</span> {{ candidate.email }}
+                </div>
+            </div>
+
+            {% if other_moderators %}
+            <div class="moderator-list">
+                <h3 style="margin-top: 0;">👥 Other Moderators</h3>
+                <ul>
+                    {% for mod in other_moderators %}
+                    <li>{{ mod.username }} ({{ mod.email }})</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{ meet_link }}" class="button">🎥 Join Video Meeting</a>
+            </div>
+
+            <div style="background: #fef3c7; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <strong>📌 Important:</strong>
+                <ul style="margin: 10px 0;">
+                    <li>Please join the meeting 5 minutes early</li>
+                    <li>Ensure your camera and microphone are working</li>
+                    <li>Review the candidate's profile before the interview</li>
+                    <li>Click the meeting link at the scheduled time to join</li>
+                </ul>
+            </div>
+
+            <p><strong>Meeting Link:</strong><br>
+                <a href="{{ meet_link }}" style="color: #667eea; word-break: break-all;">{{ meet_link }}</a>
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated email from Source Point Platform</p>
+            <p>© {{ now.year }} Source Point. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+
+</html>

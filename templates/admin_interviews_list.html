@@ -1,0 +1,216 @@
+{% extends "layout.html" %}
+
+{% block title %}Scheduled Interviews{% endblock %}
+
+{% block content %}
+<div class="space-y-6 pb-10 max-w-7xl mx-auto">
+    <!-- Header -->
+    <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-indigo-500/30 pb-6">
+        <div>
+            <div class="flex items-center gap-3 mb-2">
+                <div class="p-2 bg-purple-500/20 rounded-lg text-purple-400">
+                    <i class="fas fa-calendar-alt text-2xl"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-white tracking-tight">Scheduled Interviews</h1>
+            </div>
+            <p class="text-gray-400">Manage all interview appointments</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{{ url_for('admin_hiring.schedule_interview') }}"
+                class="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-green-500/20 transition-all">
+                <i class="fas fa-plus mr-2"></i> Schedule New
+            </a>
+            <a href="{{ url_for('admin_hiring.admin_hiring_dashboard') }}"
+                class="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white rounded-lg text-sm font-bold transition-all">
+                <i class="fas fa-arrow-left mr-2"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="flex gap-2 flex-wrap bg-white/5 p-2 rounded-xl border border-white/10">
+        <a href="{{ url_for('admin_hiring.view_interviews', status='all') }}"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-all {% if status_filter == 'all' %}bg-indigo-600 text-white shadow-lg{% else %}text-gray-400 hover:text-white hover:bg-white/5{% endif %}">
+            <i class="fas fa-list mr-1"></i> All
+        </a>
+        <a href="{{ url_for('admin_hiring.view_interviews', status='upcoming') }}"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-all {% if status_filter == 'upcoming' %}bg-green-600 text-white shadow-lg{% else %}text-gray-400 hover:text-white hover:bg-white/5{% endif %}">
+            <i class="fas fa-clock mr-1"></i> Upcoming
+        </a>
+        <a href="{{ url_for('admin_hiring.view_interviews', status='past') }}"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-all {% if status_filter == 'past' %}bg-blue-600 text-white shadow-lg{% else %}text-gray-400 hover:text-white hover:bg-white/5{% endif %}">
+            <i class="fas fa-history mr-1"></i> Past
+        </a>
+        <a href="{{ url_for('admin_hiring.view_interviews', status='cancelled') }}"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-all {% if status_filter == 'cancelled' %}bg-red-600 text-white shadow-lg{% else %}text-gray-400 hover:text-white hover:bg-white/5{% endif %}">
+            <i class="fas fa-times-circle mr-1"></i> Cancelled
+        </a>
+    </div>
+
+    <!-- Interviews List -->
+    {% if interviews %}
+    <div class="space-y-4">
+        {% for interview in interviews %}
+        <div class="glass-panel rounded-xl border border-white/10 p-6 hover:border-indigo-500/50 transition-all group">
+            <div class="flex flex-col lg:flex-row items-start justify-between gap-4">
+                <div class="flex-1 min-w-0">
+                    <!-- Title and Status -->
+                    <div class="flex items-center gap-3 mb-3 flex-wrap">
+                        <h3 class="text-xl font-bold text-white">{{ interview.title }}</h3>
+                        {% if interview.status == 'scheduled' %}
+                        {% if interview.scheduled_time > now %}
+                        <span
+                            class="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-full border border-green-500/30">
+                            <i class="fas fa-clock mr-1"></i> Upcoming
+                        </span>
+                        {% else %}
+                        <span
+                            class="px-3 py-1 bg-blue-500/20 text-blue-400 text-xs font-bold rounded-full border border-blue-500/30">
+                            <i class="fas fa-check mr-1"></i> Past
+                        </span>
+                        {% endif %}
+                        {% elif interview.status == 'cancelled' %}
+                        <span
+                            class="px-3 py-1 bg-red-500/20 text-red-400 text-xs font-bold rounded-full border border-red-500/30">
+                            <i class="fas fa-times mr-1"></i> Cancelled
+                        </span>
+                        {% elif interview.status == 'completed' %}
+                        <span
+                            class="px-3 py-1 bg-gray-500/20 text-gray-400 text-xs font-bold rounded-full border border-gray-500/30">
+                            <i class="fas fa-check-double mr-1"></i> Completed
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Description -->
+                    {% if interview.description %}
+                    <p class="text-gray-400 mb-4 line-clamp-2">{{ interview.description }}</p>
+                    {% endif %}
+
+                    <!-- Details Grid -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                        <!-- Date & Time -->
+                        <div class="flex items-start gap-3">
+                            <div class="p-2 bg-indigo-500/20 rounded-lg">
+                                <i class="fas fa-calendar text-indigo-400"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wide">Date & Time</p>
+                                <p class="text-sm font-semibold text-white">
+                                    {{ (interview.scheduled_time + timedelta(hours=5, minutes=30)).strftime('%b %d, %Y')
+                                    }}
+                                </p>
+                                <p class="text-xs text-gray-400">
+                                    {{ (interview.scheduled_time + timedelta(hours=5, minutes=30)).strftime('%I:%M %p
+                                    IST') }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Duration -->
+                        <div class="flex items-start gap-3">
+                            <div class="p-2 bg-cyan-500/20 rounded-lg">
+                                <i class="fas fa-hourglass-half text-cyan-400"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wide">Duration</p>
+                                <p class="text-sm font-semibold text-white">{{ interview.duration_minutes }} min</p>
+                            </div>
+                        </div>
+
+                        <!-- Candidate -->
+                        <div class="flex items-start gap-3">
+                            <div class="p-2 bg-pink-500/20 rounded-lg">
+                                <i class="fas fa-user text-pink-400"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wide">Candidate</p>
+                                <p class="text-sm font-semibold text-white">{{ interview.candidate.username }}</p>
+                                <p class="text-xs text-gray-400 truncate max-w-[150px]">{{ interview.candidate.email }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Moderators -->
+                        <div class="flex items-start gap-3">
+                            <div class="p-2 bg-purple-500/20 rounded-lg">
+                                <i class="fas fa-users text-purple-400"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wide">Moderators ({{
+                                    interview.participants|length }})</p>
+                                {% for participant in interview.participants[:2] %}
+                                <p class="text-sm font-semibold text-white">{{ participant.user.username }}</p>
+                                {% endfor %}
+                                {% if interview.participants|length > 2 %}
+                                <p class="text-xs text-gray-400">+{{ interview.participants|length - 2 }} more</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Meeting Link -->
+                    {% if interview.google_meet_link and interview.status != 'cancelled' %}
+                    <div
+                        class="bg-green-500/10 border border-green-500/30 rounded-lg p-3 inline-flex items-center gap-3">
+                        <i class="fas fa-video text-green-400"></i>
+                        <div>
+                            <p class="text-xs text-gray-400">Meeting Link:</p>
+                            <a href="{{ interview.google_meet_link }}" target="_blank"
+                                class="text-sm text-green-400 hover:text-green-300 font-medium break-all">
+                                {{ interview.google_meet_link }}
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Actions -->
+                <div class="flex flex-row lg:flex-col gap-2 flex-shrink-0">
+                    {% if interview.status != 'cancelled' %}
+                    <a href="{{ interview.google_meet_link }}" target="_blank"
+                        class="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white text-sm font-bold rounded-lg transition-all shadow-lg shadow-green-500/20 text-center">
+                        <i class="fas fa-video mr-1"></i> Join
+                    </a>
+                    <form action="{{ url_for('admin_hiring.resend_interview_invites', interview_id=interview.id) }}"
+                        method="POST" class="inline">
+                        <button type="submit"
+                            class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg transition-all">
+                            <i class="fas fa-envelope mr-1"></i> Resend
+                        </button>
+                    </form>
+                    <form action="{{ url_for('admin_hiring.cancel_interview', interview_id=interview.id) }}"
+                        method="POST" onsubmit="return confirm('Are you sure you want to cancel this interview?');"
+                        class="inline">
+                        <button type="submit"
+                            class="w-full px-4 py-2 bg-red-600/20 hover:bg-red-600 border border-red-500/30 hover:border-red-500 text-red-400 hover:text-white text-sm font-bold rounded-lg transition-all">
+                            <i class="fas fa-times mr-1"></i> Cancel
+                        </button>
+                    </form>
+                    {% else %}
+                    <span class="px-4 py-2 bg-gray-600/20 text-gray-500 text-sm font-bold rounded-lg text-center">
+                        Cancelled
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="glass-panel rounded-2xl border border-white/10 p-12 text-center">
+        <div class="p-4 bg-indigo-500/20 rounded-full inline-block mb-4">
+            <i class="fas fa-calendar-plus text-4xl text-indigo-400"></i>
+        </div>
+        <h3 class="text-xl font-bold text-white mb-2">No interviews found</h3>
+        <p class="text-gray-400 mb-6">Get started by scheduling your first interview</p>
+        <a href="{{ url_for('admin_hiring.schedule_interview') }}"
+            class="inline-block px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold rounded-lg transition-all shadow-lg shadow-green-500/20">
+            <i class="fas fa-plus mr-2"></i> Schedule Interview
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

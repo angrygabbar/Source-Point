@@ -16,3 +16,7 @@ OS-specific files
 # Ignore Docker Compose files
 docker-compose.yml
 docker-compose.override.yml
+
+# Google Calendar API Credentials (IMPORTANT!)
+credentials.json
+token.pickleservice_account.json

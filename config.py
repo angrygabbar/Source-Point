@@ -56,6 +56,11 @@ class Config:
         "pool_timeout": 30
     }
     
+    # --- GOOGLE CALENDAR API ---
+    GOOGLE_CALENDAR_CREDENTIALS_FILE = os.environ.get('GOOGLE_CALENDAR_CREDENTIALS_FILE', 'credentials.json')
+    GOOGLE_CALENDAR_ID = os.environ.get('GOOGLE_CALENDAR_ID', 'primary')
+    GOOGLE_CALENDAR_TIMEZONE = os.environ.get('GOOGLE_CALENDAR_TIMEZONE', 'Asia/Kolkata')
+    
     @classmethod
     def init_app(cls, app):
         pass

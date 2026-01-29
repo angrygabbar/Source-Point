@@ -10,6 +10,7 @@ from whitenoise import WhiteNoise
 from extensions import db, bcrypt, login_manager, migrate, cache, limiter, celery
 from models.auth import User, Message
 from models.learning import LearningContent
+from models.interview import Interview, InterviewParticipant
 from bs4 import BeautifulSoup
 from flask_login import current_user
 from config import DevelopmentConfig, ProductionConfig

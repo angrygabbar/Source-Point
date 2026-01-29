@@ -3,7 +3,7 @@
 
 {% block content %}
 <div class="space-y-8 pb-10 max-w-7xl mx-auto" x-data="{ currentTab: 'interviews', showJobModal: false }">
-    
+
     <div class="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-indigo-500/30 pb-6">
         <div>
             <div class="flex items-center gap-3 mb-2">
@@ -15,11 +15,20 @@
             <p class="text-gray-400">Manage candidates, interviews, and technical assessments.</p>
         </div>
         <div class="flex gap-3">
-            <button @click="showJobModal = true; setTimeout(() => initTinyMCE(), 100)" 
-                    class="px-4 py-2 bg-white/5 hover:bg-indigo-600/20 border border-white/10 hover:border-indigo-500 text-indigo-400 rounded-lg text-sm font-bold transition-all">
+            <a href="{{ url_for('admin_hiring.schedule_interview') }}"
+                class="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-green-500/20 transition-all">
+                <i class="fas fa-video mr-2"></i> Schedule Interview
+            </a>
+            <a href="{{ url_for('admin_hiring.view_interviews') }}"
+                class="px-4 py-2 bg-white/5 hover:bg-purple-600/20 border border-white/10 hover:border-purple-500 text-purple-400 rounded-lg text-sm font-bold transition-all">
+                <i class="fas fa-calendar-alt mr-2"></i> View Interviews
+            </a>
+            <button @click="showJobModal = true; setTimeout(() => initTinyMCE(), 100)"
+                class="px-4 py-2 bg-white/5 hover:bg-indigo-600/20 border border-white/10 hover:border-indigo-500 text-indigo-400 rounded-lg text-sm font-bold transition-all">
                 <i class="fas fa-briefcase mr-2"></i> Post Job
             </button>
-            <a href="{{ url_for('admin_core.admin_analytics') }}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all">
+            <a href="{{ url_for('admin_core.admin_analytics') }}"
+                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all">
                 <i class="fas fa-chart-line mr-2"></i> Analytics
             </a>
         </div>
@@ -27,70 +36,93 @@
 
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="glass-panel p-5 rounded-xl border-l-4 border-indigo-500 relative overflow-hidden group">
-            <div class="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity"><i class="fas fa-file-alt text-5xl text-indigo-400"></i></div>
+            <div class="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity"><i
+                    class="fas fa-file-alt text-5xl text-indigo-400"></i></div>
             <p class="text-xs font-bold text-gray-400 uppercase">New Applications</p>
             <h3 class="text-3xl font-bold text-white mt-1">{{ pending_apps_count }}</h3>
-            <button @click="currentTab = 'applications'" class="text-xs text-indigo-400 mt-2 hover:underline">Review CVs &rarr;</button>
+            <button @click="currentTab = 'applications'" class="text-xs text-indigo-400 mt-2 hover:underline">Review CVs
+                &rarr;</button>
         </div>
 
         <div class="glass-panel p-5 rounded-xl border-l-4 border-cyan-500 relative overflow-hidden group">
-            <div class="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity"><i class="fas fa-video text-5xl text-cyan-400"></i></div>
+            <div class="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity"><i
+                    class="fas fa-video text-5xl text-cyan-400"></i></div>
             <p class="text-xs font-bold text-gray-400 uppercase">Interviews Pending</p>
             <h3 class="text-3xl font-bold text-white mt-1">{{ scheduled_candidates|length }}</h3>
-            <button @click="currentTab = 'interviews'" class="text-xs text-cyan-400 mt-2 hover:underline">Assign Mods &rarr;</button>
+            <button @click="currentTab = 'interviews'" class="text-xs text-cyan-400 mt-2 hover:underline">Assign Mods
+                &rarr;</button>
         </div>
 
         <div class="glass-panel p-5 rounded-xl border-l-4 border-purple-500 relative overflow-hidden group">
-            <div class="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity"><i class="fas fa-calendar-check text-5xl text-purple-400"></i></div>
+            <div class="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity"><i
+                    class="fas fa-calendar-check text-5xl text-purple-400"></i></div>
             <p class="text-xs font-bold text-gray-400 uppercase">Scheduled</p>
             <h3 class="text-3xl font-bold text-white mt-1">{{ assigned_candidates|length }}</h3>
             <span class="text-xs text-gray-500 mt-2 block">Upcoming Tests</span>
         </div>
 
         <div class="glass-panel p-5 rounded-xl border-l-4 border-pink-500 relative overflow-hidden group">
-            <div class="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity"><i class="fas fa-user-plus text-5xl text-pink-400"></i></div>
+            <div class="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity"><i
+                    class="fas fa-user-plus text-5xl text-pink-400"></i></div>
             <p class="text-xs font-bold text-gray-400 uppercase">User Approvals</p>
             <h3 class="text-3xl font-bold text-white mt-1">{{ pending_hiring_users|length }}</h3>
-            <button @click="currentTab = 'users'" class="text-xs text-pink-400 mt-2 hover:underline">Verify &rarr;</button>
+            <button @click="currentTab = 'users'" class="text-xs text-pink-400 mt-2 hover:underline">Verify
+                &rarr;</button>
         </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         <div class="lg:col-span-2 space-y-6">
             <div class="flex space-x-1 bg-white/5 p-1 rounded-xl border border-white/10 overflow-x-auto">
-                <button @click="currentTab = 'interviews'" :class="currentTab === 'interviews' ? 'bg-cyan-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'" class="px-4 py-2 rounded-lg text-sm font-medium transition-all"><i class="fas fa-video mr-2"></i> Interviews</button>
-                <button @click="currentTab = 'applications'" :class="currentTab === 'applications' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'" class="px-4 py-2 rounded-lg text-sm font-medium transition-all"><i class="fas fa-file-contract mr-2"></i> Applications</button>
-                <button @click="currentTab = 'users'" :class="currentTab === 'users' ? 'bg-pink-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'" class="px-4 py-2 rounded-lg text-sm font-medium transition-all"><i class="fas fa-id-card mr-2"></i> Approvals</button>
+                <button @click="currentTab = 'interviews'"
+                    :class="currentTab === 'interviews' ? 'bg-cyan-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'"
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all"><i class="fas fa-video mr-2"></i>
+                    Interviews</button>
+                <button @click="currentTab = 'applications'"
+                    :class="currentTab === 'applications' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'"
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all"><i
+                        class="fas fa-file-contract mr-2"></i> Applications</button>
+                <button @click="currentTab = 'users'"
+                    :class="currentTab === 'users' ? 'bg-pink-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'"
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all"><i class="fas fa-id-card mr-2"></i>
+                    Approvals</button>
             </div>
 
             <div class="glass-panel rounded-2xl border border-white/10 min-h-[400px]">
-                
+
                 <div x-show="currentTab === 'interviews'" class="p-6">
                     {% if scheduled_candidates %}
                     <div class="mb-8">
-                        <h3 class="text-xs font-bold text-orange-400 uppercase tracking-wide mb-3 flex items-center gap-2">
+                        <h3
+                            class="text-xs font-bold text-orange-400 uppercase tracking-wide mb-3 flex items-center gap-2">
                             <i class="fas fa-exclamation-circle"></i> Needs Moderator Assignment
                         </h3>
                         <div class="space-y-3">
                             {% for candidate in scheduled_candidates %}
-                            <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 gap-4">
+                            <div
+                                class="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 gap-4">
                                 <div>
                                     <div class="flex items-center gap-2">
                                         <img src="{{ candidate.avatar_url }}" class="w-6 h-6 rounded-full">
                                         <span class="text-white font-bold">{{ candidate.username }}</span>
                                     </div>
-                                    <p class="text-xs text-gray-400 mt-1 pl-8">{{ candidate.assigned_problem.title }}</p>
-                                    <p class="text-xs text-orange-300 mt-1 pl-8"><i class="far fa-clock"></i> {{ candidate.test_start_time.strftime('%Y-%m-%d %H:%M') }}</p>
+                                    <p class="text-xs text-gray-400 mt-1 pl-8">{{ candidate.assigned_problem.title }}
+                                    </p>
+                                    <p class="text-xs text-orange-300 mt-1 pl-8"><i class="far fa-clock"></i> {{
+                                        candidate.test_start_time.strftime('%Y-%m-%d %H:%M') }}</p>
                                 </div>
-                                <form action="{{ url_for('admin_hiring.assign_moderator') }}" method="POST" class="flex items-center gap-2">
+                                <form action="{{ url_for('admin_hiring.assign_moderator') }}" method="POST"
+                                    class="flex items-center gap-2">
                                     <input type="hidden" name="candidate_id" value="{{ candidate.id }}">
-                                    <select name="moderator_id" class="bg-black/40 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500">
+                                    <select name="moderator_id"
+                                        class="bg-black/40 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500">
                                         {% for mod in all_moderators %}
                                         <option value="{{ mod.id }}">{{ mod.username }}</option>
                                         {% endfor %}
                                     </select>
-                                    <button type="submit" class="px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-bold transition-colors">Assign</button>
+                                    <button type="submit"
+                                        class="px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-bold transition-colors">Assign</button>
                                 </form>
                             </div>
                             {% endfor %}
@@ -113,12 +145,15 @@
                                 {% for candidate in assigned_candidates %}
                                 <tr class="hover:bg-white/5">
                                     <td class="px-4 py-3 text-white">{{ candidate.username }}</td>
-                                    <td class="px-4 py-3 text-gray-400">{{ moderators_map[candidate.moderator_id].username }}</td>
+                                    <td class="px-4 py-3 text-gray-400">{{
+                                        moderators_map[candidate.moderator_id].username }}</td>
                                     <td class="px-4 py-3">{{ candidate.test_start_time.strftime('%d %b %H:%M') }}</td>
                                     <td class="px-4 py-3"><span class="text-yellow-400 text-xs">Scheduled</span></td>
                                 </tr>
                                 {% else %}
-                                <tr><td colspan="4" class="text-center py-8">No upcoming interviews.</td></tr>
+                                <tr>
+                                    <td colspan="4" class="text-center py-8">No upcoming interviews.</td>
+                                </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -152,14 +187,20 @@
                                     </td>
                                     <td class="px-4 py-3 text-right flex justify-end gap-3 items-center">
                                         {% if app.resume_url %}
-                                        <a href="{{ app.resume_url }}" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors" title="View Resume">
+                                        <a href="{{ app.resume_url }}" target="_blank"
+                                            class="text-blue-400 hover:text-blue-300 transition-colors"
+                                            title="View Resume">
                                             <i class="fas fa-file-pdf"></i>
                                         </a>
                                         {% endif %}
-                                        
+
                                         {% if app.status == 'Pending' %}
-                                        <a href="{{ url_for('admin_hiring.accept_application', app_id=app.id) }}" class="text-green-400 hover:text-green-300 transition-colors" title="Accept"><i class="fas fa-check"></i></a>
-                                        <a href="{{ url_for('admin_hiring.reject_application', app_id=app.id) }}" class="text-red-400 hover:text-red-300 transition-colors" title="Reject"><i class="fas fa-times"></i></a>
+                                        <a href="{{ url_for('admin_hiring.accept_application', app_id=app.id) }}"
+                                            class="text-green-400 hover:text-green-300 transition-colors"
+                                            title="Accept"><i class="fas fa-check"></i></a>
+                                        <a href="{{ url_for('admin_hiring.reject_application', app_id=app.id) }}"
+                                            class="text-red-400 hover:text-red-300 transition-colors" title="Reject"><i
+                                                class="fas fa-times"></i></a>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -175,15 +216,21 @@
                         {% for user in pending_hiring_users %}
                         <div class="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5">
                             <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold">{{ user.username[:1] }}</div>
+                                <div
+                                    class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold">
+                                    {{ user.username[:1] }}</div>
                                 <div>
                                     <p class="text-white text-sm font-bold">{{ user.username }}</p>
                                     <p class="text-xs text-gray-400">{{ user.role|title }} • {{ user.email }}</p>
                                 </div>
                             </div>
                             <div class="flex gap-2">
-                                <a href="{{ url_for('admin_users.approve_user', user_id=user.id) }}" class="p-1.5 bg-green-500/20 text-green-400 rounded hover:bg-green-500 hover:text-white transition-colors"><i class="fas fa-check"></i></a>
-                                <a href="{{ url_for('admin_users.reject_user', user_id=user.id) }}" class="p-1.5 bg-red-500/20 text-red-400 rounded hover:bg-red-500 hover:text-white transition-colors"><i class="fas fa-times"></i></a>
+                                <a href="{{ url_for('admin_users.approve_user', user_id=user.id) }}"
+                                    class="p-1.5 bg-green-500/20 text-green-400 rounded hover:bg-green-500 hover:text-white transition-colors"><i
+                                        class="fas fa-check"></i></a>
+                                <a href="{{ url_for('admin_users.reject_user', user_id=user.id) }}"
+                                    class="p-1.5 bg-red-500/20 text-red-400 rounded hover:bg-red-500 hover:text-white transition-colors"><i
+                                        class="fas fa-times"></i></a>
                             </div>
                         </div>
                         {% else %}
@@ -207,9 +254,12 @@
                             <span class="text-indigo-400 font-bold">{{ snippet.snippet_sender.username }}</span>
                             <span class="text-gray-500">{{ snippet.language }}</span>
                         </div>
-                        <div class="bg-black/30 p-2 rounded text-gray-400 font-mono text-xs overflow-hidden h-16 relative">
+                        <div
+                            class="bg-black/30 p-2 rounded text-gray-400 font-mono text-xs overflow-hidden h-16 relative">
                             {{ snippet.code }}
-                            <div class="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-black/50 to-transparent"></div>
+                            <div
+                                class="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-black/50 to-transparent">
+                            </div>
                         </div>
                     </div>
                     {% else %}
@@ -221,15 +271,24 @@
             <div class="glass-panel p-5 rounded-2xl border border-white/10">
                 <h3 class="font-bold text-white mb-4">Directories</h3>
                 <div class="space-y-2">
-                    <a href="{{ url_for('admin_users.manage_users', role='candidate') }}" class="flex items-center justify-between p-3 rounded bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group">
+                    <a href="{{ url_for('admin_hiring.view_interviews') }}"
+                        class="flex items-center justify-between p-3 rounded bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 hover:border-green-500/40 transition-colors cursor-pointer group">
+                        <span class="text-green-400 text-sm font-semibold group-hover:text-green-300"><i
+                                class="fas fa-video mr-2"></i> Google Meet Interviews</span>
+                        <i class="fas fa-chevron-right text-xs text-green-600 group-hover:text-green-400"></i>
+                    </a>
+                    <a href="{{ url_for('admin_users.manage_users', role='candidate') }}"
+                        class="flex items-center justify-between p-3 rounded bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group">
                         <span class="text-gray-300 text-sm group-hover:text-white">Candidates</span>
                         <i class="fas fa-chevron-right text-xs text-gray-600 group-hover:text-indigo-400"></i>
                     </a>
-                    <a href="{{ url_for('admin_users.manage_users', role='developer') }}" class="flex items-center justify-between p-3 rounded bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group">
+                    <a href="{{ url_for('admin_users.manage_users', role='developer') }}"
+                        class="flex items-center justify-between p-3 rounded bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group">
                         <span class="text-gray-300 text-sm group-hover:text-white">Developers</span>
                         <i class="fas fa-chevron-right text-xs text-gray-600 group-hover:text-emerald-400"></i>
                     </a>
-                    <a href="{{ url_for('admin_users.manage_users', role='moderator') }}" class="flex items-center justify-between p-3 rounded bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group">
+                    <a href="{{ url_for('admin_users.manage_users', role='moderator') }}"
+                        class="flex items-center justify-between p-3 rounded bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group">
                         <span class="text-gray-300 text-sm group-hover:text-white">Moderators</span>
                         <i class="fas fa-chevron-right text-xs text-gray-600 group-hover:text-red-400"></i>
                     </a>
@@ -238,25 +297,30 @@
         </div>
     </div>
 
-    <div x-show="showJobModal" 
-         class="fixed inset-0 z-50 overflow-y-auto" 
-         role="dialog" aria-modal="true" 
-         x-cloak>
+    <div x-show="showJobModal" class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" x-cloak>
         <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" @click="showJobModal = false"></div>
-        
+
         <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-            <div class="relative transform overflow-hidden rounded-2xl bg-gray-900 border border-white/10 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-2xl p-6">
+            <div
+                class="relative transform overflow-hidden rounded-2xl bg-gray-900 border border-white/10 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-2xl p-6">
                 <h3 class="text-xl font-bold mb-4 text-white">Post New Job</h3>
-                
-                <form action="{{ url_for('admin_hiring.post_job') }}" method="POST" class="space-y-4" onsubmit="tinymce.triggerSave();">
-                    
-                    <input type="text" name="job_title" placeholder="Job Title" class="w-full bg-white/5 border border-white/10 rounded px-4 py-2 text-white placeholder-gray-500" required>
-                    
-                    <textarea id="jobDescriptionEditor" name="job_description" placeholder="Description" rows="8" class="w-full bg-white/5 border border-white/10 rounded px-4 py-2 text-white"></textarea>
-                    
+
+                <form action="{{ url_for('admin_hiring.post_job') }}" method="POST" class="space-y-4"
+                    onsubmit="tinymce.triggerSave();">
+
+                    <input type="text" name="job_title" placeholder="Job Title"
+                        class="w-full bg-white/5 border border-white/10 rounded px-4 py-2 text-white placeholder-gray-500"
+                        required>
+
+                    <textarea id="jobDescriptionEditor" name="job_description" placeholder="Description" rows="8"
+                        class="w-full bg-white/5 border border-white/10 rounded px-4 py-2 text-white"></textarea>
+
                     <div class="flex justify-end gap-2 mt-4">
-                        <button type="button" @click="showJobModal = false" class="px-4 py-2 text-gray-400 hover:text-white">Cancel</button>
-                        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-white font-bold transition-colors">Post Job</button>
+                        <button type="button" @click="showJobModal = false"
+                            class="px-4 py-2 text-gray-400 hover:text-white">Cancel</button>
+                        <button type="submit"
+                            class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-white font-bold transition-colors">Post
+                            Job</button>
                     </div>
                 </form>
             </div>
@@ -279,8 +343,8 @@
             statusbar: false,
             plugins: 'lists link code wordcount',
             toolbar: 'undo redo | bold italic underline | bullist numlist | alignleft aligncenter alignright | link | code',
-            setup: function(editor) {
-                editor.on('change', function() {
+            setup: function (editor) {
+                editor.on('change', function () {
                     editor.save();
                 });
             }

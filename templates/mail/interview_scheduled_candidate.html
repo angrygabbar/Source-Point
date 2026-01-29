@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .content {
+            background: #f9fafb;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+        }
+
+        .info-box {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #10b981;
+            border-radius: 5px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #10b981;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+        .moderator-list {
+            background: #d1fae5;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+
+        .detail-row {
+            margin: 10px 0;
+        }
+
+        .label {
+            font-weight: bold;
+            color: #4b5563;
+        }
+
+        .tips {
+            background: #dbeafe;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎉 Interview Scheduled</h1>
+            <p>Your interview has been confirmed</p>
+        </div>
+
+        <div class="content">
+            <p>Hello <strong>{{ candidate.username }}</strong>,</p>
+
+            <p>Great news! Your interview has been scheduled. We're looking forward to speaking with you!</p>
+
+            <div class="info-box">
+                <h2 style="margin-top: 0; color: #10b981;">📋 Interview Details</h2>
+
+                <div class="detail-row">
+                    <span class="label">Title:</span> {{ interview.title }}
+                </div>
+
+                {% if interview.description %}
+                <div class="detail-row">
+                    <span class="label">Description:</span> {{ interview.description }}
+                </div>
+                {% endif %}
+
+                <div class="detail-row">
+                    <span class="label">📅 Date & Time:</span> {{ scheduled_time_ist.strftime('%A, %B %d, %Y at %I:%M %p
+                    IST') }}
+                </div>
+
+                <div class="detail-row">
+                    <span class="label">⏱️ Duration:</span> {{ interview.duration_minutes }} minutes
+                </div>
+            </div>
+
+            <div class="moderator-list">
+                <h3 style="margin-top: 0;">👥 Your Interviewers</h3>
+                <ul>
+                    {% for mod in moderators %}
+                    <li><strong>{{ mod.username }}</strong> - {{ mod.email }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{ meet_link }}" class="button">🎥 Join Video Meeting</a>
+            </div>
+
+            <div class="tips">
+                <h3 style="margin-top: 0; color: #1e40af;">💡 Preparation Tips</h3>
+                <ul style="margin: 10px 0;">
+                    <li><strong>Join early:</strong> Please join 5 minutes before the scheduled time</li>
+                    <li><strong>Test your setup:</strong> Ensure your camera and microphone work properly</li>
+                    <li><strong>Quiet environment:</strong> Find a quiet place with good lighting</li>
+                    <li><strong>Stable internet:</strong> Use a reliable internet connection</li>
+                    <li><strong>Be prepared:</strong> Review the job description and have questions ready</li>
+                </ul>
+            </div>
+
+            <p><strong>Meeting Link:</strong><br>
+                <a href="{{ meet_link }}" style="color: #10b981; word-break: break-all;">{{ meet_link }}</a>
+            </p>
+
+            <div style="background: #fef3c7; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <strong>📌 Note:</strong> Click the meeting link above to join the interview at the scheduled time. No
+                account or login required!
+            </div>
+
+            <p>If you need to reschedule or have any questions, please contact us immediately.</p>
+
+            <p>Best of luck!<br>
+                <strong>The Source Point Team</strong>
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated email from Source Point Platform</p>
+            <p>© {{ now.year }} Source Point. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+
+</html>

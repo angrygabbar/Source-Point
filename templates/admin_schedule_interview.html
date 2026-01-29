@@ -1,0 +1,165 @@
+{% extends "layout.html" %}
+
+{% block title %}Schedule Interview{% endblock %}
+
+{% block content %}
+<div class="space-y-6 pb-10 max-w-4xl mx-auto">
+    <!-- Header -->
+    <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-indigo-500/30 pb-6">
+        <div>
+            <div class="flex items-center gap-3 mb-2">
+                <div class="p-2 bg-green-500/20 rounded-lg text-green-400">
+                    <i class="fas fa-video text-2xl"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-white tracking-tight">Schedule Interview</h1>
+            </div>
+            <p class="text-gray-400">Create a video interview with automatic email invitations</p>
+        </div>
+        <a href="{{ url_for('admin_hiring.view_interviews') }}"
+            class="px-4 py-2 bg-white/5 hover:bg-purple-600/20 border border-white/10 hover:border-purple-500 text-purple-400 rounded-lg text-sm font-bold transition-all">
+            <i class="fas fa-calendar-alt mr-2"></i> View All Interviews
+        </a>
+    </div>
+
+    <!-- Scheduling Form -->
+    <div class="glass-panel rounded-2xl border border-white/10 p-8">
+        <form action="{{ url_for('admin_hiring.create_interview') }}" method="POST" id="scheduleForm">
+            <!-- Title -->
+            <div class="mb-6">
+                <label for="title" class="block text-sm font-semibold text-gray-300 mb-2">
+                    Interview Title <span class="text-red-400">*</span>
+                </label>
+                <input type="text" id="title" name="title" required
+                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    placeholder="e.g., Technical Interview - Python Developer">
+            </div>
+
+            <!-- Description -->
+            <div class="mb-6">
+                <label for="description" class="block text-sm font-semibold text-gray-300 mb-2">
+                    Description <span class="text-gray-500">(Optional)</span>
+                </label>
+                <textarea id="description" name="description" rows="3"
+                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    placeholder="Round 2 technical assessment, focus on algorithms and system design..."></textarea>
+            </div>
+
+            <!-- Candidate Selection -->
+            <div class="mb-6">
+                <label for="candidate_id" class="block text-sm font-semibold text-gray-300 mb-2">
+                    Candidate <span class="text-red-400">*</span>
+                </label>
+                <select id="candidate_id" name="candidate_id" required
+                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
+                    <option value="" class="bg-gray-900">Select a candidate...</option>
+                    {% for candidate in candidates %}
+                    <option value="{{ candidate.id }}" class="bg-gray-900">{{ candidate.username }} ({{ candidate.email
+                        }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Moderators Selection -->
+            <div class="mb-6">
+                <label for="moderator_ids" class="block text-sm font-semibold text-gray-300 mb-2">
+                    Moderators <span class="text-red-400">*</span>
+                    <span class="text-xs text-gray-500 ml-2">(Hold Ctrl/Cmd to select multiple)</span>
+                </label>
+                <select id="moderator_ids" name="moderator_ids" multiple required size="5"
+                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
+                    {% for moderator in moderators %}
+                    <option value="{{ moderator.id }}" class="bg-gray-900 py-1">{{ moderator.username }} ({{
+                        moderator.email }})</option>
+                    {% endfor %}
+                </select>
+                <p class="text-xs text-gray-500 mt-2">
+                    <i class="fas fa-lightbulb text-yellow-400 mr-1"></i>
+                    You can select multiple moderators for panel interviews
+                </p>
+            </div>
+
+            <!-- Date and Time -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label for="scheduled_date" class="block text-sm font-semibold text-gray-300 mb-2">
+                        Date <span class="text-red-400">*</span>
+                    </label>
+                    <input type="date" id="scheduled_date" name="scheduled_date" required
+                        min="{{ now.strftime('%Y-%m-%d') }}"
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
+                </div>
+                <div>
+                    <label for="scheduled_time" class="block text-sm font-semibold text-gray-300 mb-2">
+                        Time (IST) <span class="text-red-400">*</span>
+                    </label>
+                    <input type="time" id="scheduled_time" name="scheduled_time" required
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
+                </div>
+            </div>
+
+            <!-- Duration -->
+            <div class="mb-6">
+                <label for="duration_minutes" class="block text-sm font-semibold text-gray-300 mb-2">
+                    Duration
+                </label>
+                <select id="duration_minutes" name="duration_minutes"
+                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
+                    <option value="30" class="bg-gray-900">30 minutes</option>
+                    <option value="45" class="bg-gray-900">45 minutes</option>
+                    <option value="60" selected class="bg-gray-900">1 hour</option>
+                    <option value="90" class="bg-gray-900">1.5 hours</option>
+                    <option value="120" class="bg-gray-900">2 hours</option>
+                </select>
+            </div>
+
+            <!-- Info Box -->
+            <div class="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4 mb-6">
+                <div class="flex items-start gap-3">
+                    <div class="p-2 bg-cyan-500/20 rounded-lg">
+                        <i class="fas fa-info-circle text-cyan-400"></i>
+                    </div>
+                    <div class="text-sm text-gray-300">
+                        <p class="font-semibold text-cyan-400 mb-2">What happens next:</p>
+                        <ul class="space-y-1 text-gray-400">
+                            <li><i class="fas fa-check text-green-400 mr-2"></i>Video meeting link will be generated
+                                automatically</li>
+                            <li><i class="fas fa-check text-green-400 mr-2"></i>All participants will receive email
+                                notifications</li>
+                            <li><i class="fas fa-check text-green-400 mr-2"></i>Interview will be tracked in the system
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex gap-4">
+                <button type="submit"
+                    class="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold py-3 px-6 rounded-lg transition-all shadow-lg shadow-green-500/20">
+                    <i class="fas fa-video mr-2"></i> Schedule Interview
+                </button>
+                <a href="{{ url_for('admin_hiring.admin_hiring_dashboard') }}"
+                    class="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white font-semibold rounded-lg transition-all">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Set minimum date to today
+    document.getElementById('scheduled_date').min = new Date().toISOString().split('T')[0];
+
+    // Form validation
+    document.getElementById('scheduleForm').addEventListener('submit', function (e) {
+        const moderators = document.getElementById('moderator_ids').selectedOptions;
+        if (moderators.length === 0) {
+            e.preventDefault();
+            alert('Please select at least one moderator');
+            return false;
+        }
+    });
+</script>
+{% endblock %}

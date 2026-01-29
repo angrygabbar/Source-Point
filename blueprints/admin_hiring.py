@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_required, current_user
 from extensions import db
 from models.auth import User
@@ -208,3 +208,316 @@ def delete_coding_event(user_id):
     log_user_action("Clear Event", f"Cleared event history for {candidate.username}")
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest': return jsonify({'success': True, 'message': 'Event cleared.', 'remove_row_id': f'evt-{user_id}'})
     return redirect(url_for('admin_hiring.manage_records'))
+
+
+# ==================== INTERVIEW SCHEDULING ROUTES ====================
+
+@admin_hiring_bp.route('/interviews/schedule', methods=['GET'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def schedule_interview():
+    """Display the interview scheduling form"""
+    from models.interview import Interview
+    
+    # Get all moderators and candidates
+    moderators = User.query.filter_by(role=UserRole.MODERATOR.value, is_approved=True).all()
+    candidates = User.query.filter_by(role=UserRole.CANDIDATE.value, is_approved=True).all()
+    
+    return render_template('admin_schedule_interview.html', 
+                         moderators=moderators, 
+                         candidates=candidates,
+                         now=datetime.utcnow())
+
+
+@admin_hiring_bp.route('/interviews/create', methods=['POST'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def create_interview():
+    """Create a new interview with Google Meet link"""
+    from models.interview import Interview, InterviewParticipant
+    from services.google_calendar_service import GoogleCalendarService
+    
+    try:
+        # Extract form data
+        title = request.form.get('title')
+        description = request.form.get('description', '')
+        candidate_id = request.form.get('candidate_id')
+        moderator_ids = request.form.getlist('moderator_ids')  # Multiple moderators
+        scheduled_date = request.form.get('scheduled_date')
+        scheduled_time = request.form.get('scheduled_time')
+        duration_minutes = int(request.form.get('duration_minutes', 60))
+        
+        # Validation
+        if not all([title, candidate_id, scheduled_date, scheduled_time]):
+            flash('Please fill in all required fields.', 'danger')
+            return redirect(url_for('admin_hiring.schedule_interview'))
+        
+        if not moderator_ids:
+            flash('Please select at least one moderator.', 'danger')
+            return redirect(url_for('admin_hiring.schedule_interview'))
+        
+        # Parse datetime
+        scheduled_datetime_str = f"{scheduled_date} {scheduled_time}"
+        scheduled_datetime = datetime.strptime(scheduled_datetime_str, '%Y-%m-%d %H:%M')
+        
+        # Get candidate and moderators
+        candidate = User.query.get_or_404(candidate_id)
+        moderators = User.query.filter(User.id.in_(moderator_ids)).all()
+        
+        if len(moderators) != len(moderator_ids):
+            flash('Invalid moderator selection.', 'danger')
+            return redirect(url_for('admin_hiring.schedule_interview'))
+        
+        # Prepare attendee emails
+        attendee_emails = [candidate.email] + [mod.email for mod in moderators]
+        
+        # Create Jitsi Meet link for the interview
+        from services.jitsi_meet_service import JitsiMeetService
+        jitsi_service = JitsiMeetService()
+        meeting_data = jitsi_service.create_meeting(
+            title=title,
+            scheduled_time=scheduled_datetime
+        )
+        meet_link = meeting_data['meet_link']
+        current_app.logger.info(f"Created Jitsi Meet link: {meet_link}")
+        
+        # Create interview record
+        interview = Interview(
+            title=title,
+            description=description,
+            scheduled_time=scheduled_datetime,
+            duration_minutes=duration_minutes,
+            candidate_id=candidate_id,
+            google_event_id=None,  # Not using Google Calendar
+            google_meet_link=meet_link,  # Jitsi Meet link stored here
+            status='scheduled',
+            created_by=current_user.id
+        )
+        current_app.logger.info(f"DEBUG: Creating interview record for candidate_id={candidate_id}")
+        db.session.add(interview)
+        db.session.flush()  # Get interview ID
+        current_app.logger.info(f"DEBUG: Interview created with ID={interview.id}")
+        
+        # Add moderators as participants
+        for moderator in moderators:
+            participant = InterviewParticipant(
+                interview_id=interview.id,
+                user_id=moderator.id,
+                role='moderator',
+                notified_at=datetime.utcnow()
+            )
+            db.session.add(participant)
+        
+        current_app.logger.info(f"DEBUG: Committing interview and participants to database")
+        db.session.commit()
+        current_app.logger.info(f"DEBUG: Database commit successful")
+        
+        # Send email notifications
+        ist_offset = timedelta(hours=5, minutes=30)
+        scheduled_time_ist = scheduled_datetime + ist_offset
+        
+        # Email to moderators
+        for moderator in moderators:
+            other_moderators = [m for m in moderators if m.id != moderator.id]
+            try:
+                send_email(
+                    to=moderator.email,
+                    subject=f"Interview Scheduled: {title}",
+                    template="mail/interview_scheduled_moderator.html",
+                    moderator=moderator,
+                    candidate=candidate,
+                    interview=interview,
+                    other_moderators=other_moderators,
+                    scheduled_time_ist=scheduled_time_ist,
+                    meet_link=meet_link,
+                    now=datetime.utcnow()
+                )
+            except Exception as email_error:
+                current_app.logger.warning(f"Failed to send email to {moderator.email}: {email_error}")
+        
+        # Email to candidate
+        try:
+            send_email(
+                to=candidate.email,
+                subject=f"Interview Scheduled: {title}",
+                template="mail/interview_scheduled_candidate.html",
+                candidate=candidate,
+                interview=interview,
+                moderators=moderators,
+                scheduled_time_ist=scheduled_time_ist,
+                meet_link=meet_link,
+                now=datetime.utcnow()
+            )
+        except Exception as email_error:
+            current_app.logger.warning(f"Failed to send email to {candidate.email}: {email_error}")
+        
+        log_user_action("Schedule Interview", f"Scheduled interview '{title}' with {candidate.username}")
+        
+        # Show success message
+        flash(f'Interview scheduled successfully! Meeting link: {meet_link}', 'success')
+        
+        return redirect(url_for('admin_hiring.view_interviews'))
+        
+    except Exception as e:
+        db.session.rollback()
+        import traceback
+        current_app.logger.error(f"Error scheduling interview: {e}")
+        current_app.logger.error(f"Full traceback: {traceback.format_exc()}")
+        flash(f'Error scheduling interview: {str(e)}', 'danger')
+        return redirect(url_for('admin_hiring.schedule_interview'))
+
+
+@admin_hiring_bp.route('/interviews')
+@login_required
+@role_required(UserRole.ADMIN.value)
+def view_interviews():
+    """View all scheduled interviews"""
+    from models.interview import Interview
+    
+    # Get filter parameter
+    status_filter = request.args.get('status', 'all')
+    
+    query = Interview.query
+    
+    if status_filter == 'upcoming':
+        query = query.filter(
+            Interview.status == 'scheduled',
+            Interview.scheduled_time >= datetime.utcnow()
+        )
+    elif status_filter == 'past':
+        query = query.filter(
+            Interview.scheduled_time < datetime.utcnow()
+        )
+    elif status_filter == 'cancelled':
+        query = query.filter(Interview.status == 'cancelled')
+    
+    interviews = query.order_by(Interview.scheduled_time.desc()).all()
+    
+    return render_template('admin_interviews_list.html', 
+                         interviews=interviews,
+                         status_filter=status_filter,
+                         now=datetime.utcnow(),
+                         timedelta=timedelta)
+
+
+@admin_hiring_bp.route('/interviews/<int:interview_id>/cancel', methods=['POST'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def cancel_interview(interview_id):
+    """Cancel an interview and notify participants"""
+    from models.interview import Interview
+    from services.google_calendar_service import GoogleCalendarService
+    
+    try:
+        interview = Interview.query.get_or_404(interview_id)
+        
+        if interview.status == 'cancelled':
+            flash('Interview is already cancelled.', 'warning')
+            return redirect(url_for('admin_hiring.view_interviews'))
+        
+        # Cancel Google Calendar event
+        if interview.google_event_id:
+            try:
+                calendar_service = GoogleCalendarService()
+                calendar_service.cancel_interview_event(interview.google_event_id)
+            except Exception as e:
+                flash(f'Warning: Could not cancel Google Calendar event: {str(e)}', 'warning')
+        
+        # Update status
+        interview.status = 'cancelled'
+        interview.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        # Send cancellation emails
+        ist_offset = timedelta(hours=5, minutes=30)
+        scheduled_time_ist = interview.scheduled_time + ist_offset
+        
+        # Email to moderators
+        for participant in interview.participants:
+            send_email(
+                to=participant.user.email,
+                subject=f"Interview Cancelled: {interview.title}",
+                template="mail/interview_cancelled.html",
+                user=participant.user,
+                interview=interview,
+                candidate=interview.candidate,
+                scheduled_time_ist=scheduled_time_ist,
+                now=datetime.utcnow()
+            )
+        
+        # Email to candidate
+        send_email(
+            to=interview.candidate.email,
+            subject=f"Interview Cancelled: {interview.title}",
+            template="mail/interview_cancelled.html",
+            user=interview.candidate,
+            interview=interview,
+            candidate=interview.candidate,
+            scheduled_time_ist=scheduled_time_ist,
+            now=datetime.utcnow()
+        )
+        
+        log_user_action("Cancel Interview", f"Cancelled interview '{interview.title}'")
+        flash('Interview cancelled and participants notified.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error cancelling interview: {str(e)}', 'danger')
+    
+    return redirect(url_for('admin_hiring.view_interviews'))
+
+
+@admin_hiring_bp.route('/interviews/<int:interview_id>/resend-invites', methods=['POST'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def resend_interview_invites(interview_id):
+    """Resend interview invitations to all participants"""
+    from models.interview import Interview
+    
+    try:
+        interview = Interview.query.get_or_404(interview_id)
+        
+        if interview.status == 'cancelled':
+            flash('Cannot resend invites for cancelled interview.', 'warning')
+            return redirect(url_for('admin_hiring.view_interviews'))
+        
+        ist_offset = timedelta(hours=5, minutes=30)
+        scheduled_time_ist = interview.scheduled_time + ist_offset
+        
+        # Resend to moderators
+        moderators = [p.user for p in interview.participants]
+        for moderator in moderators:
+            other_moderators = [m for m in moderators if m.id != moderator.id]
+            send_email(
+                to=moderator.email,
+                subject=f"Reminder: Interview Scheduled - {interview.title}",
+                template="mail/interview_scheduled_moderator.html",
+                moderator=moderator,
+                candidate=interview.candidate,
+                interview=interview,
+                other_moderators=other_moderators,
+                scheduled_time_ist=scheduled_time_ist,
+                meet_link=interview.google_meet_link,
+                now=datetime.utcnow()
+            )
+        
+        # Resend to candidate
+        send_email(
+            to=interview.candidate.email,
+            subject=f"Reminder: Interview Scheduled - {interview.title}",
+            template="mail/interview_scheduled_candidate.html",
+            candidate=interview.candidate,
+            interview=interview,
+            moderators=moderators,
+            scheduled_time_ist=scheduled_time_ist,
+            meet_link=interview.google_meet_link,
+            now=datetime.utcnow()
+        )
+        
+        log_user_action("Resend Interview Invites", f"Resent invites for interview '{interview.title}'")
+        flash('Interview invitations resent to all participants.', 'success')
+        
+    except Exception as e:
+        flash(f'Error resending invites: {str(e)}', 'danger')
+    
+    return redirect(url_for('admin_hiring.view_interviews'))
