@@ -87,6 +87,11 @@
                     :class="currentTab === 'users' ? 'bg-pink-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'"
                     class="px-4 py-2 rounded-lg text-sm font-medium transition-all"><i class="fas fa-id-card mr-2"></i>
                     Approvals</button>
+                <button @click="currentTab = 'feedback'"
+                    :class="currentTab === 'feedback' ? 'bg-purple-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'"
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all"><i
+                        class="fas fa-clipboard-check mr-2"></i>
+                    Feedback</button>
             </div>
 
             <div class="glass-panel rounded-2xl border border-white/10 min-h-[400px]">
@@ -236,6 +241,159 @@
                         {% else %}
                         <div class="text-center py-8 text-gray-500">No pending approvals.</div>
                         {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Feedback Tab -->
+                <div x-show="currentTab === 'feedback'" class="p-6" x-cloak
+                    x-data="{ expandedInterview: null, expandedCode: null }">
+                    <div class="mb-8">
+                        <h3 class="font-bold text-white mb-4 flex items-center gap-2">
+                            <i class="fas fa-video text-purple-400"></i> Interview Feedback
+                            <span class="text-xs text-gray-500 font-normal ml-2">Click row to expand</span>
+                        </h3>
+                        {% if interview_feedbacks %}
+                        <div class="space-y-2">
+                            {% for fb in interview_feedbacks %}
+                            <div
+                                class="bg-white/5 rounded-xl border border-white/10 overflow-hidden hover:border-purple-500/30 transition-all">
+                                <div @click="expandedInterview = expandedInterview === {{ fb.id }} ? null : {{ fb.id }}"
+                                    class="flex items-center justify-between p-4 cursor-pointer hover:bg-white/5">
+                                    <div class="flex items-center gap-4">
+                                        <div
+                                            class="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold">
+                                            {{ fb.candidate.username[0]|upper }}
+                                        </div>
+                                        <div>
+                                            <p class="text-white font-bold">{{ fb.candidate.username }}</p>
+                                            <p class="text-xs text-gray-400">{{ fb.interview.title }} • by {{
+                                                fb.moderator.username }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <span class="text-purple-400 font-bold">{{ fb.rating }}/5</span>
+                                        <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded
+                                            {% if fb.recommendation == 'hire' %}bg-green-500/20 text-green-400
+                                            {% elif fb.recommendation == 'maybe' %}bg-yellow-500/20 text-yellow-400
+                                            {% else %}bg-red-500/20 text-red-400{% endif %}">
+                                            {{ fb.recommendation|replace('_', ' ') }}
+                                        </span>
+                                        <i class="fas fa-chevron-down text-gray-500 transition-transform"
+                                            :class="expandedInterview === {{ fb.id }} ? 'rotate-180' : ''"></i>
+                                    </div>
+                                </div>
+                                <div x-show="expandedInterview === {{ fb.id }}" x-collapse
+                                    class="border-t border-white/10 bg-black/20 p-4">
+                                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+                                        <div class="text-center p-3 bg-white/5 rounded-lg">
+                                            <p class="text-xs text-gray-400 mb-1">Communication</p>
+                                            <p class="text-xl font-bold text-purple-400">{{ fb.communication_skills }}/5
+                                            </p>
+                                        </div>
+                                        <div class="text-center p-3 bg-white/5 rounded-lg">
+                                            <p class="text-xs text-gray-400 mb-1">Technical</p>
+                                            <p class="text-xl font-bold text-purple-400">{{ fb.technical_knowledge }}/5
+                                            </p>
+                                        </div>
+                                        <div class="text-center p-3 bg-white/5 rounded-lg">
+                                            <p class="text-xs text-gray-400 mb-1">Problem Solving</p>
+                                            <p class="text-xl font-bold text-purple-400">{{ fb.problem_solving }}/5</p>
+                                        </div>
+                                        <div class="text-center p-3 bg-white/5 rounded-lg">
+                                            <p class="text-xs text-gray-400 mb-1">Cultural Fit</p>
+                                            <p class="text-xl font-bold text-purple-400">{{ fb.cultural_fit }}/5</p>
+                                        </div>
+                                        <div class="text-center p-3 bg-white/5 rounded-lg">
+                                            <p class="text-xs text-gray-400 mb-1">Overall</p>
+                                            <p class="text-xl font-bold text-purple-400">{{ fb.overall_impression }}/5
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {% if fb.remarks %}
+                                    <div class="bg-white/5 rounded-lg p-3">
+                                        <p class="text-xs text-gray-400 mb-1">Remarks</p>
+                                        <p class="text-sm text-gray-300">{{ fb.remarks }}</p>
+                                    </div>
+                                    {% endif %}
+                                    <p class="text-xs text-gray-500 mt-3">Submitted: {{ fb.created_at.strftime('%B %d,
+                                        %Y at %I:%M %p') }}</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-8 text-gray-500">No interview feedback submitted yet.</div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <h3 class="font-bold text-white mb-4 flex items-center gap-2">
+                            <i class="fas fa-code text-pink-400"></i> Code Test Feedback
+                            <span class="text-xs text-gray-500 font-normal ml-2">Click row to expand</span>
+                        </h3>
+                        {% if code_feedbacks %}
+                        <div class="space-y-2">
+                            {% for fb in code_feedbacks %}
+                            <div
+                                class="bg-white/5 rounded-xl border border-white/10 overflow-hidden hover:border-pink-500/30 transition-all">
+                                <div @click="expandedCode = expandedCode === {{ fb.id }} ? null : {{ fb.id }}"
+                                    class="flex items-center justify-between p-4 cursor-pointer hover:bg-white/5">
+                                    <div class="flex items-center gap-4">
+                                        <div
+                                            class="h-10 w-10 rounded-lg bg-gradient-to-br from-pink-500 to-red-500 flex items-center justify-center text-white font-bold">
+                                            {{ fb.candidate.username[0]|upper }}
+                                        </div>
+                                        <div>
+                                            <p class="text-white font-bold">{{ fb.candidate.username }}</p>
+                                            <p class="text-xs text-gray-400">Code Test • by {{ fb.moderator.username }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <span class="text-pink-400 font-bold">{{ fb.rating }}/5</span>
+                                        <i class="fas fa-chevron-down text-gray-500 transition-transform"
+                                            :class="expandedCode === {{ fb.id }} ? 'rotate-180' : ''"></i>
+                                    </div>
+                                </div>
+                                <div x-show="expandedCode === {{ fb.id }}" x-collapse
+                                    class="border-t border-white/10 bg-black/20 p-4">
+                                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+                                        <div class="text-center p-3 bg-white/5 rounded-lg">
+                                            <p class="text-xs text-gray-400 mb-1">Correctness</p>
+                                            <p class="text-xl font-bold text-pink-400">{{ fb.code_correctness }}/5</p>
+                                        </div>
+                                        <div class="text-center p-3 bg-white/5 rounded-lg">
+                                            <p class="text-xs text-gray-400 mb-1">Efficiency</p>
+                                            <p class="text-xl font-bold text-pink-400">{{ fb.code_efficiency }}/5</p>
+                                        </div>
+                                        <div class="text-center p-3 bg-white/5 rounded-lg">
+                                            <p class="text-xs text-gray-400 mb-1">Readability</p>
+                                            <p class="text-xl font-bold text-pink-400">{{ fb.code_readability }}/5</p>
+                                        </div>
+                                        <div class="text-center p-3 bg-white/5 rounded-lg">
+                                            <p class="text-xs text-gray-400 mb-1">Problem Solving</p>
+                                            <p class="text-xl font-bold text-pink-400">{{ fb.problem_solving }}/5</p>
+                                        </div>
+                                        <div class="text-center p-3 bg-white/5 rounded-lg">
+                                            <p class="text-xs text-gray-400 mb-1">Time Mgmt</p>
+                                            <p class="text-xl font-bold text-pink-400">{{ fb.time_management }}/5</p>
+                                        </div>
+                                    </div>
+                                    {% if fb.remarks %}
+                                    <div class="bg-white/5 rounded-lg p-3">
+                                        <p class="text-xs text-gray-400 mb-1">Remarks</p>
+                                        <p class="text-sm text-gray-300">{{ fb.remarks }}</p>
+                                    </div>
+                                    {% endif %}
+                                    <p class="text-xs text-gray-500 mt-3">Submitted: {{ fb.created_at.strftime('%B %d,
+                                        %Y at %I:%M %p') }}</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-8 text-gray-500">No code test feedback submitted yet.</div>
+                        {% endif %}
                     </div>
                 </div>
 

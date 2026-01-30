@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from extensions import db
 from models.auth import User
 from models.hiring import JobApplication, JobOpening, CodeSnippet, Feedback, CodeTestSubmission, ModeratorAssignmentHistory
+from models.interview import Interview, InterviewFeedback
 from utils import role_required, log_user_action, send_email
 from datetime import datetime, timedelta
 from enums import UserRole, ApplicationStatus
@@ -27,6 +28,10 @@ def admin_hiring_dashboard():
     moderators_map = {m.id: m for m in User.query.filter(User.id.in_(mod_ids)).all()}
     all_moderators = User.query.filter_by(role=UserRole.MODERATOR.value).all()
     received_snippets = CodeSnippet.query.filter_by(recipient_id=current_user.id).order_by(CodeSnippet.timestamp.desc()).limit(5).all()
+    
+    # Get all feedback - code test and interview
+    code_feedbacks = Feedback.query.order_by(Feedback.created_at.desc()).limit(20).all()
+    interview_feedbacks = InterviewFeedback.query.order_by(InterviewFeedback.created_at.desc()).limit(20).all()
 
     return render_template('admin_hiring_dashboard.html',
                            pending_apps_count=pending_apps_count,
@@ -36,7 +41,9 @@ def admin_hiring_dashboard():
                            assigned_candidates=assigned_candidates,
                            moderators_map=moderators_map,
                            all_moderators=all_moderators,
-                           received_snippets=received_snippets)
+                           received_snippets=received_snippets,
+                           code_feedbacks=code_feedbacks,
+                           interview_feedbacks=interview_feedbacks)
 
 @admin_hiring_bp.route('/job/post', methods=['POST'])
 @login_required

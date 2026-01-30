@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interview Feedback Submitted</title>
+</head>
+
+<body
+    style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #e2e8f0;">
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0f172a;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0"
+                    style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%); padding: 40px 40px 50px 40px; text-align: center;">
+                            <table role="presentation" cellspacing="0" cellpadding="0"
+                                style="margin: 0 auto 20px auto;">
+                                <tr>
+                                    <td style="background: rgba(255,255,255,0.2); border-radius: 16px; padding: 16px;">
+                                        <img src="https://img.icons8.com/fluency/48/comments.png" alt="Feedback"
+                                            width="48" height="48" style="display: block;">
+                                    </td>
+                                </tr>
+                            </table>
+                            <h1
+                                style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">
+                                Interview Feedback Submitted 📋</h1>
+                            <p style="margin: 12px 0 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">New evaluation
+                                available for review</p>
+                        </td>
+                    </tr>
+
+                    <!-- Wave Divider -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%); height: 30px;">
+                            <div style="background: #1e293b; height: 30px; border-radius: 30px 30px 0 0;"></div>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 0 40px 40px 40px;">
+
+                            <p style="font-size: 18px; color: #f1f5f9; margin: 0 0 24px 0; line-height: 1.6;">
+                                Hello Admin,
+                            </p>
+
+                            <p style="font-size: 16px; color: #d1d5db; margin: 0 0 24px 0; line-height: 1.6;">
+                                <strong style="color: #a78bfa;">{{ moderator.username }}</strong> has submitted
+                                interview feedback for <strong style="color: #c4b5fd;">{{ candidate.username
+                                    }}</strong>.
+                            </p>
+
+                            <!-- Interview Details Card -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <h2
+                                            style="margin: 0 0 16px 0; font-size: 18px; color: #a78bfa; font-weight: 600;">
+                                            🎯 Interview Details
+                                        </h2>
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 12px;">
+                                            <tr>
+                                                <td width="140" style="font-size: 13px; color: #9ca3af;">Interview</td>
+                                                <td style="font-size: 15px; color: #f1f5f9; font-weight: 500;">{{
+                                                    interview.title }}</td>
+                                            </tr>
+                                        </table>
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 12px;">
+                                            <tr>
+                                                <td width="140" style="font-size: 13px; color: #9ca3af;">Candidate</td>
+                                                <td style="font-size: 15px; color: #f1f5f9;">{{ candidate.username }}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 12px;">
+                                            <tr>
+                                                <td width="140" style="font-size: 13px; color: #9ca3af;">Moderator</td>
+                                                <td style="font-size: 15px; color: #f1f5f9;">{{ moderator.username }}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td width="140" style="font-size: 13px; color: #9ca3af;">Date</td>
+                                                <td style="font-size: 14px; color: #d1d5db;">{{
+                                                    interview.scheduled_time.strftime('%B %d, %Y at %I:%M %p') }}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Feedback Summary Card -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(148, 163, 184, 0.1); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <h2
+                                            style="margin: 0 0 16px 0; font-size: 18px; color: #e5e7eb; font-weight: 600;">
+                                            📊 Evaluation Summary
+                                        </h2>
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 16px;">
+                                            <tr>
+                                                <td width="50%"
+                                                    style="font-size: 13px; color: #9ca3af; padding: 8px 0;">
+                                                    Communication</td>
+                                                <td style="font-size: 15px; color: #a78bfa; font-weight: 600;">{{
+                                                    feedback.communication_skills }}/5</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 13px; color: #9ca3af; padding: 8px 0;">Technical
+                                                    Knowledge</td>
+                                                <td style="font-size: 15px; color: #a78bfa; font-weight: 600;">{{
+                                                    feedback.technical_knowledge }}/5</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 13px; color: #9ca3af; padding: 8px 0;">Problem
+                                                    Solving</td>
+                                                <td style="font-size: 15px; color: #a78bfa; font-weight: 600;">{{
+                                                    feedback.problem_solving }}/5</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 13px; color: #9ca3af; padding: 8px 0;">Cultural
+                                                    Fit</td>
+                                                <td style="font-size: 15px; color: #a78bfa; font-weight: 600;">{{
+                                                    feedback.cultural_fit }}/5</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 13px; color: #9ca3af; padding: 8px 0;">Overall
+                                                    Impression</td>
+                                                <td style="font-size: 15px; color: #a78bfa; font-weight: 600;">{{
+                                                    feedback.overall_impression }}/5</td>
+                                            </tr>
+                                        </table>
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="border-top: 1px solid rgba(148, 163, 184, 0.1); padding-top: 16px;">
+                                            <tr>
+                                                <td width="50%"
+                                                    style="font-size: 14px; color: #e5e7eb; font-weight: 600;">Average
+                                                    Rating</td>
+                                                <td style="font-size: 20px; color: #a78bfa; font-weight: 700;">{{
+                                                    feedback.rating }}/5</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Recommendation Badge -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="margin-bottom: 24px;">
+                                <tr>
+                                    <td align="center">
+                                        {% if feedback.recommendation == 'hire' %}
+                                        <span
+                                            style="display: inline-block; background: rgba(16, 185, 129, 0.2); color: #10b981; padding: 12px 32px; border-radius: 30px; font-size: 16px; font-weight: 700; border: 2px solid rgba(16, 185, 129, 0.3);">
+                                            ✅ RECOMMENDATION: HIRE
+                                        </span>
+                                        {% elif feedback.recommendation == 'maybe' %}
+                                        <span
+                                            style="display: inline-block; background: rgba(245, 158, 11, 0.2); color: #fbbf24; padding: 12px 32px; border-radius: 30px; font-size: 16px; font-weight: 700; border: 2px solid rgba(245, 158, 11, 0.3);">
+                                            🤔 RECOMMENDATION: MAYBE
+                                        </span>
+                                        {% else %}
+                                        <span
+                                            style="display: inline-block; background: rgba(239, 68, 68, 0.2); color: #f87171; padding: 12px 32px; border-radius: 30px; font-size: 16px; font-weight: 700; border: 2px solid rgba(239, 68, 68, 0.3);">
+                                            ❌ RECOMMENDATION: DON'T HIRE
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+
+                            {% if feedback.remarks %}
+                            <!-- Remarks -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(148, 163, 184, 0.1); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p
+                                            style="margin: 0 0 8px 0; font-size: 13px; color: #9ca3af; text-transform: uppercase;">
+                                            Moderator Remarks</p>
+                                        <p style="margin: 0; font-size: 14px; color: #e5e7eb; line-height: 1.6;">{{
+                                            feedback.remarks }}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            <!-- Closing -->
+                            <p style="font-size: 16px; color: #e2e8f0; margin: 0;">
+                                Please review this feedback in the admin dashboard.<br>
+                                <strong style="color: #a78bfa;">The Source Point Team</strong>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background: rgba(15, 23, 42, 0.8); padding: 24px 40px; border-top: 1px solid rgba(148, 163, 184, 0.1);">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td align="center">
+                                        <p style="margin: 0; font-size: 12px; color: #6b7280;">
+                                            © 2025 Source Point. All rights reserved.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>

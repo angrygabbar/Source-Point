@@ -6,5 +6,5 @@ from .hiring import (JobOpening, JobApplication, CodeTestSubmission, CodeSnippet
 from .learning import LearningContent, ProblemStatement
 # REMOVED EMIPayment from this line:
 from .finance import Project, Transaction, BRD, EMIPlan
-from .interview import Interview, InterviewParticipant
+from .interview import Interview, InterviewParticipant, InterviewFeedback
 #from .payment import EMIPayment
