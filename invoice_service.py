@@ -46,7 +46,7 @@ class InvoiceGenerator:
         text = str(text)
         # Replacement map for common incompatible characters
         replacements = {
-            '\u200b': '',  # Zero-width space
+            '\u200b': '',  #  Zero-width space
             '\xa0': ' ',   # Non-breaking space
             '’': "'",      # Smart quotes
             '‘': "'",

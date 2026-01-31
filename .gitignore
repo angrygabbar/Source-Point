@@ -20,3 +20,4 @@ docker-compose.override.yml
 # Google Calendar API Credentials (IMPORTANT!)
 credentials.json
 token.pickleservice_account.json
+service_account.json
