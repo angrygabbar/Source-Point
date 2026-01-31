@@ -1,159 +1,262 @@
 <!DOCTYPE html>
 <html lang="en" class="h-full">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Vision For The Future{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.6"></script>
-    
+
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/gsap.min.js"></script>
-    <script src="https://cdn.tiny.cloud/1/z53vyzj5hcwj6nlffpeu227p3t1sya9zs5w66nd3qshdjniq/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <script src="https://cdn.tiny.cloud/1/z53vyzj5hcwj6nlffpeu227p3t1sya9zs5w66nd3qshdjniq/tinymce/6/tinymce.min.js"
+        referrerpolicy="origin"></script>
 
     <style>
         /* Grid Overlay retained from your original concept but optimized */
         .bg-grid-overlay {
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
             background-size: 50px 50px;
             pointer-events: none;
             z-index: -1;
             mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
             -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
         }
-        [x-cloak] { display: none !important; }
+
+        [x-cloak] {
+            display: none !important;
+        }
     </style>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-transparent text-gray-100 h-full overflow-hidden selection:bg-indigo-500 selection:text-white" hx-boost="false">
-    
+
+<body class="bg-transparent text-gray-100 h-full overflow-hidden selection:bg-indigo-500 selection:text-white"
+    hx-boost="false">
+
+    <!-- Page Loader -->
+    <div class="page-loader" id="page-loader">
+        <div class="loader-content">
+            <div class="loader-spinner"></div>
+            <p class="loader-text">Loading...</p>
+        </div>
+    </div>
+
     <div class="htmx-indicator-bar"></div>
-    
-    <div class="fixed inset-0 bg-[#00000a] z-[-3]"></div>
+
+    <div class="fixed inset-0 bg-[#00000a] z-[-5]"></div>
     <canvas id="bg-canvas" class="fixed top-0 left-0 w-full h-full z-[-2]"></canvas>
-    <div class="bg-grid-overlay"></div>
-    <div class="fixed inset-0 bg-gradient-to-b from-transparent via-[#00000a]/30 to-[#00000a] pointer-events-none z-[-1]"></div>
+    <div
+        class="fixed inset-0 bg-gradient-to-b from-transparent via-[#00000a]/30 to-[#00000a] pointer-events-none z-[-1]">
+    </div>
 
     <div x-data="{ sidebarOpen: false }" class="flex h-full">
-        <div x-show="sidebarOpen" @click="sidebarOpen = false" x-transition:enter="transition-opacity ease-linear duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-linear duration-300" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-black/80 z-40 lg:hidden backdrop-blur-sm" style="display: none;"></div>
+        <div x-show="sidebarOpen" @click="sidebarOpen = false"
+            x-transition:enter="transition-opacity ease-linear duration-300" x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-linear duration-300"
+            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+            class="fixed inset-0 bg-black/80 z-40 lg:hidden backdrop-blur-sm" style="display: none;"></div>
 
         {% if current_user.is_authenticated %}
-        <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="glass-sidebar fixed inset-y-0 left-0 z-50 w-64 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 flex flex-col shadow-2xl lg:shadow-none">
+        <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+            class="glass-sidebar fixed inset-y-0 left-0 z-50 w-64 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 flex flex-col shadow-2xl lg:shadow-none">
             <div class="relative flex items-center justify-center h-20 border-b border-white/5">
-                <a hx-get="{{ url_for('seller.seller_dashboard') if current_user.role == 'seller' else url_for('main.dashboard') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="flex items-center gap-3 cursor-pointer group">
-                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:shadow-indigo-500/40 transition-all">
+                <a hx-get="{{ url_for('seller.seller_dashboard') if current_user.role == 'seller' else url_for('main.dashboard') }}"
+                    hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true"
+                    hx-push-url="true" class="flex items-center gap-3 cursor-pointer group">
+                    <div
+                        class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:shadow-indigo-500/40 transition-all">
                         <i class="fas fa-layer-group text-white text-sm"></i>
                     </div>
-                    <span class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">SourcePoint</span>
+                    <span
+                        class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">SourcePoint</span>
                 </a>
-                <button @click="sidebarOpen = false" class="absolute right-4 lg:hidden p-2 text-gray-400 hover:text-white transition-colors focus:outline-none"><i class="fas fa-times text-xl"></i></button>
+                <button @click="sidebarOpen = false"
+                    class="absolute right-4 lg:hidden p-2 text-gray-400 hover:text-white transition-colors focus:outline-none"><i
+                        class="fas fa-times text-xl"></i></button>
             </div>
 
             <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto custom-scrollbar">
                 <div @click="if(window.innerWidth < 1024) sidebarOpen = false">
-                    
+
                     {% if current_user.role != 'seller' %}
-                    <a hx-get="{{ url_for('main.dashboard') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer mb-1 {{ 'bg-white/10 text-white shadow-md border border-white/5' if request.endpoint and 'dashboard' in request.endpoint and 'seller' not in request.endpoint else 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
-                        <i class="fas fa-home w-6 text-center mr-2 {{ 'text-indigo-400' if request.endpoint and 'dashboard' in request.endpoint }}"></i> Dashboard
+                    <a hx-get="{{ url_for('main.dashboard') }}" hx-target="#main-content" hx-select="#main-content"
+                        hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer mb-1 {{ 'bg-white/10 text-white shadow-md border border-white/5' if request.endpoint and 'dashboard' in request.endpoint and 'seller' not in request.endpoint else 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
+                        <i
+                            class="fas fa-home w-6 text-center mr-2 {{ 'text-indigo-400' if request.endpoint and 'dashboard' in request.endpoint }}"></i>
+                        Dashboard
                     </a>
                     {% endif %}
 
-                    <a hx-get="{{ url_for('main.messages') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer mb-1 {{ 'bg-white/10 text-white shadow-md border border-white/5' if request.endpoint == 'main.messages' else 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
-                        <i class="fas fa-comment-dots w-6 text-center mr-2 {{ 'text-indigo-400' if request.endpoint == 'main.messages' }}"></i> Messages
+                    <a hx-get="{{ url_for('main.messages') }}" hx-target="#main-content" hx-select="#main-content"
+                        hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer mb-1 {{ 'bg-white/10 text-white shadow-md border border-white/5' if request.endpoint == 'main.messages' else 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
+                        <i
+                            class="fas fa-comment-dots w-6 text-center mr-2 {{ 'text-indigo-400' if request.endpoint == 'main.messages' }}"></i>
+                        Messages
                     </a>
 
                     {% if current_user.role == 'admin' %}
-                    <div class="pt-6 pb-2"><p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Admin Controls</p></div>
-                    <a hx-get="{{ url_for('admin_users.manage_users') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
+                    <div class="pt-6 pb-2">
+                        <p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Admin Controls</p>
+                    </div>
+                    <a hx-get="{{ url_for('admin_users.manage_users') }}" hx-target="#main-content"
+                        hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
                         <i class="fas fa-users-cog w-6 text-center mr-2"></i> Users
                     </a>
-                    <a hx-get="{{ url_for('admin_core.projects') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
+                    <a hx-get="{{ url_for('admin_core.projects') }}" hx-target="#main-content" hx-select="#main-content"
+                        hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
                         <i class="fas fa-project-diagram w-6 text-center mr-2"></i> Projects
                     </a>
-                    <a hx-get="{{ url_for('events.events') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
+                    <a hx-get="{{ url_for('events.events') }}" hx-target="#main-content" hx-select="#main-content"
+                        hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
                         <i class="fas fa-calendar-alt w-6 text-center mr-2"></i> Events
                     </a>
-                    <a hx-get="{{ url_for('admin_core.emi_manager') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
+                    <a hx-get="{{ url_for('admin_core.emi_manager') }}" hx-target="#main-content"
+                        hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
                         <i class="fas fa-coins w-6 text-center mr-2"></i> Finance
                     </a>
-                    <a hx-get="{{ url_for('admin_hiring.manage_records') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
+                    <a hx-get="{{ url_for('admin_hiring.manage_records') }}" hx-target="#main-content"
+                        hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
                         <i class="fas fa-database w-6 text-center mr-2"></i> Records
                     </a>
                     {% endif %}
 
                     {% if current_user.role == 'developer' %}
-                    <div class="pt-6 pb-2"><p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">DevOps</p></div>
-                    <a hx-get="{{ url_for('events.events') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
+                    <div class="pt-6 pb-2">
+                        <p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">DevOps</p>
+                    </div>
+                    <a hx-get="{{ url_for('events.events') }}" hx-target="#main-content" hx-select="#main-content"
+                        hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
                         <i class="fas fa-calendar-day w-6 text-center mr-2"></i> Events
                     </a>
-                    <a hx-get="{{ url_for('main.learning') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
+                    <a hx-get="{{ url_for('main.learning') }}" hx-target="#main-content" hx-select="#main-content"
+                        hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
                         <i class="fas fa-book w-6 text-center mr-2"></i> Learning Hub
                     </a>
                     {% endif %}
 
                     {% if current_user.role == 'moderator' %}
-                    <div class="pt-6 pb-2"><p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Assessment</p></div>
-                    <a hx-get="{{ url_for('events.events') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
+                    <div class="pt-6 pb-2">
+                        <p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Assessment</p>
+                    </div>
+                    <a hx-get="{{ url_for('events.events') }}" hx-target="#main-content" hx-select="#main-content"
+                        hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
                         <i class="fas fa-calendar-check w-6 text-center mr-2"></i> Events Schedule
                     </a>
-                    <a hx-get="{{ url_for('main.learning') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
+                    <a hx-get="{{ url_for('main.learning') }}" hx-target="#main-content" hx-select="#main-content"
+                        hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
                         <i class="fas fa-book w-6 text-center mr-2"></i> Learning Hub
                     </a>
                     {% endif %}
 
                     {% if current_user.role == 'recruiter' %}
-                    <div class="pt-6 pb-2"><p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Hiring</p></div>
-                    <a hx-get="{{ url_for('recruiter.recruiter_dashboard') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
+                    <div class="pt-6 pb-2">
+                        <p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Hiring</p>
+                    </div>
+                    <a hx-get="{{ url_for('recruiter.recruiter_dashboard') }}" hx-target="#main-content"
+                        hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
                         <i class="fas fa-user-tie w-6 text-center mr-2"></i> Dashboard
                     </a>
-                    <a hx-get="{{ url_for('events.events') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
+                    <a hx-get="{{ url_for('events.events') }}" hx-target="#main-content" hx-select="#main-content"
+                        hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
                         <i class="fas fa-calendar-alt w-6 text-center mr-2"></i> Events & Tests
                     </a>
-                    <a hx-get="{{ url_for('main.learning') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
+                    <a hx-get="{{ url_for('main.learning') }}" hx-target="#main-content" hx-select="#main-content"
+                        hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
                         <i class="fas fa-book w-6 text-center mr-2"></i> Resources
                     </a>
                     {% endif %}
 
                     {% if current_user.role == 'candidate' %}
-                    <div class="pt-6 pb-2"><p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Preparation</p></div>
-                    <a hx-get="{{ url_for('main.learning') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
+                    <div class="pt-6 pb-2">
+                        <p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Preparation</p>
+                    </div>
+                    <a hx-get="{{ url_for('main.learning') }}" hx-target="#main-content" hx-select="#main-content"
+                        hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
                         <i class="fas fa-book w-6 text-center mr-2"></i> Learning Hub
                     </a>
-                    <a hx-get="{{ url_for('candidate.code_test') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
+                    <a hx-get="{{ url_for('candidate.code_test') }}" hx-target="#main-content" hx-select="#main-content"
+                        hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
                         <i class="fas fa-code w-6 text-center mr-2"></i> Code Test
                     </a>
                     {% endif %}
 
                     {% if current_user.role == 'seller' %}
-                    <div class="pt-6 pb-2"><p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Seller Tools</p></div>
-                    <a hx-get="{{ url_for('seller.seller_dashboard') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer"><i class="fas fa-chart-line w-6 text-center mr-2"></i> Dashboard</a>
-                    <a hx-get="{{ url_for('seller.manage_inventory') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer"><i class="fas fa-boxes w-6 text-center mr-2"></i> Inventory</a>
-                    <a hx-get="{{ url_for('seller.manage_orders') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer"><i class="fas fa-shopping-cart w-6 text-center mr-2"></i> Orders</a>
-                    <a hx-get="{{ url_for('seller.manage_invoices') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer"><i class="fas fa-file-invoice-dollar w-6 text-center mr-2"></i> Invoices</a>
+                    <div class="pt-6 pb-2">
+                        <p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Seller Tools</p>
+                    </div>
+                    <a hx-get="{{ url_for('seller.seller_dashboard') }}" hx-target="#main-content"
+                        hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer"><i
+                            class="fas fa-chart-line w-6 text-center mr-2"></i> Dashboard</a>
+                    <a hx-get="{{ url_for('seller.manage_inventory') }}" hx-target="#main-content"
+                        hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer"><i
+                            class="fas fa-boxes w-6 text-center mr-2"></i> Inventory</a>
+                    <a hx-get="{{ url_for('seller.manage_orders') }}" hx-target="#main-content"
+                        hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer"><i
+                            class="fas fa-shopping-cart w-6 text-center mr-2"></i> Orders</a>
+                    <a hx-get="{{ url_for('seller.manage_invoices') }}" hx-target="#main-content"
+                        hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer"><i
+                            class="fas fa-file-invoice-dollar w-6 text-center mr-2"></i> Invoices</a>
                     {% endif %}
 
                     {% if current_user.role == 'buyer' %}
-                    <div class="pt-6 pb-2"><p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Market</p></div>
-                    <a hx-get="{{ url_for('buyer.buyer_dashboard') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer"><i class="fas fa-store w-6 text-center mr-2"></i> Catalog</a>
-                    <a hx-get="{{ url_for('buyer.my_orders') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer"><i class="fas fa-box w-6 text-center mr-2"></i> My Orders</a>
+                    <div class="pt-6 pb-2">
+                        <p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Market</p>
+                    </div>
+                    <a hx-get="{{ url_for('buyer.buyer_dashboard') }}" hx-target="#main-content"
+                        hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer"><i
+                            class="fas fa-store w-6 text-center mr-2"></i> Catalog</a>
+                    <a hx-get="{{ url_for('buyer.my_orders') }}" hx-target="#main-content" hx-select="#main-content"
+                        hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer"><i
+                            class="fas fa-box w-6 text-center mr-2"></i> My Orders</a>
                     {% endif %}
                 </div>
             </nav>
 
             <div class="p-4 border-t border-white/5 bg-black/20">
-                <a hx-get="{{ url_for('main.profile') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="flex items-center w-full p-2 rounded-xl hover:bg-white/5 transition-colors group cursor-pointer border border-transparent hover:border-white/5">
-                    <img src="{{ current_user.avatar_url }}" alt="" class="w-10 h-10 rounded-full border border-white/10 group-hover:border-indigo-400 transition-colors object-cover">
+                <a hx-get="{{ url_for('main.profile') }}" hx-target="#main-content" hx-select="#main-content"
+                    hx-swap="outerHTML transition:true" hx-push-url="true"
+                    class="flex items-center w-full p-2 rounded-xl hover:bg-white/5 transition-colors group cursor-pointer border border-transparent hover:border-white/5">
+                    <img src="{{ current_user.avatar_url }}" alt=""
+                        class="w-10 h-10 rounded-full border border-white/10 group-hover:border-indigo-400 transition-colors object-cover">
                     <div class="ml-3 overflow-hidden">
-                        <p class="text-sm font-bold text-white truncate group-hover:text-indigo-300 transition-colors">{{ current_user.username }}</p>
-                        <p class="text-[10px] text-gray-500 uppercase tracking-wider truncate">{{ current_user.role }}</p>
+                        <p class="text-sm font-bold text-white truncate group-hover:text-indigo-300 transition-colors">
+                            {{ current_user.username }}</p>
+                        <p class="text-[10px] text-gray-500 uppercase tracking-wider truncate">{{ current_user.role }}
+                        </p>
                     </div>
                 </a>
             </div>
@@ -161,13 +264,16 @@
         {% endif %}
 
         <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-            <header class="h-20 glass-panel border-b border-white/5 flex items-center justify-between px-6 z-20 relative">
+            <header class="h-20 bg-transparent flex items-center justify-between px-6 z-20 relative">
                 <div class="flex items-center">
                     {% if current_user.is_authenticated %}
-                    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden text-gray-400 hover:text-white focus:outline-none mr-4 transition-transform active:scale-95"><i class="fas fa-bars text-xl"></i></button>
+                    <button @click="sidebarOpen = !sidebarOpen"
+                        class="lg:hidden text-gray-400 hover:text-white focus:outline-none mr-4 transition-transform active:scale-95"><i
+                            class="fas fa-bars text-xl"></i></button>
                     {% else %}
                     <a href="{{ url_for('main.home') }}" class="flex items-center gap-3 group">
-                        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+                        <div
+                            class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
                             <i class="fas fa-layer-group text-white text-sm"></i>
                         </div>
                         <span class="text-lg font-bold text-white tracking-tight">SourcePoint</span>
@@ -176,36 +282,45 @@
                 </div>
                 <div class="flex items-center space-x-6">
                     {% if not current_user.is_authenticated %}
-                        <a href="{{ url_for('main.home') }}" class="text-sm font-medium text-gray-400 hover:text-white transition-colors hidden sm:block">Home</a>
-                        
-                        <a href="{{ url_for('auth.login_register') }}" class="px-5 py-2.5 rounded-xl bg-white hover:bg-gray-100 text-black text-sm font-bold shadow-lg shadow-white/10 transition-all transform hover:-translate-y-0.5">Login</a>
+                    <a href="{{ url_for('main.home') }}"
+                        class="text-sm font-medium text-gray-400 hover:text-white transition-colors hidden sm:block">Home</a>
+
+                    <a href="{{ url_for('auth.login_register') }}"
+                        class="px-5 py-2.5 rounded-xl bg-white hover:bg-gray-100 text-black text-sm font-bold shadow-lg shadow-white/10 transition-all transform hover:-translate-y-0.5">Login</a>
                     {% else %}
-                        <a href="{{ url_for('auth.logout') }}" class="w-10 h-10 rounded-xl bg-white/5 hover:bg-red-500/20 border border-white/5 hover:border-red-500/50 flex items-center justify-center text-gray-400 hover:text-red-400 transition-all" title="Logout"><i class="fas fa-power-off"></i></a>
+                    <a href="{{ url_for('auth.logout') }}"
+                        class="w-10 h-10 rounded-xl bg-white/5 hover:bg-red-500/20 border border-white/5 hover:border-red-500/50 flex items-center justify-center text-gray-400 hover:text-red-400 transition-all"
+                        title="Logout"><i class="fas fa-power-off"></i></a>
                     {% endif %}
                 </div>
             </header>
             <main class="flex-1 overflow-y-auto p-4 sm:p-8 relative scroll-smooth custom-scrollbar" id="main-content">
                 <div id="flash-container" class="fixed top-24 right-6 z-50 space-y-3 pointer-events-none">
                     {% with messages = get_flashed_messages(with_categories=true) %}
-                        {% if messages %}
-                            {% for category, message in messages %}
-                                <div class="pointer-events-auto flex items-center w-full max-w-sm p-4 text-gray-200 bg-[#1a1a1f]/95 rounded-xl shadow-2xl border border-white/10 backdrop-blur-md animate-fade-in" role="alert">
-                                    <div class="inline-flex items-center justify-center flex-shrink-0 w-10 h-10 rounded-lg {{ 'bg-emerald-500/10 text-emerald-400' if category == 'success' else 'bg-red-500/10 text-red-400' }}">
-                                        <i class="fas {{ 'fa-check-circle' if category == 'success' else 'fa-exclamation-circle' }}"></i>
-                                    </div>
-                                    <div class="ml-4 text-sm font-medium">{{ message }}</div>
-                                    <button type="button" class="ml-auto -mx-1.5 -my-1.5 text-gray-500 hover:text-white rounded-lg p-1.5 inline-flex h-8 w-8 transition-colors" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
-                                </div>
-                            {% endfor %}
-                        {% endif %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="pointer-events-auto flex items-center w-full max-w-sm p-4 text-gray-200 bg-[#1a1a1f]/95 rounded-xl shadow-2xl border border-white/10 backdrop-blur-md animate-fade-in"
+                        role="alert">
+                        <div
+                            class="inline-flex items-center justify-center flex-shrink-0 w-10 h-10 rounded-lg {{ 'bg-emerald-500/10 text-emerald-400' if category == 'success' else 'bg-red-500/10 text-red-400' }}">
+                            <i
+                                class="fas {{ 'fa-check-circle' if category == 'success' else 'fa-exclamation-circle' }}"></i>
+                        </div>
+                        <div class="ml-4 text-sm font-medium">{{ message }}</div>
+                        <button type="button"
+                            class="ml-auto -mx-1.5 -my-1.5 text-gray-500 hover:text-white rounded-lg p-1.5 inline-flex h-8 w-8 transition-colors"
+                            onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
                     {% endwith %}
                 </div>
                 {% block content %}{% endblock %}
             </main>
         </div>
     </div>
-    
-<script>
+
+    <script>
         // --- 1. Notification Management (Auto-Dismiss 1s) ---
         function initFlashMessages() {
             const alerts = document.querySelectorAll('#flash-container [role="alert"]');
@@ -217,21 +332,58 @@
                     alert.style.opacity = '0';
                     alert.style.transform = 'translateX(100%)';
                     setTimeout(() => alert.remove(), 500);
-                }, 3000); 
+                }, 3000);
             });
         }
         document.addEventListener('DOMContentLoaded', initFlashMessages);
         document.addEventListener('htmx:afterSwap', initFlashMessages);
 
-        window.showToast = function(message, category = 'success') {
+        // --- 1b. Page Loader ---
+        window.addEventListener('load', function () {
+            const loader = document.getElementById('page-loader');
+            if (loader) {
+                setTimeout(() => {
+                    loader.classList.add('loaded');
+                }, 300); // Small delay for smooth transition
+            }
+        });
+
+        // --- 1c. Scroll Reveal Effects ---
+        function initScrollReveal() {
+            const revealElements = document.querySelectorAll('.scroll-reveal, .scroll-reveal-left, .scroll-reveal-right, .scroll-reveal-scale, .scroll-reveal-stagger');
+
+            if ('IntersectionObserver' in window) {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('revealed');
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                }, {
+                    threshold: 0.1,
+                    rootMargin: '0px 0px -50px 0px'
+                });
+
+                revealElements.forEach(el => observer.observe(el));
+            } else {
+                // Fallback for older browsers
+                revealElements.forEach(el => el.classList.add('revealed'));
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initScrollReveal);
+        document.addEventListener('htmx:afterSwap', initScrollReveal);
+
+        window.showToast = function (message, category = 'success') {
             const container = document.getElementById('flash-container');
             const div = document.createElement('div');
             div.className = 'pointer-events-auto flex items-center w-full max-w-sm p-4 text-gray-200 bg-[#1a1a1f]/95 rounded-xl shadow-2xl border border-white/10 backdrop-blur-md animate-fade-in';
             div.setAttribute('role', 'alert');
-            
+
             const iconClass = category === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
             const colorClass = category === 'success' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400';
-            
+
             div.innerHTML = `
                 <div class="inline-flex items-center justify-center flex-shrink-0 w-10 h-10 rounded-lg ${colorClass}">
                     <i class="fas ${iconClass}"></i>
@@ -240,15 +392,15 @@
                 <button type="button" class="ml-auto -mx-1.5 -my-1.5 text-gray-500 hover:text-white rounded-lg p-1.5 inline-flex h-8 w-8 transition-colors" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
             `;
             container.appendChild(div);
-            setTimeout(() => { 
-                div.style.transition = 'all 0.5s ease-out'; 
-                div.style.opacity = '0'; 
-                div.style.transform = 'translateX(20px)'; 
-                setTimeout(() => div.remove(), 500); 
+            setTimeout(() => {
+                div.style.transition = 'all 0.5s ease-out';
+                div.style.opacity = '0';
+                div.style.transform = 'translateX(20px)';
+                setTimeout(() => div.remove(), 500);
             }, 3000);
         };
 
-        window.handleAjaxUrl = async function(event, url, confirmMsg = null) {
+        window.handleAjaxUrl = async function (event, url, confirmMsg = null) {
             event.preventDefault();
             if (confirmMsg && !confirm(confirmMsg)) return;
             const btn = event.currentTarget;
@@ -268,7 +420,7 @@
             } catch (e) { console.error(e); if (window.showToast) window.showToast('Network error', 'error'); btn.innerHTML = originalContent; btn.style.pointerEvents = 'auto'; }
         };
 
-        window.handleAjaxForm = async function(event, confirmMsg = null) {
+        window.handleAjaxForm = async function (event, confirmMsg = null) {
             event.preventDefault();
             if (confirmMsg && !confirm(confirmMsg)) return;
             const form = event.target;
@@ -290,66 +442,151 @@
             } catch (e) { console.error(e); if (window.showToast) window.showToast('Network error', 'error'); btn.innerHTML = originalContent; btn.disabled = false; }
         };
 
-        // --- 3. OPTIMIZED BACKGROUND (Paused when tab inactive) ---
-        if (window.innerWidth > 768) {
+        // --- 3. ENHANCED ANIMATED BACKGROUND ---
+        const canvas = document.getElementById('bg-canvas');
+        const isMobile = window.innerWidth <= 768;
+
+        if (!isMobile && canvas) {
             const scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x00000a, 0.0003); 
+            scene.fog = new THREE.FogExp2(0x000005, 0.00015);
 
-            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.z = 100;
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+            camera.position.z = 150;
 
-            const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), alpha: true, antialias: true });
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-            // Create circular particle texture programmatically
-            function createCircleTexture() {
+            // Create realistic star texture with sharp center and soft glow
+            function createStarTexture(brightness = 1, warmth = 0) {
                 const canvas = document.createElement('canvas');
-                canvas.width = 32;
-                canvas.height = 32;
+                canvas.width = 64;
+                canvas.height = 64;
                 const ctx = canvas.getContext('2d');
-                const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
-                gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-                gradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.8)');
-                gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.2)');
+
+                // Color temperature (0 = pure white, positive = warm/orange, negative = cool/blue)
+                const r = Math.min(255, 255 + warmth * 10);
+                const g = 255;
+                const b = Math.min(255, 255 - warmth * 15);
+
+                const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+                // Sharp bright core
+                gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${brightness})`);
+                gradient.addColorStop(0.03, `rgba(${r}, ${g}, ${b}, ${brightness * 0.95})`);
+                // Quick falloff for realism
+                gradient.addColorStop(0.08, `rgba(${r}, ${g}, ${b}, ${brightness * 0.6})`);
+                gradient.addColorStop(0.15, `rgba(${r}, ${g}, ${b}, ${brightness * 0.3})`);
+                gradient.addColorStop(0.3, `rgba(${r}, ${g}, ${b}, ${brightness * 0.1})`);
+                gradient.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, ${brightness * 0.03})`);
                 gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
                 ctx.fillStyle = gradient;
-                ctx.fillRect(0, 0, 32, 32);
+                ctx.fillRect(0, 0, 64, 64);
                 return new THREE.CanvasTexture(canvas);
             }
 
-            const particlesGeometry = new THREE.BufferGeometry();
-            const particlesCount = 120; 
-            const posArray = new Float32Array(particlesCount * 3);
-            
-            for(let i = 0; i < particlesCount * 3; i++) {
-                posArray[i] = (Math.random() - 0.5) * 300; 
+            // Layer 1: Dense background stars (tiny, many)
+            const bgStarsGeometry = new THREE.BufferGeometry();
+            const bgStarsCount = 500;
+            const bgStarsPositions = new Float32Array(bgStarsCount * 3);
+            for (let i = 0; i < bgStarsCount * 3; i++) {
+                bgStarsPositions[i] = (Math.random() - 0.5) * 1200;
             }
-            
-            particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-            
-            const particlesMaterial = new THREE.PointsMaterial({
-                size: 2.5, 
-                color: 0x6366f1, 
-                map: createCircleTexture(), 
+            bgStarsGeometry.setAttribute('position', new THREE.BufferAttribute(bgStarsPositions, 3));
+            const bgStarsMaterial = new THREE.PointsMaterial({
+                size: 2.5,
+                color: 0xffffff,
+                map: createStarTexture(0.7),
                 transparent: true,
                 opacity: 0.9,
                 depthWrite: false,
                 blending: THREE.AdditiveBlending
             });
-            
-            const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
-            scene.add(particlesMesh);
+            const bgStarsMesh = new THREE.Points(bgStarsGeometry, bgStarsMaterial);
+            scene.add(bgStarsMesh);
 
-            let mouseX = 0, mouseY = 0;
-            let isPaused = false;
-
-            document.addEventListener('mousemove', (event) => {
-                mouseX = event.clientX - window.innerWidth / 2;
-                mouseY = event.clientY - window.innerHeight / 2;
+            // Layer 2: Medium stars (slightly larger, with color variation)
+            const medStarsGeometry = new THREE.BufferGeometry();
+            const medStarsCount = 200;
+            const medStarsPositions = new Float32Array(medStarsCount * 3);
+            for (let i = 0; i < medStarsCount * 3; i++) {
+                medStarsPositions[i] = (Math.random() - 0.5) * 800;
+            }
+            medStarsGeometry.setAttribute('position', new THREE.BufferAttribute(medStarsPositions, 3));
+            const medStarsMaterial = new THREE.PointsMaterial({
+                size: 4,
+                color: 0xf8f8ff,
+                map: createStarTexture(0.9),
+                transparent: true,
+                opacity: 1,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending
             });
-            
-            // Pausing logic
+            const medStarsMesh = new THREE.Points(medStarsGeometry, medStarsMaterial);
+            scene.add(medStarsMesh);
+
+            // Layer 3: Bright stars (few, prominent)
+            const brightStarsGeometry = new THREE.BufferGeometry();
+            const brightStarsCount = 50;
+            const brightStarsPositions = new Float32Array(brightStarsCount * 3);
+            for (let i = 0; i < brightStarsCount * 3; i++) {
+                brightStarsPositions[i] = (Math.random() - 0.5) * 600;
+            }
+            brightStarsGeometry.setAttribute('position', new THREE.BufferAttribute(brightStarsPositions, 3));
+            const brightStarsMaterial = new THREE.PointsMaterial({
+                size: 6,
+                color: 0xffffff,
+                map: createStarTexture(1),
+                transparent: true,
+                opacity: 1,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending
+            });
+            const brightStarsMesh = new THREE.Points(brightStarsGeometry, brightStarsMaterial);
+            scene.add(brightStarsMesh);
+
+            // Layer 4: Blue-tinted distant stars (cold color temperature)
+            const blueStarsGeometry = new THREE.BufferGeometry();
+            const blueStarsCount = 80;
+            const blueStarsPositions = new Float32Array(blueStarsCount * 3);
+            for (let i = 0; i < blueStarsCount * 3; i++) {
+                blueStarsPositions[i] = (Math.random() - 0.5) * 1000;
+            }
+            blueStarsGeometry.setAttribute('position', new THREE.BufferAttribute(blueStarsPositions, 3));
+            const blueStarsMaterial = new THREE.PointsMaterial({
+                size: 3.5,
+                color: 0xcce5ff,
+                map: createStarTexture(0.8, -3),
+                transparent: true,
+                opacity: 0.85,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending
+            });
+            const blueStarsMesh = new THREE.Points(blueStarsGeometry, blueStarsMaterial);
+            scene.add(blueStarsMesh);
+
+            // Layer 5: Warm-tinted stars (red giants - subtle orange)
+            const warmStarsGeometry = new THREE.BufferGeometry();
+            const warmStarsCount = 30;
+            const warmStarsPositions = new Float32Array(warmStarsCount * 3);
+            for (let i = 0; i < warmStarsCount * 3; i++) {
+                warmStarsPositions[i] = (Math.random() - 0.5) * 700;
+            }
+            warmStarsGeometry.setAttribute('position', new THREE.BufferAttribute(warmStarsPositions, 3));
+            const warmStarsMaterial = new THREE.PointsMaterial({
+                size: 5,
+                color: 0xffeedd,
+                map: createStarTexture(0.95, 5),
+                transparent: true,
+                opacity: 0.95,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending
+            });
+            const warmStarsMesh = new THREE.Points(warmStarsGeometry, warmStarsMaterial);
+            scene.add(warmStarsMesh);
+
+            let isPaused = false;
+            let time = 0;
+
             document.addEventListener("visibilitychange", () => {
                 isPaused = document.hidden;
             });
@@ -358,10 +595,38 @@
                 requestAnimationFrame(animate);
                 if (isPaused) return;
 
-                particlesMesh.rotation.y += 0.001;
-                particlesMesh.rotation.x += 0.0005;
-                particlesMesh.rotation.y += 0.05 * (mouseX * 0.05 - particlesMesh.rotation.y) * 0.001;
-                particlesMesh.rotation.x += 0.05 * (mouseY * 0.05 - particlesMesh.rotation.x) * 0.001;
+                time += 0.001; // Faster time for visible motion
+
+                // Visible automatic rotation - gentle but noticeable drift
+                // Background stars - slowest (furthest away)
+                bgStarsMesh.rotation.y += 0.0001;
+                bgStarsMesh.rotation.x = Math.sin(time * 0.3) * 0.05;
+
+                // Medium stars - slightly faster
+                medStarsMesh.rotation.y += 0.00015;
+                medStarsMesh.rotation.x = Math.sin(time * 0.25) * 0.04;
+
+                // Bright stars
+                brightStarsMesh.rotation.y += 0.0002;
+                brightStarsMesh.rotation.x = Math.sin(time * 0.2) * 0.03;
+
+                // Blue stars (distant)
+                blueStarsMesh.rotation.y += 0.00012;
+                blueStarsMesh.rotation.x = Math.sin(time * 0.35) * 0.05;
+
+                // Warm stars
+                warmStarsMesh.rotation.y += 0.00018;
+                warmStarsMesh.rotation.x = Math.sin(time * 0.22) * 0.035;
+
+                // Visible twinkling - noticeable but not distracting
+                const twinkle1 = Math.sin(time * 2) * 0.15 + Math.sin(time * 3.5) * 0.1 + 0.85;
+                brightStarsMaterial.opacity = Math.max(0.6, Math.min(1, twinkle1));
+
+                const twinkle2 = Math.sin(time * 1.5) * 0.12 + Math.sin(time * 2.8) * 0.08 + 0.85;
+                warmStarsMaterial.opacity = Math.max(0.6, Math.min(1, twinkle2));
+
+                const twinkle3 = Math.sin(time * 2.5) * 0.1 + 0.8;
+                blueStarsMaterial.opacity = Math.max(0.6, Math.min(1, twinkle3));
 
                 renderer.render(scene, camera);
             }
@@ -372,7 +637,11 @@
                 camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
             });
+        } else if (canvas) {
+            // Mobile: Hide canvas and rely on CSS gradient background
+            canvas.style.display = 'none';
         }
     </script>
 </body>
+
 </html>
