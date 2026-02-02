@@ -19,13 +19,13 @@ jobs:
         run: |
           mkdir -p /var/www/sourcepoint/Source-Point
           
-          # CRITICAL: We exclude .env so we don't break the Database connection 
-          # We also exclude venv and .git to keep the sync clean
+          # Add --exclude='actions-runner' to protect your runner files
           rsync -av --delete \
             --exclude='.git' \
             --exclude='venv' \
             --exclude='__pycache__' \
             --exclude='.env' \
+            --exclude='actions-runner' \
             ./ /var/www/sourcepoint/Source-Point/
 
       # 3. Rebuild and Restart Docker containers
