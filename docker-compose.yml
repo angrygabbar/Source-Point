@@ -1,0 +1,65 @@
+services:
+  # 1. The Flask App
+  web:
+    build: .
+    container_name: sourcepoint_app
+    restart: always
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://dev_user:dev_password@db:5432/sourcepoint_dev_db
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - .:/app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - db
+      - redis
+
+  # 2. The Database
+  db:
+    image: postgres:15
+    container_name: sourcepoint_db_dev
+    restart: always
+    environment:
+      POSTGRES_USER: dev_user
+      POSTGRES_PASSWORD: dev_password
+      POSTGRES_DB: sourcepoint_dev_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+
+  # 3. Redis
+  redis:
+    image: redis:alpine
+    container_name: sourcepoint_redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  # 4. The Celery Worker & Scheduler
+  worker:
+    build: .
+    container_name: sourcepoint_worker
+    restart: always
+    # UPDATED COMMAND: Added --beat to run the scheduler alongside the worker
+    command: celery -A app.celery worker --beat --loglevel=info
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://dev_user:dev_password@db:5432/sourcepoint_dev_db
+      - REDIS_URL=redis://redis:6379/0
+      - C_FORCE_ROOT=true
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+      - web
+
+volumes:
+  postgres_data_dev:
