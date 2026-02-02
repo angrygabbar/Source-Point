@@ -10,35 +10,41 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      # 1. This step Authenticates & Downloads code to a temp folder (SUCCESS)
+      # 1. Download code from GitHub to the Runner's workspace
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # 2. Sync the downloaded code to your live folder
-      # We use rsync to update only changed files (Faster & Safer than git pull here)
+      # 2. Sync files to the live folder
       - name: Sync Files to Live Folder
         run: |
-          # Create folder if missing
           mkdir -p /var/www/sourcepoint/Source-Point
           
-          # Copy files from Runner -> Live Server
-          # -a: preserve permissions, -v: verbose, --delete: remove deleted files
-          # --exclude: don't copy .git folder or venv to avoid messing up local configs
-          rsync -av --exclude='.git' --exclude='venv' --exclude='__pycache__' ./ /var/www/sourcepoint/Source-Point/
+          # CRITICAL: We exclude .env so we don't break the Database connection 
+          # We also exclude venv and .git to keep the sync clean
+          rsync -av --delete \
+            --exclude='.git' \
+            --exclude='venv' \
+            --exclude='__pycache__' \
+            --exclude='.env' \
+            ./ /var/www/sourcepoint/Source-Point/
 
-      # 3. Rebuild Docker
+      # 3. Rebuild and Restart Docker containers
       - name: Rebuild Application
         run: |
           cd /var/www/sourcepoint/Source-Point
-          docker compose up -d --build --no-deps web
+          # Rebuilds the images and restarts containers in the background
+          docker compose up -d --build
 
       # 4. Database Migrations
       - name: Run Database Migrations
         run: |
           cd /var/www/sourcepoint/Source-Point
+          # Runs migrations inside the 'web' container
+          # Note: This will now connect to 'localhost' on your laptop because of network_mode: host
           docker compose exec -T web flask db upgrade
 
       # 5. Cleanup
       - name: Cleanup Old Images
         run: |
+          # Removes old, unused Docker images to save disk space on your laptop
           docker image prune -f
