@@ -10,41 +10,35 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      # 1. Download code from GitHub to the Runner's workspace
+      # 1. This step Authenticates & Downloads code to a temp folder (SUCCESS)
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # 2. Sync files to the live folder
+      # 2. Sync the downloaded code to your live folder
+      # We use rsync to update only changed files (Faster & Safer than git pull here)
       - name: Sync Files to Live Folder
         run: |
+          # Create folder if missing
           mkdir -p /var/www/sourcepoint/Source-Point
           
-          # Add --exclude='actions-runner' to protect your runner files
-          rsync -av --delete \
-            --exclude='.git' \
-            --exclude='venv' \
-            --exclude='__pycache__' \
-            --exclude='.env' \
-            --exclude='actions-runner' \
-            ./ /var/www/sourcepoint/Source-Point/
+          # Copy files from Runner -> Live Server
+          # -a: preserve permissions, -v: verbose, --delete: remove deleted files
+          # --exclude: don't copy .git folder or venv to avoid messing up local configs
+          rsync -av --exclude='.git' --exclude='venv' --exclude='__pycache__' ./ /var/www/sourcepoint/Source-Point/
 
-      # 3. Rebuild and Restart Docker containers
+      # 3. Rebuild Docker
       - name: Rebuild Application
         run: |
           cd /var/www/sourcepoint/Source-Point
-          # Rebuilds the images and restarts containers in the background
-          docker compose up -d --build
+          docker compose up -d --build --no-deps web
 
       # 4. Database Migrations
       - name: Run Database Migrations
         run: |
           cd /var/www/sourcepoint/Source-Point
-          # Runs migrations inside the 'web' container
-          # Note: This will now connect to 'localhost' on your laptop because of network_mode: host
           docker compose exec -T web flask db upgrade
 
       # 5. Cleanup
       - name: Cleanup Old Images
         run: |
-          # Removes old, unused Docker images to save disk space on your laptop
           docker image prune -f
