@@ -14,7 +14,7 @@ OS-specific files
 .DS_Store
 
 # Ignore Docker Compose files
-docker-compose.yml
+
 docker-compose.override.yml
 
 # Google Calendar API Credentials (IMPORTANT!)
