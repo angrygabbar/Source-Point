@@ -44,7 +44,7 @@ services:
   # 4. The Celery Worker & Scheduler
   worker:
     build: .
-    container_name: sourcepoint_worker
+   # container_name: sourcepoint_worker
     restart: always
     # UPDATED COMMAND: Added --beat to run the scheduler alongside the worker
     command: celery -A app.celery worker --beat --loglevel=info
