@@ -3,7 +3,7 @@ Never commit this file!
 .env
 
 Instance folder
-Contains the old SQLite database and other instance-specific files...
+Contains the old SQLite database and other instance-specific files....
 instance/
 
 Python cache
