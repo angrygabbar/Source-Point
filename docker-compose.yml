@@ -8,9 +8,8 @@ services:
       - "5000:5000"
     env_file:
       - .env
-    environment:
-      - DATABASE_URL=postgresql://dev_user:dev_password@db:5432/sourcepoint_dev_db
-      - REDIS_URL=redis://redis:6379/0
+    # --- DELETED HARDCODED ENVIRONMENT SECTION ---
+    # We removed DATABASE_URL here so it reads from .env file
     volumes:
       - .:/app
     extra_hosts:
@@ -26,8 +25,10 @@ services:
     restart: always
     environment:
       POSTGRES_USER: dev_user
-      POSTGRES_PASSWORD: dev_password
-      POSTGRES_DB: sourcepoint_dev_db
+      # Update this if you want the DB container to start with the admin password
+      # But since your volume is already created, the password inside is already 'admin123'
+      POSTGRES_PASSWORD: dev_password 
+      POSTGRES_DB: sourcepoint_db  # Updated to prod DB name
     ports:
       - "5434:5432"
     volumes:
@@ -44,15 +45,14 @@ services:
   # 4. The Celery Worker & Scheduler
   worker:
     build: .
-   # container_name: sourcepoint_worker
+    # container_name: sourcepoint_worker  <-- KEEP THIS COMMENTED (Good)
     restart: always
-    # UPDATED COMMAND: Added --beat to run the scheduler alongside the worker
     command: celery -A app.celery worker --beat --loglevel=info
     env_file:
       - .env
+    # --- DELETED HARDCODED ENVIRONMENT SECTION ---
+    # We removed DATABASE_URL here so it reads from .env file
     environment:
-      - DATABASE_URL=postgresql://dev_user:dev_password@db:5432/sourcepoint_dev_db
-      - REDIS_URL=redis://redis:6379/0
       - C_FORCE_ROOT=true
     volumes:
       - .:/app
