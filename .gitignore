@@ -13,7 +13,7 @@ pycache/
 OS-specific files
 .DS_Store
 
-# Ignore Docker Compose files
+# Ignore Docker Compose filess
 docker-compose.yml
 docker-compose.override.yml
 
