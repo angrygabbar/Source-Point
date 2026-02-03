@@ -1,35 +1,173 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Application Received</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        body { margin: 0; padding: 0; background-color: #f4f7f6; font-family: 'Inter', sans-serif; }
-        .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .header { background: linear-gradient(135deg, #16a34a, #15803d); color: #ffffff; padding: 40px; text-align: center; }
-        .header h1 { margin: 0; font-size: 28px; }
-        .content { padding: 30px 40px; color: #333; line-height: 1.6; }
-        .content h2 { color: #166534; font-size: 22px; }
-        .content p { margin: 0 0 15px; }
-        .footer { background-color: #eef2ff; text-align: center; padding: 20px; font-size: 12px; color: #6b7280; }
-    </style>
+    <title>Application Submitted</title>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Application Received!</h1>
-        </div>
-        <div class="content">
-            <h2>Hi {{ candidate.username }},</h2>
-            <p>Thank you for your interest. We have successfully received your application for the <strong>{{ job.title }}</strong> position.</p>
-            <p>Our recruitment team will review your application and get back to you soon regarding the next steps. You can track the status of your application on your dashboard.</p>
-            <p>Best regards,<br>The Source Point Team</p>
-        </div>
-        <div class="footer">
-            <p>&copy; {{ now.year }} Source Point. All rights reserved.</p>
-        </div>
-    </div>
+
+<body
+    style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #e2e8f0;">
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0f172a;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0"
+                    style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%); padding: 40px 40px 50px 40px; text-align: center;">
+                            <table role="presentation" cellspacing="0" cellpadding="0"
+                                style="margin: 0 auto 20px auto;">
+                                <tr>
+                                    <td style="background: rgba(255,255,255,0.2); border-radius: 16px; padding: 16px;">
+                                        <img src="https://img.icons8.com/fluency/48/job.png" alt="Application"
+                                            width="48" height="48" style="display: block;">
+                                    </td>
+                                </tr>
+                            </table>
+                            <h1
+                                style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">
+                                Application Received! ✨</h1>
+                            <p style="margin: 12px 0 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">Thank you for
+                                applying</p>
+                        </td>
+                    </tr>
+
+                    <!-- Wave Divider -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%); height: 30px;">
+                            <div style="background: #1e293b; height: 30px; border-radius: 30px 30px 0 0;"></div>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 0 40px 40px 40px;">
+
+                            <p style="font-size: 18px; color: #f1f5f9; margin: 0 0 24px 0; line-height: 1.6;">
+                                Hello <strong style="color: #a78bfa;">{{ candidate.username }}</strong>,
+                            </p>
+
+                            <p style="font-size: 16px; color: #d1d5db; margin: 0 0 24px 0; line-height: 1.6;">
+                                Thank you for submitting your application! We have received your interest and will
+                                review it shortly.
+                            </p>
+
+                            <!-- Application Details Card -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <h2
+                                            style="margin: 0 0 16px 0; font-size: 18px; color: #a78bfa; font-weight: 600;">
+                                            📋 Application Details
+                                        </h2>
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 12px;">
+                                            <tr>
+                                                <td width="100" style="font-size: 13px; color: #9ca3af;">Position</td>
+                                                <td style="font-size: 15px; color: #f1f5f9; font-weight: 500;">{{
+                                                    job.title }}</td>
+                                            </tr>
+                                        </table>
+                                        {% if job.department %}
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 12px;">
+                                            <tr>
+                                                <td width="100" style="font-size: 13px; color: #9ca3af;">Department</td>
+                                                <td style="font-size: 15px; color: #f1f5f9;">{{ job.department }}</td>
+                                            </tr>
+                                        </table>
+                                        {% endif %}
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td width="100" style="font-size: 13px; color: #9ca3af;">Status</td>
+                                                <td>
+                                                    <span
+                                                        style="display: inline-block; background: rgba(245, 158, 11, 0.2); color: #fbbf24; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">Under
+                                                        Review</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- What's Next -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <h2
+                                            style="margin: 0 0 16px 0; font-size: 16px; color: #60a5fa; font-weight: 600;">
+                                            🚀 What Happens Next?
+                                        </h2>
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td style="padding: 6px 0;">
+                                                    <span style="color: #60a5fa; margin-right: 10px;">1.</span>
+                                                    <span style="color: #e5e7eb; font-size: 14px;">Our team reviews your
+                                                        application</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 6px 0;">
+                                                    <span style="color: #60a5fa; margin-right: 10px;">2.</span>
+                                                    <span style="color: #e5e7eb; font-size: 14px;">You'll receive
+                                                        updates via email</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 6px 0;">
+                                                    <span style="color: #60a5fa; margin-right: 10px;">3.</span>
+                                                    <span style="color: #e5e7eb; font-size: 14px;">Shortlisted
+                                                        candidates will be contacted</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Closing -->
+                            <p style="font-size: 16px; color: #e2e8f0; margin: 0;">
+                                Good luck! 🍀<br>
+                                <strong style="color: #a78bfa;">The Source Point Team</strong>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background: rgba(15, 23, 42, 0.8); padding: 24px 40px; border-top: 1px solid rgba(148, 163, 184, 0.1);">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td align="center">
+                                        <p style="margin: 0 0 8px 0; font-size: 14px; color: #9ca3af;">
+                                            This is an automated email from Source Point Platform
+                                        </p>
+                                        <p style="margin: 0; font-size: 12px; color: #6b7280;">
+                                            © {{ now.year if now else '2025' }} Source Point. All rights reserved.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
 </body>
+
 </html>

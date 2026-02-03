@@ -2,39 +2,47 @@
 {% block title %}Edit BRD for {{ project.name }}{% endblock %}
 {% block content %}
 <div class="max-w-4xl mx-auto">
-    <a href="{{ url_for('admin.view_brd', project_id=project.id) }}" class="text-indigo-400 hover:underline mb-4 inline-block">&larr; Back to BRD</a>
+    <a href="{{ url_for('admin_core.view_brd', project_id=project.id) }}" class="text-indigo-400 hover:underline mb-4 inline-block">&larr; Back to BRD</a>
     <div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-6 animate-dynamic backdrop-blur-sm border border-white/10">
         <h1 class="text-3xl font-bold text-white mb-6">Edit BRD: {{ project.name }}</h1>
-        <form action="{{ url_for('admin.edit_brd', project_id=project.id) }}" method="POST" class="space-y-6">
-            <div>
-                <label for="executive_summary" class="block text-sm font-medium text-gray-300">Executive Summary</label>
+        <form action="{{ url_for('admin_core.edit_brd', project_id=project.id) }}" method="POST" class="space-y-8">
+            
+            <div class="space-y-2">
+                <input type="text" name="executive_summary_label" value="{{ brd.executive_summary_label or 'Executive Summary' }}" class="w-full bg-transparent border-none text-lg font-bold text-indigo-300 focus:ring-0 placeholder-gray-500" placeholder="Section Title...">
                 <textarea name="executive_summary" class="brd-editor mt-1 w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">{{ brd.executive_summary or '' }}</textarea>
             </div>
-            <div>
-                <label for="project_objectives" class="block text-sm font-medium text-gray-300">Project Objectives</label>
+
+            <div class="space-y-2">
+                <input type="text" name="project_objectives_label" value="{{ brd.project_objectives_label or 'Project Objectives' }}" class="w-full bg-transparent border-none text-lg font-bold text-indigo-300 focus:ring-0 placeholder-gray-500" placeholder="Section Title...">
                 <textarea name="project_objectives" class="brd-editor mt-1 w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">{{ brd.project_objectives or '' }}</textarea>
             </div>
-            <div>
-                <label for="project_scope" class="block text-sm font-medium text-gray-300">Project Scope</label>
+
+            <div class="space-y-2">
+                <input type="text" name="project_scope_label" value="{{ brd.project_scope_label or 'Project Scope' }}" class="w-full bg-transparent border-none text-lg font-bold text-indigo-300 focus:ring-0 placeholder-gray-500" placeholder="Section Title...">
                 <textarea name="project_scope" class="brd-editor mt-1 w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">{{ brd.project_scope or '' }}</textarea>
             </div>
-            <div>
-                <label for="business_requirements" class="block text-sm font-medium text-gray-300">Business Requirements</label>
+
+            <div class="space-y-2">
+                <input type="text" name="business_requirements_label" value="{{ brd.business_requirements_label or 'Business Requirements' }}" class="w-full bg-transparent border-none text-lg font-bold text-indigo-300 focus:ring-0 placeholder-gray-500" placeholder="Section Title...">
                 <textarea name="business_requirements" class="brd-editor mt-1 w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">{{ brd.business_requirements or '' }}</textarea>
             </div>
-            <div>
-                <label for="key_stakeholders" class="block text-sm font-medium text-gray-300">Key Stakeholders</label>
+
+            <div class="space-y-2">
+                <input type="text" name="key_stakeholders_label" value="{{ brd.key_stakeholders_label or 'Key Stakeholders' }}" class="w-full bg-transparent border-none text-lg font-bold text-indigo-300 focus:ring-0 placeholder-gray-500" placeholder="Section Title...">
                 <textarea name="key_stakeholders" class="brd-editor mt-1 w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">{{ brd.key_stakeholders or '' }}</textarea>
             </div>
-            <div>
-                <label for="project_constraints" class="block text-sm font-medium text-gray-300">Project Constraints</label>
+
+            <div class="space-y-2">
+                <input type="text" name="project_constraints_label" value="{{ brd.project_constraints_label or 'Project Constraints' }}" class="w-full bg-transparent border-none text-lg font-bold text-indigo-300 focus:ring-0 placeholder-gray-500" placeholder="Section Title...">
                 <textarea name="project_constraints" class="brd-editor mt-1 w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">{{ brd.project_constraints or '' }}</textarea>
             </div>
-            <div>
-                <label for="cost_benefit_analysis" class="block text-sm font-medium text-gray-300">Cost-Benefit Analysis</label>
+
+            <div class="space-y-2">
+                <input type="text" name="cost_benefit_analysis_label" value="{{ brd.cost_benefit_analysis_label or 'Cost-Benefit Analysis' }}" class="w-full bg-transparent border-none text-lg font-bold text-indigo-300 focus:ring-0 placeholder-gray-500" placeholder="Section Title...">
                 <textarea name="cost_benefit_analysis" class="brd-editor mt-1 w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700/50 text-white">{{ brd.cost_benefit_analysis or '' }}</textarea>
             </div>
-            <button type="submit" class="w-full py-2 px-4 rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Save BRD</button>
+
+            <button type="submit" class="w-full py-3 px-4 rounded-md text-white bg-indigo-600 hover:bg-indigo-700 font-bold shadow-lg transition-all">Save BRD Changes</button>
         </form>
     </div>
 </div>

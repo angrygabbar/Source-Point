@@ -6,7 +6,7 @@
     
     <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-            <a href="{{ url_for('admin.projects') }}" class="text-gray-400 hover:text-white text-xs uppercase tracking-wide font-bold mb-2 inline-block transition-colors">
+            <a href="{{ url_for('admin_core.projects') }}" class="text-gray-400 hover:text-white text-xs uppercase tracking-wide font-bold mb-2 inline-block transition-colors">
                 <i class="fas fa-arrow-left mr-1"></i> Back to Hub
             </a>
             <h1 class="text-4xl font-extrabold text-white tracking-tight mb-1">{{ project.name }}</h1>
@@ -90,8 +90,8 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-right opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <a href="{{ url_for('admin.edit_transaction', transaction_id=transaction.id) }}" class="text-blue-400 hover:text-blue-300 mr-3 transition-colors" title="Edit"><i class="fas fa-pen"></i></a>
-                                    <a href="{{ url_for('admin.delete_transaction', transaction_id=transaction.id) }}" class="text-red-400 hover:text-red-300 transition-colors" onclick="return confirm('Delete transaction?')" title="Delete"><i class="fas fa-trash"></i></a>
+                                    <a href="{{ url_for('admin_core.edit_transaction', transaction_id=transaction.id) }}" class="text-blue-400 hover:text-blue-300 mr-3 transition-colors" title="Edit"><i class="fas fa-pen"></i></a>
+                                    <a href="{{ url_for('admin_core.delete_transaction', transaction_id=transaction.id) }}" class="text-red-400 hover:text-red-300 transition-colors" onclick="return confirm('Delete transaction?')" title="Delete"><i class="fas fa-trash"></i></a>
                                 </td>
                             </tr>
                             {% else %}
@@ -109,12 +109,12 @@
                 <h3 class="text-sm font-bold text-white uppercase tracking-wide mb-4">Project Controls</h3>
                 
                 <div class="space-y-3">
-                    <a href="{{ url_for('admin.view_brd', project_id=project.id) }}" class="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-indigo-600 hover:text-white transition-all group border border-white/5">
+                    <a href="{{ url_for('admin_core.view_brd', project_id=project.id) }}" class="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-indigo-600 hover:text-white transition-all group border border-white/5">
                         <span class="text-sm font-medium text-gray-300 group-hover:text-white"><i class="fas fa-file-alt mr-2 opacity-70"></i> Project BRD</span>
                         <i class="fas fa-arrow-right text-xs opacity-50 group-hover:translate-x-1 transition-transform"></i>
                     </a>
                     
-                    <form action="{{ url_for('admin.update_project_status', project_id=project.id) }}" method="POST" class="relative">
+                    <form action="{{ url_for('admin_core.update_project_status', project_id=project.id) }}" method="POST" class="relative">
                         <select name="status" onchange="this.form.submit()" class="w-full appearance-none p-3 rounded-lg bg-white/5 border border-white/5 text-sm text-gray-300 hover:bg-white/10 transition-colors cursor-pointer focus:ring-1 focus:ring-indigo-500">
                             {% for s in ['Planning', 'In-Progress', 'Development', 'Testing', 'Deployment', 'Completed', 'On-Hold'] %}
                                 <option value="{{ s }}" {% if project.status == s %}selected{% endif %}>{{ s }}</option>
@@ -130,7 +130,7 @@
                     <h3 class="font-bold text-white text-sm flex items-center"><i class="fas fa-plus-circle text-indigo-400 mr-2"></i> New Transaction</h3>
                 </div>
                 <div class="p-5">
-                    <form action="{{ url_for('admin.add_transaction', project_id=project.id) }}" method="POST" class="space-y-4">
+                    <form action="{{ url_for('admin_core.add_transaction', project_id=project.id) }}" method="POST" class="space-y-4">
                         <div>
                             <label class="block text-xs font-medium text-gray-400 uppercase mb-1">Description</label>
                             <input type="text" name="description" required placeholder="e.g. Server Costs" class="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:ring-1 focus:ring-indigo-500 placeholder-gray-600 transition-all">

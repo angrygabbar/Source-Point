@@ -66,9 +66,6 @@ def login():
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
-    # ... (Keep existing code unchanged or replace with your local file if needed) ...
-    # For debugging login, we don't strictly need to modify register right now.
-    # Paste your original register code here if you overwrite this file entirely.
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
 
@@ -148,7 +145,8 @@ def register():
 def logout():
     logout_user()
     flash('You have been logged out.', 'info')
-    return redirect(url_for('auth.login_register'))
+    # CORRECTED: Now redirects to main.home instead of auth.login_register
+    return redirect(url_for('main.home'))
 
 @auth_bp.route('/reset_password_request')
 def reset_password_request():

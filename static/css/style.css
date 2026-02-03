@@ -3,130 +3,737 @@
    ========================================= */
 :root {
     --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-bg: rgba(10, 10, 12, 0.6);
-    --glass-shine: rgba(255, 255, 255, 0.03);
-    --primary-glow: rgba(99, 102, 241, 0.4);
+    --glass-bg: rgba(13, 13, 15, 0.6);
+    --primary-glow: rgba(99, 102, 241, 0.5);
+
+    /* Solar system variables kept for backward compatibility */
+    --orbit-line: rgba(255, 255, 255, 0.1);
+    --planet-color: #6366f1;
 }
 
+html,
 body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    width: 100%;
+    max-width: 100%;
     overflow-x: hidden;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     color: #e2e8f0;
-    /* The layout.html handles the background canvas */
+    background-color: #00000a;
+    margin: 0;
+    padding: 0;
 }
 
 /* =========================================
-   2. Premium Glassmorphism
+   2. Background Systems
    ========================================= */
+/* The Canvas for Stars/Three.js */
+#star-canvas,
+#bg-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -2;
+    pointer-events: none;
+}
 
-/* The base glass container */
+/* Enhanced Mobile Background (when Three.js is disabled) */
+@media (max-width: 768px) {
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background:
+            radial-gradient(ellipse at 20% 30%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+            radial-gradient(ellipse at 80% 70%, rgba(192, 132, 252, 0.1) 0%, transparent 40%),
+            radial-gradient(ellipse at 50% 90%, rgba(34, 211, 238, 0.08) 0%, transparent 45%),
+            radial-gradient(circle at 30% 80%, rgba(129, 140, 248, 0.12) 0%, transparent 35%),
+            linear-gradient(180deg, #000005 0%, #050510 50%, #000005 100%);
+        z-index: -30;
+        pointer-events: none;
+        animation: nebulaFloat 20s ease-in-out infinite;
+    }
+
+    body::after {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image:
+            radial-gradient(2px 2px at 10% 20%, rgba(255, 255, 255, 0.4) 0%, transparent 100%),
+            radial-gradient(2px 2px at 30% 60%, rgba(99, 102, 241, 0.5) 0%, transparent 100%),
+            radial-gradient(1px 1px at 50% 30%, rgba(255, 255, 255, 0.3) 0%, transparent 100%),
+            radial-gradient(2px 2px at 70% 80%, rgba(192, 132, 252, 0.4) 0%, transparent 100%),
+            radial-gradient(1px 1px at 90% 40%, rgba(34, 211, 238, 0.5) 0%, transparent 100%),
+            radial-gradient(1px 1px at 20% 90%, rgba(255, 255, 255, 0.3) 0%, transparent 100%),
+            radial-gradient(2px 2px at 80% 10%, rgba(129, 140, 248, 0.4) 0%, transparent 100%),
+            radial-gradient(1px 1px at 40% 50%, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+        z-index: -25;
+        pointer-events: none;
+        animation: twinkle 8s ease-in-out infinite alternate;
+    }
+}
+
+@keyframes nebulaFloat {
+
+    0%,
+    100% {
+        transform: scale(1) translateY(0);
+    }
+
+    25% {
+        transform: scale(1.02) translateY(-10px);
+    }
+
+    50% {
+        transform: scale(1) translateY(5px);
+    }
+
+    75% {
+        transform: scale(1.01) translateY(-5px);
+    }
+}
+
+@keyframes twinkle {
+    0% {
+        opacity: 0.6;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.7;
+    }
+}
+
+/* Desktop Background Enhancement */
+@media (min-width: 769px) {
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background:
+            radial-gradient(ellipse at 0% 0%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+            radial-gradient(ellipse at 100% 100%, rgba(192, 132, 252, 0.06) 0%, transparent 40%);
+        z-index: -15;
+        pointer-events: none;
+    }
+}
+
+/* Solar System (kept for legacy/fallback) */
+.solar-system {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) perspective(1000px) rotateX(20deg) scale(1.2);
+    width: 1000px;
+    height: 1000px;
+    z-index: -10;
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+.orbit {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border: 1px solid var(--orbit-line);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 30px rgba(99, 102, 241, 0.05);
+}
+
+.planet {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    transform: translate(-50%, -50%);
+    animation: orbit-spin infinite linear;
+}
+
+.planet::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 0 10px var(--planet-color), 0 0 20px var(--planet-color);
+}
+
+.orbit-1 {
+    width: 300px;
+    height: 300px;
+}
+
+.planet-1 {
+    animation-duration: 60s;
+}
+
+.planet-1::after {
+    width: 6px;
+    height: 6px;
+    background: #818cf8;
+}
+
+.orbit-2 {
+    width: 500px;
+    height: 500px;
+}
+
+.planet-2 {
+    animation-duration: 100s;
+    animation-direction: reverse;
+}
+
+.planet-2::after {
+    width: 10px;
+    height: 10px;
+    background: #c084fc;
+}
+
+.orbit-3 {
+    width: 750px;
+    height: 750px;
+}
+
+.planet-3 {
+    animation-duration: 180s;
+}
+
+.planet-3::after {
+    width: 8px;
+    height: 8px;
+    background: #22d3ee;
+}
+
+@keyframes orbit-spin {
+    from {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+/* =========================================
+   3. Realistic Glassmorphism
+   ========================================= */
 .glass-panel {
     background: var(--glass-bg);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
     border: 1px solid var(--glass-border);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), border-color 0.2s ease;
 }
 
-/* Hover effect for cards */
 .glass-panel:hover {
-    border-color: rgba(99, 102, 241, 0.3); /* Indigo tint on hover */
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.1), inset 0 0 20px var(--glass-shine);
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
 }
 
-/* Premium Input Fields */
-.input-premium {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--glass-border);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.input-premium:focus {
-    background: rgba(0, 0, 0, 0.5);
-    border-color: #6366f1; /* Indigo-500 */
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-    outline: none;
+.glass-sidebar {
+    background: rgba(5, 5, 8, 0.9);
+    backdrop-filter: blur(24px);
+    border-right: 1px solid var(--glass-border);
 }
 
 /* =========================================
-   3. Animations & Micro-Interactions
+   4. MISSING FEATURE RESTORED: Skeleton Loading
    ========================================= */
-
-/* Smooth Fade In */
-@keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+.skeleton {
+    background: rgba(255, 255, 255, 0.05);
+    background-image: linear-gradient(90deg,
+            rgba(255, 255, 255, 0) 0,
+            rgba(255, 255, 255, 0.05) 20%,
+            rgba(255, 255, 255, 0.1) 60%,
+            rgba(255, 255, 255, 0));
+    background-size: 200px 100%;
+    background-repeat: no-repeat;
+    background-position: -200% 0;
+    animation: skeleton-shimmer 1.5s infinite linear;
+    border-radius: 8px;
 }
+
+@keyframes skeleton-shimmer {
+    to {
+        background-position: 200% 0;
+    }
+}
+
+/* Helper to hide content while loading and show skeleton */
+.htmx-indicator-content {
+    display: none;
+}
+
+.htmx-request .htmx-indicator-content {
+    display: block;
+}
+
+.htmx-request.hide-when-loading {
+    display: none !important;
+}
+
+/* =========================================
+   5. Typography & Effects
+   ========================================= */
+.text-gradient-animated {
+    background: linear-gradient(to right, #818cf8, #22d3ee, #c084fc, #818cf8);
+    background-size: 300% auto;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: textShine 6s linear infinite;
+}
+
+@keyframes textShine {
+    to {
+        background-position: 200% center;
+    }
+}
+
 .animate-fade-in {
     animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Text Gradient Flow */
-@keyframes textShine {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-.text-gradient-animated {
-    background: linear-gradient(to right, #818cf8, #c084fc, #f472b6, #818cf8);
-    background-size: 200% auto;
-    color: transparent;
-    -webkit-background-clip: text;
-    background-clip: text;
-    animation: textShine 4s linear infinite;
-}
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
 
-/* Button Glow on Hover */
-.btn-glow {
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s ease;
-}
-.btn-glow::after {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 60%);
-    opacity: 0;
-    transform: scale(0.5);
-    transition: transform 0.5s ease, opacity 0.5s ease;
-}
-.btn-glow:hover::after {
-    opacity: 1;
-    transform: scale(1);
-}
-.btn-glow:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 20px -5px var(--primary-glow);
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* =========================================
-   4. HTMX & Utilities
+   5b. Page Loading Animation
    ========================================= */
+/* Page loader overlay */
+.page-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #00000a;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
 
-/* Top Loading Bar */
+.page-loader.loaded {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.page-loader .loader-content {
+    text-align: center;
+}
+
+.page-loader .loader-spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(99, 102, 241, 0.2);
+    border-top-color: #6366f1;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.page-loader .loader-text {
+    margin-top: 1rem;
+    color: #6366f1;
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+/* =========================================
+   5c. Scroll Reveal Effects
+   ========================================= */
+/* Elements that reveal on scroll */
+.scroll-reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.scroll-reveal.revealed {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.scroll-reveal-left {
+    opacity: 0;
+    transform: translateX(-30px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.scroll-reveal-left.revealed {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.scroll-reveal-right {
+    opacity: 0;
+    transform: translateX(30px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.scroll-reveal-right.revealed {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.scroll-reveal-scale {
+    opacity: 0;
+    transform: scale(0.9);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.scroll-reveal-scale.revealed {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Staggered reveal for children */
+.scroll-reveal-stagger>* {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+}
+
+.scroll-reveal-stagger.revealed>*:nth-child(1) {
+    transition-delay: 0.05s;
+}
+
+.scroll-reveal-stagger.revealed>*:nth-child(2) {
+    transition-delay: 0.1s;
+}
+
+.scroll-reveal-stagger.revealed>*:nth-child(3) {
+    transition-delay: 0.15s;
+}
+
+.scroll-reveal-stagger.revealed>*:nth-child(4) {
+    transition-delay: 0.2s;
+}
+
+.scroll-reveal-stagger.revealed>*:nth-child(5) {
+    transition-delay: 0.25s;
+}
+
+.scroll-reveal-stagger.revealed>*:nth-child(6) {
+    transition-delay: 0.3s;
+}
+
+.scroll-reveal-stagger.revealed>* {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* =========================================
+   5d. Page Transitions
+   ========================================= */
+/* HTMX page transitions */
+.htmx-swapping {
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+
+.htmx-settling {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+}
+
+/* Content fade in on page load */
+.page-content {
+    animation: pageContentFadeIn 0.5s ease-out forwards;
+}
+
+@keyframes pageContentFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Smooth hover transitions for interactive elements */
+.hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 40px rgba(99, 102, 241, 0.2);
+}
+
+.hover-glow {
+    transition: box-shadow 0.3s ease;
+}
+
+.hover-glow:hover {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+}
+
+/* =========================================
+   6. Utilities
+   ========================================= */
+[x-cloak] {
+    display: none !important;
+}
+
 .htmx-indicator-bar {
     display: none;
     position: fixed;
     top: 0;
     left: 0;
     height: 3px;
-    background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
+    background: linear-gradient(90deg, #6366f1, #22d3ee);
     z-index: 9999;
+    box-shadow: 0 0 15px #6366f1;
     width: 100%;
-    animation: progress 1.5s infinite ease-in-out;
-}
-.htmx-request .htmx-indicator-bar { display: block; }
-@keyframes progress {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+    animation: progress 1s infinite ease-in-out;
 }
 
-/* Scrollbar */
-.custom-scrollbar::-webkit-scrollbar { width: 6px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
+.htmx-request .htmx-indicator-bar {
+    display: block;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.spotlight-group {
+    position: relative;
+}
+
+.spotlight-card {
+    background-color: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.spotlight-card::before {
+    content: "";
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    top: 0;
+    left: 0;
+    background: radial-gradient(800px circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.06), transparent 40%);
+    opacity: 0;
+    transition: opacity 0.5s;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.spotlight-group:hover .spotlight-card::before {
+    opacity: 1;
+}
+
+/* =========================================
+   7. Mobile Responsive Utilities
+   ========================================= */
+@media (max-width: 768px) {
+
+    /* Sidebar improvements */
+    .glass-sidebar {
+        width: 280px;
+        max-width: 85vw;
+    }
+
+    /* Main content area */
+    main {
+        padding: 1rem !important;
+    }
+
+    /* Glass panels */
+    .glass-panel {
+        border-radius: 1rem;
+        padding: 1rem;
+    }
+
+    /* Header adjustments */
+    header {
+        height: 60px !important;
+        padding: 0 1rem !important;
+    }
+
+    /* Grid adjustments for mobile */
+    .grid {
+        gap: 0.75rem !important;
+    }
+
+    /* Table responsiveness */
+    .overflow-x-auto {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+        font-size: 0.75rem;
+    }
+
+    table th,
+    table td {
+        padding: 0.5rem !important;
+    }
+
+    /* Button scaling */
+    button,
+    .btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    /* Text scaling */
+    h1 {
+        font-size: 1.5rem !important;
+    }
+
+    h2 {
+        font-size: 1.25rem !important;
+    }
+
+    h3 {
+        font-size: 1rem !important;
+    }
+
+    /* Form elements */
+    input,
+    select,
+    textarea {
+        font-size: 16px !important;
+        /* Prevents iOS zoom */
+    }
+
+    /* Reduce spacing */
+    .space-y-8>*+* {
+        margin-top: 1.5rem !important;
+    }
+
+    .space-y-6>*+* {
+        margin-top: 1rem !important;
+    }
+
+    .space-y-4>*+* {
+        margin-top: 0.75rem !important;
+    }
+
+    /* Hide decorative elements on mobile */
+    .solar-system {
+        display: none !important;
+    }
+
+    /* Improve touch targets */
+    .nav-item {
+        padding: 0.875rem 1rem !important;
+        margin-bottom: 0.25rem;
+    }
+
+    /* Modal adjustments */
+    [role="dialog"]>div>div {
+        margin: 1rem !important;
+        max-height: calc(100vh - 2rem);
+        overflow-y: auto;
+    }
+}
+
+/* Small mobile screens */
+@media (max-width: 380px) {
+    main {
+        padding: 0.75rem !important;
+    }
+
+    .glass-panel {
+        padding: 0.75rem;
+    }
+
+    h1 {
+        font-size: 1.25rem !important;
+    }
+}
+
+/* Landscape mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+    header {
+        height: 50px !important;
+    }
+
+    main {
+        padding-top: 0.5rem !important;
+    }
+}
+
+/* Tablet adjustments */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .glass-sidebar {
+        width: 240px;
+    }
+
+    main {
+        padding: 1.5rem !important;
+    }
+}

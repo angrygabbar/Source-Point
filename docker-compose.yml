@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # 1. The Flask App
   web:
@@ -8,41 +6,60 @@ services:
     restart: always
     ports:
       - "5000:5000"
-    
-    # Load keys from the .env file (Mac .env or Server .env)
     env_file:
       - .env
-    
-    # Maps local folder to container (Syncs code on Mac)
+    # --- DELETED HARDCODED ENVIRONMENT SECTION ---
+    # We removed DATABASE_URL here so it reads from .env file
     volumes:
       - .:/app
-    
-    # --- CRITICAL: THE BRIDGE ---
-    # Allows Server Container -> Server DB
-    # Allows Mac Container -> Mac DB
     extra_hosts:
       - "host.docker.internal:host-gateway"
-
-    # We keep this dependency so Mac starts DB first.
-    # Server will ignore it if it's not using the 'db' service.
     depends_on:
       - db
+      - redis
 
-  # 2. The Development Database (Mac Only)
-  # On the Server, this container will start but sit empty/unused.
-  # This is fine and safe.
+  # 2. The Database
   db:
     image: postgres:15
     container_name: sourcepoint_db_dev
     restart: always
     environment:
       POSTGRES_USER: dev_user
-      POSTGRES_PASSWORD: dev_password
-      POSTGRES_DB: sourcepoint_dev_db
+      # Update this if you want the DB container to start with the admin password
+      # But since your volume is already created, the password inside is already 'admin123'
+      POSTGRES_PASSWORD: dev_password 
+      POSTGRES_DB: sourcepoint_db  # Updated to prod DB name
     ports:
       - "5434:5432"
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
+
+  # 3. Redis
+  redis:
+    image: redis:alpine
+    container_name: sourcepoint_redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  # 4. The Celery Worker & Scheduler
+  worker:
+    build: .
+    # container_name: sourcepoint_worker  <-- KEEP THIS COMMENTED (Good)
+    restart: always
+    command: celery -A app.celery worker --beat --loglevel=info
+    env_file:
+      - .env
+    # --- DELETED HARDCODED ENVIRONMENT SECTION ---
+    # We removed DATABASE_URL here so it reads from .env file
+    environment:
+      - C_FORCE_ROOT=true
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+      - web
 
 volumes:
   postgres_data_dev:

@@ -1,4 +1,4 @@
-# --- CORE FRAMEWORK (Downgraded for Compatibility) ---
+# --- CORE FRAMEWORK ---
 Flask==2.3.3
 Werkzeug==2.3.7
 
@@ -15,6 +15,10 @@ psycopg2-binary==2.9.9
 python-dotenv==1.0.0
 requests==2.31.0
 gunicorn==21.2.0
+gevent==23.9.1
+flask-talisman==1.1.0
+whitenoise==6.5.0
+pybreaker==1.0.1
 
 # --- THIRD PARTY SERVICES ---
 cloudinary==1.36.0
@@ -25,6 +29,12 @@ google-generativeai==0.8.3
 redis==5.0.1
 celery==5.3.6
 
+# --- GOOGLE CALENDAR API ---
+google-auth==2.27.0
+google-auth-oauthlib==1.2.0
+google-auth-httplib2==0.2.0
+google-api-python-client==2.116.0
+
 # --- PDF & HTML PARSING ---
 beautifulsoup4==4.12.2
-fpdf==1.7.2
+fpdf2==2.7.9

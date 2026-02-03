@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interview Cancelled</title>
+</head>
+
+<body
+    style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #e2e8f0;">
+
+    <!-- Main Container -->
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0f172a;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+
+                <!-- Email Card -->
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0"
+                    style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+
+                    <!-- Header with Gradient -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%); padding: 40px 40px 50px 40px; text-align: center;">
+                            <table role="presentation" cellspacing="0" cellpadding="0"
+                                style="margin: 0 auto 20px auto;">
+                                <tr>
+                                    <td style="background: rgba(255,255,255,0.2); border-radius: 16px; padding: 16px;">
+                                        <img src="https://img.icons8.com/fluency/48/cancel.png" alt="Cancelled"
+                                            width="48" height="48" style="display: block;">
+                                    </td>
+                                </tr>
+                            </table>
+                            <h1
+                                style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">
+                                Interview Cancelled</h1>
+                            <p style="margin: 12px 0 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">We regret to
+                                inform you of this change</p>
+                        </td>
+                    </tr>
+
+                    <!-- Wave Divider -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%); height: 30px;">
+                            <div style="background: #1e293b; height: 30px; border-radius: 30px 30px 0 0;"></div>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 0 40px 40px 40px;">
+
+                            <!-- Greeting -->
+                            <p style="font-size: 16px; color: #e2e8f0; margin: 0 0 24px 0; line-height: 1.6;">
+                                Hello <strong style="color: #f87171;">{{ candidate.username }}</strong>,
+                            </p>
+                            <p style="font-size: 16px; color: #d1d5db; margin: 0 0 30px 0; line-height: 1.6;">
+                                We regret to inform you that your scheduled interview has been cancelled. We apologize
+                                for any inconvenience this may cause.
+                            </p>
+
+                            <!-- Cancelled Interview Details -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <h2
+                                            style="margin: 0 0 20px 0; font-size: 18px; color: #f87171; font-weight: 600;">
+                                            ❌ Cancelled Interview Details
+                                        </h2>
+
+                                        <!-- Title -->
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 16px;">
+                                            <tr>
+                                                <td width="40" valign="top">
+                                                    <div
+                                                        style="background: rgba(239, 68, 68, 0.2); border-radius: 8px; width: 36px; height: 36px; text-align: center; line-height: 36px;">
+                                                        📝</div>
+                                                </td>
+                                                <td style="padding-left: 12px;">
+                                                    <p
+                                                        style="margin: 0; font-size: 12px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px;">
+                                                        Title</p>
+                                                    <p
+                                                        style="margin: 4px 0 0 0; font-size: 16px; color: #f1f5f9; font-weight: 500; text-decoration: line-through; opacity: 0.7;">
+                                                        {{ interview.title }}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        <!-- Date & Time -->
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td width="40" valign="top">
+                                                    <div
+                                                        style="background: rgba(239, 68, 68, 0.2); border-radius: 8px; width: 36px; height: 36px; text-align: center; line-height: 36px;">
+                                                        📅</div>
+                                                </td>
+                                                <td style="padding-left: 12px;">
+                                                    <p
+                                                        style="margin: 0; font-size: 12px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px;">
+                                                        Originally Scheduled</p>
+                                                    <p
+                                                        style="margin: 4px 0 0 0; font-size: 16px; color: #f87171; font-weight: 600; text-decoration: line-through; opacity: 0.7;">
+                                                        {{ scheduled_time_ist.strftime('%A, %B %d, %Y at %I:%M %p IST')
+                                                        }}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- What's Next -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <h2
+                                            style="margin: 0 0 16px 0; font-size: 18px; color: #60a5fa; font-weight: 600;">
+                                            💡 What's Next?
+                                        </h2>
+                                        <p style="margin: 0; font-size: 14px; color: #e5e7eb; line-height: 1.6;">
+                                            Our team will reach out to you shortly to discuss rescheduling options. If
+                                            you have any immediate questions or concerns, please don't hesitate to
+                                            contact us.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Apology Note -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(251, 191, 36, 0.1); border-left: 4px solid #fbbf24; border-radius: 0 12px 12px 0; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 16px 20px;">
+                                        <p style="margin: 0; font-size: 14px; color: #fcd34d;">
+                                            <strong>We sincerely apologize</strong> for any inconvenience this
+                                            cancellation may have caused. We value your interest in joining our team and
+                                            look forward to connecting with you soon.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Closing -->
+                            <p style="font-size: 16px; color: #e2e8f0; margin: 0;">
+                                Best regards,<br>
+                                <strong style="color: #f87171;">The Source Point Team</strong>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background: rgba(15, 23, 42, 0.8); padding: 24px 40px; border-top: 1px solid rgba(148, 163, 184, 0.1);">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td align="center">
+                                        <p style="margin: 0 0 8px 0; font-size: 14px; color: #9ca3af;">
+                                            This is an automated email from Source Point Platform
+                                        </p>
+                                        <p style="margin: 0; font-size: 12px; color: #475569;">
+                                            © {{ now.year }} Source Point. All rights reserved.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>

@@ -1,37 +1,44 @@
-name: Deploy to Laptop
+name: Deploy to Production
 
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch:  # Manual run button
+  workflow_dispatch:
 
 jobs:
   deploy:
-    runs-on: self-hosted  # Runs on your laptop
+    runs-on: self-hosted
 
     steps:
+      # 1. Thes step Authenticates & Downloads code to a temp folder (SUCCESS)
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # --- THIS IS THE MISSING STEP ---
-      - name: Copy Files to Web Server
+      # 2. Sync the downloaded code to your live folder
+      # We use rsync to update only changed files (Faster & Safer than git pull here)
+      - name: Sync Files to Live Folder
         run: |
-          # Copy all new files from the runner to your live website folder
-          # -r: recursive, -u: update only new files, -v: verbose
-          cp -rf . /var/www/sourcepoint/Source-Point/
+          # Create folder if missing
+          mkdir -p /var/www/sourcepoint/Source-Point
+          
+          # Copy files from Runner -> Live Server
+          # -a: preserve permissions, -v: verbose, --delete: remove deleted files
+          # --exclude: don't copy .git folder or venv to avoid messing up local configs
+          rsync -av --exclude='.git' --exclude='venv' --exclude='__pycache__' ./ /var/www/sourcepoint/Source-Point/
 
-      - name: Install Dependencies
+      # 3. Rebuild Docker
+      - name: Rebuild Application
         run: |
-          # Install libraries (e.g. google-generativeai) into the virtual env
-          /var/www/sourcepoint/venv/bin/pip install -r /var/www/sourcepoint/Source-Point/requirements.txt
-
-      - name: Apply Database Migrations
-        run: |
-          export FLASK_APP=app.py
           cd /var/www/sourcepoint/Source-Point
-          /var/www/sourcepoint/venv/bin/flask db upgrade || echo "No migrations needed"
+          docker compose up -d --build --no-deps web
 
-      - name: Restart Application
+      # 4. Database Migrations
+      - name: Run Database Migrations
         run: |
-          # Restart the service to load the new Python code
-          sudo systemctl restart sourcepoint
+          cd /var/www/sourcepoint/Source-Point
+          docker compose exec -T web flask db upgrade
+
+      # 5. Cleanup
+      - name: Cleanup Old Images
+        run: |
+          docker image prune -f

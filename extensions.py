@@ -5,6 +5,7 @@ from flask_migrate import Migrate
 from flask_caching import Cache
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from celery import Celery  #
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()
@@ -12,6 +13,7 @@ migrate = Migrate()
 login_manager = LoginManager()
 cache = Cache()
 limiter = Limiter(key_func=get_remote_address)
+celery = Celery()  # Initialize Celery
 
 # Redirect users to this endpoint if they aren't logged in
 login_manager.login_view = 'auth.login_register'

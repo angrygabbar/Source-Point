@@ -2,100 +2,289 @@
 {% block title %}SourcePoint - The Future of Development{% endblock %}
 {% block content %}
 
-<div class="relative min-h-[90vh] flex flex-col justify-center items-center text-center overflow-hidden px-4">
+<style>
+    /* --- 1. Scramble Text Cursor --- */
+    .cursor-blink {
+        display: inline-block;
+        width: 3px;
+        height: 1em;
+        background-color: #6366f1;
+        margin-left: 4px;
+        animation: blink 1s step-end infinite;
+        vertical-align: middle;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* --- 2. 3D Isometric Stack (The Hero Visual) --- */
+    .iso-container {
+        position: relative;
+        width: 300px;
+        height: 300px;
+        transform: rotateX(60deg) rotateZ(-45deg) rotateY(0deg);
+        transform-style: preserve-3d;
+        transition: transform 0.5s ease-out;
+    }
     
-    <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-600/20 rounded-full blur-[120px] -z-10 animate-pulse"></div>
-    <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-[120px] -z-10 animate-pulse" style="animation-delay: 2s;"></div>
+    .iso-layer {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: rgba(20, 20, 25, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 24px;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.5s ease-out;
+    }
 
-    <div class="relative z-10 max-w-6xl mx-auto animate-fade-in">
+    /* Floating Animation for layers */
+    .layer-1 { transform: translateZ(0px); z-index: 1; animation: float1 4s ease-in-out infinite; }
+    .layer-2 { transform: translateZ(60px); z-index: 2; animation: float2 4s ease-in-out infinite 0.2s; background: rgba(99, 102, 241, 0.1); border-color: rgba(99, 102, 241, 0.3); }
+    .layer-3 { transform: translateZ(120px); z-index: 3; animation: float3 4s ease-in-out infinite 0.4s; background: rgba(255, 255, 255, 0.05); }
+
+    @keyframes float1 { 0%, 100% { transform: translateZ(0px); } 50% { transform: translateZ(20px); } }
+    @keyframes float2 { 0%, 100% { transform: translateZ(60px); } 50% { transform: translateZ(90px); } }
+    @keyframes float3 { 0%, 100% { transform: translateZ(120px); } 50% { transform: translateZ(160px); } }
+
+    /* Icons inside layers */
+    .iso-icon { font-size: 3rem; color: white; transform: rotateZ(45deg) rotateX(-60deg); text-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+
+    /* --- 3. Border Beam Effect --- */
+    .border-beam-card {
+        position: relative;
+        overflow: hidden;
+    }
+    .border-beam-card::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        border-radius: 1.5rem; 
+        padding: 2px; 
+        background: linear-gradient(90deg, transparent, #6366f1, transparent);
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        background-size: 200% 100%;
+        animation: borderBeam 4s linear infinite;
+        opacity: 0.5;
+        pointer-events: none;
+    }
+    @keyframes borderBeam { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+
+    /* --- 4. Infinite Marquee --- */
+    .marquee-mask {
+        mask-image: linear-gradient(to right, transparent, black 20%, black 80%, transparent);
+        -webkit-mask-image: linear-gradient(to right, transparent, black 20%, black 80%, transparent);
+    }
+</style>
+
+<div class="relative min-h-[90vh] flex flex-col justify-center px-4 overflow-hidden pt-20">
+    <div class="max-w-7xl w-full mx-auto grid lg:grid-cols-2 gap-16 items-center">
         
-        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8 hover:bg-white/10 transition-colors cursor-default">
-            <span class="flex h-2 w-2 relative">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span class="text-xs font-medium text-gray-300 uppercase tracking-wide">v2.0 System Online</span>
-        </div>
-        
-        <h1 class="text-5xl md:text-7xl lg:text-8xl font-black text-white tracking-tight leading-[1.1] mb-8">
-            Build Faster.<br>
-            <span class="text-gradient-animated">Scale Smarter.</span>
-        </h1>
-        
-        <p class="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed mb-10">
-            The all-in-one ecosystem for engineering teams. Source talent, manage code tests, and orchestrate commerce in a single, beautiful workspace.
-        </p>
-        
-        <div class="flex flex-col sm:flex-row justify-center gap-5">
-            <a href="{{ url_for('auth.login_register') }}"
-               class="btn-glow px-8 py-4 rounded-xl bg-indigo-600 text-white font-bold text-lg shadow-xl shadow-indigo-600/20 flex items-center justify-center">
-                Start Building Free
-                <i class="fas fa-arrow-right ml-3"></i>
-            </a>
-            <a href="#features"
-               class="px-8 py-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold text-lg backdrop-blur-md transition-all flex items-center justify-center group">
-                <i class="fas fa-play text-xs mr-3 text-gray-400 group-hover:text-white transition-colors"></i>
-                Watch Demo
-            </a>
+        <div class="z-10 order-2 lg:order-1">
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 backdrop-blur-md mb-8 hover:bg-indigo-500/20 transition-colors cursor-default animate-fade-in">
+                <span class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                </span>
+                <span class="text-[11px] font-mono font-bold text-indigo-300 uppercase tracking-widest">System Operational</span>
+            </div>
+            
+            <h1 class="text-5xl md:text-7xl lg:text-8xl font-black text-white tracking-tighter leading-[1] mb-8 drop-shadow-2xl">
+                Build <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Without</span><br>
+                <span id="scramble-text">Boundaries</span><span class="cursor-blink"></span>
+            </h1>
+            
+            <p class="text-lg md:text-xl text-gray-400 max-w-xl leading-relaxed mb-10 font-light tracking-wide">
+                The all-in-one ecosystem for elite engineering. Source talent, manage projects, and monetize assets in a unified glass-morphic workspace.
+            </p>
+            
+            <div class="flex flex-wrap gap-4">
+                <a href="{{ url_for('auth.login_register') }}"
+                   class="relative overflow-hidden group px-8 py-4 rounded-xl bg-indigo-600 text-white font-bold text-lg shadow-[0_0_20px_rgba(79,70,229,0.3)] transition-all hover:scale-105 hover:shadow-[0_0_40px_rgba(79,70,229,0.5)]">
+                   <span class="relative z-10 flex items-center">Start Building Free <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i></span>
+                   <div class="absolute inset-0 -translate-x-full group-hover:translate-x-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700"></div>
+                </a>
+                
+                <a href="#features"
+                   class="px-8 py-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium text-lg backdrop-blur-md transition-all flex items-center justify-center group">
+                    <i class="fas fa-play text-xs mr-3 text-gray-400 group-hover:text-white transition-colors"></i>
+                    See How It Works
+                </a>
+            </div>
+
+            <div class="mt-16 pt-8 border-t border-white/5 flex gap-12">
+                <div>
+                    <h3 class="text-3xl font-bold text-white tracking-tight">20+</h3>
+                    <p class="text-xs text-gray-500 uppercase font-bold tracking-widest mt-1">Engineers</p>
+                </div>
+                <div>
+                    <h3 class="text-3xl font-bold text-white tracking-tight">$200K+</h3>
+                    <p class="text-xs text-gray-500 uppercase font-bold tracking-widest mt-1">Transacted</p>
+                </div>
+                <div>
+                    <h3 class="text-3xl font-bold text-white tracking-tight">99.9%</h3>
+                    <p class="text-xs text-gray-500 uppercase font-bold tracking-widest mt-1">UpTime</p>
+                </div>
+            </div>
         </div>
 
-        <div class="mt-16 pt-8 border-t border-white/5 grid grid-cols-2 md:grid-cols-4 gap-8 opacity-80">
-            <div>
-                <h3 class="text-3xl font-bold text-white">10+</h3>
-                <p class="text-xs text-gray-500 uppercase tracking-widest mt-1">Developers</p>
-            </div>
-            <div>
-                <h3 class="text-3xl font-bold text-white">99.9%</h3>
-                <p class="text-xs text-gray-500 uppercase tracking-widest mt-1">Uptime</p>
-            </div>
-            <div>
-                <h3 class="text-3xl font-bold text-white">$2M+</h3>
-                <p class="text-xs text-gray-500 uppercase tracking-widest mt-1">Processed</p>
-            </div>
-            <div>
-                <h3 class="text-3xl font-bold text-white">24/7</h3>
-                <p class="text-xs text-gray-500 uppercase tracking-widest mt-1">AI Support</p>
+        <div class="relative z-10 order-1 lg:order-2 flex justify-center items-center h-[500px] perspective-[2000px]">
+            <div class="absolute w-[400px] h-[400px] bg-indigo-500/20 rounded-full blur-[100px] -z-10"></div>
+            
+            <div class="iso-container" id="hero-iso">
+                <div class="iso-layer layer-1">
+                    <div class="text-center">
+                        <i class="fas fa-server iso-icon mb-2 opacity-50"></i>
+                        <div class="text-white/50 font-mono text-sm transform rotateZ(45deg) rotateX(-60deg)">Infrastructure</div>
+                    </div>
+                </div>
+                
+                <div class="iso-layer layer-2">
+                    <div class="absolute inset-0 border border-indigo-400/30 rounded-2xl"></div>
+                    <div class="text-center">
+                        <i class="fas fa-code iso-icon mb-2 text-indigo-400"></i>
+                        <div class="text-indigo-200 font-mono text-sm transform rotateZ(45deg) rotateX(-60deg)">Source Code</div>
+                    </div>
+                    <div class="absolute top-0 left-0 w-full h-1 bg-indigo-500/50 shadow-[0_0_15px_#6366f1] animate-[scan_3s_linear_infinite]"></div>
+                </div>
+                
+                <div class="iso-layer layer-3">
+                    <div class="flex gap-4 transform rotateZ(45deg) rotateX(-60deg)">
+                        <div class="w-16 h-20 bg-emerald-500/20 rounded-lg border border-emerald-500/50 flex items-center justify-center backdrop-blur-sm">
+                            <i class="fas fa-dollar-sign text-2xl text-emerald-400"></i>
+                        </div>
+                        <div class="w-16 h-20 bg-purple-500/20 rounded-lg border border-purple-500/50 flex items-center justify-center backdrop-blur-sm">
+                            <i class="fas fa-user-plus text-2xl text-purple-400"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div id="features" class="py-24 relative z-10 max-w-7xl mx-auto px-4">
-    <div class="text-center mb-16">
-        <h2 class="text-3xl md:text-5xl font-bold text-white mb-6">Why SourcePoint?</h2>
-        <p class="text-gray-400 max-w-2xl mx-auto text-lg">We've removed the friction from hiring, project management, and commerce.</p>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div class="glass-panel p-8 rounded-3xl group relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150 duration-700"></div>
-            
-            <div class="w-14 h-14 rounded-2xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 mb-6 group-hover:bg-indigo-500 group-hover:text-white transition-colors duration-300">
-                <i class="fas fa-code-branch text-2xl"></i>
-            </div>
-            <h3 class="text-2xl font-bold text-white mb-3">Unified Workflow</h3>
-            <p class="text-gray-400 leading-relaxed">Stop context switching. Manage your repository, team updates, and project milestones in one dashboard.</p>
+<div class="py-12 border-y border-white/5 bg-[#000000]/50 backdrop-blur-sm marquee-mask relative z-10">
+    <div class="flex overflow-hidden group">
+        <div class="flex space-x-16 animate-[scroll_30s_linear_infinite] group-hover:[animation-play-state:paused] min-w-full px-8">
+            {% for _ in range(2) %}
+            <i class="fab fa-aws text-4xl text-gray-600 hover:text-white transition-colors"></i>
+            <i class="fab fa-google text-4xl text-gray-600 hover:text-white transition-colors"></i>
+            <i class="fab fa-meta text-4xl text-gray-600 hover:text-white transition-colors"></i>
+            <i class="fab fa-stripe text-4xl text-gray-600 hover:text-white transition-colors"></i>
+            <i class="fab fa-docker text-4xl text-gray-600 hover:text-white transition-colors"></i>
+            <i class="fab fa-github text-4xl text-gray-600 hover:text-white transition-colors"></i>
+            <i class="fab fa-python text-4xl text-gray-600 hover:text-white transition-colors"></i>
+            <i class="fab fa-react text-4xl text-gray-600 hover:text-white transition-colors"></i>
+            {% endfor %}
         </div>
-
-        <div class="glass-panel p-8 rounded-3xl group relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150 duration-700"></div>
-            
-            <div class="w-14 h-14 rounded-2xl bg-purple-500/20 flex items-center justify-center text-purple-400 mb-6 group-hover:bg-purple-500 group-hover:text-white transition-colors duration-300">
-                <i class="fas fa-brain text-2xl"></i>
-            </div>
-            <h3 class="text-2xl font-bold text-white mb-3">AI-Powered Hiring</h3>
-            <p class="text-gray-400 leading-relaxed">Let our AI screen resumes and grade code tests. Focus on interviewing the top 1% of talent.</p>
-        </div>
-
-        <div class="glass-panel p-8 rounded-3xl group relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150 duration-700"></div>
-            
-            <div class="w-14 h-14 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 mb-6 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-300">
-                <i class="fas fa-shopping-bag text-2xl"></i>
-            </div>
-            <h3 class="text-2xl font-bold text-white mb-3">Developer Marketplace</h3>
-            <p class="text-gray-400 leading-relaxed">Buy and sell assets directly. Integrated stock management and automated invoicing included.</p>
+        <div class="flex space-x-16 animate-[scroll_30s_linear_infinite] group-hover:[animation-play-state:paused] min-w-full px-8" aria-hidden="true">
+             {% for _ in range(2) %}
+            <i class="fab fa-aws text-4xl text-gray-600 hover:text-white transition-colors"></i>
+            <i class="fab fa-google text-4xl text-gray-600 hover:text-white transition-colors"></i>
+            <i class="fab fa-meta text-4xl text-gray-600 hover:text-white transition-colors"></i>
+            <i class="fab fa-stripe text-4xl text-gray-600 hover:text-white transition-colors"></i>
+            <i class="fab fa-docker text-4xl text-gray-600 hover:text-white transition-colors"></i>
+            <i class="fab fa-github text-4xl text-gray-600 hover:text-white transition-colors"></i>
+            <i class="fab fa-python text-4xl text-gray-600 hover:text-white transition-colors"></i>
+            <i class="fab fa-react text-4xl text-gray-600 hover:text-white transition-colors"></i>
+            {% endfor %}
         </div>
     </div>
 </div>
+
+<div id="features" class="py-32 relative z-10 max-w-7xl mx-auto px-4">
+    <div class="text-center mb-24">
+        <h2 class="text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight">The Ecosystem</h2>
+        <p class="text-gray-400 max-w-2xl mx-auto text-lg">Engineered to remove friction. Everything you need in one OS.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 grid-rows-2 gap-6 h-auto md:h-[600px]">
+        
+        <div class="md:col-span-2 md:row-span-2 glass-panel rounded-3xl p-10 border-beam-card group relative">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -mr-16 -mt-16 group-hover:bg-indigo-500/20 transition-colors duration-700"></div>
+            
+            <div class="relative z-10 h-full flex flex-col justify-between">
+                <div>
+                    <div class="w-14 h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 mb-6 border border-indigo-500/20 shadow-lg shadow-indigo-500/5">
+                        <i class="fas fa-network-wired text-2xl"></i>
+                    </div>
+                    <h3 class="text-3xl font-bold text-white mb-4">Unified Workflow</h3>
+                    <p class="text-gray-400 text-lg max-w-md leading-relaxed">
+                        Stop tab-switching. Manage your repository, team chat, and project kanban in a single, synchronized dashboard.
+                    </p>
+                </div>
+                
+                <div class="w-full mt-10 p-4 bg-[#0a0a0f] rounded-xl border border-white/10 shadow-2xl translate-y-4 group-hover:translate-y-2 transition-transform duration-500">
+                    <div class="flex items-center gap-3 mb-4 border-b border-white/5 pb-3">
+                        <div class="flex gap-1.5"><div class="w-2.5 h-2.5 rounded-full bg-red-500/50"></div><div class="w-2.5 h-2.5 rounded-full bg-yellow-500/50"></div><div class="w-2.5 h-2.5 rounded-full bg-green-500/50"></div></div>
+                        <div class="h-2 w-32 bg-white/10 rounded-full"></div>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex justify-between"><div class="h-2 w-1/3 bg-white/10 rounded-full"></div><div class="h-2 w-10 bg-indigo-500/50 rounded-full"></div></div>
+                        <div class="flex justify-between"><div class="h-2 w-1/2 bg-white/10 rounded-full"></div><div class="h-2 w-8 bg-purple-500/50 rounded-full"></div></div>
+                        <div class="flex justify-between"><div class="h-2 w-1/4 bg-white/10 rounded-full"></div><div class="h-2 w-12 bg-emerald-500/50 rounded-full"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-panel rounded-3xl p-8 border-beam-card group hover:bg-white/[0.02] transition-colors">
+            <div class="flex items-start justify-between mb-6">
+                <div class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 border border-purple-500/20">
+                    <i class="fas fa-brain text-xl"></i>
+                </div>
+                <span class="px-2 py-1 rounded bg-purple-500/10 text-[10px] text-purple-300 border border-purple-500/20 uppercase font-bold">AI Beta</span>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2">Smart Hiring</h3>
+            <p class="text-sm text-gray-400">Automated resume parsing and code test grading powered by neural networks.</p>
+        </div>
+
+        <div class="glass-panel rounded-3xl p-8 border-beam-card group hover:bg-white/[0.02] transition-colors">
+            <div class="flex items-start justify-between mb-6">
+                <div class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
+                    <i class="fas fa-shopping-bag text-xl"></i>
+                </div>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2">Dev Market</h3>
+            <p class="text-sm text-gray-400">Monetize your side projects. Sell components, templates, and scripts securely.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Scramble Text Effect ---
+    const textElement = document.getElementById('scramble-text');
+    const finalText = "Boundaries";
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+    let iterations = 0;
+
+    const interval = setInterval(() => {
+        textElement.innerText = finalText
+            .split("")
+            .map((letter, index) => {
+                if(index < iterations) return finalText[index];
+                return chars[Math.floor(Math.random() * chars.length)];
+            })
+            .join("");
+        
+        if(iterations >= finalText.length) clearInterval(interval);
+        iterations += 1/3;
+    }, 30);
+
+    // --- Interactive 3D Stack (Subtle movement on mouse) ---
+    const isoContainer = document.getElementById('hero-iso');
+    if(isoContainer) {
+        document.addEventListener('mousemove', (e) => {
+            const x = (window.innerWidth / 2 - e.clientX) / 40;
+            const y = (window.innerHeight / 2 - e.clientY) / 40;
+            // Maintain base rotation and add mouse influence
+            isoContainer.style.transform = `rotateX(${60 + y}deg) rotateZ(${-45 + x}deg) rotateY(0deg)`;
+        });
+    }
+</script>
+
 {% endblock %}

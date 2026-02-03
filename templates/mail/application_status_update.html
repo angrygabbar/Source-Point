@@ -1,48 +1,188 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Update on Your Job Application</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        body { margin: 0; padding: 0; background-color: #f4f7f6; font-family: 'Inter', sans-serif; }
-        .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .header { background: linear-gradient(135deg, #4338ca, #6d28d9); color: #ffffff; padding: 40px; text-align: center; }
-        .header h1 { margin: 0; font-size: 28px; }
-        .content { padding: 30px 40px; color: #333; line-height: 1.6; }
-        .content h2 { color: #4338ca; font-size: 22px; }
-        .content p { margin: 0 0 15px; }
-        .status-box { padding: 20px; margin: 25px 0; border-radius: 8px; text-align: center; font-size: 18px; font-weight: 600; }
-        .status-accepted { background-color: #dcfce7; color: #166534; border-left: 5px solid #22c55e;}
-        .status-rejected { background-color: #fee2e2; color: #991b1b; border-left: 5px solid #ef4444;}
-        .footer { background-color: #eef2ff; text-align: center; padding: 20px; font-size: 12px; color: #6b7280; }
-    </style>
+    <title>Application Status Update</title>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Application Status Update</h1>
-        </div>
-        <div class="content">
-            <h2>Hi {{ candidate.username }},</h2>
-            <p>This is an update regarding your application for the <strong>{{ job.title }}</strong> position.</p>
-            
-            <div class="status-box status-{{ status|lower }}">
-                Your application has been {{ status }}.
-            </div>
 
-            {% if status == 'Accepted' %}
-            <p>Congratulations! Our team will be in touch shortly with the next steps. We're excited to move forward with you.</p>
-            {% else %}
-            <p>Thank you for your interest and the time you invested in this application. While we will not be moving forward at this time, we encourage you to apply for other positions that may open in the future.</p>
-            {% endif %}
+<body
+    style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #e2e8f0;">
 
-            <p>Best regards,<br>The Source Point Team</p>
-        </div>
-        <div class="footer">
-            <p>&copy; {{ now.year }} Source Point. All rights reserved.</p>
-        </div>
-    </div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0f172a;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0"
+                    style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+
+                    <!-- Header - Dynamic based on status -->
+                    {% if status == 'Accepted' %}
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%); padding: 40px 40px 50px 40px; text-align: center;">
+                            <table role="presentation" cellspacing="0" cellpadding="0"
+                                style="margin: 0 auto 20px auto;">
+                                <tr>
+                                    <td style="background: rgba(255,255,255,0.2); border-radius: 16px; padding: 16px;">
+                                        <img src="https://img.icons8.com/fluency/48/trophy.png" alt="Success" width="48"
+                                            height="48" style="display: block;">
+                                    </td>
+                                </tr>
+                            </table>
+                            <h1
+                                style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">
+                                Congratulations! 🎉</h1>
+                            <p style="margin: 12px 0 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">Your
+                                application has been accepted</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%); height: 30px;">
+                            <div style="background: #1e293b; height: 30px; border-radius: 30px 30px 0 0;"></div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%); padding: 40px 40px 50px 40px; text-align: center;">
+                            <table role="presentation" cellspacing="0" cellpadding="0"
+                                style="margin: 0 auto 20px auto;">
+                                <tr>
+                                    <td style="background: rgba(255,255,255,0.2); border-radius: 16px; padding: 16px;">
+                                        <img src="https://img.icons8.com/fluency/48/info.png" alt="Update" width="48"
+                                            height="48" style="display: block;">
+                                    </td>
+                                </tr>
+                            </table>
+                            <h1
+                                style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">
+                                Application Update</h1>
+                            <p style="margin: 12px 0 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">Regarding your
+                                job application</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%); height: 30px;">
+                            <div style="background: #1e293b; height: 30px; border-radius: 30px 30px 0 0;"></div>
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 0 40px 40px 40px;">
+
+                            <p style="font-size: 18px; color: #f1f5f9; margin: 0 0 24px 0; line-height: 1.6;">
+                                Hello <strong
+                                    style="color: {% if status == 'Accepted' %}#10b981{% else %}#a78bfa{% endif %};">{{
+                                    candidate.username }}</strong>,
+                            </p>
+
+                            <p style="font-size: 16px; color: #d1d5db; margin: 0 0 24px 0; line-height: 1.6;">
+                                This is an update regarding your application for the <strong style="color: #f1f5f9;">{{
+                                    job.title }}</strong> position.
+                            </p>
+
+                            <!-- Status Card -->
+                            {% if status == 'Accepted' %}
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(16, 185, 129, 0.15); border: 2px solid rgba(16, 185, 129, 0.3); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px; text-align: center;">
+                                        <div style="font-size: 48px; margin-bottom: 12px;">🎊</div>
+                                        <h2
+                                            style="margin: 0 0 8px 0; font-size: 24px; color: #10b981; font-weight: 700;">
+                                            APPLICATION ACCEPTED</h2>
+                                        <p style="margin: 0; font-size: 14px; color: #34d399;">You're moving to the next
+                                            stage!</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <h3
+                                            style="margin: 0 0 16px 0; font-size: 16px; color: #60a5fa; font-weight: 600;">
+                                            🚀 What's Next?</h3>
+                                        <p style="margin: 0; font-size: 15px; color: #e5e7eb; line-height: 1.6;">
+                                            Our team will be in touch shortly with the next steps. We're excited to move
+                                            forward with you!
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% else %}
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px; text-align: center;">
+                                        <h2
+                                            style="margin: 0 0 8px 0; font-size: 20px; color: #a78bfa; font-weight: 600;">
+                                            Application Status: {{ status }}</h2>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="font-size: 15px; color: #d1d5db; margin: 0 0 24px 0; line-height: 1.7;">
+                                Thank you for your interest and the time you invested in this application. While we will
+                                not be moving forward at this time, we encourage you to apply for other positions that
+                                may open in the future.
+                            </p>
+
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; border-radius: 0 12px 12px 0; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 16px 20px;">
+                                        <p style="margin: 0; font-size: 14px; color: #93c5fd;">
+                                            <strong>💡 Tip:</strong> Keep improving your skills and check back for new
+                                            opportunities!
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            <!-- Closing -->
+                            <p style="font-size: 16px; color: #e2e8f0; margin: 0;">
+                                Best regards,<br>
+                                <strong
+                                    style="color: {% if status == 'Accepted' %}#10b981{% else %}#a78bfa{% endif %};">The
+                                    Source Point Team</strong>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background: rgba(15, 23, 42, 0.8); padding: 24px 40px; border-top: 1px solid rgba(148, 163, 184, 0.1);">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td align="center">
+                                        <p style="margin: 0 0 8px 0; font-size: 14px; color: #9ca3af;">
+                                            This is an automated email from Source Point Platform
+                                        </p>
+                                        <p style="margin: 0; font-size: 12px; color: #6b7280;">
+                                            © {{ now.year }} Source Point. All rights reserved.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
 </body>
+
 </html>

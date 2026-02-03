@@ -1,12 +1,13 @@
-import google.generativeai as genai  # <--- THIS IS CORRECT
+import google.generativeai as genai
 import os
+from threading import Thread
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, current_app
 from flask_login import login_required, current_user
 from extensions import db, bcrypt, cache
 from models.auth import User, Message, ActivityLog, ActivityUpdate
 from models.commerce import Product, Order, Invoice, StockRequest, AffiliateAd
 from models.hiring import JobOpening, JobApplication, CodeTestSubmission, Feedback
-from models.learning import LearningContent, ProblemStatement
+from models.learning import LearningContent, ProblemStatement, ChatHistory
 from models.finance import Project, Transaction, EMIPlan
 from utils import role_required, log_user_action, send_email
 from sqlalchemy import or_
@@ -68,9 +69,7 @@ def submit_contact():
     """
     
     admin_user = User.query.filter_by(role=UserRole.ADMIN.value).first()
-    
     if not admin_user:
-        # Fallback if no admin exists
         class DummyUser:
             username = "Admin"
             email = "admin@sourcepoint.in"
@@ -87,9 +86,6 @@ def submit_contact():
 @main_bp.route('/dashboard')
 @login_required
 def dashboard():
-    """
-    Central Dashboard Router
-    """
     if current_user.role == UserRole.SELLER.value: return redirect(url_for('seller.seller_dashboard'))
     elif current_user.role == UserRole.ADMIN.value: return redirect(url_for('admin_core.admin_dashboard'))
     elif current_user.role == UserRole.DEVELOPER.value: return redirect(url_for('developer.developer_dashboard'))
@@ -105,7 +101,6 @@ def messages():
     messageable_users_dict = {}
     now = datetime.utcnow()
 
-    # Define who can message whom using Enums
     if current_user.role == UserRole.CANDIDATE.value:
         admins = User.query.filter_by(role=UserRole.ADMIN.value).all()
         for admin in admins:
@@ -267,7 +262,6 @@ def learning():
 @login_required
 @role_required([UserRole.CANDIDATE.value, UserRole.ADMIN.value, UserRole.DEVELOPER.value, 
                 UserRole.RECRUITER.value, UserRole.MODERATOR.value, UserRole.SELLER.value, UserRole.BUYER.value])
-@cache.cached(timeout=300) 
 def learn_language(language):
     supported_languages = ['java', 'cpp', 'c', 'sql', 'dbms', 'plsql', 'mysql']
     if language in supported_languages:
@@ -283,6 +277,82 @@ def learn_language(language):
         flash('The requested learning page does not exist.', 'danger')
         return redirect(url_for('main.learning'))
 
+# --- AI & CHAT HISTORY ENDPOINTS ---
+
+@main_bp.route('/get_chat_history/<subject>')
+@login_required
+def get_chat_history(subject):
+    """Fetches chat history for the current user and subject."""
+    history = ChatHistory.query.filter_by(
+        user_id=current_user.id,
+        subject=subject
+    ).order_by(ChatHistory.timestamp.asc()).all()
+    
+    # Format for frontend
+    chat_data = []
+    for chat in history:
+        chat_data.append({
+            'role': chat.role,
+            'text': chat.message,
+            'time': chat.timestamp.strftime('%H:%M')
+        })
+    return jsonify(chat_data)
+
+@main_bp.route('/delete_chat_history', methods=['POST'])
+@login_required
+def delete_chat_history():
+    """Deletes all chat history for the current user and subject."""
+    data = request.get_json()
+    subject = data.get('subject')
+    
+    if not subject:
+        return jsonify({'error': 'Subject required'}), 400
+
+    try:
+        ChatHistory.query.filter_by(
+            user_id=current_user.id,
+            subject=subject
+        ).delete()
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'History cleared'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+# --- BACKGROUND AI WORKER ---
+def background_ai_task(app, user_id, subject, question, api_key):
+    """
+    Runs in a separate thread so it doesn't block the website.
+    """
+    with app.app_context():
+        try:
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-2.5-flash')
+            
+            prompt = f"""
+            You are an expert technical tutor for {subject}.
+            The user is asking: "{question}"
+            Keep your answer concise (under 200 words) and helpful.
+            Format your response with simple HTML (e.g., use <b> for bold, <br> for new lines, <code> for code snippets).
+            Do not include Markdown blocks like ```html.
+            """
+            
+            response = model.generate_content(prompt)
+            answer_text = response.text
+
+            # Save AI Response to DB
+            ai_msg = ChatHistory(
+                user_id=user_id,
+                subject=subject,
+                role='ai',
+                message=answer_text
+            )
+            db.session.add(ai_msg)
+            db.session.commit()
+            
+        except Exception as e:
+            print(f"Background AI Error: {str(e)}")
+
 @main_bp.route('/ask_learning_ai', methods=['POST'])
 @login_required
 def ask_learning_ai():
@@ -297,16 +367,36 @@ def ask_learning_ai():
     if not api_key:
         return jsonify({'error': 'Server configuration error (Missing API Key)'}), 500
 
+    # 1. Save User Question to DB Immediately
     try:
-        client = genai.Client(api_key=api_key)
-        prompt = f"""
-        You are an expert technical tutor for {subject}.
-        The user is asking: "{question}"
-        Keep your answer concise (under 150 words) and helpful for a student.
-        """
-        response = client.models.generate_content(model='gemini-1.5-flash', contents=prompt)
-        return jsonify({'answer': response.text})
-
+        user_msg = ChatHistory(
+            user_id=current_user.id,
+            subject=subject,
+            role='user',
+            message=question
+        )
+        db.session.add(user_msg)
+        db.session.commit()
     except Exception as e:
-        print(f"Gemini AI Error: {e}")
-        return jsonify({'error': 'I am having trouble thinking right now. Try again later.'}), 500
+        print(f"Error saving user chat: {e}")
+        return jsonify({'error': 'Database error saving question'}), 500
+
+    # 2. Start AI processing in a background thread
+    # We pass 'current_app._get_current_object()' because standard 'current_app' proxy 
+    # doesn't work well inside threads.
+    thread = Thread(target=background_ai_task, args=(
+        current_app._get_current_object(),
+        current_user.id,
+        subject,
+        question,
+        api_key
+    ))
+    thread.start()
+
+    # 3. Return immediately! 
+    # The frontend will see this and can poll 'get_chat_history' every few seconds 
+    # to check if the answer has arrived.
+    return jsonify({
+        'status': 'processing', 
+        'message': 'AI is thinking... The answer will appear in your history shortly.'
+    })

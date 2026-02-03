@@ -4,4 +4,7 @@ from .commerce import (Product, ProductImage, Order, OrderItem, Cart, CartItem,
 from .hiring import (JobOpening, JobApplication, CodeTestSubmission, CodeSnippet, 
                      Feedback, ModeratorAssignmentHistory)
 from .learning import LearningContent, ProblemStatement
-from .finance import Project, Transaction, BRD, EMIPlan, EMIPayment
+# REMOVED EMIPayment from this line:
+from .finance import Project, Transaction, BRD, EMIPlan
+from .interview import Interview, InterviewParticipant, InterviewFeedback
+#from .payment import EMIPayment

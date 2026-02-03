@@ -1,5 +1,6 @@
 import os
 from datetime import timedelta
+from celery.schedules import crontab
 
 class Config:
     """Base configuration."""
@@ -11,19 +12,54 @@ class Config:
     UPLOAD_FOLDER = os.path.join('static', 'resumes')
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024
     
-    # Cache (Simple for Dev, Redis for Prod recommended)
-    CACHE_TYPE = 'SimpleCache'
+    # --- REDIS & CELERY CONFIGURATION ---
+    CACHE_TYPE = 'RedisCache'
+    REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379/0')
+    
+    CACHE_REDIS_URL = REDIS_URL
     CACHE_DEFAULT_TIMEOUT = 300
-    CACHE_THRESHOLD = 200
+    CACHE_THRESHOLD = 500
 
-    # DB Pooling (Stability)
+    # Celery Configuration
+    CELERY_BROKER_URL = REDIS_URL
+    CELERY_RESULT_BACKEND = REDIS_URL
+    
+    # Timezone: India Standard Time
+    CELERY_TIMEZONE = 'Asia/Kolkata'
+
+    # --- SCHEDULED TASKS (Celery Beat) ---
+    CELERY_BEAT_SCHEDULE = {
+        # 1. Invoice Reminders (9 AM & 5 PM IST)
+        'send-invoice-reminders-twice-daily': {
+            'task': 'worker.send_invoice_reminders_task',
+            'schedule': crontab(hour='9,17', minute=0),
+        },
+        # 2. Finance EMI Reminders (10 AM IST Daily)
+        'send-emi-reminders-daily': {
+            'task': 'worker.process_emi_reminders_task',
+            'schedule': crontab(hour=10, minute=0),
+        },
+        # 3. NEW: Hiring Event Checks (Every 15 Minutes)
+        # Checks for upcoming tests (2hr reminder) AND expired tests (auto-complete)
+        'check-hiring-events': {
+            'task': 'worker.check_hiring_events_task',
+            'schedule': crontab(minute='*/15'),
+        },
+    }
+
+    # --- DATABASE POOLING OPTIMIZATION ---
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_pre_ping": True,
         "pool_recycle": 280,
-        "pool_size": 2,
-        "max_overflow": 1,
+        "pool_size": 20,
+        "max_overflow": 10,
         "pool_timeout": 30
     }
+    
+    # --- GOOGLE CALENDAR API ---
+    GOOGLE_CALENDAR_CREDENTIALS_FILE = os.environ.get('GOOGLE_CALENDAR_CREDENTIALS_FILE', 'credentials.json')
+    GOOGLE_CALENDAR_ID = os.environ.get('GOOGLE_CALENDAR_ID', 'primary')
+    GOOGLE_CALENDAR_TIMEZONE = os.environ.get('GOOGLE_CALENDAR_TIMEZONE', 'Asia/Kolkata')
     
     @classmethod
     def init_app(cls, app):
@@ -42,9 +78,8 @@ class ProductionConfig(Config):
     @classmethod
     def init_app(cls, app):
         Config.init_app(app)
-        # Ensure secret key is set in production
         if not os.environ.get('SECRET_KEY'):
-             print("WARNING: SECRET_KEY is not set in Production environment! Session security is at risk.")
+             print("WARNING: SECRET_KEY is not set in Production environment!")
 
 class TestingConfig(Config):
     """Testing configuration."""

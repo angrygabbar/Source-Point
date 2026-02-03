@@ -46,7 +46,7 @@ class InvoiceGenerator:
         text = str(text)
         # Replacement map for common incompatible characters
         replacements = {
-            '\u200b': '',  # Zero-width space
+            '\u200b': '',  #  Zero-width space
             '\xa0': ' ',   # Non-breaking space
             '’': "'",      # Smart quotes
             '‘': "'",
@@ -222,7 +222,7 @@ class InvoiceGenerator:
 
     def _add_totals_and_notes(self):
         self.pdf.set_font('helvetica', 'B', 9)
-        self.pdf.cell(165, 8, "Sub Total", 1, 0, 'R')
+        self.pdf.cell(165, 8, "Sub Total (Base)", 1, 0, 'R')
         self.pdf.cell(25, 8, f"{self.invoice.subtotal:,.2f}", 1, 1, 'R')
         
         self.pdf.ln(5)
@@ -249,8 +249,10 @@ class InvoiceGenerator:
         self.pdf.set_xy(125, y_start + 2)
         self.pdf.set_font('helvetica', 'B', 9)
         self.pdf.set_text_color(0, 0, 0)
-        self.pdf.cell(40, 6, f"Tax Rate", 0, 0, 'L')
-        self.pdf.cell(30, 6, f"{self.invoice.tax}%", 0, 1, 'R')
+        
+        # --- FIXED TAX DISPLAY ---
+        self.pdf.cell(40, 6, f"Total Tax", 0, 0, 'L')
+        self.pdf.cell(30, 6, f"{self.invoice.tax:,.2f}", 0, 1, 'R') # Removed % and added number formatting
         
         self.pdf.set_x(125)
         self.pdf.cell(40, 6, "Total", 0, 0, 'L')
@@ -265,98 +267,223 @@ class InvoiceGenerator:
         self.pdf.set_text_color(*self.c_gray_text)
         self.pdf.cell(0, 10, "Thanks for shopping with us.", 0, 1, 'C')
 
-
 class BrdGenerator:
     def __init__(self, project):
         self.project = project
         self.pdf = PDF(title=f"BRD: {project.name}")
         self.pdf.add_page()
         self.pdf.set_font("helvetica", size=12)
-        # Professional Colors
-        self.primary_color = (67, 56, 202)   # Indigo-700
-        self.header_bg = (238, 242, 255)     # Indigo-50
-        self.text_color = (55, 65, 81)       # Gray-700
+        
+        # Enhanced Professional Color Palette
+        self.primary_color = (37, 99, 235)      # Blue-600
+        self.secondary_color = (79, 70, 229)    # Indigo-600
+        self.accent_color = (16, 185, 129)      # Emerald-500
+        self.header_bg = (239, 246, 255)        # Blue-50
+        self.section_bg = (248, 250, 252)       # Slate-50
+        self.table_header_bg = (219, 234, 254)  # Blue-100
+        self.table_alt_row = (248, 250, 252)    # Slate-50
+        self.text_color = (30, 41, 59)          # Slate-800
+        self.text_secondary = (71, 85, 105)     # Slate-600
+        self.border_color = (203, 213, 225)     # Slate-300
 
     def generate_pdf(self):
         self._add_cover_page()
-        self.pdf.add_page() # Start content on new page
+        self.pdf.add_page()  # Start content on new page
+        self._add_table_of_contents()
+        self.pdf.add_page()  # Start sections on new page
         self._add_brd_content()
         return bytes(self.pdf.output())
 
+    def _clean_text(self, text):
+        """Sanitizes text to be compatible with Helvetica (Latin-1) font."""
+        if text is None:
+            return ""
+        text = str(text)
+        replacements = {
+            '\u200b': '',  # Zero-width space
+            '\xa0': ' ',   # Non-breaking space
+            '’': "'",      # Smart quotes
+            '‘': "'",
+            '”': '"',
+            '“': '"',
+            '–': '-',      # En-dash
+            '—': '-',      # Em-dash
+            '₹': 'Rs. ',
+            '•': '-',
+            '…': '...',
+        }
+        for char, replacement in replacements.items():
+            text = text.replace(char, replacement)
+        return text.encode('latin-1', 'replace').decode('latin-1')
+
     def _sanitize_html(self, html_content):
-        """Prepares HTML for FPDF write_html method with better spacing handling."""
+        """Enhanced HTML sanitization with better table and list support."""
         if not html_content:
             return ""
         
-        # 1. Pre-processing: Standardize Characters
-        replacements = {
-            '“': '"', '”': '"', '‘': "'", '’': "'",
-            '–': '-', '—': '-', '…': '...', '•': '-', '&nbsp;': ' ',
-            '\u200b': '', '\ufeff': '', # Zero-width spaces
-        }
-        for char, replacement in replacements.items():
-            html_content = html_content.replace(char, replacement)
-
+        # Pre-processing: Standardize Characters
+        html_content = self._clean_text(html_content)
+        
         soup = BeautifulSoup(html_content, "html.parser")
         
-        # 2. Table Fixes: Force borders and width
+        # Enhanced Table Processing
         for table in soup.find_all("table"):
             table['border'] = '1'
             table['width'] = '100%'
-            table['cellpadding'] = '5'
-            if table.has_attr('style'): del table['style']
+            table['cellpadding'] = '8'
+            table['cellspacing'] = '0'
+            table['style'] = 'border-collapse: collapse;'
+            
+            # Style table headers
+            for th in table.find_all(['th']):
+                th['bgcolor'] = '#dbeafe'  # Light blue background
+                th['style'] = 'font-weight: bold; padding: 8px; text-align: left;'
+            
+            # Add alternating row colors
+            rows = table.find_all('tr')
+            for idx, row in enumerate(rows):
+                if idx > 0 and idx % 2 == 0:  # Skip header, alternate others
+                    row['bgcolor'] = '#f8fafc'
+                # Style cells
+                for td in row.find_all('td'):
+                    td['style'] = 'padding: 8px; border: 1px solid #cbd5e1;'
 
-        # 3. Paragraph Formatting (Fixing spacing)
-        # Instead of blindly unwrapping, we ensure distinct paragraphs
+        # Enhanced List Processing
+        for ul in soup.find_all("ul"):
+            ul['style'] = 'margin-left: 20px; margin-bottom: 10px;'
+            for li in ul.find_all('li'):
+                li.insert(0, '• ')
+        
+        for ol in soup.find_all("ol"):
+            ol['style'] = 'margin-left: 20px; margin-bottom: 10px;'
+        
+        # Preserve text formatting
+        for strong in soup.find_all(['strong', 'b']):
+            strong.name = 'b'
+        
+        for em in soup.find_all(['em', 'i']):
+            em.name = 'i'
+        
+        # Better paragraph handling
         for p in soup.find_all("p"):
-            if p.get_text(strip=True) or p.find('img'):
-                # Add explicit break tags to control spacing
-                p.insert_after(soup.new_tag("br"))
-                p.insert_after(soup.new_tag("br"))
-                p.unwrap()
+            if p.get_text(strip=True):
+                p['style'] = 'margin-bottom: 8px; line-height: 1.5;'
             else:
-                p.decompose() # Remove empty paragraphs
+                p.decompose()
 
-        # 4. Final Cleanup
+        # Convert headings to bold text with proper spacing
+        for heading in soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']):
+            heading.name = 'b'
+            heading.insert_after(soup.new_tag("br"))
+            heading.insert_after(soup.new_tag("br"))
+        
         html_str = str(soup)
-        # Reduce excessive newlines created by BR tags to a maximum of 2
-        html_str = re.sub(r'(<br\s*/?>){3,}', '<br><br>', html_str)
+        # Clean up excessive breaks
+        html_str = re.sub(r'(<br\s*/?>\s*){3,}', '<br/><br/>', html_str)
         
         return html_str
 
+    def _add_section_divider(self):
+        """Adds a visual divider between sections."""
+        self.pdf.ln(3)
+        self.pdf.set_draw_color(*self.border_color)
+        self.pdf.set_line_width(0.5)
+        y = self.pdf.get_y()
+        self.pdf.line(10, y, 200, y)
+        self.pdf.ln(5)
+
     def _add_cover_page(self):
-        """Creates a professional cover page."""
+        """Creates an enhanced professional cover page."""
+        # Gradient-like header with multiple color bands
         self.pdf.set_fill_color(*self.primary_color)
-        self.pdf.rect(0, 0, 210, 60, 'F') # Top banner
+        self.pdf.rect(0, 0, 210, 80, 'F')
         
-        self.pdf.set_y(25)
-        self.pdf.set_font('helvetica', 'B', 32)
+        # Accent stripe
+        self.pdf.set_fill_color(*self.accent_color)
+        self.pdf.rect(0, 80, 210, 5, 'F')
+        
+        # Main title
+        self.pdf.set_y(30)
+        self.pdf.set_font('helvetica', 'B', 36)
         self.pdf.set_text_color(255, 255, 255)
-        self.pdf.cell(0, 10, "Business Requirement", 0, 1, 'C')
-        self.pdf.cell(0, 15, "Document", 0, 1, 'C')
+        self.pdf.cell(0, 12, "Business Requirement", 0, 1, 'C')
+        self.pdf.cell(0, 12, "Document", 0, 1, 'C')
         
-        self.pdf.set_y(100)
-        self.pdf.set_font('helvetica', '', 14)
-        self.pdf.set_text_color(100, 100, 100)
-        self.pdf.cell(0, 10, "PROJECT NAME:", 0, 1, 'C')
+        # Decorative line
+        self.pdf.set_y(95)
+        self.pdf.set_draw_color(*self.secondary_color)
+        self.pdf.set_line_width(1)
+        self.pdf.line(60, 95, 150, 95)
         
-        self.pdf.set_font('helvetica', 'B', 24)
-        self.pdf.set_text_color(*self.primary_color)
-        self.pdf.cell(0, 15, self.project.name, 0, 1, 'C')
-        
-        self.pdf.set_y(150)
+        # Project information box
+        self.pdf.set_y(110)
         self.pdf.set_font('helvetica', '', 12)
-        self.pdf.set_text_color(0, 0, 0)
-        self.pdf.cell(0, 10, f"Date Generated: {datetime.utcnow().strftime('%B %d, %Y')}", 0, 1, 'C')
-        self.pdf.cell(0, 10, f"Status: {self.project.status}", 0, 1, 'C')
+        self.pdf.set_text_color(*self.text_secondary)
+        self.pdf.cell(0, 8, "PROJECT NAME:", 0, 1, 'C')
         
-        self.pdf.set_y(260)
-        self.pdf.set_font('helvetica', 'I', 10)
-        self.pdf.set_text_color(150, 150, 150)
-        self.pdf.cell(0, 10, "Generated by Source Point Platform", 0, 1, 'C')
+        self.pdf.set_font('helvetica', 'B', 26)
+        self.pdf.set_text_color(*self.primary_color)
+        self.pdf.multi_cell(0, 12, self._clean_text(self.project.name), 0, 'C')
+        
+        # Metadata section with box
+        self.pdf.set_y(160)
+        self.pdf.set_fill_color(*self.section_bg)
+        self.pdf.set_draw_color(*self.border_color)
+        self.pdf.rect(40, 160, 130, 45, 'FD')
+        
+        self.pdf.set_y(165)
+        self.pdf.set_font('helvetica', '', 11)
+        self.pdf.set_text_color(*self.text_color)
+        
+        # Date
+        self.pdf.cell(0, 8, f"Generated: {datetime.utcnow().strftime('%B %d, %Y')}", 0, 1, 'C')
+        
+        # Status with color indicator
+        self.pdf.set_font('helvetica', 'B', 11)
+        status_text = f"Status: {self.project.status}"
+        self.pdf.cell(0, 8, self._clean_text(status_text), 0, 1, 'C')
+        
+        # Budget if available
+        if hasattr(self.project, 'budget') and self.project.budget:
+            self.pdf.set_font('helvetica', '', 11)
+            self.pdf.cell(0, 8, f"Budget: Rs. {self.project.budget:,.2f}", 0, 1, 'C')
+        
+        # Footer
+        self.pdf.set_y(270)
+        self.pdf.set_font('helvetica', 'I', 9)
+        self.pdf.set_text_color(*self.text_secondary)
+        self.pdf.cell(0, 5, "Generated by Source Point Platform", 0, 1, 'C')
+        self.pdf.set_font('helvetica', '', 8)
+        self.pdf.cell(0, 5, "Confidential - For Internal Use Only", 0, 1, 'C')
+
+    def _add_table_of_contents(self):
+        """Adds a table of contents page."""
+        self.pdf.set_font('helvetica', 'B', 20)
+        self.pdf.set_text_color(*self.primary_color)
+        self.pdf.cell(0, 15, "Table of Contents", 0, 1, 'L')
+        
+        self.pdf.ln(5)
+        
+        sections = [
+            "1. Executive Summary",
+            "2. Project Objectives",
+            "3. Project Scope",
+            "4. Business Requirements",
+            "5. Key Stakeholders",
+            "6. Project Constraints",
+            "7. Cost-Benefit Analysis"
+        ]
+        
+        self.pdf.set_font('helvetica', '', 12)
+        self.pdf.set_text_color(*self.text_color)
+        
+        for section in sections:
+            self.pdf.cell(10, 8, "", 0, 0)  # Indent
+            self.pdf.cell(0, 8, section, 0, 1, 'L')
+            self.pdf.ln(2)
 
     def _add_brd_content(self):
-        """Adds the content sections using write_html."""
+        """Adds the content sections with enhanced formatting."""
         brd_sections = {
             "1. Executive Summary": self.project.brd.executive_summary,
             "2. Project Objectives": self.project.brd.project_objectives,
@@ -367,13 +494,20 @@ class BrdGenerator:
             "7. Cost-Benefit Analysis": self.project.brd.cost_benefit_analysis
         }
 
-        for title, content in brd_sections.items():
-            # Section Header
-            self.pdf.set_font('helvetica', 'B', 14)
+        for idx, (title, content) in enumerate(brd_sections.items()):
+            # Add page break before each major section (except first)
+            if idx > 0 and idx % 2 == 0:
+                self.pdf.add_page()
+            
+            # Section Header with enhanced styling
+            self.pdf.set_font('helvetica', 'B', 16)
             self.pdf.set_text_color(*self.primary_color)
             self.pdf.set_fill_color(*self.header_bg)
-            self.pdf.cell(0, 10, title, 0, 1, 'L', 1)
-            self.pdf.ln(2) 
+            self.pdf.set_draw_color(*self.border_color)
+            
+            # Header box with border
+            self.pdf.cell(0, 12, self._clean_text(title), 1, 1, 'L', 1)
+            self.pdf.ln(4)
             
             if content:
                 self.pdf.set_font('helvetica', '', 11)
@@ -384,14 +518,22 @@ class BrdGenerator:
                 try:
                     self.pdf.write_html(html_data)
                 except Exception as e:
-                    # Fallback for safety
+                    # Enhanced fallback with better formatting
+                    print(f"HTML rendering error for {title}: {e}")
                     clean_text = BeautifulSoup(content, "html.parser").get_text()
-                    clean_text = clean_text.replace('•', '-').replace('“', '"').replace('”', '"')
-                    self.pdf.multi_cell(0, 6, clean_text)
+                    clean_text = self._clean_text(clean_text)
+                    self.pdf.set_font('helvetica', '', 11)
+                    self.pdf.multi_cell(0, 6, clean_text, 0, 'L')
                 
-                self.pdf.ln(5) 
+                self.pdf.ln(8)
             else:
+                # Enhanced "not provided" message
+                self.pdf.set_fill_color(*self.section_bg)
                 self.pdf.set_font('helvetica', 'I', 11)
-                self.pdf.set_text_color(150, 150, 150)
-                self.pdf.cell(0, 8, "Not provided", 0, 1)
-                self.pdf.ln(5)
+                self.pdf.set_text_color(*self.text_secondary)
+                self.pdf.cell(0, 10, "Not provided", 0, 1, 'L', 1)
+                self.pdf.ln(8)
+            
+            # Add divider between sections
+            if idx < len(brd_sections) - 1:
+                self._add_section_divider()

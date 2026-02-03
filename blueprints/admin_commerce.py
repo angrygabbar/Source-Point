@@ -8,7 +8,7 @@ from invoice_service import InvoiceGenerator
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import csv
-from io import TextIOWrapper, BytesIO
+from io import TextIOWrapper
 import openpyxl 
 import traceback 
 from enums import UserRole, OrderStatus, InvoiceStatus
@@ -21,7 +21,6 @@ GST_RATES = {'Electronics': 18.0, 'Apparel': 12.0, 'Home & Office': 12.0, 'Books
 @login_required
 @role_required(UserRole.ADMIN.value)
 def admin_commerce_dashboard():
-    # Use Enum values for filtering
     pending_orders_count = Order.query.filter_by(status=OrderStatus.PLACED.value).count()
     pending_requests_count = StockRequest.query.filter_by(status='Pending').count()
     low_stock_count = Product.query.filter(Product.stock < 10).count()
@@ -30,7 +29,6 @@ def admin_commerce_dashboard():
     pending_requests = StockRequest.query.filter_by(status='Pending').order_by(StockRequest.request_date.desc()).all()
     recent_invoices = Invoice.query.order_by(Invoice.created_at.desc()).limit(5).all()
     
-    # Filter pending users by Role Enums
     pending_commerce_users = User.query.filter(
         User.is_approved == False, 
         User.role.in_([UserRole.SELLER.value, UserRole.BUYER.value])
@@ -49,7 +47,7 @@ def admin_commerce_dashboard():
                            pending_commerce_users=pending_commerce_users,
                            sellers=sellers, buyers=buyers)
 
-# --- ADS ---
+# --- ADS MANAGEMENT ---
 @admin_commerce_bp.route('/ads/manage', methods=['GET', 'POST'])
 @login_required
 @role_required(UserRole.ADMIN.value)
@@ -60,10 +58,12 @@ def manage_ads():
         existing_ad = AffiliateAd.query.filter_by(ad_name=ad_name).first()
         if existing_ad:
             existing_ad.affiliate_link = affiliate_link
+            log_user_action("Update Ad", f"Updated ad {ad_name}")
             flash(f'Ad "{ad_name}" updated.', 'success')
         else:
             new_ad = AffiliateAd(ad_name=ad_name, affiliate_link=affiliate_link)
             db.session.add(new_ad)
+            log_user_action("Create Ad", f"Created ad {ad_name}")
             flash(f'New ad "{ad_name}" added.', 'success')
         db.session.commit()
         return redirect(url_for('admin_commerce.manage_ads'))
@@ -77,11 +77,12 @@ def delete_ad(ad_id):
     ad = AffiliateAd.query.get_or_404(ad_id)
     db.session.delete(ad)
     db.session.commit()
+    log_user_action("Delete Ad", f"Deleted ad {ad.ad_name}")
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'success': True, 'message': 'Ad deleted.', 'remove_row_id': f'ad-{ad_id}'})
     return redirect(url_for('admin_commerce.manage_ads'))
 
-# --- INVENTORY ---
+# --- INVENTORY MANAGEMENT ---
 @admin_commerce_bp.route('/inventory', methods=['GET', 'POST'])
 @login_required
 @role_required(UserRole.ADMIN.value)
@@ -98,6 +99,7 @@ def manage_inventory():
             new_product = Product(product_code=product_code, name=name, stock=int(stock), price=float(price), seller_id=None)
             db.session.add(new_product)
             db.session.commit()
+            log_user_action("Add Product", f"Added product {name}")
             flash(f'Product "{name}" added to Master Inventory.', 'success')
         return redirect(url_for('admin_commerce.manage_inventory'))
     
@@ -108,6 +110,88 @@ def manage_inventory():
 
     return render_template('manage_inventory.html', products=products, sellers=sellers, 
                            total_inventory_value=total_inventory_value, total_products_count=len(products), low_stock_count=low_stock_count)
+
+@admin_commerce_bp.route('/inventory/add', methods=['GET', 'POST'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def add_product_page():
+    if request.method == 'POST':
+        product_code = request.form.get('product_code')
+        name = request.form.get('name')
+        stock = request.form.get('stock')
+        price = request.form.get('price')
+        description = request.form.get('description')
+        image_urls = request.form.getlist('image_urls[]')
+        category = request.form.get('category')
+        brand = request.form.get('brand')
+        mrp = request.form.get('mrp')
+        warranty = request.form.get('warranty')
+        return_policy = request.form.get('return_policy')
+        
+        if Product.query.filter_by(product_code=product_code).first():
+            flash(f'Product ID {product_code} already exists.', 'danger')
+            return redirect(url_for('admin_commerce.add_product_page'))
+        
+        primary_image = image_urls[0].strip() if image_urls and image_urls[0].strip() else None
+        
+        new_product = Product(
+            product_code=product_code, name=name, stock=int(stock), price=float(price),
+            description=description, image_url=primary_image, category=category,
+            brand=brand, mrp=float(mrp) if mrp else None, warranty=warranty, return_policy=return_policy,
+            seller_id=None
+        )
+        db.session.add(new_product)
+        db.session.commit()
+        
+        for url in image_urls:
+            if url.strip():
+                img = ProductImage(product_id=new_product.id, image_url=url.strip())
+                db.session.add(img)
+        db.session.commit()
+        
+        log_user_action("Add Product", f"Added product {name}")
+        flash(f'Product "{name}" added to catalog successfully.', 'success')
+        return redirect(url_for('admin_commerce.manage_inventory'))
+    
+    return render_template('add_product.html')
+
+@admin_commerce_bp.route('/inventory/edit/<int:product_id>', methods=['GET', 'POST'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def edit_product_page(product_id):
+    product = Product.query.get_or_404(product_id)
+    
+    if request.method == 'POST':
+        product.name = request.form.get('name')
+        product.stock = int(request.form.get('stock'))
+        product.price = float(request.form.get('price'))
+        product.description = request.form.get('description')
+        product.category = request.form.get('category')
+        product.brand = request.form.get('brand')
+        
+        mrp = request.form.get('mrp')
+        if mrp: product.mrp = float(mrp)
+        else: product.mrp = None
+        
+        product.warranty = request.form.get('warranty')
+        product.return_policy = request.form.get('return_policy')
+
+        image_urls = request.form.getlist('image_urls[]')
+        if image_urls and image_urls[0].strip():
+            product.image_url = image_urls[0].strip()
+        
+        ProductImage.query.filter_by(product_id=product.id).delete()
+        for url in image_urls:
+            if url.strip():
+                db.session.add(ProductImage(product_id=product.id, image_url=url.strip()))
+        
+        db.session.commit()
+        log_user_action("Update Product", f"Updated product {product.name}")
+        flash(f'Product "{product.name}" updated successfully.', 'success')
+        # Redirect to the product detail view instead of the inventory list
+        return redirect(url_for('admin_commerce.view_product', product_id=product.id))
+
+    return render_template('edit_product.html', product=product)
 
 @admin_commerce_bp.route('/inventory/import', methods=['POST'])
 @login_required
@@ -126,8 +210,7 @@ def import_inventory():
             file_content = file.read().decode('utf-8')
             csv_reader = csv.DictReader(file_content.splitlines())
             for row in csv_reader:
-                if Product.query.filter_by(product_code=row.get('product_code')).first():
-                    continue
+                if Product.query.filter_by(product_code=row.get('product_code')).first(): continue
                 new_product = Product(
                     product_code=row.get('product_code'),
                     name=row.get('name'),
@@ -143,8 +226,7 @@ def import_inventory():
             sheet = wb.active
             for row in sheet.iter_rows(min_row=2, values_only=True):
                 if not row[0]: continue
-                if Product.query.filter_by(product_code=str(row[0])).first():
-                    continue
+                if Product.query.filter_by(product_code=str(row[0])).first(): continue
                 new_product = Product(
                     product_code=str(row[0]),
                     name=row[1],
@@ -156,6 +238,7 @@ def import_inventory():
                 products_added += 1
 
         db.session.commit()
+        log_user_action("Import Inventory", f"Imported {products_added} products")
         flash(f'Successfully imported {products_added} products.', 'success')
     except Exception as e:
         db.session.rollback()
@@ -169,14 +252,15 @@ def import_inventory():
 def update_product():
     product_id = request.form.get('product_id')
     product = Product.query.get_or_404(product_id)
-    
     product.name = request.form.get('name')
     product.stock = int(request.form.get('stock'))
     product.price = float(request.form.get('price'))
-    
     db.session.commit()
+    log_user_action("Quick Update", f"Quick updated product {product.name}")
     flash(f'Product "{product.name}" updated.', 'success')
-    return redirect(url_for('admin_commerce.manage_inventory'))
+    
+    # Redirect to the product detail view
+    return redirect(url_for('admin_commerce.view_product', product_id=product.id))
 
 @admin_commerce_bp.route('/inventory/delete/<int:product_id>')
 @login_required
@@ -185,6 +269,7 @@ def delete_product(product_id):
     product = Product.query.get_or_404(product_id)
     db.session.delete(product)
     db.session.commit()
+    log_user_action("Delete Product", f"Deleted product {product_id}")
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'success': True, 'message': 'Product deleted.', 'remove_row_id': f'prod-{product_id}'})
     return redirect(url_for('admin_commerce.manage_inventory'))
@@ -198,9 +283,13 @@ def assign_inventory():
     quantity = int(request.form.get('quantity'))
 
     product = Product.query.get_or_404(product_id)
+    
+    # Redirect target
+    redirect_target = redirect(url_for('admin_commerce.view_product', product_id=product.id))
+    
     if product.stock < quantity:
         flash(f"Insufficient stock (Available: {product.stock}).", "danger")
-        return redirect(url_for('admin_commerce.manage_inventory'))
+        return redirect_target
 
     product.stock -= quantity
     seller_inv = SellerInventory.query.filter_by(seller_id=seller_id, product_id=product.id).first()
@@ -209,10 +298,11 @@ def assign_inventory():
     else: db.session.add(SellerInventory(seller_id=seller_id, product_id=product.id, stock=quantity))
 
     db.session.commit()
+    log_user_action("Assign Inventory", f"Assigned {quantity} of {product.name} to seller {seller_id}")
     flash(f"Assigned {quantity} units to seller.", "success")
-    return redirect(url_for('admin_commerce.manage_inventory'))
+    return redirect_target
 
-# --- SELLER INVENTORY MANAGEMENT ---
+# --- SELLER INVENTORY ---
 @admin_commerce_bp.route('/inventory/seller', defaults={'seller_id': None})
 @admin_commerce_bp.route('/inventory/seller/<int:seller_id>')
 @login_required
@@ -236,6 +326,7 @@ def update_seller_stock():
         allocation = SellerInventory.query.get_or_404(allocation_id)
         allocation.stock = new_stock
         db.session.commit()
+        log_user_action("Update Seller Stock", f"Updated stock for seller {allocation.seller.username}")
         flash(f"Stock updated for {allocation.product.name}.", "success")
         return redirect(url_for('admin_commerce.manage_seller_inventory', seller_id=allocation.seller_id))
     except ValueError:
@@ -250,6 +341,7 @@ def delete_seller_allocation(allocation_id):
     seller_id = allocation.seller_id
     db.session.delete(allocation)
     db.session.commit()
+    log_user_action("Delete Seller Alloc", f"Removed allocation {allocation_id}")
     flash("Allocation removed.", "info")
     return redirect(url_for('admin_commerce.manage_seller_inventory', seller_id=seller_id))
 
@@ -284,8 +376,8 @@ def approve_stock_request(req_id):
         send_email(to=req.seller.email, subject=f"Stock Request Approved: {req.product.name}", template="mail/request_status_update.html", request=req, product=req.product, status="Approved")
     except Exception as e:
         print(f"Error sending stock approval email: {e}")
-        traceback.print_exc()
     
+    log_user_action("Approve Stock Request", f"Approved stock for {req.seller.username}")
     flash('Request approved.', 'success')
     return redirect(url_for('admin_commerce.manage_stock_requests_page'))
 
@@ -302,8 +394,8 @@ def reject_stock_request(req_id):
         send_email(to=req.seller.email, subject=f"Stock Request Rejected: {req.product.name}", template="mail/request_status_update.html", request=req, product=req.product, status="Rejected")
     except Exception as e:
         print(f"Error sending stock rejection email: {e}")
-        traceback.print_exc()
     
+    log_user_action("Reject Stock Request", f"Rejected stock for {req.seller.username}")
     flash('Request rejected.', 'warning')
     return redirect(url_for('admin_commerce.manage_stock_requests_page'))
 
@@ -313,19 +405,11 @@ def reject_stock_request(req_id):
 @role_required(UserRole.ADMIN.value)
 def manage_orders():
     orders = Order.query.order_by(Order.created_at.desc()).all()
-    
     total_revenue = sum(order.total_amount for order in orders)
     pending_count = sum(1 for order in orders if order.status == OrderStatus.PLACED.value)
-    
-    # Check against Enum values or list of completed statuses
-    completed_statuses = [OrderStatus.DELIVERED.value, OrderStatus.SHIPPED.value]
-    completed_count = sum(1 for order in orders if order.status in completed_statuses)
+    completed_count = sum(1 for order in orders if order.status in [OrderStatus.DELIVERED.value, OrderStatus.SHIPPED.value])
 
-    return render_template('manage_orders.html', 
-                           orders=orders,
-                           total_revenue=total_revenue,
-                           pending_count=pending_count,
-                           completed_count=completed_count)
+    return render_template('manage_orders.html', orders=orders, total_revenue=total_revenue, pending_count=pending_count, completed_count=completed_count)
 
 @admin_commerce_bp.route('/orders/update/<int:order_id>', methods=['POST'])
 @login_required
@@ -336,15 +420,35 @@ def update_order_status(order_id):
     order.status = new_status
     db.session.commit()
     
-    # --- AUTOMATIC INVOICE GENERATION LOGIC ---
+    # Auto Invoice Generation when Accepted
     attachments = None
-    
-    # Check if 'Order Accepted' or 'Confirmed' maps to our Enum
     if new_status == OrderStatus.CONFIRMED.value or new_status == 'Order Accepted':
         try:
             invoice = Invoice.query.filter_by(order_id=order.order_number).first()
             if not invoice:
-                # Create Invoice if it doesn't exist
+                # --- NEW TAX CALCULATION LOGIC ---
+                total_tax_amount = 0
+                total_base_amount = 0
+                
+                # Iterate order items to determine category-based tax
+                for item in order.items:
+                    # Find Product to get category
+                    product = Product.query.filter_by(name=item.product_name).first()
+                    category = product.category if product else 'Other'
+                    
+                    # Get Tax Rate from Config
+                    rate = GST_RATES.get(category, GST_RATES['Other'])
+                    
+                    # Back-calculate Tax from Inclusive Price
+                    # Formula: Tax = (Price * Rate) / (100 + Rate)
+                    item_total_inclusive = float(item.price_at_purchase) * item.quantity
+                    tax_component = (item_total_inclusive * rate) / (100 + rate)
+                    base_component = item_total_inclusive - tax_component
+                    
+                    total_tax_amount += tax_component
+                    total_base_amount += base_component
+
+                # Create Invoice with Segregated Tax
                 invoice = Invoice(
                     invoice_number=f"INV-{order.order_number}",
                     recipient_name=order.buyer.username,
@@ -352,8 +456,8 @@ def update_order_status(order_id):
                     bill_to_address=order.billing_address,
                     ship_to_address=order.shipping_address, 
                     order_id=order.order_number,
-                    subtotal=order.total_amount, 
-                    tax=0.00,
+                    subtotal=total_base_amount, 
+                    tax=total_tax_amount, # Stores the AMOUNT now
                     total_amount=order.total_amount,
                     status=InvoiceStatus.UNPAID.value,
                     admin_id=current_user.id,
@@ -362,52 +466,31 @@ def update_order_status(order_id):
                 )
                 db.session.add(invoice)
                 db.session.flush() 
-                
-                # Copy items from Order to Invoice
                 for order_item in order.items:
-                    inv_item = InvoiceItem(
-                        invoice_id=invoice.id,
-                        description=order_item.product_name,
-                        quantity=order_item.quantity,
-                        price=order_item.price_at_purchase
-                    )
+                    inv_item = InvoiceItem(invoice_id=invoice.id, description=order_item.product_name, quantity=order_item.quantity, price=order_item.price_at_purchase)
                     db.session.add(inv_item)
                 db.session.commit()
             
-            # Generate PDF
             generator = InvoiceGenerator(invoice)
             pdf_bytes = generator.generate_pdf()
-            
-            attachments = [{
-                'filename': f'Invoice_{invoice.invoice_number}.pdf',
-                'data': pdf_bytes
-            }]
-            print(f"Invoice generated and attached for Order {order.order_number}")
-            
+            attachments = [{'filename': f'Invoice_{invoice.invoice_number}.pdf', 'data': pdf_bytes}]
         except Exception as e:
-            print(f"Error generating invoice for Order {order.order_number}: {e}")
+            print(f"Error generating invoice: {e}")
             traceback.print_exc()
 
-    # --- EMAIL NOTIFICATION ---
     try:
         send_email(
-            to=order.buyer.email, 
-            subject=f'Order Update: {new_status}', 
-            template='mail/order_status_update.html', 
-            buyer_name=order.buyer.username, 
-            order_number=order.order_number, 
-            status=new_status, 
-            order_date=order.created_at.strftime('%Y-%m-%d'), 
-            total_amount=order.total_amount,
-            shipping_address=order.shipping_address,
-            now=datetime.utcnow(),
+            to=order.buyer.email, subject=f'Order Update: {new_status}', 
+            template='mail/order_status_update.html', buyer_name=order.buyer.username, 
+            order_number=order.order_number, status=new_status, 
+            total_amount=order.total_amount, shipping_address=order.shipping_address, now=datetime.utcnow(),
             attachments=attachments  
         )
     except Exception as e:
-        print(f"Failed to send order status email. Error: {e}")
-        traceback.print_exc() 
+        print(f"Failed to send email: {e}")
     
-    flash(f'Order {order.order_number} status updated to {new_status}.', 'success')
+    log_user_action("Update Order", f"Updated order {order.order_number} to {new_status}")
+    flash(f'Order {order.order_number} updated to {new_status}.', 'success')
     return redirect(url_for('admin_commerce.manage_orders'))
 
 # --- INVOICES ---
@@ -424,7 +507,6 @@ def manage_invoices():
 def create_invoice():
     if request.method == 'POST':
         try:
-            # 1. Extract Basic Data
             recipient_name = request.form.get('recipient_name')
             recipient_email = request.form.get('recipient_email')
             due_date_str = request.form.get('due_date')
@@ -435,7 +517,6 @@ def create_invoice():
             payment_details = request.form.get('payment_details')
             tax_rate = float(request.form.get('tax', 0))
 
-            # 2. Process Items
             descriptions = request.form.getlist('item_description[]')
             quantities = request.form.getlist('item_quantity[]')
             prices = request.form.getlist('item_price[]')
@@ -447,78 +528,46 @@ def create_invoice():
                 if d and q and p:
                     qty = int(q)
                     price = float(p)
-                    total = qty * price
-                    subtotal += total
-                    invoice_items_data.append({
-                        'description': d,
-                        'quantity': qty,
-                        'price': price
-                    })
+                    subtotal += qty * price
+                    invoice_items_data.append({'description': d, 'quantity': qty, 'price': price})
             
             tax_amount = subtotal * (tax_rate / 100)
             total_amount = subtotal + tax_amount
 
-            # 3. Create Database Record
             import uuid
             invoice_num = f"INV-{uuid.uuid4().hex[:6].upper()}"
             
             new_invoice = Invoice(
-                invoice_number=invoice_num,
-                recipient_name=recipient_name,
-                recipient_email=recipient_email,
-                bill_to_address=bill_to,
-                ship_to_address=ship_to,
-                order_id=order_id,
-                subtotal=subtotal,
-                tax=tax_amount,
-                total_amount=total_amount,
+                invoice_number=invoice_num, recipient_name=recipient_name, recipient_email=recipient_email,
+                bill_to_address=bill_to, ship_to_address=ship_to, order_id=order_id,
+                subtotal=subtotal, tax=tax_amount, total_amount=total_amount,
                 status=InvoiceStatus.UNPAID.value,
                 due_date=datetime.strptime(due_date_str, '%Y-%m-%d').date() if due_date_str else None,
-                notes=notes,
-                payment_details=payment_details,
-                admin_id=current_user.id
+                notes=notes, payment_details=payment_details, admin_id=current_user.id
             )
             db.session.add(new_invoice)
-            db.session.flush() # Get ID
+            db.session.flush()
 
             for item in invoice_items_data:
-                db.session.add(InvoiceItem(
-                    invoice_id=new_invoice.id,
-                    description=item['description'],
-                    quantity=item['quantity'],
-                    price=item['price']
-                ))
+                db.session.add(InvoiceItem(invoice_id=new_invoice.id, description=item['description'], quantity=item['quantity'], price=item['price']))
 
             db.session.commit()
 
-            # 4. Generate PDF & Send
             generator = InvoiceGenerator(new_invoice)
             pdf_bytes = generator.generate_pdf()
+            attachments = [{'filename': f'Invoice_{new_invoice.invoice_number}.pdf', 'data': pdf_bytes}]
             
-            attachments = [{
-                'filename': f'Invoice_{new_invoice.invoice_number}.pdf',
-                'data': pdf_bytes
-            }]
-            
-            send_email(
-                to=recipient_email,
-                subject=f"New Invoice #{new_invoice.invoice_number} from Source Point",
-                template="mail/invoice_email.html",
-                invoice=new_invoice,
-                attachments=attachments
-            )
+            send_email(to=recipient_email, subject=f"New Invoice #{new_invoice.invoice_number}", template="mail/invoice_email.html", invoice=new_invoice, attachments=attachments)
 
-            flash(f'Invoice {new_invoice.invoice_number} generated and sent successfully.', 'success')
+            log_user_action("Create Invoice", f"Created invoice {invoice_num}")
+            flash(f'Invoice {new_invoice.invoice_number} created and sent.', 'success')
             return redirect(url_for('admin_commerce.manage_invoices'))
 
         except Exception as e:
             db.session.rollback()
-            print(f"Error creating invoice: {e}")
-            traceback.print_exc()
             flash(f"Error creating invoice: {str(e)}", 'danger')
             return redirect(url_for('admin_commerce.create_invoice'))
 
-    # GET Request
     products = Product.query.filter(Product.stock > 0).all()
     products_js = [{'id': p.id, 'name': p.name, 'price': float(p.price), 'code': p.product_code} for p in products]
     return render_template('create_invoice.html', products=products_js)
@@ -529,47 +578,28 @@ def create_invoice():
 def mark_invoice_paid(invoice_id):
     invoice = Invoice.query.get_or_404(invoice_id)
     invoice.status = InvoiceStatus.PAID.value
-    
-    # Update linked order status if it exists
     if invoice.order_id:
         order = Order.query.filter_by(order_number=invoice.order_id).first()
-        if order and order.status != OrderStatus.DELIVERED.value:
-             order.status = 'Payment Received'
-    
+        if order and order.status != OrderStatus.DELIVERED.value: order.status = 'Payment Received'
     db.session.commit()
     
-    # Send Payment Received Email
     try:
-        send_email(
-            to=invoice.recipient_email,
-            subject=f"Payment Received: Invoice #{invoice.invoice_number}",
-            template="mail/payment_received.html",
-            recipient_name=invoice.recipient_name,
-            invoice=invoice,
-            total_amount=invoice.total_amount
-        )
-    except Exception as e:
-        print(f"Error sending payment confirmation email: {e}")
-        traceback.print_exc()
+        send_email(to=invoice.recipient_email, subject=f"Payment Receipt: Invoice #{invoice.invoice_number}", template="mail/payment_received.html", recipient_name=invoice.recipient_name, invoice=invoice, total_amount=invoice.total_amount)
+    except Exception as e: print(f"Email error: {e}")
 
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return jsonify({'success': True, 'message': 'Invoice marked as Paid.'})
-    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest': return jsonify({'success': True, 'message': 'Invoice marked as Paid.'})
     flash('Invoice marked as Paid.', 'success')
     return redirect(url_for('admin_commerce.manage_invoices'))
 
-@admin_commerce_bp.route('/invoices/delete/<int:invoice_id>')
+@admin_commerce_bp.route('/invoices/delete/<int:invoice_id>', methods=['GET', 'POST'])
 @login_required
 @role_required(UserRole.ADMIN.value)
 def delete_invoice(invoice_id):
     invoice = Invoice.query.get_or_404(invoice_id)
     db.session.delete(invoice)
     db.session.commit()
-    
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-         return jsonify({'success': True, 'message': 'Invoice deleted.', 'remove_row_id': f'inv-{invoice_id}'})
-    
-    flash('Invoice deleted.', 'info')
+    log_user_action("Delete Invoice", f"Deleted invoice {invoice_id}")
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest': return jsonify({'success': True, 'message': 'Invoice deleted.', 'remove_row_id': f'inv-{invoice_id}'})
     return redirect(url_for('admin_commerce.manage_invoices'))
 
 @admin_commerce_bp.route('/invoices/resend', methods=['POST'])
@@ -578,44 +608,18 @@ def delete_invoice(invoice_id):
 def resend_invoice():
     invoice_id = request.form.get('invoice_id')
     recipients = request.form.get('recipient_emails')
-    
-    if not invoice_id:
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'success': False, 'message': 'Invoice ID missing.'})
-        return redirect(url_for('admin_commerce.manage_invoices'))
+    if not invoice_id: return redirect(url_for('admin_commerce.manage_invoices'))
 
     invoice = Invoice.query.get(invoice_id)
-    
     try:
         generator = InvoiceGenerator(invoice)
         pdf_bytes = generator.generate_pdf()
-        
-        attachments = [{
-            'filename': f'Invoice_{invoice.invoice_number}.pdf',
-            'data': pdf_bytes
-        }]
-        
+        attachments = [{'filename': f'Invoice_{invoice.invoice_number}.pdf', 'data': pdf_bytes}]
         recipient_list = [r.strip() for r in recipients.split(',')]
-        
         for email_to in recipient_list:
-             send_email(
-                to=email_to,
-                subject=f"Invoice #{invoice.invoice_number} from Source Point",
-                template="mail/invoice_email.html",
-                invoice=invoice,
-                attachments=attachments
-             )
-        
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'success': True, 'message': 'Invoice resent successfully.'})
-        flash("Invoice resent successfully.", "success")
-        
-    except Exception as e:
-        print(f"Error resending invoice: {e}")
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'success': False, 'message': str(e)})
-        flash(f"Error: {e}", "danger")
-
+             send_email(to=email_to, subject=f"Invoice #{invoice.invoice_number}", template="mail/invoice_email.html", invoice=invoice, attachments=attachments)
+        flash("Invoice resent.", "success")
+    except Exception as e: flash(f"Error: {e}", "danger")
     return redirect(url_for('admin_commerce.manage_invoices'))
 
 @admin_commerce_bp.route('/invoices/remind/<int:invoice_id>', methods=['POST'])
@@ -623,20 +627,24 @@ def resend_invoice():
 @role_required(UserRole.ADMIN.value)
 def send_invoice_reminder(invoice_id):
     invoice = Invoice.query.get_or_404(invoice_id)
-    
     try:
-        send_email(
-            to=invoice.recipient_email,
-            subject=f"Payment Reminder: Invoice #{invoice.invoice_number}",
-            template="mail/reminder_invoice_email.html",
-            invoice=invoice
-        )
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'success': True, 'message': 'Reminder sent.'})
+        generator = InvoiceGenerator(invoice)
+        pdf_bytes = generator.generate_pdf()
+        attachments = [{'filename': f'Invoice_{invoice.invoice_number}.pdf', 'data': pdf_bytes}]
+        send_email(to=invoice.recipient_email, subject=f"Payment Reminder: Invoice #{invoice.invoice_number}", template="mail/reminder_invoice_email.html", recipient_name=invoice.recipient_name, invoice_number=invoice.invoice_number, created_at=invoice.created_at.strftime('%d %b %Y'), total_amount=invoice.total_amount, due_date=invoice.due_date.strftime('%d %b %Y') if invoice.due_date else "Immediate", invoice=invoice, attachments=attachments)
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest': return jsonify({'success': True, 'message': 'Reminder sent.'})
         flash("Reminder sent.", "success")
     except Exception as e:
-         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'success': False, 'message': str(e)})
+         if request.headers.get('X-Requested-With') == 'XMLHttpRequest': return jsonify({'success': False, 'message': str(e)})
          flash(f"Error: {e}", "danger")
-         
     return redirect(url_for('admin_commerce.manage_invoices'))
+
+# --- VIEW PRODUCT DETAILS ROUTE ---
+@admin_commerce_bp.route('/inventory/view/<int:product_id>')
+@login_required
+@role_required(UserRole.ADMIN.value)
+def view_product(product_id):
+    product = Product.query.get_or_404(product_id)
+    # Admin wants to see who has this product
+    allocations = SellerInventory.query.filter_by(product_id=product.id).all()
+    return render_template('product_detail_manage.html', product=product, allocations=allocations)

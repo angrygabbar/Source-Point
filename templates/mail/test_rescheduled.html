@@ -1,50 +1,202 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coding Test Rescheduled</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        body { margin: 0; padding: 0; background-color: #f4f7f6; font-family: 'Inter', sans-serif; }
-        .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1); animation: fadeIn 0.5s ease-out; }
-        .header { background: linear-gradient(135deg, #ca8a04, #a16207); color: #ffffff; padding: 40px; text-align: center; }
-        .header img { width: 80px; margin-bottom: 20px; }
-        .header h1 { margin: 0; font-size: 28px; }
-        .content { padding: 30px 40px; color: #333; line-height: 1.6; }
-        .content h2 { color: #854d0e; font-size: 22px; }
-        .content p { margin: 0 0 15px; }
-        .details-box { background-color: #fefce8; border-left: 5px solid #ca8a04; padding: 20px; margin: 25px 0; border-radius: 8px; }
-        .details-box h3 { margin-top: 0; color: #ca8a04; }
-        .button-container { text-align: center; margin-top: 30px; }
-        .button { display: inline-block; background-color: #4f46e5; color: #ffffff; padding: 14px 24px; text-decoration: none; border-radius: 8px; font-weight: 600; }
-        .footer { background-color: #eef2ff; text-align: center; padding: 20px; font-size: 12px; color: #6b7280; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
+    <title>Test Rescheduled</title>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <img src="https://i.imgur.com/v1h2y28.png" alt="Vision For The Future Logo">
-            <h1>Test Rescheduled</h1>
-        </div>
-        <div class="content">
-            <h2>Important Update: Your Coding Test Time Has Changed</h2>
-            <p>Dear {{ candidate.username }},</p>
-            <p>Please note that your coding test for the problem "<strong>{{ problem_title }}</strong>" has been rescheduled. The new details are listed below.</p>
-            <div class="details-box">
-                <h3>New Test Details</h3>
-                <p><strong>Start Time:</strong> {{ start_time_ist.strftime('%B %d, %Y at %I:%M %p') }} IST</p>
-                <p><strong>End Time:</strong> {{ end_time_ist.strftime('%B %d, %Y at %I:%M %p') }} IST</p>
-            </div>
-            <p>Please ensure you are available at the new time. We apologize for any inconvenience this may cause.</p>
-            <div class="button-container">
-                <a href="{{ url_for('main.dashboard', _external=True) }}" class="button">View Your Dashboard</a>
-            </div>
-        </div>
-        <div class="footer">
-            <p>&copy; 2025 Source Point. All rights reserved.</p>
-        </div>
-    </div>
+
+<body
+    style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #e2e8f0;">
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0f172a;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0"
+                    style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%); padding: 40px 40px 50px 40px; text-align: center;">
+                            <table role="presentation" cellspacing="0" cellpadding="0"
+                                style="margin: 0 auto 20px auto;">
+                                <tr>
+                                    <td style="background: rgba(255,255,255,0.2); border-radius: 16px; padding: 16px;">
+                                        <img src="https://img.icons8.com/fluency/48/calendar.png" alt="Reschedule"
+                                            width="48" height="48" style="display: block;">
+                                    </td>
+                                </tr>
+                            </table>
+                            <h1
+                                style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">
+                                Test Rescheduled 🔄</h1>
+                            <p style="margin: 12px 0 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">Your test has
+                                been moved to a new time</p>
+                        </td>
+                    </tr>
+
+                    <!-- Wave Divider -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%); height: 30px;">
+                            <div style="background: #1e293b; height: 30px; border-radius: 30px 30px 0 0;"></div>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 0 40px 40px 40px;">
+
+                            <p style="font-size: 18px; color: #f1f5f9; margin: 0 0 24px 0; line-height: 1.6;">
+                                Hello <strong style="color: #fbbf24;">{{ candidate.username }}</strong>,
+                            </p>
+
+                            <p style="font-size: 16px; color: #d1d5db; margin: 0 0 24px 0; line-height: 1.6;">
+                                Your coding test has been rescheduled. Please review the updated details below.
+                            </p>
+
+                            <!-- Time Change Card -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.1) 100%); border: 2px solid rgba(245, 158, 11, 0.3); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <h2
+                                            style="margin: 0 0 20px 0; font-size: 18px; color: #fbbf24; font-weight: 600; text-align: center;">
+                                            📅 Schedule Change
+                                        </h2>
+
+                                        <!-- Old Time -->
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 12px;">
+                                            <tr>
+                                                <td
+                                                    style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 12px; padding: 16px;">
+                                                    <table role="presentation" width="100%" cellspacing="0"
+                                                        cellpadding="0">
+                                                        <tr>
+                                                            <td width="40" valign="top">
+                                                                <div
+                                                                    style="background: rgba(239, 68, 68, 0.2); border-radius: 50%; width: 32px; height: 32px; text-align: center; line-height: 32px; font-size: 14px;">
+                                                                    ❌</div>
+                                                            </td>
+                                                            <td style="padding-left: 12px;">
+                                                                <p
+                                                                    style="margin: 0; font-size: 11px; color: #f87171; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">
+                                                                    Previous Time</p>
+                                                                <p
+                                                                    style="margin: 4px 0 0 0; font-size: 14px; color: #fca5a5; text-decoration: line-through;">
+                                                                    {{ old_start_time_ist.strftime('%B %d, %Y at %I:%M
+                                                                    %p') }} IST</p>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        <!-- Arrow -->
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 12px;">
+                                            <tr>
+                                                <td align="center">
+                                                    <div style="font-size: 20px;">⬇️</div>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        <!-- New Time -->
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td
+                                                    style="background: rgba(16, 185, 129, 0.1); border: 2px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 16px;">
+                                                    <table role="presentation" width="100%" cellspacing="0"
+                                                        cellpadding="0">
+                                                        <tr>
+                                                            <td width="40" valign="top">
+                                                                <div
+                                                                    style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 50%; width: 32px; height: 32px; text-align: center; line-height: 32px; font-size: 14px;">
+                                                                    ✅</div>
+                                                            </td>
+                                                            <td style="padding-left: 12px;">
+                                                                <p
+                                                                    style="margin: 0; font-size: 11px; color: #10b981; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">
+                                                                    New Time</p>
+                                                                <p
+                                                                    style="margin: 4px 0 0 0; font-size: 15px; color: #34d399; font-weight: 600;">
+                                                                    {{ new_start_time_ist.strftime('%B %d, %Y at %I:%M
+                                                                    %p') }} IST</p>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Test Info -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(148, 163, 184, 0.1); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 20px 24px;">
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td width="80" style="font-size: 13px; color: #9ca3af;">Problem</td>
+                                                <td style="font-size: 15px; color: #f1f5f9; font-weight: 500;">{{
+                                                    problem.title }}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- CTA Button -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="margin-bottom: 24px;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{ url_for('candidate.code_test', _external=True) }}"
+                                            style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-size: 16px; font-weight: 600; box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.4);">
+                                            🚀 Go to Code Test Page
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Closing -->
+                            <p style="font-size: 16px; color: #e2e8f0; margin: 0;">
+                                Best of luck! 🍀<br>
+                                <strong style="color: #fbbf24;">The Source Point Team</strong>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background: rgba(15, 23, 42, 0.8); padding: 24px 40px; border-top: 1px solid rgba(148, 163, 184, 0.1);">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td align="center">
+                                        <p style="margin: 0; font-size: 12px; color: #6b7280;">
+                                            © 2025 Source Point. All rights reserved.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
 </body>
+
 </html>

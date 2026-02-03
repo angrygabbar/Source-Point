@@ -3,7 +3,7 @@ Never commit this file!
 .env
 
 Instance folder
-Contains the old SQLite database and other instance-specific files.
+Contains the old SQLite database and other instance-specific files...
 instance/
 
 Python cache
@@ -12,3 +12,12 @@ pycache/
 
 OS-specific files
 .DS_Store
+
+# Ignore Docker Compose filess
+docker-compose.yml
+docker-compose.override.yml
+
+# Google Calendar API Credentials (IMPORTANT!)
+credentials.json
+token.pickleservice_account.json
+service_account.json

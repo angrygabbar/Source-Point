@@ -1,50 +1,133 @@
-{% extends "layout.html" %}
+{% if not partial %}{% extends "layout.html" %}{% endif %}
+
 {% block title %}My Orders{% endblock %}
+
 {% block content %}
-<div class="max-w-4xl mx-auto animate-dynamic">
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-3xl font-bold text-white">My Orders</h1>
-        <a href="{{ url_for('buyer.buyer_dashboard') }}" class="text-indigo-400 hover:underline">&larr; Back to Shop</a>
+<div id="main-content" class="max-w-4xl mx-auto animate-dynamic p-4 md:p-8">
+
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-3xl font-black text-white tracking-tight">Order History</h1>
+            <p class="text-gray-400 text-sm mt-1">Track and manage your recent purchases.</p>
+        </div>
+
+        <a hx-get="{{ url_for('buyer.buyer_dashboard') }}" hx-target="#main-content" hx-push-url="true"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-indigo-400 font-bold text-sm transition-all border border-white/5 hover:border-white/10 cursor-pointer">
+            <i class="fas fa-arrow-left"></i> Back to Market
+        </a>
     </div>
 
     <div class="space-y-6">
         {% for order in orders %}
-        <div class="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-            <div class="bg-gray-900/50 p-4 flex justify-between items-center border-b border-white/5">
-                <div>
-                    <p class="text-xs text-gray-400 uppercase">Order Placed</p>
-                    <p class="text-sm text-white">{{ order.created_at.strftime('%d %B %Y') }}</p>
+        <div
+            class="group bg-[#0f1115] border border-white/5 rounded-2xl overflow-hidden hover:border-indigo-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/5">
+
+            <div
+                class="bg-white/[0.02] p-5 flex flex-wrap gap-y-4 justify-between items-center border-b border-white/5">
+                <div class="flex gap-8">
+                    <div>
+                        <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Order Placed</p>
+                        <p class="text-sm font-medium text-gray-200">{{ order.created_at.strftime('%d %b %Y') }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Total Amount</p>
+                        <p class="text-sm font-bold text-white">₹{{ "{:,.2f}".format(order.total_amount) }}</p>
+                    </div>
                 </div>
-                <div>
-                    <p class="text-xs text-gray-400 uppercase">Total</p>
-                    <p class="text-sm text-white font-bold">₹{{ "{:,.2f}".format(order.total_amount) }}</p>
-                </div>
-                <div>
-                    <p class="text-xs text-gray-400 uppercase">Order #</p>
-                    <p class="text-sm text-gray-300 font-mono">{{ order.order_number }}</p>
+
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-mono text-gray-500 bg-white/5 px-2 py-1 rounded border border-white/5">
+                        #{{ order.order_number }}
+                    </span>
+                    {% if order.status == 'Delivered' %}
+                    <span
+                        class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                        <i class="fas fa-check-circle"></i> Delivered
+                    </span>
+                    {% elif 'Cancelled' in order.status %}
+                    <span
+                        class="px-3 py-1 rounded-full text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20">
+                        {{ order.status }}
+                    </span>
+                    {% else %}
+                    <span
+                        class="px-3 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1">
+                        <i class="fas fa-truck-loading"></i> {{ order.status }}
+                    </span>
+                    {% endif %}
                 </div>
             </div>
+
             <div class="p-6">
-                <h4 class="text-sm font-bold text-gray-300 mb-3">Items</h4>
-                <ul class="space-y-2 mb-4">
+                <div class="space-y-4">
                     {% for item in order.items %}
-                    <li class="flex justify-between text-sm">
-                        <span class="text-white">{{ item.product_name }} <span class="text-gray-500">x{{ item.quantity }}</span></span>
-                        <span class="text-gray-300">₹{{ "{:,.2f}".format(item.price_at_purchase) }}</span>
-                    </li>
-                    {% endfor %}
-                </ul>
-                <div class="pt-4 border-t border-white/5">
-                    <p class="text-xs text-gray-500">Shipping to: {{ order.shipping_address }}</p>
-                    <div class="mt-2 inline-block px-2 py-1 rounded text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                        {{ order.status }}
+                    <div class="flex justify-between items-center py-2 border-b border-white/5 last:border-0 last:pb-0">
+                        <div class="flex items-center gap-4">
+                            <div
+                                class="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center text-gray-500 border border-white/5">
+                                <i class="fas fa-cube text-xs"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-gray-200">{{ item.product_name }}</p>
+                                <p class="text-xs text-gray-500">Qty: {{ item.quantity }}</p>
+                            </div>
+                        </div>
+                        <span class="text-sm font-medium text-gray-300">₹{{ "{:,.2f}".format(item.price_at_purchase)
+                            }}</span>
                     </div>
+                    {% endfor %}
+                </div>
+
+                <div
+                    class="mt-6 pt-4 border-t border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-map-marker-alt text-gray-500 mt-1 text-xs"></i>
+                        <p class="text-xs text-gray-400 max-w-md leading-relaxed">
+                            <span class="font-bold text-gray-300">Shipping to:</span> {{ order.shipping_address }}
+                        </p>
+                    </div>
+
+                    {% if order.status not in ['Placed', 'Cancelled'] %}
+                    <button
+                        class="text-xs font-bold text-indigo-400 hover:text-white transition-colors flex items-center gap-2">
+                        <i class="fas fa-file-invoice"></i> Download Invoice
+                    </button>
+                    {% endif %}
                 </div>
             </div>
         </div>
         {% else %}
-        <p class="text-center text-gray-500 py-10">No orders placed yet.</p>
+        <div
+            class="flex flex-col items-center justify-center py-20 text-center bg-white/[0.02] border border-white/5 rounded-2xl border-dashed">
+            <div class="w-16 h-16 bg-gray-800/50 rounded-full flex items-center justify-center mb-4 text-gray-600">
+                <i class="fas fa-box-open text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white mb-1">No orders yet</h3>
+            <p class="text-gray-500 text-sm mb-6">Looks like you haven't bought anything yet.</p>
+            <a hx-get="{{ url_for('buyer.buyer_dashboard') }}" hx-target="#main-content"
+                class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-xl transition-all cursor-pointer">
+                Start Shopping
+            </a>
+        </div>
         {% endfor %}
     </div>
 </div>
-{% endblock %}
+
+<style>
+    .animate-dynamic {
+        animation: fadeIn 0.4s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}a
