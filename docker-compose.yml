@@ -1,5 +1,4 @@
 services:
-  # 1. The Flask App
   web:
     build: .
     container_name: sourcepoint_app
@@ -10,13 +9,10 @@ services:
       - .env
     volumes:
       - .:/app
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     depends_on:
       - db
       - redis
 
-  # 2. The Database
   db:
     image: postgres:15
     container_name: sourcepoint_db_dev
@@ -32,9 +28,8 @@ services:
     networks:
       default:
         aliases:
-          - db  # This makes 'db' a valid hostname for the app
+          - db
 
-  # 3. Redis
   redis:
     image: redis:alpine
     container_name: sourcepoint_redis
@@ -42,11 +37,11 @@ services:
     ports:
       - "6379:6379"
 
-  # 4. The Celery Worker & Scheduler
   worker:
     build: .
     restart: always
-    command: celery -A app.celery worker --beat --loglevel=info
+    # REMOVED --beat here to prevent 7x duplicates
+    command: celery -A app.celery worker --loglevel=info
     env_file:
       - .env
     environment:
@@ -57,9 +52,23 @@ services:
       - db
       - redis
       - web
-    # --- NEW: Permanent Scaling to 7 Workers ---
     deploy:
       replicas: 7
+
+  # NEW: Separate Scheduler service (Only 1 instance)
+  scheduler:
+    build: .
+    container_name: sourcepoint_scheduler
+    restart: always
+    command: celery -A app.celery beat --loglevel=info
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+      - web
 
 volumes:
   postgres_data_dev:
