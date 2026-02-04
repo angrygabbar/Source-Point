@@ -608,9 +608,20 @@ def delete_invoice(invoice_id):
 def resend_invoice():
     invoice_id = request.form.get('invoice_id')
     recipients = request.form.get('recipient_emails')
-    if not invoice_id: return redirect(url_for('admin_commerce.manage_invoices'))
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    
+    if not invoice_id:
+        if is_ajax:
+            return jsonify({'success': False, 'message': 'Invoice ID is required.'})
+        return redirect(url_for('admin_commerce.manage_invoices'))
 
     invoice = Invoice.query.get(invoice_id)
+    if not invoice:
+        if is_ajax:
+            return jsonify({'success': False, 'message': 'Invoice not found.'})
+        flash("Invoice not found.", "danger")
+        return redirect(url_for('admin_commerce.manage_invoices'))
+    
     try:
         generator = InvoiceGenerator(invoice)
         pdf_bytes = generator.generate_pdf()
@@ -618,8 +629,15 @@ def resend_invoice():
         recipient_list = [r.strip() for r in recipients.split(',')]
         for email_to in recipient_list:
              send_email(to=email_to, subject=f"Invoice #{invoice.invoice_number}", template="mail/invoice_email.html", invoice=invoice, attachments=attachments)
+        
+        if is_ajax:
+            return jsonify({'success': True, 'message': 'Invoice resent successfully.'})
         flash("Invoice resent.", "success")
-    except Exception as e: flash(f"Error: {e}", "danger")
+    except Exception as e:
+        if is_ajax:
+            return jsonify({'success': False, 'message': str(e)})
+        flash(f"Error: {e}", "danger")
+    
     return redirect(url_for('admin_commerce.manage_invoices'))
 
 @admin_commerce_bp.route('/invoices/remind/<int:invoice_id>', methods=['POST'])

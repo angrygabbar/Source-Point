@@ -51,7 +51,7 @@
                         <td style="padding: 0 40px 40px 40px;">
 
                             <p style="font-size: 18px; color: #f1f5f9; margin: 0 0 24px 0; line-height: 1.6;">
-                                Hello <strong style="color: #22d3ee;">{{ user.username }}</strong>,
+                                Hello <strong style="color: #22d3ee;">{{ buyer_name }}</strong>,
                             </p>
 
                             <p style="font-size: 16px; color: #d1d5db; margin: 0 0 24px 0; line-height: 1.6;">
@@ -67,13 +67,13 @@
                                             style="margin: 0 0 20px 0; font-size: 18px; color: #22d3ee; font-weight: 600;">
                                             📋 Order Details
                                         </h2>
-                                        {% if order_id %}
+                                        {% if order_number %}
                                         <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
                                             style="margin-bottom: 12px;">
                                             <tr>
                                                 <td width="120" style="font-size: 13px; color: #9ca3af;">Order ID</td>
                                                 <td style="font-size: 14px; color: #f1f5f9; font-family: monospace;">{{
-                                                    order_id }}</td>
+                                                    order_number }}</td>
                                             </tr>
                                         </table>
                                         {% endif %}

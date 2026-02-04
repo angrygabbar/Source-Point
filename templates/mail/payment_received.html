@@ -51,7 +51,7 @@
                         <td style="padding: 0 40px 40px 40px;">
 
                             <p style="font-size: 18px; color: #f1f5f9; margin: 0 0 24px 0; line-height: 1.6;">
-                                Hello <strong style="color: #10b981;">{{ recipient.username }}</strong>,
+                                Hello <strong style="color: #10b981;">{{ recipient_name }}</strong>,
                             </p>
 
                             <p style="font-size: 16px; color: #d1d5db; margin: 0 0 24px 0; line-height: 1.6;">
@@ -67,10 +67,10 @@
                                         <h2
                                             style="margin: 0 0 8px 0; font-size: 24px; color: #10b981; font-weight: 700;">
                                             PAYMENT CONFIRMED</h2>
-                                        {% if amount %}
+                                        {% if total_amount %}
                                         <p
                                             style="margin: 12px 0 0 0; font-size: 28px; color: #f1f5f9; font-weight: 700;">
-                                            ₹{{ amount }}</p>
+                                            ₹{{ total_amount }}</p>
                                         {% endif %}
                                     </td>
                                 </tr>

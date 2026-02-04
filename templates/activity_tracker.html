@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+
+{# Define macro at the top before it's used #}
+{% macro get_activity_color(action) -%}
+{% if 'Login' in action or 'Logout' in action %}activity-type-login
+{% elif 'Create' in action or 'Add' in action %}activity-type-create
+{% elif 'Update' in action or 'Edit' in action %}activity-type-update
+{% elif 'Delete' in action or 'Remove' in action %}activity-type-delete
+{% elif 'Email' in action or 'Send' in action %}activity-type-email
+{% elif 'Order' in action or 'Invoice' in action %}activity-type-order
+{% else %}activity-type-default
+{% endif %}
+{%- endmacro %}
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Activity Tracker - Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            min-height: 100vh;
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(59, 130, 246, 0.2);
+        }
+
+        .activity-item {
+            animation: slideIn 0.3s ease-out;
+            transition: all 0.2s ease;
+        }
+
+        .activity-item:hover {
+            background: rgba(59, 130, 246, 0.05);
+            transform: translateX(4px);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.8);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1.4);
+                opacity: 0;
+            }
+        }
+
+        .live-indicator {
+            position: relative;
+        }
+
+        .live-indicator::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse-ring 1.5s infinite;
+        }
+
+        .activity-type-login {
+            color: #10b981;
+        }
+
+        .activity-type-create {
+            color: #3b82f6;
+        }
+
+        .activity-type-update {
+            color: #f59e0b;
+        }
+
+        .activity-type-delete {
+            color: #ef4444;
+        }
+
+        .activity-type-email {
+            color: #8b5cf6;
+        }
+
+        .activity-type-order {
+            color: #06b6d4;
+        }
+
+        .activity-type-default {
+            color: #64748b;
+        }
+
+        .filter-panel {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .filter-panel.active {
+            max-height: 500px;
+        }
+
+        .role-badge {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .role-admin {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+        }
+
+        .role-seller {
+            background: rgba(59, 130, 246, 0.2);
+            color: #93c5fd;
+        }
+
+        .role-buyer {
+            background: rgba(16, 185, 129, 0.2);
+            color: #6ee7b7;
+        }
+
+        .role-candidate {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fcd34d;
+        }
+
+        .role-moderator {
+            background: rgba(139, 92, 246, 0.2);
+            color: #c4b5fd;
+        }
+
+        .role-developer {
+            background: rgba(6, 182, 212, 0.2);
+            color: #67e8f9;
+        }
+
+        .role-recruiter {
+            background: rgba(236, 72, 153, 0.2);
+            color: #f9a8d4;
+        }
+    </style>
+</head>
+
+<body class="text-gray-100">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1
+                    class="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                    Live Activity Tracker
+                </h1>
+                <p class="text-gray-400 mt-2">Real-time monitoring of all system activities</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 glass-card px-4 py-2 rounded-lg">
+                    <div class="w-3 h-3 bg-green-500 rounded-full live-indicator"></div>
+                    <span class="text-sm font-medium text-green-400">Live</span>
+                </div>
+                <button onclick="toggleAutoRefresh()" id="autoRefreshBtn"
+                    class="glass-card px-4 py-2 rounded-lg hover:bg-blue-500/20 transition">
+                    <i class="fas fa-sync-alt mr-2"></i>
+                    <span id="autoRefreshText">Auto-refresh: ON</span>
+                </button>
+                <a href="{{ url_for('admin_core.admin_dashboard') }}"
+                    class="glass-card px-4 py-2 rounded-lg hover:bg-gray-700/50 transition">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="stat-card rounded-2xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm font-medium">Total Activities</p>
+                        <h3 class="text-3xl font-bold text-white mt-2">{{ total_activities }}</h3>
+                    </div>
+                    <div class="w-14 h-14 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-chart-line text-2xl text-blue-400"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card rounded-2xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm font-medium">Today's Activities</p>
+                        <h3 class="text-3xl font-bold text-white mt-2">{{ today_activities }}</h3>
+                    </div>
+                    <div class="w-14 h-14 bg-green-500/20 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-calendar-day text-2xl text-green-400"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card rounded-2xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm font-medium">Active Users Today</p>
+                        <h3 class="text-3xl font-bold text-white mt-2">{{ active_users_today }}</h3>
+                    </div>
+                    <div class="w-14 h-14 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-users text-2xl text-purple-400"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card rounded-2xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm font-medium">Recent Logins</p>
+                        <h3 class="text-3xl font-bold text-white mt-2">{{ recent_logins }}</h3>
+                    </div>
+                    <div class="w-14 h-14 bg-cyan-500/20 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-sign-in-alt text-2xl text-cyan-400"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Panel -->
+        <div class="glass-card rounded-2xl p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                    <i class="fas fa-filter text-blue-400"></i>
+                    Filters & Search
+                </h2>
+                <button onclick="toggleFilters()" class="text-blue-400 hover:text-blue-300 transition">
+                    <i class="fas fa-chevron-down" id="filterToggleIcon"></i>
+                </button>
+            </div>
+
+            <div class="filter-panel" id="filterPanel">
+                <form id="filterForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-2">Activity Type</label>
+                        <select name="activity_type"
+                            class="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="all">All Types</option>
+                            <option value="Login">Login/Logout</option>
+                            <option value="Create">Create</option>
+                            <option value="Update">Update</option>
+                            <option value="Delete">Delete</option>
+                            <option value="Email">Email</option>
+                            <option value="Order">Orders</option>
+                            <option value="Invoice">Invoices</option>
+                            <option value="EMI">EMI/Finance</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-2">User</label>
+                        <select name="user_id"
+                            class="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="all">All Users</option>
+                            {% for user in all_users %}
+                            <option value="{{ user.id }}">{{ user.username }} ({{ user.role }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-2">Date From</label>
+                        <input type="date" name="date_from"
+                            class="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-2">Date To</label>
+                        <input type="date" name="date_to"
+                            class="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+
+                    <div class="md:col-span-2 lg:col-span-3">
+                        <label class="block text-sm font-medium text-gray-400 mb-2">Search</label>
+                        <input type="text" name="search" placeholder="Search in actions and details..."
+                            class="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+
+                    <div class="flex items-end gap-2">
+                        <button type="submit"
+                            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition">
+                            <i class="fas fa-search mr-2"></i>Apply
+                        </button>
+                        <button type="button" onclick="resetFilters()"
+                            class="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition">
+                            <i class="fas fa-redo mr-2"></i>Reset
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Activity Feed -->
+        <div class="glass-card rounded-2xl p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                    <i class="fas fa-stream text-blue-400"></i>
+                    Activity Feed
+                    <span id="activityCount" class="text-sm font-normal text-gray-400 ml-2">({{ activities|length }}
+                        activities)</span>
+                </h2>
+                <button onclick="refreshActivities()" class="text-blue-400 hover:text-blue-300 transition">
+                    <i class="fas fa-sync-alt mr-2"></i>Refresh Now
+                </button>
+            </div>
+
+            <div id="activityFeed" class="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                {% for activity in activities %}
+                <div class="activity-item bg-gray-800/30 rounded-xl p-4 border border-gray-700/50"
+                    data-activity-id="{{ activity.id }}">
+                    <div class="flex items-start gap-4">
+                        <img src="{{ activity.user.avatar_url }}" alt="{{ activity.user.username }}"
+                            class="w-12 h-12 rounded-full border-2 border-gray-700">
+
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="font-semibold text-white">{{ activity.user.username }}</span>
+                                <span class="role-badge role-{{ activity.user.role }}">{{ activity.user.role }}</span>
+                                <span class="text-gray-500 text-sm">•</span>
+                                <span class="text-gray-400 text-sm"
+                                    title="{{ activity.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC') }}">
+                                    {{ activity.timestamp.strftime('%b %d, %Y at %H:%M') }}
+                                </span>
+                            </div>
+
+                            <div class="flex items-center gap-2 mb-2">
+                                {% set color_class = get_activity_color(activity.action) %}
+                                <i class="fas fa-bolt {{ color_class }} text-sm"></i>
+                                <span class="font-medium text-gray-200">{{ activity.action }}</span>
+                            </div>
+
+                            {% if activity.details %}
+                            <p class="text-gray-400 text-sm mb-2">{{ activity.details }}</p>
+                            {% endif %}
+
+                            {% if activity.ip_address %}
+                            <div class="flex items-center gap-2 text-xs text-gray-500">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>IP: {{ activity.ip_address }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let autoRefresh = true;
+        let refreshInterval;
+        let latestActivityId = {{ activities[0].id if activities else 0 }};
+
+        // Toggle auto-refresh
+        function toggleAutoRefresh() {
+            autoRefresh = !autoRefresh;
+            document.getElementById('autoRefreshText').textContent = `Auto-refresh: ${autoRefresh ? 'ON' : 'OFF'}`;
+
+            if (autoRefresh) {
+                startAutoRefresh();
+            } else {
+                clearInterval(refreshInterval);
+            }
+        }
+
+        // Start auto-refresh
+        function startAutoRefresh() {
+            refreshInterval = setInterval(() => {
+                fetchNewActivities();
+            }, 5000); // Refresh every 5 seconds
+        }
+
+        // Fetch new activities
+        async function fetchNewActivities() {
+            try {
+                const response = await fetch(`/admin/activity-tracker/live?last_id=${latestActivityId}`);
+                const data = await response.json();
+
+                if (data.success && data.activities.length > 0) {
+                    data.activities.reverse().forEach(activity => {
+                        addActivityToFeed(activity);
+                    });
+                    latestActivityId = data.latest_id;
+                }
+            } catch (error) {
+                console.error('Error fetching activities:', error);
+            }
+        }
+
+        // Add activity to feed
+        function addActivityToFeed(activity) {
+            const feed = document.getElementById('activityFeed');
+            const activityHtml = createActivityHtml(activity);
+            feed.insertAdjacentHTML('afterbegin', activityHtml);
+
+            // Update count
+            const count = feed.children.length;
+            document.getElementById('activityCount').textContent = `(${count} activities)`;
+        }
+
+        // Create activity HTML
+        function createActivityHtml(activity) {
+            const roleClass = `role-${activity.user_role}`;
+            const colorClass = getActivityColorClass(activity.action);
+
+            return `
+                <div class="activity-item bg-gray-800/30 rounded-xl p-4 border border-gray-700/50" data-activity-id="${activity.id}">
+                    <div class="flex items-start gap-4">
+                        <img src="${activity.user_avatar}" alt="${activity.username}" class="w-12 h-12 rounded-full border-2 border-gray-700">
+                        
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="font-semibold text-white">${activity.username}</span>
+                                <span class="role-badge ${roleClass}">${activity.user_role}</span>
+                                <span class="text-gray-500 text-sm">•</span>
+                                <span class="text-gray-400 text-sm">${activity.relative_time}</span>
+                            </div>
+                            
+                            <div class="flex items-center gap-2 mb-2">
+                                <i class="fas fa-bolt ${colorClass} text-sm"></i>
+                                <span class="font-medium text-gray-200">${activity.action}</span>
+                            </div>
+                            
+                            ${activity.details ? `<p class="text-gray-400 text-sm mb-2">${activity.details}</p>` : ''}
+                            
+                            ${activity.ip_address ? `
+                                <div class="flex items-center gap-2 text-xs text-gray-500">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <span>IP: ${activity.ip_address}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Get activity color class
+        function getActivityColorClass(action) {
+            if (action.includes('Login') || action.includes('Logout')) return 'activity-type-login';
+            if (action.includes('Create') || action.includes('Add')) return 'activity-type-create';
+            if (action.includes('Update') || action.includes('Edit')) return 'activity-type-update';
+            if (action.includes('Delete') || action.includes('Remove')) return 'activity-type-delete';
+            if (action.includes('Email') || action.includes('Send')) return 'activity-type-email';
+            if (action.includes('Order') || action.includes('Invoice')) return 'activity-type-order';
+            return 'activity-type-default';
+        }
+
+        // Toggle filters
+        function toggleFilters() {
+            const panel = document.getElementById('filterPanel');
+            const icon = document.getElementById('filterToggleIcon');
+            panel.classList.toggle('active');
+            icon.classList.toggle('fa-chevron-down');
+            icon.classList.toggle('fa-chevron-up');
+        }
+
+        // Handle filter form submission
+        document.getElementById('filterForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+
+            try {
+                const response = await fetch('/admin/activity-tracker/filter', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const feed = document.getElementById('activityFeed');
+                    feed.innerHTML = '';
+
+                    data.activities.forEach(activity => {
+                        feed.insertAdjacentHTML('beforeend', createActivityHtml(activity));
+                    });
+
+                    document.getElementById('activityCount').textContent = `(${data.count} activities)`;
+                }
+            } catch (error) {
+                console.error('Error filtering activities:', error);
+            }
+        });
+
+        // Reset filters
+        function resetFilters() {
+            document.getElementById('filterForm').reset();
+            refreshActivities();
+        }
+
+        // Refresh activities
+        function refreshActivities() {
+            window.location.reload();
+        }
+
+        // Start auto-refresh on page load
+        if (autoRefresh) {
+            startAutoRefresh();
+        }
+    </script>
+</body>
+
+</html>

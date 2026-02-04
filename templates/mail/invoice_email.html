@@ -51,7 +51,7 @@
                         <td style="padding: 0 40px 40px 40px;">
 
                             <p style="font-size: 18px; color: #f1f5f9; margin: 0 0 24px 0; line-height: 1.6;">
-                                Hello <strong style="color: #10b981;">{{ recipient.username }}</strong>,
+                                Hello <strong style="color: #10b981;">{{ invoice.recipient_name }}</strong>,
                             </p>
 
                             <p style="font-size: 16px; color: #d1d5db; margin: 0 0 24px 0; line-height: 1.6;">
@@ -67,33 +67,34 @@
                                             style="margin: 0 0 20px 0; font-size: 18px; color: #10b981; font-weight: 600;">
                                             📋 Invoice Details
                                         </h2>
-                                        {% if invoice_number %}
+                                        {% if invoice.invoice_number %}
                                         <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
                                             style="margin-bottom: 12px;">
                                             <tr>
                                                 <td width="120" style="font-size: 13px; color: #9ca3af;">Invoice #</td>
                                                 <td style="font-size: 15px; color: #f1f5f9; font-weight: 600;">{{
-                                                    invoice_number }}</td>
+                                                    invoice.invoice_number }}</td>
                                             </tr>
                                         </table>
                                         {% endif %}
-                                        {% if amount %}
+                                        {% if invoice.total_amount %}
                                         <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
                                             style="margin-bottom: 12px;">
                                             <tr>
                                                 <td width="120" style="font-size: 13px; color: #9ca3af;">Amount</td>
                                                 <td style="font-size: 20px; color: #10b981; font-weight: 700;">₹{{
-                                                    amount }}</td>
+                                                    invoice.total_amount }}</td>
                                             </tr>
                                         </table>
                                         {% endif %}
-                                        {% if due_date %}
+                                        {% if invoice.due_date %}
                                         <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
                                             style="margin-bottom: 12px;">
                                             <tr>
                                                 <td width="120" style="font-size: 13px; color: #9ca3af;">Due Date</td>
                                                 <td style="font-size: 15px; color: #fbbf24; font-weight: 500;">{{
-                                                    due_date }}</td>
+                                                    invoice.due_date.strftime('%B %d, %Y') if invoice.due_date else
+                                                    'Immediate' }}</td>
                                             </tr>
                                         </table>
                                         {% endif %}
@@ -103,7 +104,7 @@
                                                 <td>
                                                     <span
                                                         style="display: inline-block; background: rgba(16, 185, 129, 0.2); color: #10b981; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">{{
-                                                        status|default('Pending') }}</span>
+                                                        invoice.status|default('Pending') }}</span>
                                                 </td>
                                             </tr>
                                         </table>

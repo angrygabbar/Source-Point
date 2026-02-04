@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_user, logout_user, login_required, current_user
 from services.auth_service import AuthService
 from extensions import db, bcrypt
-from utils import send_email
+from utils import send_email, log_user_action
 from datetime import datetime
 from enums import UserRole
 import sys
@@ -34,6 +34,8 @@ def login():
         print(f"DEBUG: Logging in user {user.id}...", file=sys.stderr)
         try:
             login_user(user, remember=remember)
+            # Log the login activity
+            log_user_action('User Login', f'User {user.username} logged in successfully')
         except Exception as e:
             print(f"CRITICAL ERROR: login_user() failed: {e}", file=sys.stderr)
             traceback.print_exc()
@@ -143,6 +145,13 @@ def register():
 @auth_bp.route('/logout')
 @login_required
 def logout():
+    # Log the logout activity before logging out
+    try:
+        username = current_user.username
+        log_user_action('User Logout', f'User {username} logged out')
+    except Exception as e:
+        print(f"WARNING: Failed to log logout activity: {e}", file=sys.stderr)
+    
     logout_user()
     flash('You have been logged out.', 'info')
     # CORRECTED: Now redirects to main.home instead of auth.login_register

@@ -2064,3 +2064,169 @@ def delete_emi_plan(plan_id):
 
     flash(f'EMI Plan "{title}" has been deleted.', 'success')
     return redirect(url_for('admin.emi_manager'))
+
+# =========================================================
+# LIVE ACTIVITY TRACKER
+# =========================================================
+
+@admin_bp.route('/activity-tracker')
+@login_required
+@role_required('admin')
+def activity_tracker():
+    """Main activity tracking dashboard page"""
+    from sqlalchemy.orm import joinedload
+    
+    # Get statistics
+    today = datetime.utcnow().date()
+    today_start = datetime.combine(today, datetime.min.time())
+    
+    total_activities = ActivityLog.query.count()
+    today_activities = ActivityLog.query.filter(ActivityLog.timestamp >= today_start).count()
+    
+    # Active users today (unique users who performed actions)
+    active_users_today = db.session.query(func.count(func.distinct(ActivityLog.user_id)))\
+        .filter(ActivityLog.timestamp >= today_start).scalar()
+    
+    # Recent logins
+    recent_logins = ActivityLog.query.filter(
+        ActivityLog.action.like('%Login%'),
+        ActivityLog.timestamp >= today_start
+    ).count()
+    
+    # Get initial activities (last 50) with eager loading of user
+    initial_activities = ActivityLog.query\
+        .options(joinedload(ActivityLog.user))\
+        .order_by(ActivityLog.timestamp.desc())\
+        .limit(50)\
+        .all()
+    
+    # Get all users for filtering
+    all_users = User.query.order_by(User.username).all()
+    
+    return render_template('activity_tracker.html',
+                         total_activities=total_activities,
+                         today_activities=today_activities,
+                         active_users_today=active_users_today,
+                         recent_logins=recent_logins,
+                         activities=initial_activities,
+                         all_users=all_users)
+
+@admin_bp.route('/activity-tracker/live')
+@login_required
+@role_required('admin')
+def activity_tracker_live():
+    """AJAX endpoint for live activity updates"""
+    last_id = request.args.get('last_id', 0, type=int)
+    
+    # Get new activities since last_id
+    new_activities = ActivityLog.query\
+        .filter(ActivityLog.id > last_id)\
+        .order_by(ActivityLog.timestamp.desc())\
+        .limit(20)\
+        .all()
+    
+    activities_data = []
+    for activity in new_activities:
+        user = User.query.get(activity.user_id)
+        activities_data.append({
+            'id': activity.id,
+            'username': user.username if user else 'Unknown',
+            'user_avatar': user.avatar_url if user else '',
+            'user_role': user.role if user else '',
+            'action': activity.action,
+            'details': activity.details,
+            'ip_address': activity.ip_address,
+            'timestamp': activity.timestamp.isoformat(),
+            'relative_time': get_relative_time(activity.timestamp)
+        })
+    
+    return jsonify({
+        'success': True,
+        'activities': activities_data,
+        'latest_id': new_activities[0].id if new_activities else last_id
+    })
+
+@admin_bp.route('/activity-tracker/filter', methods=['POST'])
+@login_required
+@role_required('admin')
+def activity_tracker_filter():
+    """Filter activities by type, user, date range"""
+    activity_type = request.form.get('activity_type', 'all')
+    user_id = request.form.get('user_id', 'all')
+    date_from = request.form.get('date_from')
+    date_to = request.form.get('date_to')
+    search_query = request.form.get('search', '').strip()
+    
+    query = ActivityLog.query
+    
+    # Filter by activity type
+    if activity_type != 'all':
+        query = query.filter(ActivityLog.action.like(f'%{activity_type}%'))
+    
+    # Filter by user
+    if user_id != 'all':
+        query = query.filter(ActivityLog.user_id == int(user_id))
+    
+    # Filter by date range
+    if date_from:
+        date_from_obj = datetime.strptime(date_from, '%Y-%m-%d')
+        query = query.filter(ActivityLog.timestamp >= date_from_obj)
+    
+    if date_to:
+        date_to_obj = datetime.strptime(date_to, '%Y-%m-%d') + timedelta(days=1)
+        query = query.filter(ActivityLog.timestamp < date_to_obj)
+    
+    # Search in action and details
+    if search_query:
+        query = query.filter(
+            or_(
+                ActivityLog.action.ilike(f'%{search_query}%'),
+                ActivityLog.details.ilike(f'%{search_query}%')
+            )
+        )
+    
+    # Get filtered activities with eager loading
+    from sqlalchemy.orm import joinedload
+    activities = query.options(joinedload(ActivityLog.user)).order_by(ActivityLog.timestamp.desc()).limit(100).all()
+    
+    activities_data = []
+    for activity in activities:
+        user = User.query.get(activity.user_id)
+        activities_data.append({
+            'id': activity.id,
+            'username': user.username if user else 'Unknown',
+            'user_avatar': user.avatar_url if user else '',
+            'user_role': user.role if user else '',
+            'action': activity.action,
+            'details': activity.details,
+            'ip_address': activity.ip_address,
+            'timestamp': activity.timestamp.isoformat(),
+            'relative_time': get_relative_time(activity.timestamp)
+        })
+    
+    return jsonify({
+        'success': True,
+        'activities': activities_data,
+        'count': len(activities_data)
+    })
+
+def get_relative_time(timestamp):
+    """Convert timestamp to relative time string"""
+    now = datetime.utcnow()
+    diff = now - timestamp
+    
+    seconds = diff.total_seconds()
+    
+    if seconds < 60:
+        return "just now"
+    elif seconds < 3600:
+        minutes = int(seconds / 60)
+        return f"{minutes}m ago"
+    elif seconds < 86400:
+        hours = int(seconds / 3600)
+        return f"{hours}h ago"
+    elif seconds < 604800:
+        days = int(seconds / 86400)
+        return f"{days}d ago"
+    else:
+        return timestamp.strftime('%b %d, %Y')
