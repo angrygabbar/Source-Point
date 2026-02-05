@@ -26,6 +26,10 @@ class Config:
     
     # Timezone: India Standard Time
     CELERY_TIMEZONE = 'Asia/Kolkata'
+    
+    # RedBeat Configuration (Redis-based scheduler)
+    CELERY_BEAT_SCHEDULER = 'redbeat.RedBeatScheduler'
+    CELERY_REDBEAT_REDIS_URL = REDIS_URL
 
     # --- SCHEDULED TASKS (Celery Beat) ---
     CELERY_BEAT_SCHEDULE = {

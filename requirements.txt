@@ -28,6 +28,7 @@ openpyxl==3.1.2
 google-generativeai==0.8.3
 redis==5.0.1
 celery==5.3.6
+celery-redbeat==2.2.0
 
 # --- GOOGLE CALENDAR API ---
 google-auth==2.27.0

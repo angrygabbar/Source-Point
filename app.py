@@ -80,6 +80,8 @@ def create_app():
         result_backend=app.config.get('CELERY_RESULT_BACKEND'),
         timezone=app.config.get('CELERY_TIMEZONE', 'UTC'),
         beat_schedule=app.config.get('CELERY_BEAT_SCHEDULE', {}),
+        beat_scheduler=app.config.get('CELERY_BEAT_SCHEDULER', 'celery.beat.PersistentScheduler'),
+        redbeat_redis_url=app.config.get('CELERY_REDBEAT_REDIS_URL'),
         enable_utc=True,
         accept_content=['json', 'pickle'],
         task_serializer='json',
