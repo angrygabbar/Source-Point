@@ -18,17 +18,13 @@ services:
     container_name: sourcepoint_db_dev
     restart: always
     environment:
-      POSTGRES_USER: dev_user
-      POSTGRES_PASSWORD: dev_password
+      POSTGRES_USER: ${POSTGRES_USER} # Use variables for prod
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: sourcepoint_db
     ports:
       - "5434:5432"
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
-    networks:
-      default:
-        aliases:
-          - db
 
   redis:
     image: redis:alpine
@@ -40,7 +36,6 @@ services:
   worker:
     build: .
     restart: always
-    # REMOVED --beat here to prevent 7x duplicates
     command: celery -A app.celery worker --loglevel=info
     env_file:
       - .env
@@ -55,20 +50,20 @@ services:
     deploy:
       replicas: 7
 
-  # NEW: Separate Scheduler service (Only 1 instance)
+  # Celery Beat Scheduler (Required for automated emails)
   scheduler:
     build: .
     container_name: sourcepoint_scheduler
     restart: always
+    # 'beat' schedules tasks and sends them to the Redis queue
     command: celery -A app.celery beat --loglevel=info
     env_file:
       - .env
     volumes:
-      - .:/app
+      - .:/app 
     depends_on:
+      - redis # Beat only needs the broker (redis) to queue tasks
       - db
-      - redis
-      - web
 
 volumes:
   postgres_data_dev:
