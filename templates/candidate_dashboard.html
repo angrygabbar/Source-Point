@@ -144,7 +144,7 @@
                                     {{ assignment.test.question_count }} questions
                                 </p>
                                 <p class="text-[10px] text-gray-400 mt-1">
-                                    Start: {{ assignment.scheduled_start_time.strftime('%b %d, %I:%M %p') }}
+                                    Start: {{ assignment.scheduled_start_time|to_ist }}
                                 </p>
                             </div>
                             <div class="flex-shrink-0">

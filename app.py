@@ -235,6 +235,16 @@ def register_commands(app):
 
 app = create_app()
 
+# Custom Jinja filter to convert UTC to IST for display
+@app.template_filter('to_ist')
+def to_ist_filter(utc_dt, fmt='%b %d, %I:%M %p'):
+    """Convert UTC datetime to IST (UTC+5:30) for display"""
+    if utc_dt is None:
+        return ''
+    from datetime import timedelta
+    ist_dt = utc_dt + timedelta(hours=5, minutes=30)
+    return ist_dt.strftime(fmt) + ' IST'
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))

@@ -438,7 +438,7 @@
                                 <div class="bg-white/5 rounded-lg p-3 border border-white/5">
                                     <p class="text-xs text-gray-500 mb-1">Scheduled Start</p>
                                     <p class="text-sm font-semibold text-white">{{
-                                        assignment.scheduled_start_time.strftime('%b %d, %I:%M %p') }}</p>
+                                        assignment.scheduled_start_time|to_ist }}</p>
                                 </div>
                                 <div class="bg-white/5 rounded-lg p-3 border border-white/5">
                                     <p class="text-xs text-gray-500 mb-1">Status</p>
