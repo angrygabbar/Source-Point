@@ -3,30 +3,52 @@
 
 {% block content %}
 <div class="max-w-5xl mx-auto space-y-6" x-data="{ 
-    timeRemaining: {{ remaining_minutes * 60 }},
+    timeRemaining: 0,
+    deadline: null,
     answers: {},
     showSubmitConfirm: false,
+    timerInterval: null,
     
     init() {
+        // Server-calculated deadline: started_at + duration (in UTC epoch ms)
+        // This is the absolute deadline - time continues even if user leaves
+        const serverDeadlineMs = {{ (assignment.started_at.timestamp() + assignment.test.duration_minutes * 60) * 1000 | int }};
+        this.deadline = serverDeadlineMs;
+        
         // Load saved answers from localStorage
         const saved = localStorage.getItem('test_{{ assignment.id }}_answers');
         if (saved) {
             this.answers = JSON.parse(saved);
         }
         
+        // Calculate initial remaining time from server deadline
+        this.updateTimeRemaining();
+        
+        // If time already expired (user came back after deadline), auto-submit immediately
+        if (this.timeRemaining <= 0) {
+            this.submitTest();
+            return;
+        }
+        
         // Start countdown timer
         this.startTimer();
     },
     
+    updateTimeRemaining() {
+        const now = Date.now();
+        const remaining = Math.max(0, Math.floor((this.deadline - now) / 1000));
+        this.timeRemaining = remaining;
+        return remaining;
+    },
+    
     startTimer() {
-        setInterval(() => {
-            if (this.timeRemaining > 0) {
-                this.timeRemaining--;
-                
-                // Auto-submit when time runs out
-                if (this.timeRemaining === 0) {
-                    this.submitTest();
-                }
+        this.timerInterval = setInterval(() => {
+            const remaining = this.updateTimeRemaining();
+            
+            // Auto-submit when time runs out
+            if (remaining <= 0) {
+                clearInterval(this.timerInterval);
+                this.submitTest();
             }
         }, 1000);
     },
@@ -37,6 +59,9 @@
     },
     
     submitTest() {
+        // Prevent double submission
+        if (this._submitting) return;
+        this._submitting = true;
         document.getElementById('submitForm').submit();
     },
     

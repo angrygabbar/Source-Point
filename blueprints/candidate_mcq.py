@@ -66,10 +66,22 @@ def start_test(assignment_id):
             elapsed_minutes = (current_time - assignment.started_at).total_seconds() / 60
             remaining_minutes = assignment.test.duration_minutes - elapsed_minutes
             
-            # Check if time has expired
+            # Check if time has expired - auto-submit the test
             if remaining_minutes <= 0:
-                flash('The time limit for this test has expired.', 'danger')
-                return redirect(url_for('candidate.candidate_dashboard'))
+                # Auto-complete the test with whatever was submitted
+                import json
+                test_result = TestResult(
+                    assignment_id=assignment.id,
+                    score=0,
+                    total_questions=len(assignment.test.questions),
+                    time_taken_minutes=assignment.test.duration_minutes,
+                    answers_json=json.dumps({})
+                )
+                assignment.status = 'completed'
+                db.session.add(test_result)
+                db.session.commit()
+                flash('The time limit for this test has expired. Your test has been auto-submitted.', 'danger')
+                return redirect(url_for('candidate_mcq.view_result', assignment_id=assignment_id))
         else:
             remaining_minutes = assignment.test.duration_minutes
         
