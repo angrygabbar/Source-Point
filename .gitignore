@@ -13,9 +13,13 @@ pycache/
 OS-specific files
 .DS_Store
 
-# Ignore Docker Compose filess
+# Ignore Docker files (separate prod config)
 docker-compose.yml
 docker-compose.override.yml
+docker-compose*.yml
+Dockerfile
+.dockerignore
+celerybeat-schedule
 
 # Google Calendar API Credentials (IMPORTANT!)
 credentials.json
