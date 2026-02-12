@@ -1,0 +1,179 @@
+{% extends "layout.html" %}
+{% block title %}{{ test.title }} - MCQ Test{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6" x-data="{ 
+    timeRemaining: {{ remaining_minutes * 60 }},
+    answers: {},
+    showSubmitConfirm: false,
+    
+    init() {
+        // Load saved answers from localStorage
+        const saved = localStorage.getItem('test_{{ assignment.id }}_answers');
+        if (saved) {
+            this.answers = JSON.parse(saved);
+        }
+        
+        // Start countdown timer
+        this.startTimer();
+    },
+    
+    startTimer() {
+        setInterval(() => {
+            if (this.timeRemaining > 0) {
+                this.timeRemaining--;
+                
+                // Auto-submit when time runs out
+                if (this.timeRemaining === 0) {
+                    this.submitTest();
+                }
+            }
+        }, 1000);
+    },
+    
+    saveAnswer(questionId, option) {
+        this.answers[questionId] = option;
+        localStorage.setItem('test_{{ assignment.id }}_answers', JSON.stringify(this.answers));
+    },
+    
+    submitTest() {
+        document.getElementById('submitForm').submit();
+    },
+    
+    formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+}">
+
+    <!-- Header with Timer -->
+    <div class="glass-panel rounded-2xl p-6 border border-white/10 sticky top-4 z-10 backdrop-blur-xl">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-white">{{ test.title }}</h1>
+                <p class="text-sm text-gray-400 mt-1">{{ test.question_count }} questions • {{ test.duration_minutes }}
+                    minutes</p>
+            </div>
+            <div class="text-right">
+                <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Time Remaining</p>
+                <div class="text-3xl font-bold font-mono"
+                    :class="timeRemaining < 300 ? 'text-red-400' : 'text-green-400'" x-text="formatTime(timeRemaining)">
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="mt-4 bg-white/5 rounded-full h-2 overflow-hidden">
+            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 h-full transition-all duration-300"
+                :style="`width: ${(Object.keys(answers).length / {{ test.question_count }}) * 100}%`"></div>
+        </div>
+        <p class="text-xs text-gray-400 mt-2 text-center">
+            <span x-text="Object.keys(answers).length"></span> of {{ test.question_count }} answered
+        </p>
+    </div>
+
+    <!-- Questions -->
+    <form id="submitForm" action="{{ url_for('candidate_mcq.submit_test', assignment_id=assignment.id) }}"
+        method="POST">
+        <div class="space-y-6">
+            {% for question in questions %}
+            <div class="glass-panel rounded-2xl p-6 border border-white/10 hover:border-indigo-500/30 transition-all"
+                :class="answers[{{ question.id }}] ? 'border-green-500/30' : ''">
+
+                <div class="flex items-start gap-4">
+                    <div
+                        class="flex-shrink-0 w-10 h-10 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center">
+                        <span class="text-indigo-400 font-bold">{{ loop.index }}</span>
+                    </div>
+
+                    <div class="flex-1">
+                        <p class="text-lg text-white font-medium mb-4">{{ question.question_text }}</p>
+
+                        <div class="space-y-3">
+                            {% for option_letter, option_text in [('A', question.option_a), ('B', question.option_b),
+                            ('C', question.option_c), ('D', question.option_d)] %}
+                            <label
+                                class="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-indigo-500/30 cursor-pointer transition-all group"
+                                :class="answers[{{ question.id }}] === '{{ option_letter }}' ? 'bg-indigo-600/20 border-indigo-500/50' : ''">
+                                <input type="radio" name="question_{{ question.id }}" value="{{ option_letter }}"
+                                    @change="saveAnswer({{ question.id }}, '{{ option_letter }}')"
+                                    :checked="answers[{{ question.id }}] === '{{ option_letter }}'"
+                                    class="w-5 h-5 text-indigo-600 bg-white/10 border-white/20 focus:ring-indigo-500">
+                                <div class="flex-1">
+                                    <span class="text-sm font-bold text-indigo-400 mr-2">{{ option_letter }})</span>
+                                    <span class="text-gray-300">{{ option_text }}</span>
+                                </div>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Submit Button -->
+        <div class="glass-panel rounded-2xl p-6 border border-white/10 mt-6 sticky bottom-4 backdrop-blur-xl">
+            <div class="flex justify-between items-center">
+                <div>
+                    <p class="text-sm text-gray-400">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        Make sure you've answered all questions before submitting
+                    </p>
+                </div>
+                <button type="button" @click="showSubmitConfirm = true"
+                    class="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-green-500/20 transition-all">
+                    <i class="fas fa-check-circle mr-2"></i> Submit Test
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Submit Confirmation Modal -->
+    <div x-show="showSubmitConfirm" x-cloak
+        class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        @click.self="showSubmitConfirm = false">
+        <div class="bg-[#1a1a1f] border border-white/10 rounded-2xl p-6 max-w-md w-full">
+            <h3 class="text-xl font-bold text-white mb-4">
+                <i class="fas fa-exclamation-triangle text-yellow-400 mr-2"></i>
+                Submit Test?
+            </h3>
+            <p class="text-gray-300 mb-6">
+                Are you sure you want to submit your test? You have answered
+                <span class="font-bold text-green-400" x-text="Object.keys(answers).length"></span>
+                out of {{ test.question_count }} questions.
+            </p>
+            <p class="text-sm text-gray-400 mb-6">
+                <i class="fas fa-info-circle mr-1"></i>
+                Once submitted, you cannot change your answers.
+            </p>
+            <div class="flex gap-3">
+                <button type="button" @click="showSubmitConfirm = false"
+                    class="flex-1 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 rounded-xl font-medium transition-all">
+                    Cancel
+                </button>
+                <button type="button" @click="submitTest()"
+                    class="flex-1 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-xl font-bold transition-all">
+                    Yes, Submit
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Prevent accidental page refresh
+    window.addEventListener('beforeunload', function (e) {
+        e.preventDefault();
+        e.returnValue = '';
+    });
+
+    // Clear saved answers after submission
+    document.getElementById('submitForm').addEventListener('submit', function () {
+        localStorage.removeItem('test_{{ assignment.id }}_answers');
+    });
+</script>
+
+{% endblock %}

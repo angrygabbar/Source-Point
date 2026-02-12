@@ -116,8 +116,10 @@ def create_app():
     from blueprints.admin_users import admin_users_bp
     from blueprints.admin_hiring import admin_hiring_bp
     from blueprints.admin_commerce import admin_commerce_bp
+    from blueprints.admin_mcq import admin_mcq_bp
     from blueprints.buyer import buyer_bp
     from blueprints.candidate import candidate_bp
+    from blueprints.candidate_mcq import candidate_mcq_bp
     from blueprints.developer import developer_bp
     from blueprints.moderator import moderator_bp
     from blueprints.events import events_bp
@@ -131,8 +133,10 @@ def create_app():
     app.register_blueprint(admin_users_bp)
     app.register_blueprint(admin_hiring_bp)
     app.register_blueprint(admin_commerce_bp)
+    app.register_blueprint(admin_mcq_bp)
     app.register_blueprint(buyer_bp)
     app.register_blueprint(candidate_bp)
+    app.register_blueprint(candidate_mcq_bp)
     app.register_blueprint(developer_bp)
     app.register_blueprint(moderator_bp)
     app.register_blueprint(events_bp)

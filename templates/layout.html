@@ -39,6 +39,7 @@
             display: none !important;
         }
     </style>
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
@@ -134,9 +135,12 @@
                     </a>
                     <a hx-get="{{ url_for('admin_hiring.manage_records') }}" hx-target="#main-content"
                         hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true"
-                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
-                        <i class="fas fa-database w-6 text-center mr-2"></i> Records
-                    </a>
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer"><i
+                            class="fas fa-database w-6 text-center mr-2"></i> Records</a>
+                    <a hx-get="{{ url_for('admin_mcq.list_questions') }}" hx-target="#main-content"
+                        hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer"><i
+                            class="fas fa-clipboard-question w-6 text-center mr-2"></i> MCQ Tests</a>
                     {% endif %}
 
                     {% if current_user.role == 'developer' %}
@@ -408,14 +412,25 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             btn.style.pointerEvents = 'none';
             try {
-                const response = await fetch(url, { method: 'GET', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-                const data = await response.json();
-                if (data.success) {
-                    if (window.showToast) window.showToast(data.message, 'success');
-                    if (data.remove_row_id) { const row = document.getElementById(data.remove_row_id); if (row) row.remove(); } else { btn.innerHTML = originalContent; btn.style.pointerEvents = 'auto'; }
+                const response = await fetch(url, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                if (response.redirected) {
+                    // If server redirected, follow the redirect
+                    window.location.href = response.url;
+                    return;
+                }
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const data = await response.json();
+                    if (data.success) {
+                        if (window.showToast) window.showToast(data.message, 'success');
+                        if (data.remove_row_id) { const row = document.getElementById(data.remove_row_id); if (row) row.remove(); } else { setTimeout(() => window.location.reload(), 500); }
+                    } else {
+                        if (window.showToast) window.showToast(data.message || 'Action failed', 'error');
+                        btn.innerHTML = originalContent; btn.style.pointerEvents = 'auto';
+                    }
                 } else {
-                    if (window.showToast) window.showToast(data.message || 'Action failed', 'error');
-                    btn.innerHTML = originalContent; btn.style.pointerEvents = 'auto';
+                    // Server returned HTML (redirect or error page), reload to show flash messages
+                    window.location.reload();
                 }
             } catch (e) { console.error(e); if (window.showToast) window.showToast('Network error', 'error'); btn.innerHTML = originalContent; btn.style.pointerEvents = 'auto'; }
         };

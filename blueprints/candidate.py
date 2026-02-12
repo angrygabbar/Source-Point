@@ -22,11 +22,17 @@ def candidate_dashboard():
     my_applications = JobApplication.query.filter_by(user_id=current_user.id).all()
     applied_job_ids = [app.job_id for app in my_applications]
     
+    # Fetch MCQ test assignments
+    from models.mcq import TestAssignment
+    mcq_assignments = TestAssignment.query.filter_by(candidate_id=current_user.id)\
+        .order_by(TestAssignment.scheduled_start_time.desc()).all()
+    
     return render_template('candidate_dashboard.html',
                            messageable_users=messageable_users,
                            open_jobs=open_jobs,
                            my_applications=my_applications,
-                           applied_job_ids=applied_job_ids)
+                           applied_job_ids=applied_job_ids,
+                           mcq_assignments=mcq_assignments)
 
 @candidate_bp.route('/code_test')
 @login_required

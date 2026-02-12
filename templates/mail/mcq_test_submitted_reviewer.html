@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCQ Test Completed - Reviewer Report</title>
+</head>
+
+<body
+    style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #e2e8f0;">
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0f172a;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0"
+                    style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%); padding: 40px 40px 50px 40px; text-align: center;">
+                            <table role="presentation" cellspacing="0" cellpadding="0"
+                                style="margin: 0 auto 20px auto;">
+                                <tr>
+                                    <td style="background: rgba(255,255,255,0.2); border-radius: 16px; padding: 16px;">
+                                        <img src="https://img.icons8.com/fluency/48/test-passed.png" alt="Test"
+                                            width="48" height="48" style="display: block;">
+                                    </td>
+                                </tr>
+                            </table>
+                            <h1
+                                style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">
+                                MCQ Test Completed 📊</h1>
+                            <p style="margin: 12px 0 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">A candidate
+                                has completed their MCQ test</p>
+                        </td>
+                    </tr>
+
+                    <!-- Wave Divider -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%); height: 30px;">
+                            <div style="background: #1e293b; height: 30px; border-radius: 30px 30px 0 0;"></div>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 0 40px 40px 40px;">
+
+                            <p style="font-size: 16px; color: #d1d5db; margin: 0 0 24px 0; line-height: 1.6;">
+                                Hello <strong style="color: #a78bfa;">{{ reviewer.username }}</strong>,
+                            </p>
+
+                            <p style="font-size: 16px; color: #d1d5db; margin: 0 0 24px 0; line-height: 1.6;">
+                                A candidate has completed the MCQ test you were assigned to review. Here are the
+                                detailed results:
+                            </p>
+
+                            <!-- Candidate Info Card -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <h2
+                                            style="margin: 0 0 16px 0; font-size: 18px; color: #a78bfa; font-weight: 600;">
+                                            👤 Candidate Profile
+                                        </h2>
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td width="56" valign="top">
+                                                    <div
+                                                        style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); border-radius: 50%; width: 48px; height: 48px; text-align: center; line-height: 48px; color: white; font-weight: 700; font-size: 20px;">
+                                                        {{ candidate.username[0]|upper }}</div>
+                                                </td>
+                                                <td style="padding-left: 16px;">
+                                                    <p
+                                                        style="margin: 0; font-size: 18px; color: #f1f5f9; font-weight: 600;">
+                                                        {{ candidate.username }}</p>
+                                                    <p style="margin: 4px 0 0 0; font-size: 14px; color: #d1d5db;">{{
+                                                        candidate.email }}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Performance Summary -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <h2
+                                            style="margin: 0 0 16px 0; font-size: 18px; color: #60a5fa; font-weight: 600;">
+                                            📈 Performance Summary
+                                        </h2>
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 12px;">
+                                            <tr>
+                                                <td width="120" style="font-size: 13px; color: #9ca3af;">Test</td>
+                                                <td style="font-size: 15px; color: #f1f5f9; font-weight: 500;">{{
+                                                    test.title }}</td>
+                                            </tr>
+                                        </table>
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 12px;">
+                                            <tr>
+                                                <td width="120" style="font-size: 13px; color: #9ca3af;">Final Score
+                                                </td>
+                                                <td style="font-size: 15px; color: #f1f5f9; font-weight: 500;">
+                                                    <span style="color: #10b981; font-weight: 700; font-size: 20px;">{{
+                                                        result.score }}/{{ result.total_questions }}</span>
+                                                    <span style="color: #9ca3af; font-size: 14px;">({{ result.percentage
+                                                        }}%)</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td width="120" style="font-size: 13px; color: #9ca3af;">Time Taken</td>
+                                                <td style="font-size: 15px; color: #f1f5f9;">{{
+                                                    result.time_taken_minutes }} / {{ test.duration_minutes }} minutes
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Detailed Breakdown -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <h2
+                                            style="margin: 0 0 16px 0; font-size: 18px; color: #10b981; font-weight: 600;">
+                                            📝 Detailed Question Breakdown
+                                        </h2>
+
+                                        {% for item in questions_data %}
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="background: rgba(15, 23, 42, 0.5); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                                            <tr>
+                                                <td>
+                                                    <p
+                                                        style="margin: 0 0 12px 0; font-size: 15px; color: #f1f5f9; font-weight: 600;">
+                                                        Q{{ loop.index }}: {{ item.question_text }}
+                                                    </p>
+
+                                                    <table role="presentation" width="100%" cellspacing="0"
+                                                        cellpadding="0" style="margin-bottom: 8px;">
+                                                        <tr>
+                                                            <td width="150" style="font-size: 13px; color: #9ca3af;">
+                                                                Candidate's Answer:</td>
+                                                            <td
+                                                                style="font-size: 14px; color: {% if item.is_correct %}#10b981{% else %}#ef4444{% endif %}; font-weight: 600;">
+                                                                {{ item.candidate_answer }}
+                                                                {% if item.candidate_answer != 'Not answered' %}
+                                                                - {{ item.options[item.candidate_answer] }}
+                                                                {% endif %}
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+
+                                                    <table role="presentation" width="100%" cellspacing="0"
+                                                        cellpadding="0" style="margin-bottom: 8px;">
+                                                        <tr>
+                                                            <td width="150" style="font-size: 13px; color: #9ca3af;">
+                                                                Correct Answer:</td>
+                                                            <td
+                                                                style="font-size: 14px; color: #10b981; font-weight: 600;">
+                                                                {{ item.correct_answer }} - {{
+                                                                item.options[item.correct_answer] }}
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+
+                                                    <table role="presentation" width="100%" cellspacing="0"
+                                                        cellpadding="0">
+                                                        <tr>
+                                                            <td width="150" style="font-size: 13px; color: #9ca3af;">
+                                                                Result:</td>
+                                                            <td>
+                                                                {% if item.is_correct %}
+                                                                <span
+                                                                    style="display: inline-block; background: rgba(16, 185, 129, 0.2); color: #10b981; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">✓
+                                                                    Correct</span>
+                                                                {% else %}
+                                                                <span
+                                                                    style="display: inline-block; background: rgba(239, 68, 68, 0.2); color: #ef4444; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">✗
+                                                                    Incorrect</span>
+                                                                {% endif %}
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- CTA Button -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="margin-bottom: 24px;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{ url_for('admin_mcq.list_assignments', _external=True) }}"
+                                            style="display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-size: 16px; font-weight: 600; box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.4);">
+                                            👁️ View Full Results
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Closing -->
+                            <p style="font-size: 14px; color: #9ca3af; margin: 0;">
+                                This test was assigned to you for review. Please log in to the admin panel to view
+                                complete details and provide feedback if needed.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background: rgba(15, 23, 42, 0.8); padding: 24px 40px; border-top: 1px solid rgba(148, 163, 184, 0.1);">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td align="center">
+                                        <p style="margin: 0; font-size: 12px; color: #6b7280;">
+                                            Reviewer Notification from Source Point
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>

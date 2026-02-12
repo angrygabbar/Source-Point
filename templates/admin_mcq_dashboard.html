@@ -1,0 +1,865 @@
+{% extends "layout.html" %}
+{% block title %}MCQ Test Management{% endblock %}
+
+{% block content %}
+<div class="space-y-8 pb-10 max-w-7xl mx-auto"
+    x-data="{ currentTab: 'questions', showQuestionModal: false, showTestModal: false, showAssignModal: false, editingQuestion: null, editingTest: null, selectedQuestions: [], testQuestions: [], selectedCategory: 'all', testCategoryFilter: 'all' }">
+
+    <div class="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-indigo-500/30 pb-6">
+        <div>
+            <div class="flex items-center gap-3 mb-2">
+                <div class="p-2 bg-indigo-500/20 rounded-lg text-indigo-400">
+                    <i class="fas fa-clipboard-question text-2xl"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-white tracking-tight">MCQ Test Management</h1>
+            </div>
+            <p class="text-gray-400">Create questions, build tests, and assign them to candidates.</p>
+        </div>
+        <div class="flex gap-3">
+            <button @click="showQuestionModal = true; editingQuestion = null"
+                class="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-green-500/20 transition-all">
+                <i class="fas fa-plus mr-2"></i> New Question
+            </button>
+            <button @click="showTestModal = true; editingTest = null; testQuestions = []"
+                class="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-purple-500/20 transition-all">
+                <i class="fas fa-file-alt mr-2"></i> Create Test
+            </button>
+            <button @click="showAssignModal = true"
+                class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all">
+                <i class="fas fa-user-plus mr-2"></i> Assign Test
+            </button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="glass-panel p-5 rounded-xl border-l-4 border-green-500 relative overflow-hidden group">
+            <div class="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity"><i
+                    class="fas fa-question-circle text-5xl text-green-400"></i></div>
+            <p class="text-xs font-bold text-gray-400 uppercase">Total Questions</p>
+            <h3 class="text-3xl font-bold text-white mt-1">{{ questions|length }}</h3>
+            <button @click="currentTab = 'questions'" class="text-xs text-green-400 mt-2 hover:underline">Manage
+                &rarr;</button>
+        </div>
+
+        <div class="glass-panel p-5 rounded-xl border-l-4 border-purple-500 relative overflow-hidden group">
+            <div class="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity"><i
+                    class="fas fa-file-alt text-5xl text-purple-400"></i></div>
+            <p class="text-xs font-bold text-gray-400 uppercase">Active Tests</p>
+            <h3 class="text-3xl font-bold text-white mt-1">{{ tests|length }}</h3>
+            <button @click="currentTab = 'tests'" class="text-xs text-purple-400 mt-2 hover:underline">View
+                &rarr;</button>
+        </div>
+
+        <div class="glass-panel p-5 rounded-xl border-l-4 border-indigo-500 relative overflow-hidden group">
+            <div class="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity"><i
+                    class="fas fa-users text-5xl text-indigo-400"></i></div>
+            <p class="text-xs font-bold text-gray-400 uppercase">Assignments</p>
+            <h3 class="text-3xl font-bold text-white mt-1">{{ assignments|length }}</h3>
+            <button @click="currentTab = 'assignments'" class="text-xs text-indigo-400 mt-2 hover:underline">Track
+                &rarr;</button>
+        </div>
+    </div>
+
+    <div class="flex space-x-1 bg-white/5 p-1 rounded-xl border border-white/10 overflow-x-auto">
+        <button @click="currentTab = 'questions'"
+            :class="currentTab === 'questions' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-all"><i class="fas fa-question-circle mr-2"></i>
+            Questions</button>
+        <button @click="currentTab = 'tests'"
+            :class="currentTab === 'tests' ? 'bg-purple-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-all"><i class="fas fa-file-alt mr-2"></i>
+            Tests</button>
+        <button @click="currentTab = 'assignments'"
+            :class="currentTab === 'assignments' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-all"><i class="fas fa-user-check mr-2"></i>
+            Assignments</button>
+    </div>
+
+    <div class="glass-panel rounded-2xl border border-white/10 min-h-[500px]">
+
+        <!-- QUESTIONS TAB -->
+        <div x-show="currentTab === 'questions'" class="p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-white">Question Bank</h2>
+                <span class="text-sm text-gray-400">{{ questions|length }} questions available</span>
+            </div>
+
+            {% if categories %}
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-300 mb-2">Filter by Category</label>
+                <select x-model="selectedCategory"
+                    class="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-indigo-500 transition-colors">
+                    <option value="all">All Categories</option>
+                    {% for category in categories %}
+                    <option value="{{ category }}">{{ category }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            {% if questions %}
+            <div class="space-y-2">
+                {% for question in questions %}
+                <div x-data="{ expanded: false }"
+                    x-show="selectedCategory === 'all' || selectedCategory === '{{ question.category }}' || (selectedCategory === 'all' && !{{ 'true' if question.category else 'false' }})"
+                    class="bg-white/5 border border-white/10 rounded-xl overflow-hidden transition-all"
+                    :class="expanded ? 'ring-1 ring-green-500/30 bg-white/[0.07]' : 'hover:bg-white/10'">
+
+                    <!-- Compact Header (Always Visible) -->
+                    <div @click="expanded = !expanded"
+                        class="flex items-center gap-3 p-4 cursor-pointer select-none group">
+                        <div
+                            class="flex-shrink-0 w-8 h-8 rounded-lg bg-green-600/20 border border-green-500/30 flex items-center justify-center">
+                            <span class="text-green-400 text-xs font-bold">Q{{ loop.index }}</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white font-medium text-sm truncate">{{ question.question_text }}</p>
+                        </div>
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            {% if question.category %}
+                            <span
+                                class="px-2 py-0.5 bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 rounded text-xs font-bold">{{
+                                question.category }}</span>
+                            {% endif %}
+                            <span
+                                class="px-2 py-0.5 bg-green-600/20 border border-green-500/30 text-green-400 rounded text-xs font-bold">Ans:
+                                {{ question.correct_option }}</span>
+                            <i class="fas fa-chevron-down text-gray-500 text-xs transition-transform duration-300"
+                                :class="expanded && 'rotate-180'"></i>
+                        </div>
+                    </div>
+
+                    <!-- Expanded Details (Dropdown) -->
+                    <div x-show="expanded" x-collapse x-cloak>
+                        <div class="px-4 pb-4 border-t border-white/10">
+                            <!-- Full Question Text -->
+                            <div class="mt-4 mb-4">
+                                <p class="text-xs font-bold text-gray-400 uppercase mb-2">Question</p>
+                                <p class="text-white text-sm leading-relaxed">{{ question.question_text }}</p>
+                            </div>
+
+                            <!-- Options Grid -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
+                                <div
+                                    class="flex items-start gap-2 p-2.5 rounded-lg {{ 'bg-green-600/10 border border-green-500/20' if question.correct_option == 'A' else 'bg-white/5 border border-white/5' }}">
+                                    <span
+                                        class="flex-shrink-0 w-6 h-6 rounded-full {{ 'bg-green-600/30 text-green-400' if question.correct_option == 'A' else 'bg-white/10 text-gray-400' }} flex items-center justify-center text-xs font-bold">A</span>
+                                    <span
+                                        class="text-sm {{ 'text-green-400 font-semibold' if question.correct_option == 'A' else 'text-gray-300' }}">{{
+                                        question.option_a }}{% if question.correct_option == 'A' %} <i
+                                            class="fas fa-check-circle text-green-400 ml-1"></i>{% endif %}</span>
+                                </div>
+                                <div
+                                    class="flex items-start gap-2 p-2.5 rounded-lg {{ 'bg-green-600/10 border border-green-500/20' if question.correct_option == 'B' else 'bg-white/5 border border-white/5' }}">
+                                    <span
+                                        class="flex-shrink-0 w-6 h-6 rounded-full {{ 'bg-green-600/30 text-green-400' if question.correct_option == 'B' else 'bg-white/10 text-gray-400' }} flex items-center justify-center text-xs font-bold">B</span>
+                                    <span
+                                        class="text-sm {{ 'text-green-400 font-semibold' if question.correct_option == 'B' else 'text-gray-300' }}">{{
+                                        question.option_b }}{% if question.correct_option == 'B' %} <i
+                                            class="fas fa-check-circle text-green-400 ml-1"></i>{% endif %}</span>
+                                </div>
+                                <div
+                                    class="flex items-start gap-2 p-2.5 rounded-lg {{ 'bg-green-600/10 border border-green-500/20' if question.correct_option == 'C' else 'bg-white/5 border border-white/5' }}">
+                                    <span
+                                        class="flex-shrink-0 w-6 h-6 rounded-full {{ 'bg-green-600/30 text-green-400' if question.correct_option == 'C' else 'bg-white/10 text-gray-400' }} flex items-center justify-center text-xs font-bold">C</span>
+                                    <span
+                                        class="text-sm {{ 'text-green-400 font-semibold' if question.correct_option == 'C' else 'text-gray-300' }}">{{
+                                        question.option_c }}{% if question.correct_option == 'C' %} <i
+                                            class="fas fa-check-circle text-green-400 ml-1"></i>{% endif %}</span>
+                                </div>
+                                <div
+                                    class="flex items-start gap-2 p-2.5 rounded-lg {{ 'bg-green-600/10 border border-green-500/20' if question.correct_option == 'D' else 'bg-white/5 border border-white/5' }}">
+                                    <span
+                                        class="flex-shrink-0 w-6 h-6 rounded-full {{ 'bg-green-600/30 text-green-400' if question.correct_option == 'D' else 'bg-white/10 text-gray-400' }} flex items-center justify-center text-xs font-bold">D</span>
+                                    <span
+                                        class="text-sm {{ 'text-green-400 font-semibold' if question.correct_option == 'D' else 'text-gray-300' }}">{{
+                                        question.option_d }}{% if question.correct_option == 'D' %} <i
+                                            class="fas fa-check-circle text-green-400 ml-1"></i>{% endif %}</span>
+                                </div>
+                            </div>
+
+                            <!-- Metadata & Actions Row -->
+                            <div class="flex items-center justify-between pt-3 border-t border-white/5">
+                                <div class="flex items-center gap-4 text-xs text-gray-500">
+                                    <span><i class="fas fa-user text-gray-400 mr-1"></i> {{ question.created_by.username
+                                        }}</span>
+                                    <span><i class="fas fa-clock text-gray-400 mr-1"></i> {{
+                                        question.created_at.strftime('%b %d, %Y') }}</span>
+                                    <span><i class="fas fa-hashtag text-gray-400 mr-1"></i> ID: {{ question.id }}</span>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button @click.stop="
+                                            $refs.questionForm.action = '{{ url_for('admin_mcq.edit_question', question_id=0) }}'.replace('0', $el.dataset.questionId);
+                                            $refs.questionForm.querySelector('[name=question_text]').value = $el.dataset.questionText;
+                                            $refs.questionForm.querySelector('[name=option_a]').value = $el.dataset.optionA;
+                                            $refs.questionForm.querySelector('[name=option_b]').value = $el.dataset.optionB;
+                                            $refs.questionForm.querySelector('[name=option_c]').value = $el.dataset.optionC;
+                                            $refs.questionForm.querySelector('[name=option_d]').value = $el.dataset.optionD;
+                                            $refs.questionForm.querySelector('[name=correct_option]').value = $el.dataset.correctOption;
+                                            $refs.questionForm.querySelector('[name=category]').value = $el.dataset.category;
+                                            showQuestionModal = true;
+                                        "
+                                        class="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-400 rounded-lg text-xs font-medium transition-all"
+                                        data-question-id="{{ question.id }}"
+                                        data-question-text="{{ question.question_text }}"
+                                        data-option-a="{{ question.option_a }}" data-option-b="{{ question.option_b }}"
+                                        data-option-c="{{ question.option_c }}" data-option-d="{{ question.option_d }}"
+                                        data-correct-option="{{ question.correct_option }}"
+                                        data-category="{{ question.category or '' }}">
+                                        <i class="fas fa-edit mr-1"></i> Edit
+                                    </button>
+                                    <button @click.stop
+                                        onclick="handleAjaxUrl(event, '{{ url_for('admin_mcq.delete_question', question_id=question.id) }}', 'Delete this question?')"
+                                        class="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-400 rounded-lg text-xs font-medium transition-all">
+                                        <i class="fas fa-trash mr-1"></i> Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-16">
+                <i class="fas fa-question-circle text-6xl text-gray-700 mb-4"></i>
+                <p class="text-gray-400 text-lg">No questions yet</p>
+                <p class="text-gray-500 text-sm mt-2">Create your first MCQ question to get started</p>
+                <button @click="showQuestionModal = true"
+                    class="mt-6 px-6 py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg font-medium transition-all">
+                    <i class="fas fa-plus mr-2"></i> Create Question
+                </button>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- TESTS TAB -->
+        <div x-show="currentTab === 'tests'" class="p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-white">Test Library</h2>
+                <span class="text-sm text-gray-400">{{ tests|length }} tests created</span>
+            </div>
+
+            {% if tests %}
+            <div class="space-y-2">
+                {% for test in tests %}
+                <div x-data="{ expanded: false }"
+                    class="bg-white/5 border border-white/10 rounded-xl overflow-hidden transition-all"
+                    :class="expanded ? 'ring-1 ring-purple-500/30 bg-white/[0.07]' : 'hover:bg-white/10'">
+
+                    <!-- Compact Header -->
+                    <div @click="expanded = !expanded"
+                        class="flex items-center gap-3 p-4 cursor-pointer select-none group">
+                        <div
+                            class="flex-shrink-0 w-8 h-8 rounded-lg bg-purple-600/20 border border-purple-500/30 flex items-center justify-center">
+                            <i class="fas fa-file-alt text-purple-400 text-xs"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white font-semibold text-sm truncate">{{ test.title }}</p>
+                        </div>
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            <span
+                                class="px-2 py-0.5 bg-purple-600/20 border border-purple-500/30 text-purple-400 rounded text-xs font-bold">{{
+                                test.question_count }} Q's</span>
+                            <span
+                                class="px-2 py-0.5 bg-yellow-600/20 border border-yellow-500/30 text-yellow-400 rounded text-xs font-bold">{{
+                                test.duration_minutes }} min</span>
+                            <i class="fas fa-chevron-down text-gray-500 text-xs transition-transform duration-300"
+                                :class="expanded && 'rotate-180'"></i>
+                        </div>
+                    </div>
+
+                    <!-- Expanded Details -->
+                    <div x-show="expanded" x-collapse x-cloak>
+                        <div class="px-4 pb-4 border-t border-white/10">
+                            <!-- Description -->
+                            <div class="mt-4 mb-4">
+                                <p class="text-xs font-bold text-gray-400 uppercase mb-2">Description</p>
+                                <p class="text-gray-300 text-sm leading-relaxed">{{ test.description or 'No description
+                                    provided' }}</p>
+                            </div>
+
+                            <!-- Info Grid -->
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                                <div class="bg-white/5 rounded-lg p-3 border border-white/5 text-center">
+                                    <p class="text-xs text-gray-500 mb-1">Questions</p>
+                                    <p class="text-lg font-bold text-purple-400">{{ test.question_count }}</p>
+                                </div>
+                                <div class="bg-white/5 rounded-lg p-3 border border-white/5 text-center">
+                                    <p class="text-xs text-gray-500 mb-1">Duration</p>
+                                    <p class="text-lg font-bold text-yellow-400">{{ test.duration_minutes }}m</p>
+                                </div>
+                                <div class="bg-white/5 rounded-lg p-3 border border-white/5 text-center">
+                                    <p class="text-xs text-gray-500 mb-1">Created By</p>
+                                    <p class="text-sm font-semibold text-white truncate">{{ test.created_by.username }}
+                                    </p>
+                                </div>
+                                <div class="bg-white/5 rounded-lg p-3 border border-white/5 text-center">
+                                    <p class="text-xs text-gray-500 mb-1">Created On</p>
+                                    <p class="text-sm font-semibold text-white">{{ test.created_at.strftime('%b %d, %Y')
+                                        }}</p>
+                                </div>
+                            </div>
+
+                            <!-- Questions List -->
+                            {% if test.questions %}
+                            <div class="mb-4">
+                                <p class="text-xs font-bold text-gray-400 uppercase mb-2">Included Questions</p>
+                                <div class="space-y-1 max-h-40 overflow-y-auto pr-1">
+                                    {% for q in test.questions %}
+                                    <div class="flex items-center gap-2 p-2 bg-white/5 rounded-lg text-sm">
+                                        <span
+                                            class="flex-shrink-0 w-5 h-5 rounded bg-green-600/20 text-green-400 flex items-center justify-center text-xs font-bold">{{
+                                            loop.index }}</span>
+                                        <span class="text-gray-300 truncate flex-1">{{ q.question_text }}</span>
+                                        {% if q.category %}
+                                        <span class="px-1.5 py-0.5 bg-indigo-600/20 text-indigo-400 rounded text-xs">{{
+                                            q.category }}</span>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Actions Row -->
+                            <div class="flex items-center justify-between pt-3 border-t border-white/5">
+                                <div class="flex items-center gap-3 text-xs text-gray-500">
+                                    <span><i class="fas fa-hashtag text-gray-400 mr-1"></i> ID: {{ test.id }}</span>
+                                </div>
+                                <div class="flex gap-2">
+                                    <a href="{{ url_for('admin_mcq.view_test', test_id=test.id) }}" @click.stop
+                                        class="px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 rounded-lg text-xs font-medium transition-all">
+                                        <i class="fas fa-eye mr-1"></i> View
+                                    </a>
+                                    <button @click.stop="
+                                            $refs.testForm.action = '{{ url_for('admin_mcq.edit_test', test_id=test.id) }}';
+                                            $refs.testForm.querySelector('[name=title]').value = '{{ test.title }}';
+                                            $refs.testForm.querySelector('[name=description]').value = '{{ test.description or '' }}';
+                                            $refs.testForm.querySelector('[name=duration_minutes]').value = '{{ test.duration_minutes }}';
+                                            const questionIds = {{ test.questions | map(attribute='id') | list | tojson }};
+                                            $refs.testForm.querySelectorAll('[name=question_ids]').forEach(cb => {
+                                                cb.checked = questionIds.includes(parseInt(cb.value));
+                                            });
+                                            $refs.testForm.closest('div').querySelector('h2').innerHTML = '<i class=\'fas fa-edit text-blue-400 mr-2\'></i> Edit Test';
+                                            $refs.testForm.querySelector('[type=submit]').innerHTML = '<i class=\'fas fa-save mr-2\'></i> Update Test';
+                                            showTestModal = true;
+                                        "
+                                        class="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-400 rounded-lg text-xs font-medium transition-all">
+                                        <i class="fas fa-edit mr-1"></i> Edit
+                                    </button>
+                                    <button @click.stop
+                                        onclick="handleAjaxUrl(event, '{{ url_for('admin_mcq.delete_test', test_id=test.id) }}', 'Delete this test?')"
+                                        class="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-400 rounded-lg text-xs font-medium transition-all">
+                                        <i class="fas fa-trash mr-1"></i> Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-16">
+                <i class="fas fa-file-alt text-6xl text-gray-700 mb-4"></i>
+                <p class="text-gray-400 text-lg">No tests created yet</p>
+                <p class="text-gray-500 text-sm mt-2">Bundle questions into a test to assign to candidates</p>
+                <button @click="showTestModal = true"
+                    class="mt-6 px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-medium transition-all">
+                    <i class="fas fa-plus mr-2"></i> Create Test
+                </button>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ASSIGNMENTS TAB -->
+        <div x-show="currentTab === 'assignments'" class="p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-white">Test Assignments</h2>
+                <span class="text-sm text-gray-400">{{ assignments|length }} assignments</span>
+            </div>
+
+            {% if assignments %}
+            <div class="space-y-2">
+                {% for assignment in assignments %}
+                <div x-data="{ expanded: false }"
+                    class="bg-white/5 border border-white/10 rounded-xl overflow-hidden transition-all"
+                    :class="expanded ? 'ring-1 ring-indigo-500/30 bg-white/[0.07]' : 'hover:bg-white/10'">
+
+                    <!-- Compact Header -->
+                    <div @click="expanded = !expanded"
+                        class="flex items-center gap-3 p-4 cursor-pointer select-none group">
+                        <img src="{{ assignment.candidate.avatar_url }}" alt=""
+                            class="w-8 h-8 rounded-full border border-white/20 flex-shrink-0">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white font-semibold text-sm truncate">{{ assignment.candidate.username }} —
+                                {{ assignment.test.title }}</p>
+                        </div>
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            <span class="px-2 py-0.5 rounded text-xs font-bold
+                                {% if assignment.status == 'completed' %}bg-green-600/20 border border-green-500/30 text-green-400
+                                {% elif assignment.status == 'in_progress' %}bg-yellow-600/20 border border-yellow-500/30 text-yellow-400
+                                {% elif assignment.status == 'expired' %}bg-red-600/20 border border-red-500/30 text-red-400
+                                {% else %}bg-gray-600/20 border border-gray-500/30 text-gray-400{% endif %}">
+                                {{ assignment.status.upper() }}
+                            </span>
+                            <i class="fas fa-chevron-down text-gray-500 text-xs transition-transform duration-300"
+                                :class="expanded && 'rotate-180'"></i>
+                        </div>
+                    </div>
+
+                    <!-- Expanded Details -->
+                    <div x-show="expanded" x-collapse x-cloak>
+                        <div class="px-4 pb-4 border-t border-white/10">
+                            <!-- Candidate Info -->
+                            <div
+                                class="mt-4 mb-4 flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/5">
+                                <img src="{{ assignment.candidate.avatar_url }}" alt=""
+                                    class="w-12 h-12 rounded-full border-2 border-indigo-500/30">
+                                <div>
+                                    <p class="text-white font-semibold">{{ assignment.candidate.username }}</p>
+                                    <p class="text-sm text-gray-400">{{ assignment.candidate.email }}</p>
+                                </div>
+                            </div>
+
+                            <!-- Info Grid -->
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                                <div class="bg-white/5 rounded-lg p-3 border border-white/5">
+                                    <p class="text-xs text-gray-500 mb-1">Test</p>
+                                    <p class="text-sm font-semibold text-purple-400 truncate">{{ assignment.test.title
+                                        }}</p>
+                                </div>
+                                <div class="bg-white/5 rounded-lg p-3 border border-white/5">
+                                    <p class="text-xs text-gray-500 mb-1">Reviewer</p>
+                                    <p class="text-sm font-semibold text-blue-400 truncate">{{
+                                        assignment.reviewer.username }}</p>
+                                </div>
+                                <div class="bg-white/5 rounded-lg p-3 border border-white/5">
+                                    <p class="text-xs text-gray-500 mb-1">Scheduled Start</p>
+                                    <p class="text-sm font-semibold text-white">{{
+                                        assignment.scheduled_start_time.strftime('%b %d, %I:%M %p') }}</p>
+                                </div>
+                                <div class="bg-white/5 rounded-lg p-3 border border-white/5">
+                                    <p class="text-xs text-gray-500 mb-1">Status</p>
+                                    <p class="text-sm font-bold
+                                        {% if assignment.status == 'completed' %}text-green-400
+                                        {% elif assignment.status == 'in_progress' %}text-yellow-400
+                                        {% elif assignment.status == 'expired' %}text-red-400
+                                        {% else %}text-gray-400{% endif %}">
+                                        {{ assignment.status.replace('_', ' ').title() }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Test Info -->
+                            <div class="mb-4 p-3 bg-purple-600/5 rounded-lg border border-purple-500/10">
+                                <p class="text-xs font-bold text-gray-400 uppercase mb-2">Test Details</p>
+                                <div class="flex items-center gap-4 text-sm">
+                                    <span class="text-gray-300"><i
+                                            class="fas fa-question-circle text-purple-400 mr-1"></i> {{
+                                        assignment.test.question_count }} questions</span>
+                                    <span class="text-gray-300"><i class="fas fa-clock text-yellow-400 mr-1"></i> {{
+                                        assignment.test.duration_minutes }} minutes</span>
+                                    {% if assignment.test.description %}
+                                    <span class="text-gray-400 truncate">{{ assignment.test.description }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Result (if completed) -->
+                            {% if assignment.status == 'completed' and assignment.result %}
+                            <div class="mb-4 p-3 bg-green-600/5 rounded-lg border border-green-500/10">
+                                <p class="text-xs font-bold text-gray-400 uppercase mb-2">Result</p>
+                                <div class="flex items-center gap-4 text-sm">
+                                    <span class="text-green-400 font-bold text-lg">{{ assignment.result.score }}/{{
+                                        assignment.result.total_questions }}</span>
+                                    <span class="text-gray-400">({{ assignment.result.percentage }}%)</span>
+                                    <span class="text-gray-300"><i class="fas fa-clock text-gray-400 mr-1"></i> {{
+                                        assignment.result.time_taken_minutes }} min</span>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Actions Row -->
+                            <div class="flex items-center justify-between pt-3 border-t border-white/5">
+                                <div class="flex items-center gap-3 text-xs text-gray-500">
+                                    <span><i class="fas fa-hashtag text-gray-400 mr-1"></i> ID: {{ assignment.id
+                                        }}</span>
+                                    <span><i class="fas fa-calendar-plus text-gray-400 mr-1"></i> {{
+                                        assignment.created_at.strftime('%b %d, %Y') if assignment.created_at else 'N/A'
+                                        }}</span>
+                                </div>
+                                <div class="flex gap-2">
+                                    <a href="{{ url_for('admin_mcq.view_assignment', assignment_id=assignment.id) }}"
+                                        @click.stop
+                                        class="px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 rounded-lg text-xs font-medium transition-all">
+                                        <i class="fas fa-eye mr-1"></i> View Details
+                                    </a>
+                                    {% if assignment.status == 'pending' %}
+                                    <button @click.stop
+                                        onclick="handleAjaxUrl(event, '{{ url_for('admin_mcq.cancel_assignment', assignment_id=assignment.id) }}', 'Cancel this assignment?')"
+                                        class="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-400 rounded-lg text-xs font-medium transition-all">
+                                        <i class="fas fa-times mr-1"></i> Cancel
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-16">
+                <i class="fas fa-user-check text-6xl text-gray-700 mb-4"></i>
+                <p class="text-gray-400 text-lg">No assignments yet</p>
+                <p class="text-gray-500 text-sm mt-2">Assign tests to candidates to start evaluating</p>
+                <button @click="showAssignModal = true"
+                    class="mt-6 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-all">
+                    <i class="fas fa-user-plus mr-2"></i> Assign Test
+                </button>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- CREATE QUESTION MODAL -->
+    <div x-show="showQuestionModal" x-cloak
+        class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        @click.self="showQuestionModal = false">
+        <div class="bg-[#1a1a1f] border border-white/10 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-white">Create MCQ Question</h2>
+                <button @click="showQuestionModal = false" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form x-ref="questionForm" id="questionForm" action="{{ url_for('admin_mcq.create_question') }}"
+                method="POST" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Question Text</label>
+                    <textarea name="question_text" rows="3" required
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors"></textarea>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Option A</label>
+                        <input type="text" name="option_a" required
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Option B</label>
+                        <input type="text" name="option_b" required
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Option C</label>
+                        <input type="text" name="option_c" required
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Option D</label>
+                        <input type="text" name="option_d" required
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Correct Answer</label>
+                    <select name="correct_option" required
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-indigo-500 transition-colors">
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                        <option value="D">D</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Category (Optional)</label>
+                    <input type="text" name="category" list="category-suggestions"
+                        placeholder="e.g., Java Developer, Python Developer, Business Analyst"
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors">
+                    {% if categories %}
+                    <datalist id="category-suggestions">
+                        {% for category in categories %}
+                        <option value="{{ category }}">
+                            {% endfor %}
+                    </datalist>
+                    {% endif %}
+                    <p class="text-xs text-gray-500 mt-1">Helps organize questions by role or topic</p>
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="submit"
+                        class="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-xl font-bold transition-all">
+                        <i class="fas fa-check mr-2"></i> Create Question
+                    </button>
+                    <button type="button" @click="showQuestionModal = false"
+                        class="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 rounded-xl font-medium transition-all">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CREATE TEST MODAL -->
+    <div x-show="showTestModal" x-cloak
+        class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        @click.self="showTestModal = false">
+        <div class="bg-[#1a1a1f] border border-white/10 rounded-2xl p-6 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-white">Create Test</h2>
+                <button @click="showTestModal = false" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form x-ref="testForm" id="testForm" action="{{ url_for('admin_mcq.create_test') }}" method="POST"
+                class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Test Title</label>
+                    <input type="text" name="title" required
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Description (Optional)</label>
+                    <textarea name="description" rows="2"
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Duration (minutes)</label>
+                    <input type="number" name="duration_minutes" min="1" required
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Select Questions</label>
+                    {% if categories %}
+                    <div class="mb-3">
+                        <select x-model="testCategoryFilter"
+                            class="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
+                            <option value="all">All Categories</option>
+                            {% for category in categories %}
+                            <option value="{{ category }}">{{ category }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    <div class="bg-white/5 border border-white/10 rounded-xl p-4 max-h-64 overflow-y-auto space-y-2">
+                        {% for question in questions %}
+                        <label
+                            x-show="testCategoryFilter === 'all' || testCategoryFilter === '{{ question.category }}' || (testCategoryFilter === 'all' && !{{ 'true' if question.category else 'false' }})"
+                            class="flex items-start gap-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 cursor-pointer transition-all">
+                            <input type="checkbox" name="question_ids" value="{{ question.id }}"
+                                class="mt-1 w-4 h-4 text-indigo-600 bg-white/10 border-white/20 rounded focus:ring-indigo-500">
+                            <div class="flex-1">
+                                <span class="text-sm text-gray-300">{{ question.question_text[:100] }}...</span>
+                                {% if question.category %}
+                                <span
+                                    class="ml-2 px-2 py-0.5 bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 rounded text-xs">{{
+                                    question.category }}</span>
+                                {% endif %}
+                            </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="submit"
+                        class="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl font-bold transition-all">
+                        <i class="fas fa-check mr-2"></i> Create Test
+                    </button>
+                    <button type="button" @click="showTestModal = false"
+                        class="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 rounded-xl font-medium transition-all">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ASSIGN TEST MODAL -->
+    <div x-show="showAssignModal" x-cloak
+        class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        @click.self="showAssignModal = false">
+        <div class="bg-[#1a1a1f] border border-white/10 rounded-2xl p-6 max-w-2xl w-full">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-white">Assign Test to Candidate</h2>
+                <button @click="showAssignModal = false" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form action="{{ url_for('admin_mcq.create_assignment') }}" method="POST" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Select Test</label>
+                    <select name="test_id" required
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-indigo-500 transition-colors">
+                        <option value="">Choose a test...</option>
+                        {% for test in tests %}
+                        <option value="{{ test.id }}">{{ test.title }} ({{ test.question_count }} questions, {{
+                            test.duration_minutes }} mins)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Candidate</label>
+                    <select name="candidate_id" required
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-indigo-500 transition-colors">
+                        <option value="">Choose a candidate...</option>
+                        {% for user in candidates %}
+                        <option value="{{ user.id }}">{{ user.username }} ({{ user.email }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Reviewer (Moderator/Developer)</label>
+                    <select name="reviewer_id" required
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-indigo-500 transition-colors">
+                        <option value="">Choose a reviewer...</option>
+                        {% for user in reviewers %}
+                        <option value="{{ user.id }}">{{ user.username }} ({{ user.role }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Scheduled Start Time (IST)</label>
+                    <input type="datetime-local" name="scheduled_start_time" required
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-indigo-500 transition-colors">
+                    <p class="text-xs text-gray-500 mt-1">Test will be locked until this time</p>
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="submit"
+                        class="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white rounded-xl font-bold transition-all">
+                        <i class="fas fa-check mr-2"></i> Assign Test
+                    </button>
+                    <button type="button" @click="showAssignModal = false"
+                        class="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 rounded-xl font-medium transition-all">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Wait for DOM to be ready
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('DOM loaded, setting up edit button listeners');
+
+        // Use event delegation for edit buttons
+        document.addEventListener('click', function (e) {
+            console.log('Click event:', e.target);
+            const editBtn = e.target.closest('.edit-question-btn');
+
+            if (editBtn) {
+                console.log('Edit button found!', editBtn);
+                e.preventDefault(); // Prevent any default action
+
+                const id = editBtn.dataset.questionId;
+                const questionText = editBtn.dataset.questionText;
+                const optionA = editBtn.dataset.optionA;
+                const optionB = editBtn.dataset.optionB;
+                const optionC = editBtn.dataset.optionC;
+                const optionD = editBtn.dataset.optionD;
+                const correctOption = editBtn.dataset.correctOption;
+                const category = editBtn.dataset.category;
+
+                console.log('Calling openEditQuestionModal with:', { id, questionText });
+
+                openEditQuestionModal(id, questionText, optionA, optionB, optionC, optionD, correctOption, category);
+            }
+        });
+    });
+    function openEditQuestionModal(id, questionText, optionA, optionB, optionC, optionD, correctOption, category) {
+        // Get the form by ID
+        const form = document.getElementById('questionForm');
+
+        if (!form) {
+            console.error('Question form not found');
+            return;
+        }
+
+        // Change form action to edit endpoint
+        form.action = "{{ url_for('admin_mcq.edit_question', question_id=0) }}".replace('0', id);
+
+        // Pre-fill the form fields
+        form.querySelector('[name="question_text"]').value = questionText;
+        form.querySelector('[name="option_a"]').value = optionA;
+        form.querySelector('[name="option_b"]').value = optionB;
+        form.querySelector('[name="option_c"]').value = optionC;
+        form.querySelector('[name="option_d"]').value = optionD;
+        form.querySelector('[name="correct_option"]').value = correctOption;
+        form.querySelector('[name="category"]').value = category;
+
+        // Change modal title
+        const modalTitle = document.querySelector('#questionModal h3');
+        if (modalTitle) {
+            modalTitle.innerHTML = '<i class="fas fa-edit text-blue-400 mr-2"></i> Edit Question';
+        }
+
+        // Change button text
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i> Update Question';
+        }
+
+        // Open the modal - use Alpine's $data method
+        setTimeout(() => {
+            const mainDiv = document.querySelector('[x-data]');
+            if (mainDiv && Alpine) {
+                // Use Alpine's $data helper
+                Alpine.$data(mainDiv).showQuestionModal = true;
+            } else {
+                console.error('Alpine not ready or element not found');
+            }
+        }, 100);
+    }
+
+    // Reset form when modal closes
+    document.addEventListener('alpine:init', () => {
+        Alpine.effect(() => {
+            const showModal = Alpine.store('showQuestionModal');
+            if (!showModal) {
+                // Reset form when modal closes
+                const form = document.querySelector('form[action*="question"]');
+                if (form) {
+                    form.action = "{{ url_for('admin_mcq.create_question') }}";
+                    form.reset();
+                    const modalTitle = document.querySelector('#questionModal h3');
+                    if (modalTitle) {
+                        modalTitle.innerHTML = '<i class="fas fa-plus text-green-400 mr-2"></i> Create New Question';
+                    }
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.innerHTML = '<i class="fas fa-plus mr-2"></i> Create Question';
+                    }
+                }
+            }
+        });
+
+        // Reset test form when modal closes
+        Alpine.effect(() => {
+            const showModal = Alpine.store('showTestModal');
+            if (!showModal) {
+                const form = document.getElementById('testForm');
+                if (form) {
+                    form.action = "{{ url_for('admin_mcq.create_test') }}";
+                    form.reset();
+                    // Uncheck all questions
+                    form.querySelectorAll('[name=question_ids]').forEach(cb => cb.checked = false);
+                    const modalTitle = form.closest('div').querySelector('h2');
+                    if (modalTitle) {
+                        modalTitle.innerHTML = 'Create Test';
+                    }
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.innerHTML = '<i class="fas fa-check mr-2"></i> Create Test';
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+{% endblock %}

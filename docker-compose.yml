@@ -7,6 +7,8 @@ services:
       - "5000:5000"
     env_file:
       - .env
+    environment:
+      - DATABASE_URL=postgresql://dev_user:dev_password@db:5432/sourcepoint_dev_db
     volumes:
       - .:/app
     depends_on:
@@ -41,6 +43,7 @@ services:
       - .env
     environment:
       - C_FORCE_ROOT=true
+      - DATABASE_URL=postgresql://dev_user:dev_password@db:5432/sourcepoint_dev_db
     volumes:
       - .:/app
     depends_on:
@@ -48,7 +51,7 @@ services:
       - redis
       - web
     deploy:
-      replicas: 7
+      replicas: 2
 
   # Celery Beat Scheduler (Required for automated emails)
   scheduler:
@@ -59,6 +62,8 @@ services:
     command: celery -A app.celery beat --loglevel=info
     env_file:
       - .env
+    environment:
+      - DATABASE_URL=postgresql://dev_user:dev_password@db:5432/sourcepoint_dev_db
     volumes:
       - .:/app 
     depends_on:
