@@ -416,6 +416,111 @@ def create_assignment():
     
     return redirect(url_for('admin_mcq.list_questions'))
 
+@admin_mcq_bp.route('/assignments/quick-assign', methods=['POST'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def quick_assign():
+    """Quick assign: auto-create a test from random category questions and assign to candidate"""
+    try:
+        category = request.form.get('category')
+        candidate_id = request.form.get('candidate_id')
+        reviewer_id = request.form.get('reviewer_id')
+        scheduled_start_time = request.form.get('scheduled_start_time')
+        num_questions = int(request.form.get('num_questions', 40))
+        duration_minutes = int(request.form.get('duration_minutes', 60))
+        
+        # Validation
+        if not all([category, candidate_id, reviewer_id, scheduled_start_time]):
+            flash('All fields are required.', 'danger')
+            return redirect(url_for('admin_mcq.list_questions'))
+        
+        # Verify entities exist
+        candidate = User.query.get_or_404(candidate_id)
+        reviewer = User.query.get_or_404(reviewer_id)
+        
+        # Verify roles
+        if candidate.role != UserRole.CANDIDATE.value:
+            flash('Selected user is not a candidate.', 'danger')
+            return redirect(url_for('admin_mcq.list_questions'))
+        
+        if reviewer.role not in [UserRole.MODERATOR.value, UserRole.DEVELOPER.value]:
+            flash('Reviewer must be a Moderator or Developer.', 'danger')
+            return redirect(url_for('admin_mcq.list_questions'))
+        
+        # Get random questions from the category
+        from sqlalchemy.sql.expression import func
+        available_questions = MCQQuestion.query.filter_by(category=category).order_by(func.random()).limit(num_questions).all()
+        
+        if len(available_questions) < 10:
+            flash(f'Not enough questions in category "{category}". Need at least 10, found {len(available_questions)}.', 'danger')
+            return redirect(url_for('admin_mcq.list_questions'))
+        
+        # Auto-create the test
+        test_title = f"{category} Assessment - {candidate.username}"
+        auto_test = Test(
+            title=test_title,
+            description=f"Auto-generated {category} test with {len(available_questions)} random questions for {candidate.username}",
+            duration_minutes=duration_minutes,
+            created_by_id=current_user.id
+        )
+        auto_test.questions = available_questions
+        db.session.add(auto_test)
+        db.session.flush()  # Get the test ID
+        
+        # Parse datetime and convert IST to UTC
+        scheduled_datetime_ist = datetime.strptime(scheduled_start_time, '%Y-%m-%dT%H:%M')
+        ist_offset = timedelta(hours=5, minutes=30)
+        scheduled_datetime_utc = scheduled_datetime_ist - ist_offset
+        
+        # Create assignment
+        new_assignment = TestAssignment(
+            test_id=auto_test.id,
+            candidate_id=candidate_id,
+            reviewer_id=reviewer_id,
+            scheduled_start_time=scheduled_datetime_utc,
+            status='pending'
+        )
+        
+        db.session.add(new_assignment)
+        db.session.commit()
+        
+        log_user_action("Quick Assign Test", 
+                       f"Auto-created '{test_title}' with {len(available_questions)} questions and assigned to {candidate.username}")
+        
+        # Send email notifications
+        try:
+            scheduled_time_display = scheduled_datetime_ist.strftime('%d %b %Y, %I:%M %p') + ' IST'
+            
+            send_email(
+                to=candidate.email,
+                subject=f"MCQ Test Assigned: {auto_test.title}",
+                template="mail/mcq_test_assigned.html",
+                candidate=candidate,
+                test=auto_test,
+                reviewer=reviewer,
+                scheduled_time=scheduled_time_display
+            )
+            
+            send_email(
+                to=reviewer.email,
+                subject=f"New MCQ Test Review Assignment: {candidate.username} - {auto_test.title}",
+                template="mail/mcq_test_assigned_reviewer.html",
+                candidate=candidate,
+                test=auto_test,
+                reviewer=reviewer,
+                scheduled_time=scheduled_time_display
+            )
+        except Exception as email_error:
+            print(f"Error sending quick assign emails: {email_error}")
+        
+        flash(f'Quick assign successful! Auto-created "{test_title}" with {len(available_questions)} questions and assigned to {candidate.username}.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error in quick assign: {str(e)}', 'danger')
+    
+    return redirect(url_for('admin_mcq.list_questions'))
+
 @admin_mcq_bp.route('/assignments/<int:assignment_id>')
 @login_required
 @role_required(UserRole.ADMIN.value)

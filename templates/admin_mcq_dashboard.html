@@ -681,14 +681,111 @@
     <div x-show="showAssignModal" x-cloak
         class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
         @click.self="showAssignModal = false">
-        <div class="bg-[#1a1a1f] border border-white/10 rounded-2xl p-6 max-w-2xl w-full">
+        <div class="bg-[#1a1a1f] border border-white/10 rounded-2xl p-6 max-w-2xl w-full"
+            x-data="{ assignMode: 'quick' }">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-white">Assign Test to Candidate</h2>
+                <h2 class="text-2xl font-bold text-white"><i class="fas fa-user-plus text-indigo-400 mr-2"></i> Assign
+                    Test</h2>
                 <button @click="showAssignModal = false" class="text-gray-400 hover:text-white">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
-            <form action="{{ url_for('admin_mcq.create_assignment') }}" method="POST" class="space-y-4">
+
+            <!-- Mode Toggle -->
+            <div class="flex bg-white/5 rounded-xl p-1 mb-6 border border-white/10">
+                <button @click="assignMode = 'quick'" type="button"
+                    :class="assignMode === 'quick' ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'"
+                    class="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200">
+                    <i class="fas fa-bolt mr-2"></i> Quick Assign by Category
+                </button>
+                <button @click="assignMode = 'existing'" type="button"
+                    :class="assignMode === 'existing' ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'"
+                    class="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200">
+                    <i class="fas fa-clipboard-list mr-2"></i> Use Existing Test
+                </button>
+            </div>
+
+            <!-- QUICK ASSIGN FORM -->
+            <form x-show="assignMode === 'quick'" action="{{ url_for('admin_mcq.quick_assign') }}" method="POST"
+                class="space-y-4">
+                <div class="bg-green-600/5 border border-green-500/20 rounded-xl p-3 mb-2">
+                    <p class="text-green-400 text-xs font-medium"><i class="fas fa-info-circle mr-1"></i> A test will be
+                        auto-created with random questions from the selected category and assigned instantly.</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Category</label>
+                    <select name="category" required
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-green-500 transition-colors">
+                        <option value="">Choose a category...</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat }}">{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Number of Questions</label>
+                        <select name="num_questions"
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-green-500 transition-colors">
+                            <option value="20">20 Questions</option>
+                            <option value="30">30 Questions</option>
+                            <option value="40" selected>40 Questions</option>
+                            <option value="50">50 Questions (All)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Duration (minutes)</label>
+                        <select name="duration_minutes"
+                            class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-green-500 transition-colors">
+                            <option value="30">30 mins</option>
+                            <option value="45">45 mins</option>
+                            <option value="60" selected>60 mins</option>
+                            <option value="90">90 mins</option>
+                            <option value="120">120 mins</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Candidate</label>
+                    <select name="candidate_id" required
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-green-500 transition-colors">
+                        <option value="">Choose a candidate...</option>
+                        {% for user in candidates %}
+                        <option value="{{ user.id }}">{{ user.username }} ({{ user.email }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Reviewer (Moderator/Developer)</label>
+                    <select name="reviewer_id" required
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-green-500 transition-colors">
+                        <option value="">Choose a reviewer...</option>
+                        {% for user in reviewers %}
+                        <option value="{{ user.id }}">{{ user.username }} ({{ user.role }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Scheduled Start Time (IST)</label>
+                    <input type="datetime-local" name="scheduled_start_time" required
+                        class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-green-500 transition-colors">
+                    <p class="text-xs text-gray-500 mt-1">Test will be locked until this time</p>
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="submit"
+                        class="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-xl font-bold transition-all">
+                        <i class="fas fa-bolt mr-2"></i> Quick Assign
+                    </button>
+                    <button type="button" @click="showAssignModal = false"
+                        class="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 rounded-xl font-medium transition-all">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+
+            <!-- EXISTING TEST FORM -->
+            <form x-show="assignMode === 'existing'" action="{{ url_for('admin_mcq.create_assignment') }}" method="POST"
+                class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Select Test</label>
                     <select name="test_id" required
