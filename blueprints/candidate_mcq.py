@@ -180,13 +180,10 @@ def view_result(assignment_id):
         flash('Test results are not yet available.', 'info')
         return redirect(url_for('candidate.candidate_dashboard'))
     
-    # Format questions with answers
-    questions_data = _format_test_results(assignment.result, assignment.test)
-    
+    # Only show score - do NOT send question details to prevent question leakage
     return render_template('candidate_mcq_results.html',
                          assignment=assignment,
-                         result=assignment.result,
-                         questions_data=questions_data)
+                         result=assignment.result)
 
 # ==================== HELPER FUNCTIONS ====================
 

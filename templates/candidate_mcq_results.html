@@ -61,58 +61,18 @@
     </div>
     {% endif %}
 
-    <!-- Question Review -->
-    <div class="glass-panel rounded-2xl p-6 border border-white/10">
-        <h2 class="text-xl font-bold text-white mb-6 flex items-center">
-            <i class="fas fa-clipboard-list text-indigo-400 mr-3"></i>
-            Answer Review
-        </h2>
-
-        <div class="space-y-4">
-            {% for q in questions_data %}
-            <div
-                class="bg-white/5 rounded-xl p-5 border {{ 'border-green-500/30' if q.is_correct else 'border-red-500/30' }}">
-                <div class="flex items-start gap-4">
-                    <div
-                        class="flex-shrink-0 w-10 h-10 rounded-full {{ 'bg-green-600/20 border border-green-500/50' if q.is_correct else 'bg-red-600/20 border border-red-500/50' }} flex items-center justify-center">
-                        <i
-                            class="fas {{ 'fa-check' if q.is_correct else 'fa-times' }} {{ 'text-green-400' if q.is_correct else 'text-red-400' }}"></i>
-                    </div>
-
-                    <div class="flex-1">
-                        <p class="text-white font-medium mb-3">{{ q.question_text }}</p>
-
-                        <div class="space-y-2">
-                            {% for opt in q.options %}
-                            <div class="flex items-center gap-2 p-3 rounded-lg
-                                        {{ 'bg-green-600/20 border border-green-500/50' if opt.is_correct else 
-                                           'bg-red-600/20 border border-red-500/50' if opt.is_selected and not opt.is_correct else 
-                                           'bg-white/5 border border-white/10' }}">
-                                <span
-                                    class="text-sm font-bold {{ 'text-green-400' if opt.is_correct else 'text-red-400' if opt.is_selected else 'text-gray-400' }}">
-                                    {{ opt.letter }})
-                                </span>
-                                <span
-                                    class="text-sm {{ 'text-white' if opt.is_correct or opt.is_selected else 'text-gray-400' }}">
-                                    {{ opt.text }}
-                                </span>
-                                {% if opt.is_correct %}
-                                <span class="ml-auto text-xs text-green-400 font-bold">
-                                    <i class="fas fa-check-circle mr-1"></i>Correct Answer
-                                </span>
-                                {% elif opt.is_selected %}
-                                <span class="ml-auto text-xs text-red-400 font-bold">
-                                    <i class="fas fa-times-circle mr-1"></i>Your Answer
-                                </span>
-                                {% endif %}
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
+    <!-- Score Summary Message -->
+    <div class="glass-panel rounded-2xl p-8 border border-white/10 text-center">
+        <div
+            class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-600/20 border border-indigo-500/30 mb-4">
+            <i class="fas fa-shield-alt text-indigo-400 text-2xl"></i>
         </div>
+        <h2 class="text-lg font-bold text-white mb-2">Detailed Review Not Available</h2>
+        <p class="text-gray-400 text-sm max-w-md mx-auto">
+            For security purposes, question details and answers are not displayed.
+            Your score summary is shown above. If you have questions about your results,
+            please contact your reviewer or administrator.
+        </p>
     </div>
 
     <!-- Back Button -->
