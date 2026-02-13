@@ -447,9 +447,31 @@ def quick_assign():
             flash('Reviewer must be a Moderator or Developer.', 'danger')
             return redirect(url_for('admin_mcq.list_questions'))
         
-        # Get random questions from the category
+        # Get balanced questions from the category (equal mix of correct options A, B, C, D)
         from sqlalchemy.sql.expression import func
-        available_questions = MCQQuestion.query.filter_by(category=category).order_by(func.random()).limit(num_questions).all()
+        per_option = num_questions // 4
+        remainder = num_questions % 4
+        
+        available_questions = []
+        for i, opt in enumerate(['A', 'B', 'C', 'D']):
+            count = per_option + (1 if i < remainder else 0)
+            qs = MCQQuestion.query.filter_by(
+                category=category, correct_option=opt
+            ).order_by(func.random()).limit(count).all()
+            available_questions.extend(qs)
+        
+        # If we didn't get enough from balanced selection, fill from any remaining
+        if len(available_questions) < num_questions:
+            existing_ids = [q.id for q in available_questions]
+            extra = MCQQuestion.query.filter(
+                MCQQuestion.category == category,
+                ~MCQQuestion.id.in_(existing_ids)
+            ).order_by(func.random()).limit(num_questions - len(available_questions)).all()
+            available_questions.extend(extra)
+        
+        # Shuffle so answers aren't grouped by option
+        import random
+        random.shuffle(available_questions)
         
         if len(available_questions) < 10:
             flash(f'Not enough questions in category "{category}". Need at least 10, found {len(available_questions)}.', 'danger')
