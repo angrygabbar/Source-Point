@@ -267,35 +267,33 @@
         }
     }
 
-    // Modal initialization function - call on page load and HTMX swaps
-    function initUserModal() {
+    // Modal setup - runs immediately when script is parsed (works on both full page load AND HTMX swaps)
+    (function () {
         const modal = document.getElementById('createUserModal');
         const btnOpen = document.getElementById('createUserBtn');
         const btnClose = document.getElementById('cancelCreateUser');
         const overlay = document.getElementById('modalOverlay');
 
-        if (!modal || !btnOpen) return; // Exit if elements don't exist
+        if (!modal || !btnOpen) return;
 
-        function toggleModal(show) {
-            if (show) {
-                modal.classList.remove('hidden');
-                setTimeout(() => modal.firstElementChild.nextElementSibling.querySelector('div').classList.add('scale-100', 'opacity-100'), 10);
-            } else {
-                modal.classList.add('hidden');
-            }
+        function openModal() {
+            modal.classList.remove('hidden');
         }
 
-        // Remove existing listeners to prevent duplicates
-        const newBtnOpen = btnOpen.cloneNode(true);
-        btnOpen.parentNode.replaceChild(newBtnOpen, btnOpen);
+        function closeModal() {
+            modal.classList.add('hidden');
+        }
 
-        newBtnOpen.addEventListener('click', () => toggleModal(true));
-        if (btnClose) btnClose.addEventListener('click', () => toggleModal(false));
-        if (overlay) overlay.addEventListener('click', () => toggleModal(false));
-    }
+        btnOpen.addEventListener('click', openModal);
+        if (btnClose) btnClose.addEventListener('click', closeModal);
+        if (overlay) overlay.addEventListener('click', closeModal);
 
-    // Initialize on both DOMContentLoaded and HTMX page swaps
-    document.addEventListener('DOMContentLoaded', initUserModal);
-    document.addEventListener('htmx:afterSwap', initUserModal);
+        // Close on Escape key
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                closeModal();
+            }
+        });
+    })();
 </script>
 {% endblock %}
