@@ -196,16 +196,18 @@
                                 {% if card.status == 'Available' %}
                                 <!-- Send Button -->
                                 <button
-                                    onclick="openSendModal({{ card.id }}, '{{ card.brand }}', '{{ card.masked_card_number }}')"
-                                    class="w-9 h-9 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-400 flex items-center justify-center transition-all"
-                                    title="Send Gift Card">
+                                    class="send-card-btn w-9 h-9 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-400 flex items-center justify-center transition-all"
+                                    data-id="{{ card.id }}" data-brand="{{ card.brand|e }}"
+                                    data-masked="{{ card.masked_card_number }}" title="Send Gift Card">
                                     <i class="fas fa-paper-plane text-sm"></i>
                                 </button>
                                 <!-- Edit Button -->
                                 <button
-                                    onclick="openEditModal({{ card.id }}, '{{ card.brand }}', '{{ card.denomination }}', '{{ card.expiry_date if card.expiry_date else '' }}', '{{ card.notes if card.notes else '' }}')"
-                                    class="w-9 h-9 rounded-xl bg-blue-500/20 hover:bg-blue-500/40 text-blue-400 flex items-center justify-center transition-all"
-                                    title="Edit">
+                                    class="edit-card-btn w-9 h-9 rounded-xl bg-blue-500/20 hover:bg-blue-500/40 text-blue-400 flex items-center justify-center transition-all"
+                                    data-id="{{ card.id }}" data-brand="{{ card.brand|e }}"
+                                    data-denomination="{{ card.denomination }}"
+                                    data-expiry="{{ card.expiry_date if card.expiry_date else '' }}"
+                                    data-notes="{{ card.notes|e if card.notes else '' }}" title="Edit">
                                     <i class="fas fa-edit text-sm"></i>
                                 </button>
                                 {% endif %}
@@ -430,43 +432,57 @@
         }
     }
 
-    function openSendModal(cardId, brand, maskedNumber) {
-        document.getElementById('sendCardForm').action = SEND_URL_BASE.replace('{id}', cardId);
-        document.getElementById('sendCardInfo').textContent = 'Sending ' + brand + ' card (' + maskedNumber + ')';
-        document.getElementById('sendCardModal').classList.remove('hidden');
-    }
-
-    function openEditModal(cardId, brand, denomination, expiryDate, notes) {
-        document.getElementById('editCardForm').action = EDIT_URL_BASE.replace('{id}', cardId);
-
-        const brandSelect = document.getElementById('editBrandSelect');
-        let brandFound = false;
-        for (let option of brandSelect.options) {
-            if (option.value === brand) {
-                option.selected = true;
-                brandFound = true;
-                break;
-            }
+    // Use event delegation for send buttons
+    document.addEventListener('click', function (e) {
+        const sendBtn = e.target.closest('.send-card-btn');
+        if (sendBtn) {
+            const cardId = sendBtn.dataset.id;
+            const brand = sendBtn.dataset.brand;
+            const masked = sendBtn.dataset.masked;
+            document.getElementById('sendCardForm').action = SEND_URL_BASE.replace('{id}', cardId);
+            document.getElementById('sendCardInfo').textContent = 'Sending ' + brand + ' card (' + masked + ')';
+            document.getElementById('sendCardModal').classList.remove('hidden');
+            return;
         }
-        if (!brandFound) {
-            // Custom brand — select "Other" and show custom field
+
+        const editBtn = e.target.closest('.edit-card-btn');
+        if (editBtn) {
+            const cardId = editBtn.dataset.id;
+            const brand = editBtn.dataset.brand;
+            const denomination = editBtn.dataset.denomination;
+            const expiryDate = editBtn.dataset.expiry;
+            const notes = editBtn.dataset.notes;
+
+            document.getElementById('editCardForm').action = EDIT_URL_BASE.replace('{id}', cardId);
+
+            const brandSelect = document.getElementById('editBrandSelect');
+            let brandFound = false;
             for (let option of brandSelect.options) {
-                if (option.value === 'Other') {
+                if (option.value === brand) {
                     option.selected = true;
+                    brandFound = true;
                     break;
                 }
             }
-            document.getElementById('editCustomBrandDiv').classList.remove('hidden');
-            document.querySelector('#editCustomBrandDiv input').value = brand;
-        } else {
-            document.getElementById('editCustomBrandDiv').classList.add('hidden');
-        }
+            if (!brandFound) {
+                for (let option of brandSelect.options) {
+                    if (option.value === 'Other') {
+                        option.selected = true;
+                        break;
+                    }
+                }
+                document.getElementById('editCustomBrandDiv').classList.remove('hidden');
+                document.querySelector('#editCustomBrandDiv input').value = brand;
+            } else {
+                document.getElementById('editCustomBrandDiv').classList.add('hidden');
+            }
 
-        document.getElementById('editDenomination').value = parseInt(denomination);
-        document.getElementById('editExpiryDate').value = expiryDate;
-        document.getElementById('editNotes').value = notes;
-        document.getElementById('editCardModal').classList.remove('hidden');
-    }
+            document.getElementById('editDenomination').value = parseInt(denomination);
+            document.getElementById('editExpiryDate').value = expiryDate;
+            document.getElementById('editNotes').value = notes || '';
+            document.getElementById('editCardModal').classList.remove('hidden');
+        }
+    });
 </script>
 
 {% endblock %}
