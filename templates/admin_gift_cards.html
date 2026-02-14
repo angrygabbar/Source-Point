@@ -255,7 +255,8 @@
         <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
             <div
                 class="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
-                <i class="fas fa-plus text-white"></i></div>
+                <i class="fas fa-plus text-white"></i>
+            </div>
             Add Gift Card
         </h2>
         <form method="POST" action="{{ url_for('admin_giftcards.add_gift_card') }}" class="space-y-5">
@@ -317,7 +318,8 @@
         <h2 class="text-2xl font-bold text-white mb-2 flex items-center gap-3">
             <div
                 class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                <i class="fas fa-paper-plane text-white"></i></div>
+                <i class="fas fa-paper-plane text-white"></i>
+            </div>
             Send Gift Card
         </h2>
         <p class="text-gray-400 text-sm mb-6" id="sendCardInfo">Sending card...</p>
@@ -357,7 +359,8 @@
         <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
             <div
                 class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                <i class="fas fa-edit text-white"></i></div>
+                <i class="fas fa-edit text-white"></i>
+            </div>
             Edit Gift Card
         </h2>
         <form method="POST" id="editCardForm" class="space-y-5">
@@ -413,6 +416,10 @@
 </div>
 
 <script>
+    // Build URL maps from Jinja so production HTTPS/proxy works correctly
+    const SEND_URL_BASE = "{{ url_for('admin_giftcards.send_gift_card', card_id=0) }}".replace('/0/', '/{id}/');
+    const EDIT_URL_BASE = "{{ url_for('admin_giftcards.edit_gift_card', card_id=0) }}".replace('/0/', '/{id}/');
+
     function toggleCustomBrand(prefix) {
         const select = document.getElementById(prefix + 'BrandSelect');
         const div = document.getElementById(prefix + 'CustomBrandDiv');
@@ -424,13 +431,13 @@
     }
 
     function openSendModal(cardId, brand, maskedNumber) {
-        document.getElementById('sendCardForm').action = '/admin/gift-cards/' + cardId + '/send';
+        document.getElementById('sendCardForm').action = SEND_URL_BASE.replace('{id}', cardId);
         document.getElementById('sendCardInfo').textContent = 'Sending ' + brand + ' card (' + maskedNumber + ')';
         document.getElementById('sendCardModal').classList.remove('hidden');
     }
 
     function openEditModal(cardId, brand, denomination, expiryDate, notes) {
-        document.getElementById('editCardForm').action = '/admin/gift-cards/' + cardId + '/edit';
+        document.getElementById('editCardForm').action = EDIT_URL_BASE.replace('{id}', cardId);
 
         const brandSelect = document.getElementById('editBrandSelect');
         let brandFound = false;
