@@ -8,4 +8,5 @@ from .learning import LearningContent, ProblemStatement
 from .finance import Project, Transaction, BRD, EMIPlan
 from .interview import Interview, InterviewParticipant, InterviewFeedback
 from .mcq import MCQQuestion, Test, TestAssignment, TestResult
+from .gift_card import GiftCard
 #from .payment import EMIPayment

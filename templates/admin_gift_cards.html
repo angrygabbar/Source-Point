@@ -1,0 +1,465 @@
+{% extends 'layout.html' %}
+
+{% block title %}Gift Card Manager{% endblock %}
+
+{% block content %}
+<div id="main-content" class="space-y-8">
+    <!-- Page Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-white flex items-center gap-3">
+                <div
+                    class="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shadow-lg shadow-pink-500/20">
+                    <i class="fas fa-gift text-white text-xl"></i>
+                </div>
+                Gift Card Manager
+            </h1>
+            <p class="text-gray-400 mt-1">Securely manage and distribute gift cards</p>
+        </div>
+        <button onclick="document.getElementById('addCardModal').classList.remove('hidden')"
+            class="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-2xl hover:shadow-lg hover:shadow-pink-500/25 transition-all flex items-center gap-2">
+            <i class="fas fa-plus"></i> Add Gift Card
+        </button>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-sm">Total Cards</p>
+                    <p class="text-3xl font-bold text-white mt-1">{{ stats.total }}</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                    <i class="fas fa-layer-group text-blue-400 text-xl"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-sm">Available</p>
+                    <p class="text-3xl font-bold text-emerald-400 mt-1">{{ stats.available }}</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                    <i class="fas fa-check-circle text-emerald-400 text-xl"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-sm">Sent</p>
+                    <p class="text-3xl font-bold text-sky-400 mt-1">{{ stats.sent }}</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-sky-500/20 flex items-center justify-center">
+                    <i class="fas fa-paper-plane text-sky-400 text-xl"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-sm">Expired</p>
+                    <p class="text-3xl font-bold text-red-400 mt-1">{{ stats.expired }}</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
+                    <i class="fas fa-clock text-red-400 text-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4">
+        <form method="GET" action="{{ url_for('admin_giftcards.gift_cards_dashboard') }}"
+            class="flex flex-wrap gap-4 items-center">
+            <div class="flex items-center gap-2">
+                <label class="text-gray-400 text-sm font-medium">Status:</label>
+                <select name="status"
+                    class="bg-white/10 border border-white/20 text-white rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+                    <option value="all" {% if current_status=='all' %}selected{% endif %}>All Statuses</option>
+                    {% for s in statuses %}
+                    <option value="{{ s }}" {% if current_status==s %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex items-center gap-2">
+                <label class="text-gray-400 text-sm font-medium">Brand:</label>
+                <select name="brand"
+                    class="bg-white/10 border border-white/20 text-white rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+                    <option value="all" {% if current_brand=='all' %}selected{% endif %}>All Brands</option>
+                    {% for b in brands %}
+                    <option value="{{ b }}" {% if current_brand==b %}selected{% endif %}>{{ b }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit"
+                class="px-5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-medium transition-all">
+                <i class="fas fa-filter mr-1"></i> Apply
+            </button>
+        </form>
+    </div>
+
+    <!-- Gift Cards Table -->
+    <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-white/10">
+                        <th class="text-left px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Brand
+                        </th>
+                        <th class="text-left px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Card
+                            Number</th>
+                        <th class="text-left px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">PIN
+                        </th>
+                        <th class="text-left px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Value
+                        </th>
+                        <th class="text-left px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Expiry
+                        </th>
+                        <th class="text-left px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Status
+                        </th>
+                        <th class="text-left px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                            Recipient</th>
+                        <th class="text-center px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                            Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    {% for card in gift_cards %}
+                    <tr class="hover:bg-white/5 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-gradient-to-br 
+                                    {% if card.brand == 'Zomato' %}from-red-500 to-red-700
+                                    {% elif card.brand == " Domino's" %}from-blue-500 to-blue-700 {% elif
+                                    card.brand=="McDonald's" %}from-yellow-500 to-red-600 {% elif card.brand=='KFC'
+                                    %}from-red-600 to-red-800 {% elif card.brand=='PVR' %}from-purple-500 to-purple-700
+                                    {% elif card.brand=='Amazon' %}from-orange-400 to-orange-600 {% elif
+                                    card.brand=='Flipkart' %}from-blue-400 to-yellow-500 {% elif card.brand=='Swiggy'
+                                    %}from-orange-500 to-orange-700 {% else %}from-gray-500 to-gray-700{% endif %} flex
+                                    items-center justify-center text-white font-bold text-sm shadow-lg">
+                                    {{ card.brand[0] }}
+                                </div>
+                                <span class="text-white font-medium">{{ card.brand }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <code
+                                class="text-gray-300 bg-white/5 px-2 py-1 rounded-lg text-sm font-mono">{{ card.masked_card_number }}</code>
+                        </td>
+                        <td class="px-6 py-4">
+                            <code
+                                class="text-gray-300 bg-white/5 px-2 py-1 rounded-lg text-sm font-mono">{{ card.masked_pin }}</code>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-emerald-400 font-semibold">₹{{ "%.0f"|format(card.denomination) }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if card.expiry_date %}
+                            {% if card.is_expired %}
+                            <span class="text-red-400 text-sm">{{ card.expiry_date.strftime('%b %d, %Y') }}</span>
+                            {% else %}
+                            <span class="text-gray-300 text-sm">{{ card.expiry_date.strftime('%b %d, %Y') }}</span>
+                            {% endif %}
+                            {% else %}
+                            <span class="text-gray-500 text-sm">No expiry</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if card.status == 'Available' %}
+                            <span
+                                class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Available</span>
+                            {% elif card.status == 'Sent' %}
+                            <span
+                                class="px-3 py-1 rounded-full text-xs font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30">Sent</span>
+                            {% elif card.status == 'Expired' %}
+                            <span
+                                class="px-3 py-1 rounded-full text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30">Expired</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if card.recipient_name %}
+                            <div class="text-sm">
+                                <p class="text-white">{{ card.recipient_name }}</p>
+                                <p class="text-gray-500 text-xs">{{ card.recipient_email }}</p>
+                                {% if card.sent_at %}
+                                <p class="text-gray-600 text-xs mt-1">Sent {{ card.sent_at.strftime('%b %d, %Y') }}</p>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <span class="text-gray-600 text-sm">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                {% if card.status == 'Available' %}
+                                <!-- Send Button -->
+                                <button
+                                    onclick="openSendModal({{ card.id }}, '{{ card.brand }}', '{{ card.masked_card_number }}')"
+                                    class="w-9 h-9 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-400 flex items-center justify-center transition-all"
+                                    title="Send Gift Card">
+                                    <i class="fas fa-paper-plane text-sm"></i>
+                                </button>
+                                <!-- Edit Button -->
+                                <button
+                                    onclick="openEditModal({{ card.id }}, '{{ card.brand }}', '{{ card.denomination }}', '{{ card.expiry_date if card.expiry_date else '' }}', '{{ card.notes if card.notes else '' }}')"
+                                    class="w-9 h-9 rounded-xl bg-blue-500/20 hover:bg-blue-500/40 text-blue-400 flex items-center justify-center transition-all"
+                                    title="Edit">
+                                    <i class="fas fa-edit text-sm"></i>
+                                </button>
+                                {% endif %}
+                                <!-- Delete Button -->
+                                <form method="POST"
+                                    action="{{ url_for('admin_giftcards.delete_gift_card', card_id=card.id) }}"
+                                    onsubmit="return confirm('Are you sure you want to delete this gift card?')">
+                                    <button type="submit"
+                                        class="w-9 h-9 rounded-xl bg-red-500/20 hover:bg-red-500/40 text-red-400 flex items-center justify-center transition-all"
+                                        title="Delete">
+                                        <i class="fas fa-trash text-sm"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not gift_cards %}
+                    <tr>
+                        <td colspan="8" class="px-6 py-16 text-center">
+                            <div class="flex flex-col items-center gap-3">
+                                <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center">
+                                    <i class="fas fa-gift text-gray-600 text-3xl"></i>
+                                </div>
+                                <p class="text-gray-500">No gift cards found</p>
+                                <button onclick="document.getElementById('addCardModal').classList.remove('hidden')"
+                                    class="px-4 py-2 bg-pink-500/20 text-pink-400 rounded-xl text-sm font-medium hover:bg-pink-500/30 transition-all">
+                                    Add Your First Card
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ADD CARD MODAL ==================== -->
+<div id="addCardModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+    onclick="if(event.target===this)this.classList.add('hidden')">
+    <div
+        class="bg-[#1e293b] border border-white/10 rounded-3xl shadow-2xl w-full max-w-lg mx-4 p-8 relative max-h-[90vh] overflow-y-auto">
+        <button onclick="this.closest('.fixed').classList.add('hidden')"
+            class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl"><i class="fas fa-times"></i></button>
+        <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+            <div
+                class="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
+                <i class="fas fa-plus text-white"></i></div>
+            Add Gift Card
+        </h2>
+        <form method="POST" action="{{ url_for('admin_giftcards.add_gift_card') }}" class="space-y-5">
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Brand *</label>
+                <select name="brand" id="addBrandSelect" onchange="toggleCustomBrand('add')" required
+                    class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+                    {% for b in brands %}
+                    <option value="{{ b }}">{{ b }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div id="addCustomBrandDiv" class="hidden">
+                <label class="block text-sm font-medium text-gray-300 mb-2">Custom Brand Name</label>
+                <input type="text" name="custom_brand" placeholder="Enter brand name"
+                    class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Card Number *</label>
+                <input type="text" name="card_number" required placeholder="Enter gift card number"
+                    class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-pink-500 focus:border-transparent font-mono">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">PIN *</label>
+                <input type="text" name="pin" required placeholder="Enter gift card PIN"
+                    class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-pink-500 focus:border-transparent font-mono">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Denomination (₹) *</label>
+                    <input type="number" name="denomination" required min="1" placeholder="500"
+                        class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Expiry Date</label>
+                    <input type="date" name="expiry_date"
+                        class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Notes</label>
+                <textarea name="notes" rows="2" placeholder="Optional notes..."
+                    class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-pink-500 focus:border-transparent resize-none"></textarea>
+            </div>
+            <button type="submit"
+                class="w-full py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-pink-500/25 transition-all text-lg">
+                <i class="fas fa-lock mr-2"></i> Save Securely
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- ==================== SEND CARD MODAL ==================== -->
+<div id="sendCardModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+    onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="bg-[#1e293b] border border-white/10 rounded-3xl shadow-2xl w-full max-w-lg mx-4 p-8 relative">
+        <button onclick="this.closest('.fixed').classList.add('hidden')"
+            class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl"><i class="fas fa-times"></i></button>
+        <h2 class="text-2xl font-bold text-white mb-2 flex items-center gap-3">
+            <div
+                class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                <i class="fas fa-paper-plane text-white"></i></div>
+            Send Gift Card
+        </h2>
+        <p class="text-gray-400 text-sm mb-6" id="sendCardInfo">Sending card...</p>
+        <form method="POST" id="sendCardForm" class="space-y-5">
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Recipient Name *</label>
+                <input type="text" name="recipient_name" required placeholder="Enter recipient's full name"
+                    class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Recipient Email *</label>
+                <input type="email" name="recipient_email" required placeholder="recipient@example.com"
+                    class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+            </div>
+            <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
+                <p class="text-amber-400 text-sm flex items-start gap-2">
+                    <i class="fas fa-shield-alt mt-0.5"></i>
+                    <span>The full card number and PIN will be securely sent only to the recipient's email. This action
+                        cannot be undone.</span>
+                </p>
+            </div>
+            <button type="submit"
+                class="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-emerald-500/25 transition-all text-lg">
+                <i class="fas fa-paper-plane mr-2"></i> Send Gift Card
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- ==================== EDIT CARD MODAL ==================== -->
+<div id="editCardModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+    onclick="if(event.target===this)this.classList.add('hidden')">
+    <div
+        class="bg-[#1e293b] border border-white/10 rounded-3xl shadow-2xl w-full max-w-lg mx-4 p-8 relative max-h-[90vh] overflow-y-auto">
+        <button onclick="this.closest('.fixed').classList.add('hidden')"
+            class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl"><i class="fas fa-times"></i></button>
+        <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+            <div
+                class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                <i class="fas fa-edit text-white"></i></div>
+            Edit Gift Card
+        </h2>
+        <form method="POST" id="editCardForm" class="space-y-5">
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Brand *</label>
+                <select name="brand" id="editBrandSelect" onchange="toggleCustomBrand('edit')" required
+                    class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    {% for b in brands %}
+                    <option value="{{ b }}">{{ b }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div id="editCustomBrandDiv" class="hidden">
+                <label class="block text-sm font-medium text-gray-300 mb-2">Custom Brand Name</label>
+                <input type="text" name="custom_brand" placeholder="Enter brand name"
+                    class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Card Number <span
+                        class="text-gray-500">(leave blank to keep existing)</span></label>
+                <input type="text" name="card_number" placeholder="Enter new card number"
+                    class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">PIN <span class="text-gray-500">(leave blank
+                        to keep existing)</span></label>
+                <input type="text" name="pin" placeholder="Enter new PIN"
+                    class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Denomination (₹) *</label>
+                    <input type="number" name="denomination" id="editDenomination" required min="1"
+                        class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Expiry Date</label>
+                    <input type="date" name="expiry_date" id="editExpiryDate"
+                        class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Notes</label>
+                <textarea name="notes" id="editNotes" rows="2"
+                    class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"></textarea>
+            </div>
+            <button type="submit"
+                class="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-blue-500/25 transition-all text-lg">
+                <i class="fas fa-save mr-2"></i> Update Card
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function toggleCustomBrand(prefix) {
+        const select = document.getElementById(prefix + 'BrandSelect');
+        const div = document.getElementById(prefix + 'CustomBrandDiv');
+        if (select.value === 'Other') {
+            div.classList.remove('hidden');
+        } else {
+            div.classList.add('hidden');
+        }
+    }
+
+    function openSendModal(cardId, brand, maskedNumber) {
+        document.getElementById('sendCardForm').action = '/admin/gift-cards/' + cardId + '/send';
+        document.getElementById('sendCardInfo').textContent = 'Sending ' + brand + ' card (' + maskedNumber + ')';
+        document.getElementById('sendCardModal').classList.remove('hidden');
+    }
+
+    function openEditModal(cardId, brand, denomination, expiryDate, notes) {
+        document.getElementById('editCardForm').action = '/admin/gift-cards/' + cardId + '/edit';
+
+        const brandSelect = document.getElementById('editBrandSelect');
+        let brandFound = false;
+        for (let option of brandSelect.options) {
+            if (option.value === brand) {
+                option.selected = true;
+                brandFound = true;
+                break;
+            }
+        }
+        if (!brandFound) {
+            // Custom brand — select "Other" and show custom field
+            for (let option of brandSelect.options) {
+                if (option.value === 'Other') {
+                    option.selected = true;
+                    break;
+                }
+            }
+            document.getElementById('editCustomBrandDiv').classList.remove('hidden');
+            document.querySelector('#editCustomBrandDiv input').value = brand;
+        } else {
+            document.getElementById('editCustomBrandDiv').classList.add('hidden');
+        }
+
+        document.getElementById('editDenomination').value = parseInt(denomination);
+        document.getElementById('editExpiryDate').value = expiryDate;
+        document.getElementById('editNotes').value = notes;
+        document.getElementById('editCardModal').classList.remove('hidden');
+    }
+</script>
+
+{% endblock %}

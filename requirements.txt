@@ -29,6 +29,7 @@ google-generativeai==0.8.3
 redis==5.0.1
 celery==5.3.6
 celery-redbeat==2.2.0
+cryptography==42.0.5
 
 # --- GOOGLE CALENDAR API ---
 google-auth==2.27.0

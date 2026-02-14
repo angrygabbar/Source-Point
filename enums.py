@@ -38,3 +38,19 @@ class PaymentStatus(enum.Enum):
     PENDING = "Pending"
     COMPLETED = "Completed"
     FAILED = "Failed"
+
+class GiftCardStatus(enum.Enum):
+    AVAILABLE = "Available"
+    SENT = "Sent"
+    EXPIRED = "Expired"
+
+class GiftCardBrand(enum.Enum):
+    ZOMATO = "Zomato"
+    DOMINOS = "Domino's"
+    MCDONALDS = "McDonald's"
+    KFC = "KFC"
+    PVR = "PVR"
+    AMAZON = "Amazon"
+    FLIPKART = "Flipkart"
+    SWIGGY = "Swiggy"
+    OTHER = "Other"

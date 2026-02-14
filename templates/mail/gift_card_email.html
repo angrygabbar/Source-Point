@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Gift Card</title>
+</head>
+
+<body
+    style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #e2e8f0;">
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0f172a;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0"
+                    style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 50%, #6366f1 100%); padding: 40px 40px 50px 40px; text-align: center;">
+                            <table role="presentation" cellspacing="0" cellpadding="0"
+                                style="margin: 0 auto 20px auto;">
+                                <tr>
+                                    <td style="background: rgba(255,255,255,0.2); border-radius: 16px; padding: 16px;">
+                                        <img src="https://img.icons8.com/fluency/48/gift-card.png" alt="Gift Card"
+                                            width="48" height="48" style="display: block;">
+                                    </td>
+                                </tr>
+                            </table>
+                            <h1
+                                style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">
+                                🎁 Gift Card for You!</h1>
+                            <p style="margin: 12px 0 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">From Source
+                                Point with ❤️</p>
+                        </td>
+                    </tr>
+
+                    <!-- Wave Divider -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 50%, #6366f1 100%); height: 30px;">
+                            <div style="background: #1e293b; height: 30px; border-radius: 30px 30px 0 0;"></div>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 0 40px 40px 40px;">
+
+                            <p style="font-size: 18px; color: #f1f5f9; margin: 0 0 24px 0; line-height: 1.6;">
+                                Hello <strong style="color: #ec4899;">{{ recipient_name }}</strong>,
+                            </p>
+
+                            <p style="font-size: 16px; color: #d1d5db; margin: 0 0 24px 0; line-height: 1.6;">
+                                You've received a <strong style="color: #a78bfa;">{{ brand }}</strong> gift card! Here
+                                are your card details:
+                            </p>
+
+                            <!-- Gift Card Box -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="margin: 0 0 24px 0;">
+                                <tr>
+                                    <td
+                                        style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); border-radius: 16px; padding: 30px; border: 1px solid rgba(139, 92, 246, 0.3);">
+
+                                        <!-- Brand Name -->
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td style="padding-bottom: 20px; text-align: center;">
+                                                    <span
+                                                        style="font-size: 24px; font-weight: 800; background: linear-gradient(135deg, #ec4899, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px;">
+                                                        {{ brand }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        <!-- Denomination -->
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 20px;">
+                                            <tr>
+                                                <td style="text-align: center; padding-bottom: 16px;">
+                                                    <span
+                                                        style="font-size: 40px; font-weight: 800; color: #34d399; letter-spacing: -1px;">
+                                                        ₹{{ "%.0f"|format(denomination) }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        <!-- Divider -->
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td
+                                                    style="border-top: 1px dashed rgba(139, 92, 246, 0.4); padding-top: 20px;">
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        <!-- Card Number -->
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 16px;">
+                                            <tr>
+                                                <td>
+                                                    <p
+                                                        style="margin: 0 0 6px 0; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #9ca3af; font-weight: 600;">
+                                                        Card Number</p>
+                                                    <p
+                                                        style="margin: 0; font-size: 22px; font-weight: 700; color: #f1f5f9; font-family: 'Courier New', monospace; letter-spacing: 3px; background: rgba(255,255,255,0.05); padding: 12px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);">
+                                                        {{ card_number }}
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        <!-- PIN -->
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td>
+                                                    <p
+                                                        style="margin: 0 0 6px 0; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #9ca3af; font-weight: 600;">
+                                                        PIN</p>
+                                                    <p
+                                                        style="margin: 0; font-size: 22px; font-weight: 700; color: #fbbf24; font-family: 'Courier New', monospace; letter-spacing: 3px; background: rgba(251, 191, 36, 0.05); padding: 12px 16px; border-radius: 10px; border: 1px solid rgba(251, 191, 36, 0.2);">
+                                                        {{ pin }}
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                    </td>
+                                </tr>
+                            </table>
+
+                            {% if expiry_date %}
+                            <!-- Expiry Date -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="margin: 0 0 24px 0;">
+                                <tr>
+                                    <td
+                                        style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 12px; padding: 14px 20px;">
+                                        <p style="margin: 0; color: #f87171; font-size: 14px; font-weight: 600;">
+                                            ⏰ Valid until: {{ expiry_date.strftime('%B %d, %Y') }}
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            <!-- How to Use -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="margin: 0 0 24px 0;">
+                                <tr>
+                                    <td
+                                        style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 12px; padding: 20px;">
+                                        <p
+                                            style="margin: 0 0 12px 0; font-size: 15px; font-weight: 700; color: #34d399;">
+                                            💡 How to Redeem</p>
+                                        <ol
+                                            style="margin: 0; padding-left: 20px; color: #d1d5db; font-size: 14px; line-height: 1.8;">
+                                            <li>Visit the {{ brand }} website or app</li>
+                                            <li>Add items to your cart and proceed to checkout</li>
+                                            <li>Select "Gift Card" as payment method</li>
+                                            <li>Enter the card number and PIN above</li>
+                                            <li>Enjoy! 🎉</li>
+                                        </ol>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Important Notice -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="margin: 0 0 24px 0;">
+                                <tr>
+                                    <td
+                                        style="background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.2); border-radius: 12px; padding: 16px 20px;">
+                                        <p style="margin: 0; color: #fbbf24; font-size: 13px; line-height: 1.6;">
+                                            🔒 <strong>Important:</strong> Keep this email confidential. Do not share
+                                            your card number and PIN with anyone. This gift card is for one-time use
+                                            only.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 24px 40px; background: rgba(0,0,0,0.2); text-align: center;">
+                            <p style="margin: 0; font-size: 13px; color: #64748b;">
+                                Sent with ❤️ by <strong style="color: #94a3b8;">Source Point</strong>
+                            </p>
+                            <p style="margin: 8px 0 0 0; font-size: 11px; color: #475569;">
+                                This is an automated email. Please do not reply.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

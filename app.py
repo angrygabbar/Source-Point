@@ -125,6 +125,7 @@ def create_app():
     from blueprints.events import events_bp
     from blueprints.recruiter import recruiter_bp
     from blueprints.seller import seller_bp
+    from blueprints.admin_giftcards import admin_giftcards_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -142,6 +143,7 @@ def create_app():
     app.register_blueprint(events_bp)
     app.register_blueprint(recruiter_bp)
     app.register_blueprint(seller_bp)
+    app.register_blueprint(admin_giftcards_bp)
 
     # --- 8. CONTEXT PROCESSORS (FIXED) ---
     @app.context_processor
