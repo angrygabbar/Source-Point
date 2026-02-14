@@ -4,7 +4,10 @@ Run this inside the Docker container:
     docker-compose exec web python seed_questions/runner.py
 """
 import sys, os
+# Add parent dir (for app, extensions, models imports)
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add seed_questions dir itself (for question module imports)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from app import create_app
 from extensions import db
