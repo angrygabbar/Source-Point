@@ -1,11 +1,15 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask_login import login_required, current_user
 from extensions import db, cache
-from models.commerce import Product, Cart, Order 
+from models.commerce import Product, Cart, Order, VoucherOrder
+from models.auth import User
+from models.gift_card import GiftCard
 from services.commerce_service import CommerceService      
-from utils import role_required
+from utils import role_required, send_email
 from forms.commerce_forms import CheckoutForm
 from sqlalchemy import or_
+from enums import GiftCardStatus, VoucherOrderStatus, UserRole
+from datetime import datetime
 
 buyer_bp = Blueprint('buyer', __name__)
 
@@ -22,7 +26,6 @@ def buyer_dashboard():
     search_query = request.args.get('q', '').strip()
     
     # 2. Build Query
-    # Default sort: In-stock first, then newest products
     query = Product.query.filter(Product.stock > 0).order_by(Product.stock.desc(), Product.id.desc())
     
     if search_query:
@@ -125,3 +128,85 @@ def my_orders():
                 .filter_by(user_id=current_user.id)\
                 .order_by(Order.created_at.desc()).all()
     return render_template('my_orders.html', orders=orders, partial=is_htmx())
+
+
+# ─── Voucher Routes ───────────────────────────────────────────────
+
+@buyer_bp.route('/vouchers')
+@login_required
+@role_required('buyer')
+def browse_vouchers():
+    """Browse available gift vouchers."""
+    vouchers = GiftCard.query.filter_by(
+        status=GiftCardStatus.AVAILABLE.value
+    ).order_by(GiftCard.denomination.asc()).all()
+
+    # Get this buyer's existing voucher orders
+    my_voucher_orders = VoucherOrder.query.filter_by(user_id=current_user.id)\
+        .order_by(VoucherOrder.created_at.desc()).all()
+
+    # Build set of gift card IDs the buyer already has a pending request for
+    pending_card_ids = {vo.gift_card_id for vo in my_voucher_orders 
+                        if vo.status == VoucherOrderStatus.PENDING.value}
+
+    return render_template('voucher_browse.html',
+                           vouchers=vouchers,
+                           my_orders=my_voucher_orders,
+                           pending_card_ids=pending_card_ids,
+                           partial=is_htmx())
+
+
+@buyer_bp.route('/vouchers/<int:card_id>/request', methods=['POST'])
+@login_required
+@role_required('buyer')
+def request_voucher(card_id):
+    """Place a voucher request — pending admin approval."""
+    card = GiftCard.query.get_or_404(card_id)
+
+    if card.status != GiftCardStatus.AVAILABLE.value:
+        flash('This voucher is no longer available.', 'warning')
+        return redirect(url_for('buyer.browse_vouchers'))
+
+    # Check if buyer already has a pending request for this card
+    existing = VoucherOrder.query.filter_by(
+        user_id=current_user.id,
+        gift_card_id=card_id,
+        status=VoucherOrderStatus.PENDING.value
+    ).first()
+
+    if existing:
+        flash('You already have a pending request for this voucher.', 'info')
+        return redirect(url_for('buyer.browse_vouchers'))
+
+    order = VoucherOrder(
+        user_id=current_user.id,
+        gift_card_id=card_id,
+        status=VoucherOrderStatus.PENDING.value
+    )
+    db.session.add(order)
+    db.session.commit()
+
+    # ── Notify all admins via email ──
+    try:
+        admin_users = User.query.filter_by(role=UserRole.ADMIN.value).all()
+        dashboard_url = url_for('admin_giftcards.gift_cards_dashboard', _external=True)
+        now = datetime.utcnow().strftime('%d %b %Y, %I:%M %p UTC')
+
+        for admin in admin_users:
+            send_email(
+                to=admin.email,
+                subject=f"🎫 New Voucher Request — {card.brand} ₹{card.denomination} by {current_user.username}",
+                template="mail/voucher_request_admin_email.html",
+                buyer_name=current_user.username,
+                buyer_email=current_user.email,
+                brand=card.brand,
+                denomination=f"{card.denomination:.0f}",
+                requested_at=now,
+                dashboard_url=dashboard_url
+            )
+    except Exception as e:
+        # Don't block the user flow if email fails
+        print(f"[WARN] Admin notification email failed: {e}")
+
+    flash(f'Voucher request placed! Admin will review your request for {card.brand} ₹{card.denomination}.', 'success')
+    return redirect(url_for('buyer.browse_vouchers'))

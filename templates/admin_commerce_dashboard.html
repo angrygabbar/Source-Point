@@ -3,7 +3,7 @@
 
 {% block content %}
 <div class="space-y-8 pb-10 max-w-7xl mx-auto" x-data="{ currentTab: 'orders' }">
-    
+
     <div class="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-emerald-500/30 pb-6">
         <div>
             <div class="flex items-center gap-3 mb-2">
@@ -15,10 +15,16 @@
             <p class="text-gray-400">Manage orders, inventory, and financial flows.</p>
         </div>
         <div class="flex gap-3">
-            <a href="{{ url_for('admin_commerce.manage_inventory') }}" class="px-4 py-2 bg-white/5 hover:bg-emerald-600/20 border border-white/10 hover:border-emerald-500 text-emerald-400 rounded-lg text-sm font-bold transition-all">
+            <button onclick="generateShareLink()"
+                class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2">
+                <i class="fas fa-share-alt"></i> Share Catalog
+            </button>
+            <a href="{{ url_for('admin_commerce.manage_inventory') }}"
+                class="px-4 py-2 bg-white/5 hover:bg-emerald-600/20 border border-white/10 hover:border-emerald-500 text-emerald-400 rounded-lg text-sm font-bold transition-all">
                 <i class="fas fa-boxes mr-2"></i> Inventory
             </a>
-            <a href="{{ url_for('admin_commerce.create_invoice') }}" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all">
+            <a href="{{ url_for('admin_commerce.create_invoice') }}"
+                class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all">
                 <i class="fas fa-plus mr-2"></i> New Invoice
             </a>
         </div>
@@ -26,45 +32,62 @@
 
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="glass-panel p-5 rounded-xl border-l-4 border-emerald-500 relative overflow-hidden group">
-            <div class="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity"><i class="fas fa-shopping-cart text-5xl text-emerald-400"></i></div>
+            <div class="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity"><i
+                    class="fas fa-shopping-cart text-5xl text-emerald-400"></i></div>
             <p class="text-xs font-bold text-gray-400 uppercase">Pending Orders</p>
             <h3 class="text-3xl font-bold text-white mt-1">{{ pending_orders_count }}</h3>
-            <button @click="currentTab = 'orders'" class="text-xs text-emerald-400 mt-2 hover:underline">View Orders &rarr;</button>
+            <button @click="currentTab = 'orders'" class="text-xs text-emerald-400 mt-2 hover:underline">View Orders
+                &rarr;</button>
         </div>
 
         <div class="glass-panel p-5 rounded-xl border-l-4 border-yellow-500 relative overflow-hidden group">
-            <div class="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity"><i class="fas fa-dolly text-5xl text-yellow-400"></i></div>
+            <div class="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity"><i
+                    class="fas fa-dolly text-5xl text-yellow-400"></i></div>
             <p class="text-xs font-bold text-gray-400 uppercase">Stock Requests</p>
             <h3 class="text-3xl font-bold text-white mt-1">{{ pending_requests_count }}</h3>
-            <button @click="currentTab = 'requests'" class="text-xs text-yellow-400 mt-2 hover:underline">Approve Stock &rarr;</button>
+            <button @click="currentTab = 'requests'" class="text-xs text-yellow-400 mt-2 hover:underline">Approve Stock
+                &rarr;</button>
         </div>
 
         <div class="glass-panel p-5 rounded-xl border-l-4 border-red-500 relative overflow-hidden group">
-            <div class="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity"><i class="fas fa-exclamation-triangle text-5xl text-red-400"></i></div>
+            <div class="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity"><i
+                    class="fas fa-exclamation-triangle text-5xl text-red-400"></i></div>
             <p class="text-xs font-bold text-gray-400 uppercase">Low Stock Items</p>
             <h3 class="text-3xl font-bold text-white mt-1">{{ low_stock_count }}</h3>
-            <a href="{{ url_for('admin_commerce.manage_inventory') }}" class="text-xs text-red-400 mt-2 hover:underline">Restock Now &rarr;</a>
+            <a href="{{ url_for('admin_commerce.manage_inventory') }}"
+                class="text-xs text-red-400 mt-2 hover:underline">Restock Now &rarr;</a>
         </div>
 
         <div class="glass-panel p-5 rounded-xl border-l-4 border-blue-500 relative overflow-hidden group">
-            <div class="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity"><i class="fas fa-users text-5xl text-blue-400"></i></div>
+            <div class="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity"><i
+                    class="fas fa-users text-5xl text-blue-400"></i></div>
             <p class="text-xs font-bold text-gray-400 uppercase">Pending Approvals</p>
             <h3 class="text-3xl font-bold text-white mt-1">{{ pending_commerce_users|length }}</h3>
-            <button @click="currentTab = 'users'" class="text-xs text-blue-400 mt-2 hover:underline">Review Users &rarr;</button>
+            <button @click="currentTab = 'users'" class="text-xs text-blue-400 mt-2 hover:underline">Review Users
+                &rarr;</button>
         </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         <div class="lg:col-span-2 space-y-6">
             <div class="flex space-x-1 bg-white/5 p-1 rounded-xl border border-white/10 overflow-x-auto">
-                <button @click="currentTab = 'orders'" :class="currentTab === 'orders' ? 'bg-emerald-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'" class="px-4 py-2 rounded-lg text-sm font-medium transition-all"><i class="fas fa-shipping-fast mr-2"></i> Orders</button>
-                <button @click="currentTab = 'requests'" :class="currentTab === 'requests' ? 'bg-yellow-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'" class="px-4 py-2 rounded-lg text-sm font-medium transition-all"><i class="fas fa-clipboard-check mr-2"></i> Stock Requests</button>
-                <button @click="currentTab = 'users'" :class="currentTab === 'users' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'" class="px-4 py-2 rounded-lg text-sm font-medium transition-all"><i class="fas fa-user-check mr-2"></i> Approvals</button>
+                <button @click="currentTab = 'orders'"
+                    :class="currentTab === 'orders' ? 'bg-emerald-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'"
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all"><i
+                        class="fas fa-shipping-fast mr-2"></i> Orders</button>
+                <button @click="currentTab = 'requests'"
+                    :class="currentTab === 'requests' ? 'bg-yellow-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'"
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all"><i
+                        class="fas fa-clipboard-check mr-2"></i> Stock Requests</button>
+                <button @click="currentTab = 'users'"
+                    :class="currentTab === 'users' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'"
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all"><i
+                        class="fas fa-user-check mr-2"></i> Approvals</button>
             </div>
 
             <div class="glass-panel rounded-2xl border border-white/10 min-h-[400px]">
-                
+
                 <div x-show="currentTab === 'orders'" class="p-6">
                     <h3 class="font-bold text-white mb-4">Recent Orders</h3>
                     <div class="overflow-x-auto">
@@ -94,15 +117,20 @@
                                     </td>
                                     <td class="px-4 py-3 text-right">
                                         {% if order.status == 'Order Placed' %}
-                                        <form action="{{ url_for('admin_commerce.update_order_status', order_id=order.id) }}" method="POST" class="inline">
+                                        <form
+                                            action="{{ url_for('admin_commerce.update_order_status', order_id=order.id) }}"
+                                            method="POST" class="inline">
                                             <input type="hidden" name="status" value="Order Accepted">
-                                            <button class="text-emerald-400 hover:text-white" title="Accept"><i class="fas fa-check"></i></button>
+                                            <button class="text-emerald-400 hover:text-white" title="Accept"><i
+                                                    class="fas fa-check"></i></button>
                                         </form>
                                         {% endif %}
                                     </td>
                                 </tr>
                                 {% else %}
-                                <tr><td colspan="5" class="text-center py-8">No recent orders.</td></tr>
+                                <tr>
+                                    <td colspan="5" class="text-center py-8">No recent orders.</td>
+                                </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -116,14 +144,19 @@
                         <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5">
                             <div>
                                 <p class="text-white font-medium">{{ req.product.name }}</p>
-                                <p class="text-xs text-gray-500">Requested by: <span class="text-yellow-400">{{ req.seller.username }}</span> • Qty: {{ req.quantity }}</p>
+                                <p class="text-xs text-gray-500">Requested by: <span class="text-yellow-400">{{
+                                        req.seller.username }}</span> • Qty: {{ req.quantity }}</p>
                             </div>
                             <div class="flex gap-2">
-                                <form action="{{ url_for('admin_commerce.approve_stock_request', req_id=req.id) }}" method="POST">
-                                    <button class="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded hover:bg-emerald-500 hover:text-white transition-colors text-xs font-bold">Approve</button>
+                                <form action="{{ url_for('admin_commerce.approve_stock_request', req_id=req.id) }}"
+                                    method="POST">
+                                    <button
+                                        class="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded hover:bg-emerald-500 hover:text-white transition-colors text-xs font-bold">Approve</button>
                                 </form>
-                                <form action="{{ url_for('admin_commerce.reject_stock_request', req_id=req.id) }}" method="POST">
-                                    <button class="px-3 py-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500 hover:text-white transition-colors text-xs font-bold">Reject</button>
+                                <form action="{{ url_for('admin_commerce.reject_stock_request', req_id=req.id) }}"
+                                    method="POST">
+                                    <button
+                                        class="px-3 py-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500 hover:text-white transition-colors text-xs font-bold">Reject</button>
                                 </form>
                             </div>
                         </div>
@@ -133,7 +166,7 @@
                     </div>
                 </div>
 
-                 <div x-show="currentTab === 'users'" class="p-6" x-cloak>
+                <div x-show="currentTab === 'users'" class="p-6" x-cloak>
                     <h3 class="font-bold text-white mb-4">Seller/Buyer Approvals</h3>
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left text-gray-400">
@@ -142,7 +175,9 @@
                                 <tr class="hover:bg-white/5">
                                     <td class="px-4 py-3">
                                         <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 rounded bg-gradient-to-br from-gray-700 to-gray-600 flex items-center justify-center text-xs font-bold text-white">{{ user.username[:2] }}</div>
+                                            <div
+                                                class="w-8 h-8 rounded bg-gradient-to-br from-gray-700 to-gray-600 flex items-center justify-center text-xs font-bold text-white">
+                                                {{ user.username[:2] }}</div>
                                             <div>
                                                 <div class="text-white">{{ user.username }}</div>
                                                 <div class="text-xs text-gray-500">{{ user.role|upper }}</div>
@@ -151,13 +186,19 @@
                                     </td>
                                     <td class="px-4 py-3 text-right">
                                         <div class="flex justify-end gap-2">
-                                            <a href="{{ url_for('admin_users.approve_user', user_id=user.id) }}" class="text-emerald-400 hover:text-white"><i class="fas fa-check-circle text-xl"></i></a>
-                                            <a href="{{ url_for('admin_users.reject_user', user_id=user.id) }}" class="text-red-400 hover:text-white"><i class="fas fa-times-circle text-xl"></i></a>
+                                            <a href="{{ url_for('admin_users.approve_user', user_id=user.id) }}"
+                                                class="text-emerald-400 hover:text-white"><i
+                                                    class="fas fa-check-circle text-xl"></i></a>
+                                            <a href="{{ url_for('admin_users.reject_user', user_id=user.id) }}"
+                                                class="text-red-400 hover:text-white"><i
+                                                    class="fas fa-times-circle text-xl"></i></a>
                                         </div>
                                     </td>
                                 </tr>
                                 {% else %}
-                                <tr><td colspan="2" class="text-center py-8">No pending commerce users.</td></tr>
+                                <tr>
+                                    <td colspan="2" class="text-center py-8">No pending commerce users.</td>
+                                </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -171,23 +212,28 @@
             <div class="glass-panel p-5 rounded-2xl border border-white/10">
                 <h3 class="font-bold text-white mb-4">Quick Actions</h3>
                 <div class="grid grid-cols-2 gap-3">
-                    <a href="{{ url_for('admin_commerce.manage_orders') }}" class="p-3 bg-white/5 rounded-lg border border-white/5 text-center hover:bg-white/10 transition-colors">
+                    <a href="{{ url_for('admin_commerce.manage_orders') }}"
+                        class="p-3 bg-white/5 rounded-lg border border-white/5 text-center hover:bg-white/10 transition-colors">
                         <i class="fas fa-shipping-fast text-emerald-400 mb-2 block text-xl"></i>
                         <span class="text-xs text-gray-300">All Orders</span>
                     </a>
-                    <a href="{{ url_for('admin_commerce.manage_invoices') }}" class="p-3 bg-white/5 rounded-lg border border-white/5 text-center hover:bg-white/10 transition-colors">
+                    <a href="{{ url_for('admin_commerce.manage_invoices') }}"
+                        class="p-3 bg-white/5 rounded-lg border border-white/5 text-center hover:bg-white/10 transition-colors">
                         <i class="fas fa-file-invoice-dollar text-yellow-400 mb-2 block text-xl"></i>
                         <span class="text-xs text-gray-300">Invoices</span>
                     </a>
-                    <a href="{{ url_for('admin_commerce.manage_inventory') }}" class="p-3 bg-white/5 rounded-lg border border-white/5 text-center hover:bg-white/10 transition-colors">
+                    <a href="{{ url_for('admin_commerce.manage_inventory') }}"
+                        class="p-3 bg-white/5 rounded-lg border border-white/5 text-center hover:bg-white/10 transition-colors">
                         <i class="fas fa-plus-circle text-blue-400 mb-2 block text-xl"></i>
                         <span class="text-xs text-gray-300">Inventory</span>
                     </a>
-                    <a href="{{ url_for('admin_commerce.manage_ads') }}" class="p-3 bg-white/5 rounded-lg border border-white/5 text-center hover:bg-white/10 transition-colors">
+                    <a href="{{ url_for('admin_commerce.manage_ads') }}"
+                        class="p-3 bg-white/5 rounded-lg border border-white/5 text-center hover:bg-white/10 transition-colors">
                         <i class="fas fa-ad text-purple-400 mb-2 block text-xl"></i>
                         <span class="text-xs text-gray-300">Ad Manager</span>
                     </a>
-                    <a href="{{ url_for('admin_commerce.manage_seller_inventory') }}" class="p-3 bg-white/5 rounded-lg border border-white/5 text-center hover:bg-white/10 transition-colors">
+                    <a href="{{ url_for('admin_commerce.manage_seller_inventory') }}"
+                        class="p-3 bg-white/5 rounded-lg border border-white/5 text-center hover:bg-white/10 transition-colors">
                         <i class="fas fa-warehouse text-pink-400 mb-2 block text-xl"></i>
                         <span class="text-xs text-gray-300">Seller Stock</span>
                     </a>
@@ -197,7 +243,8 @@
             <div class="glass-panel p-5 rounded-2xl border border-white/10">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="font-bold text-white">Latest Invoices</h3>
-                    <a href="{{ url_for('admin_commerce.manage_invoices') }}" class="text-xs text-emerald-400">View All</a>
+                    <a href="{{ url_for('admin_commerce.manage_invoices') }}" class="text-xs text-emerald-400">View
+                        All</a>
                 </div>
                 <div class="space-y-3">
                     {% for inv in recent_invoices %}
@@ -214,4 +261,73 @@
         </div>
     </div>
 </div>
+
+<!-- Share Link Modal -->
+<div id="share-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+    onclick="if(event.target===this)closeShareModal()">
+    <div
+        class="glass-panel rounded-2xl border border-indigo-500/30 p-6 max-w-md w-full mx-4 shadow-2xl shadow-indigo-500/20">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-white flex items-center gap-2"><i class="fas fa-link text-indigo-400"></i>
+                Shareable Catalog Link</h3>
+            <button onclick="closeShareModal()" class="text-gray-500 hover:text-white transition-colors"><i
+                    class="fas fa-times"></i></button>
+        </div>
+        <p class="text-gray-400 text-sm mb-4">Anyone with this link can browse your full product catalog.</p>
+        <div class="flex items-center gap-2 mb-4">
+            <input id="share-url-input" type="text" readonly
+                class="flex-1 bg-black/30 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm font-mono truncate focus:outline-none">
+            <button onclick="copyShareLink()"
+                class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5">
+                <i id="copy-icon" class="fas fa-copy"></i> <span id="copy-text">Copy</span>
+            </button>
+        </div>
+        <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-400">Link Status</span>
+            <button id="toggle-link-btn" onclick="toggleShareLink()"
+                class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"></button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function generateShareLink() {
+        fetch('/admin/commerce/share-link', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('share-url-input').value = data.url;
+                    updateToggleBtn(data.is_active);
+                    document.getElementById('share-modal').classList.remove('hidden');
+                }
+            });
+    }
+    function closeShareModal() { document.getElementById('share-modal').classList.add('hidden'); }
+    function copyShareLink() {
+        const input = document.getElementById('share-url-input');
+        navigator.clipboard.writeText(input.value).then(() => {
+            document.getElementById('copy-icon').className = 'fas fa-check';
+            document.getElementById('copy-text').textContent = 'Copied!';
+            setTimeout(() => {
+                document.getElementById('copy-icon').className = 'fas fa-copy';
+                document.getElementById('copy-text').textContent = 'Copy';
+            }, 2000);
+        });
+    }
+    function toggleShareLink() {
+        fetch('/admin/commerce/share-link/toggle', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.json())
+            .then(data => { if (data.success) updateToggleBtn(data.is_active); });
+    }
+    function updateToggleBtn(isActive) {
+        const btn = document.getElementById('toggle-link-btn');
+        if (isActive) {
+            btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-emerald-500/20 text-emerald-400';
+            btn.innerHTML = '<i class="fas fa-toggle-on mr-1"></i> Active';
+        } else {
+            btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-red-500/20 text-red-400';
+            btn.innerHTML = '<i class="fas fa-toggle-off mr-1"></i> Inactive';
+        }
+    }
+</script>
 {% endblock %}

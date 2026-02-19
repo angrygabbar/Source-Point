@@ -2,8 +2,43 @@
 {% block title %}Seller Dashboard{% endblock %}
 {% block content %}
 <div class="space-y-6 animate-fade-in">
-    <h1 class="text-3xl font-bold text-white">Seller Dashboard</h1>
-    
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <h1 class="text-3xl font-bold text-white">Seller Dashboard</h1>
+        <button onclick="generateShareLink()"
+            class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-600/20 transition-all hover:-translate-y-0.5 flex items-center gap-2">
+            <i class="fas fa-share-alt"></i> Share Inventory
+        </button>
+    </div>
+
+    <!-- Share Link Modal -->
+    <div id="share-modal"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+        onclick="if(event.target===this)closeShareModal()">
+        <div
+            class="glass-panel rounded-2xl border border-indigo-500/30 p-6 max-w-md w-full mx-4 shadow-2xl shadow-indigo-500/20">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2"><i
+                        class="fas fa-link text-indigo-400"></i> Shareable Link</h3>
+                <button onclick="closeShareModal()" class="text-gray-500 hover:text-white transition-colors"><i
+                        class="fas fa-times"></i></button>
+            </div>
+            <p class="text-gray-400 text-sm mb-4">Anyone with this link can view your product catalog.</p>
+            <div class="flex items-center gap-2 mb-4">
+                <input id="share-url-input" type="text" readonly
+                    class="flex-1 bg-black/30 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm font-mono truncate focus:outline-none">
+                <button onclick="copyShareLink()"
+                    class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5">
+                    <i id="copy-icon" class="fas fa-copy"></i> <span id="copy-text">Copy</span>
+                </button>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-400">Link Status</span>
+                <button id="toggle-link-btn" onclick="toggleShareLink()"
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"></button>
+            </div>
+        </div>
+    </div>
+
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div class="glass-panel p-6 rounded-2xl border border-white/5">
             <h3 class="text-gray-400 text-xs font-bold uppercase">Total Revenue</h3>
@@ -53,5 +88,47 @@
             </tbody>
         </table>
     </div>
+
 </div>
+
+<script>
+    function generateShareLink() {
+        fetch('/seller/share-link', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('share-url-input').value = data.url;
+                    updateToggleBtn(data.is_active);
+                    document.getElementById('share-modal').classList.remove('hidden');
+                }
+            });
+    }
+    function closeShareModal() { document.getElementById('share-modal').classList.add('hidden'); }
+    function copyShareLink() {
+        const input = document.getElementById('share-url-input');
+        navigator.clipboard.writeText(input.value).then(() => {
+            document.getElementById('copy-icon').className = 'fas fa-check';
+            document.getElementById('copy-text').textContent = 'Copied!';
+            setTimeout(() => {
+                document.getElementById('copy-icon').className = 'fas fa-copy';
+                document.getElementById('copy-text').textContent = 'Copy';
+            }, 2000);
+        });
+    }
+    function toggleShareLink() {
+        fetch('/seller/share-link/toggle', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.json())
+            .then(data => { if (data.success) updateToggleBtn(data.is_active); });
+    }
+    function updateToggleBtn(isActive) {
+        const btn = document.getElementById('toggle-link-btn');
+        if (isActive) {
+            btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-emerald-500/20 text-emerald-400';
+            btn.innerHTML = '<i class="fas fa-toggle-on mr-1"></i> Active';
+        } else {
+            btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-red-500/20 text-red-400';
+            btn.innerHTML = '<i class="fas fa-toggle-off mr-1"></i> Inactive';
+        }
+    }
+</script>
 {% endblock %}

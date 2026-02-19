@@ -161,6 +161,82 @@ def logout():
 def reset_password_request():
     return render_template('forgot_password.html')
 
-@auth_bp.route('/forgot_password')
+@auth_bp.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
-    return render_template('forgot_password.html')
+    if request.method == 'GET':
+        return render_template('forgot_password.html')
+
+    # POST: send reset link via email
+    email = request.form.get('email', '').strip()
+    from models.auth import User
+    user = User.query.filter_by(email=email).first()
+
+    if not user:
+        # Don't reveal whether the email exists (security best practice)
+        flash('If an account with that email exists, a password reset link has been sent.', 'info')
+        return redirect(url_for('auth.forgot_password'))
+
+    # Generate a time-limited token (30 minutes)
+    from itsdangerous import URLSafeTimedSerializer
+    s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+    token = s.dumps(user.email, salt='password-reset-salt')
+
+    reset_url = request.host_url.rstrip('/') + url_for('auth.reset_password', token=token)
+
+    try:
+        send_email(
+            to=[user.email],
+            subject='SourcePoint — Password Reset',
+            template='mail/password_reset_email.html',
+            user=user,
+            reset_url=reset_url
+        )
+    except Exception as e:
+        print(f"WARNING: Failed to send password reset email: {e}")
+        flash('Failed to send reset email. Please try again later.', 'danger')
+        return redirect(url_for('auth.forgot_password'))
+
+    flash('If an account with that email exists, a password reset link has been sent.', 'info')
+    return redirect(url_for('auth.forgot_password'))
+
+
+@auth_bp.route('/reset_password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
+    s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+
+    try:
+        email = s.loads(token, salt='password-reset-salt', max_age=1800)  # 30 min
+    except SignatureExpired:
+        flash('The password reset link has expired. Please request a new one.', 'danger')
+        return redirect(url_for('auth.forgot_password'))
+    except BadSignature:
+        flash('Invalid password reset link.', 'danger')
+        return redirect(url_for('auth.forgot_password'))
+
+    from models.auth import User
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        flash('Invalid reset link.', 'danger')
+        return redirect(url_for('auth.forgot_password'))
+
+    if request.method == 'GET':
+        return render_template('reset_password.html', token=token)
+
+    # POST: set new password
+    new_password = request.form.get('password', '').strip()
+    confirm_password = request.form.get('confirm_password', '').strip()
+
+    if not new_password or len(new_password) < 6:
+        flash('Password must be at least 6 characters.', 'danger')
+        return redirect(url_for('auth.reset_password', token=token))
+
+    if new_password != confirm_password:
+        flash('Passwords do not match.', 'danger')
+        return redirect(url_for('auth.reset_password', token=token))
+
+    user.password_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
+    db.session.commit()
+
+    flash('Password reset successful! Please log in with your new password.', 'success')
+    return redirect(url_for('auth.login_register'))

@@ -3,7 +3,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from extensions import db
 from models.gift_card import GiftCard
-from enums import GiftCardStatus, GiftCardBrand
+from models.commerce import VoucherOrder
+from enums import GiftCardStatus, GiftCardBrand, VoucherOrderStatus
 from utils import role_required, send_email, log_user_action
 from datetime import datetime
 
@@ -43,13 +44,30 @@ def gift_cards_dashboard():
     brands = [b.value for b in GiftCardBrand]
     statuses = [s.value for s in GiftCardStatus]
     
+    # Pending voucher orders
+    from sqlalchemy.orm import joinedload
+    voucher_orders = VoucherOrder.query.options(
+        joinedload(VoucherOrder.user),
+        joinedload(VoucherOrder.gift_card)
+    ).order_by(
+        db.case(
+            (VoucherOrder.status == VoucherOrderStatus.PENDING.value, 0),
+        else_=1
+        ),
+        VoucherOrder.created_at.desc()
+    ).all()
+    
+    pending_count = sum(1 for vo in voucher_orders if vo.status == VoucherOrderStatus.PENDING.value)
+
     return render_template('admin_gift_cards.html',
                            gift_cards=gift_cards,
                            stats=stats,
                            brands=brands,
                            statuses=statuses,
                            current_status=status_filter,
-                           current_brand=brand_filter)
+                           current_brand=brand_filter,
+                           voucher_orders=voucher_orders,
+                           pending_count=pending_count)
 
 
 @admin_giftcards_bp.route('/admin/gift-cards/add', methods=['POST'])
@@ -222,4 +240,95 @@ def send_gift_card(card_id):
         db.session.rollback()
         flash(f'Error sending gift card: {str(e)}', 'danger')
     
+    return redirect(url_for('admin_giftcards.gift_cards_dashboard'))
+
+
+# ─── Voucher Order Management ─────────────────────────────────────
+
+@admin_giftcards_bp.route('/admin/voucher-orders/<int:order_id>/approve', methods=['POST'])
+@login_required
+@role_required('admin')
+def approve_voucher_order(order_id):
+    """Approve a voucher order — decrypt and email PIN/code to buyer."""
+    vo = VoucherOrder.query.get_or_404(order_id)
+    
+    if vo.status != VoucherOrderStatus.PENDING.value:
+        flash('This order has already been processed.', 'warning')
+        return redirect(url_for('admin_giftcards.gift_cards_dashboard'))
+    
+    card = vo.gift_card
+    user = vo.user
+    
+    if card.status != GiftCardStatus.AVAILABLE.value:
+        flash('This gift card is no longer available.', 'warning')
+        vo.status = VoucherOrderStatus.REJECTED.value
+        vo.rejection_reason = 'Gift card no longer available'
+        vo.reviewed_at = datetime.utcnow()
+        vo.reviewed_by_id = current_user.id
+        db.session.commit()
+        return redirect(url_for('admin_giftcards.gift_cards_dashboard'))
+    
+    try:
+        # Decrypt card details for the email
+        full_card_number = card.get_card_number()
+        full_pin = card.get_pin()
+        
+        # Send the email to the buyer
+        send_email(
+            to=user.email,
+            subject=f"🎁 Your {card.brand} Gift Card from SourcePoint",
+            template="mail/gift_card_email.html",
+            recipient_name=user.username,
+            brand=card.brand,
+            card_number=full_card_number,
+            pin=full_pin,
+            denomination=card.denomination,
+            expiry_date=card.expiry_date
+        )
+        
+        # Update card status
+        card.status = GiftCardStatus.SENT.value
+        card.recipient_name = user.username
+        card.recipient_email = user.email
+        card.sent_at = datetime.utcnow()
+        card.sent_by_id = current_user.id
+        
+        # Update voucher order
+        vo.status = VoucherOrderStatus.APPROVED.value
+        vo.reviewed_at = datetime.utcnow()
+        vo.reviewed_by_id = current_user.id
+        
+        db.session.commit()
+        
+        log_user_action('Voucher Order Approved', f'Order #{vo.id}, {card.brand} → {user.email}')
+        flash(f'Voucher approved! {card.brand} card details sent to {user.username} ({user.email}). 🎉', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error approving voucher order: {str(e)}', 'danger')
+    
+    return redirect(url_for('admin_giftcards.gift_cards_dashboard'))
+
+
+@admin_giftcards_bp.route('/admin/voucher-orders/<int:order_id>/reject', methods=['POST'])
+@login_required
+@role_required('admin')
+def reject_voucher_order(order_id):
+    """Reject a voucher order with an optional reason."""
+    vo = VoucherOrder.query.get_or_404(order_id)
+    
+    if vo.status != VoucherOrderStatus.PENDING.value:
+        flash('This order has already been processed.', 'warning')
+        return redirect(url_for('admin_giftcards.gift_cards_dashboard'))
+    
+    rejection_reason = request.form.get('rejection_reason', '').strip()
+    
+    vo.status = VoucherOrderStatus.REJECTED.value
+    vo.rejection_reason = rejection_reason or None
+    vo.reviewed_at = datetime.utcnow()
+    vo.reviewed_by_id = current_user.id
+    
+    db.session.commit()
+    
+    log_user_action('Voucher Order Rejected', f'Order #{vo.id}, Reason: {rejection_reason or "No reason"}')
+    flash(f'Voucher order #{vo.id} rejected.', 'info')
     return redirect(url_for('admin_giftcards.gift_cards_dashboard'))

@@ -245,6 +245,135 @@
             </table>
         </div>
     </div>
+
+    <!-- ==================== VOUCHER ORDERS SECTION ==================== -->
+    <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                    <i class="fas fa-receipt text-white text-lg"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-white">Voucher Orders</h2>
+                    <p class="text-gray-400 text-sm">Review and approve buyer voucher requests</p>
+                </div>
+            </div>
+            {% if pending_count > 0 %}
+            <span
+                class="px-4 py-1.5 rounded-full bg-amber-500/20 text-amber-400 text-sm font-bold border border-amber-500/30 animate-pulse">
+                {{ pending_count }} Pending
+            </span>
+            {% endif %}
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-white/10">
+                        <th class="text-left px-6 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Buyer
+                        </th>
+                        <th class="text-left px-6 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Voucher
+                        </th>
+                        <th class="text-left px-6 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Value
+                        </th>
+                        <th class="text-left px-6 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                            Requested</th>
+                        <th class="text-left px-6 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Status
+                        </th>
+                        <th class="text-center px-6 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                            Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    {% for vo in voucher_orders %}
+                    <tr
+                        class="hover:bg-white/5 transition-colors {% if vo.status == 'Pending' %}bg-amber-500/[0.03]{% endif %}">
+                        <td class="px-6 py-4">
+                            <div>
+                                <p class="text-white font-medium">{{ vo.user.username }}</p>
+                                <p class="text-gray-500 text-xs">{{ vo.user.email }}</p>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-amber-400 font-bold">{{ vo.gift_card.brand }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-emerald-400 font-semibold">₹{{ "%.0f"|format(vo.gift_card.denomination)
+                                }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-gray-400 text-sm">{{ vo.created_at.strftime('%d %b %Y, %I:%M %p')
+                                }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if vo.status == 'Pending' %}
+                            <span
+                                class="px-3 py-1 rounded-full text-xs font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                                <i class="fas fa-clock mr-1"></i> Pending
+                            </span>
+                            {% elif vo.status == 'Approved' %}
+                            <span
+                                class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                <i class="fas fa-check-circle mr-1"></i> Approved
+                            </span>
+                            {% elif vo.status == 'Rejected' %}
+                            <span
+                                class="px-3 py-1 rounded-full text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30">
+                                <i class="fas fa-times-circle mr-1"></i> Rejected
+                            </span>
+                            {% if vo.rejection_reason %}
+                            <p class="text-red-400/60 text-xs mt-1">{{ vo.rejection_reason }}</p>
+                            {% endif %}
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            {% if vo.status == 'Pending' %}
+                            <div class="flex items-center justify-center gap-2">
+                                <!-- Approve -->
+                                <form method="POST"
+                                    action="{{ url_for('admin_giftcards.approve_voucher_order', order_id=vo.id) }}"
+                                    onsubmit="return confirm('Approve this voucher request? The card PIN and number will be emailed to {{ vo.user.username }}.')">
+                                    <button type="submit"
+                                        class="px-4 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 text-xs font-bold border border-emerald-500/30 transition-all"
+                                        title="Approve & Send">
+                                        <i class="fas fa-check mr-1"></i> Approve
+                                    </button>
+                                </form>
+                                <!-- Reject -->
+                                <button
+                                    onclick="showRejectModal({{ vo.id }}, '{{ vo.user.username }}', '{{ vo.gift_card.brand }}')"
+                                    class="px-4 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs font-bold border border-red-500/30 transition-all"
+                                    title="Reject">
+                                    <i class="fas fa-times mr-1"></i> Reject
+                                </button>
+                            </div>
+                            {% elif vo.status == 'Approved' %}
+                            <span class="text-gray-500 text-xs">
+                                {% if vo.reviewed_at %}Reviewed {{ vo.reviewed_at.strftime('%d %b') }}{% endif %}
+                            </span>
+                            {% else %}
+                            <span class="text-gray-600 text-xs">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not voucher_orders %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center gap-2">
+                                <div class="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center">
+                                    <i class="fas fa-inbox text-gray-600 text-2xl"></i>
+                                </div>
+                                <p class="text-gray-500">No voucher orders yet</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <!-- ==================== ADD CARD MODAL ==================== -->
@@ -483,6 +612,45 @@
             document.getElementById('editCardModal').classList.remove('hidden');
         }
     });
+
+    // Reject voucher order
+    const REJECT_URL_BASE = "{{ url_for('admin_giftcards.reject_voucher_order', order_id=0) }}".replace('/0/', '/{id}/');
+
+    function showRejectModal(orderId, buyerName, brand) {
+        document.getElementById('rejectOrderForm').action = REJECT_URL_BASE.replace('{id}', orderId);
+        document.getElementById('rejectOrderInfo').textContent = 'Reject ' + buyerName + "'s request for " + brand + ' voucher';
+        document.getElementById('rejectOrderModal').classList.remove('hidden');
+    }
 </script>
+
+<!-- ==================== REJECT ORDER MODAL ==================== -->
+<div id="rejectOrderModal"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+    onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="bg-[#1e293b] border border-white/10 rounded-3xl shadow-2xl w-full max-w-lg mx-4 p-8 relative">
+        <button onclick="this.closest('.fixed').classList.add('hidden')"
+            class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl"><i class="fas fa-times"></i></button>
+        <h2 class="text-2xl font-bold text-white mb-2 flex items-center gap-3">
+            <div
+                class="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center">
+                <i class="fas fa-times text-white"></i>
+            </div>
+            Reject Voucher Order
+        </h2>
+        <p class="text-gray-400 text-sm mb-6" id="rejectOrderInfo">Rejecting order...</p>
+        <form method="POST" id="rejectOrderForm" class="space-y-5">
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Rejection Reason (optional)</label>
+                <textarea name="rejection_reason" rows="3"
+                    placeholder="e.g. Payment not verified, voucher reserved for event..."
+                    class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"></textarea>
+            </div>
+            <button type="submit"
+                class="w-full py-3 bg-gradient-to-r from-red-500 to-red-700 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-red-500/25 transition-all text-lg">
+                <i class="fas fa-times mr-2"></i> Reject Order
+            </button>
+        </form>
+    </div>
+</div>
 
 {% endblock %}

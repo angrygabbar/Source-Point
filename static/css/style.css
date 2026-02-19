@@ -547,8 +547,15 @@ body {
     display: block;
 }
 
+.custom-scrollbar {
+    -webkit-overflow-scrolling: touch;
+    will-change: scroll-position;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {

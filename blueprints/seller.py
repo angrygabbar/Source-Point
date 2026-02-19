@@ -487,3 +487,42 @@ def send_invoice_reminder(invoice_id):
         
     flash('Payment reminder sent.', 'success')
     return redirect(url_for('seller.manage_invoices'))
+
+# =========================================================
+# 5. SHAREABLE LINK
+# =========================================================
+
+@seller_bp.route('/share-link', methods=['POST'])
+@login_required
+@role_required(UserRole.SELLER.value)
+def generate_share_link():
+    import uuid
+    from models.commerce import ShareableLink
+
+    link = ShareableLink.query.filter_by(seller_id=current_user.id).first()
+    if not link:
+        link = ShareableLink(
+            token=uuid.uuid4().hex,
+            seller_id=current_user.id,
+            is_active=True
+        )
+        db.session.add(link)
+        db.session.commit()
+
+    share_url = url_for('public.shared_catalog', token=link.token, _external=True)
+    return jsonify({'success': True, 'url': share_url, 'is_active': link.is_active, 'token': link.token})
+
+
+@seller_bp.route('/share-link/toggle', methods=['POST'])
+@login_required
+@role_required(UserRole.SELLER.value)
+def toggle_share_link():
+    from models.commerce import ShareableLink
+
+    link = ShareableLink.query.filter_by(seller_id=current_user.id).first()
+    if not link:
+        return jsonify({'success': False, 'message': 'No share link found. Generate one first.'}), 404
+
+    link.is_active = not link.is_active
+    db.session.commit()
+    return jsonify({'success': True, 'is_active': link.is_active, 'message': f"Link {'activated' if link.is_active else 'deactivated'}."})

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body style="margin:0;padding:0;background-color:#0f0f23;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0f0f23;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0"
+                    style="background:linear-gradient(135deg,#1a1a3e,#141428);border-radius:16px;border:1px solid rgba(245,158,11,0.3);box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding:40px 40px 20px;text-align:center;">
+                            <div
+                                style="display:inline-block;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:12px;padding:12px 16px;margin-bottom:16px;">
+                                <span style="color:white;font-size:24px;font-weight:800;">🎁 SourcePoint</span>
+                            </div>
+                            <h1 style="color:#ffffff;font-size:24px;margin:16px 0 8px;font-weight:700;">New Voucher
+                                Request</h1>
+                            <p style="color:#9ca3af;font-size:14px;margin:0;">A buyer has requested a gift voucher and
+                                needs your approval.</p>
+                        </td>
+                    </tr>
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding:20px 40px;">
+                            <!-- Alert Banner -->
+                            <div
+                                style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:16px;margin-bottom:24px;">
+                                <p
+                                    style="color:#fbbf24;font-size:14px;font-weight:700;margin:0;display:flex;align-items:center;">
+                                    ⏳ Action Required — Pending Approval
+                                </p>
+                            </div>
+
+                            <!-- Request Details -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;margin-bottom:24px;">
+                                <tr>
+                                    <td
+                                        style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.05);color:#9ca3af;font-size:13px;font-weight:600;width:40%;">
+                                        Buyer</td>
+                                    <td
+                                        style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.05);color:#ffffff;font-size:14px;font-weight:600;">
+                                        {{ buyer_name }}</td>
+                                </tr>
+                                <tr>
+                                    <td
+                                        style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.05);color:#9ca3af;font-size:13px;font-weight:600;">
+                                        Email</td>
+                                    <td
+                                        style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.05);color:#818cf8;font-size:14px;">
+                                        {{ buyer_email }}</td>
+                                </tr>
+                                <tr>
+                                    <td
+                                        style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.05);color:#9ca3af;font-size:13px;font-weight:600;">
+                                        Voucher Brand</td>
+                                    <td
+                                        style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.05);color:#fbbf24;font-size:14px;font-weight:700;">
+                                        {{ brand }}</td>
+                                </tr>
+                                <tr>
+                                    <td
+                                        style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.05);color:#9ca3af;font-size:13px;font-weight:600;">
+                                        Value</td>
+                                    <td
+                                        style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.05);color:#34d399;font-size:16px;font-weight:800;">
+                                        ₹{{ denomination }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:14px 20px;color:#9ca3af;font-size:13px;font-weight:600;">
+                                        Requested At</td>
+                                    <td style="padding:14px 20px;color:#d1d5db;font-size:14px;">
+                                        {{ requested_at }}</td>
+                                </tr>
+                            </table>
+
+                            <!-- CTA Button -->
+                            <div style="text-align:center;margin:32px 0;">
+                                <a href="{{ dashboard_url }}"
+                                    style="display:inline-block;background:linear-gradient(135deg,#f59e0b,#d97706);color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:12px;font-size:16px;font-weight:700;box-shadow:0 8px 24px rgba(245,158,11,0.4);">
+                                    Review Request
+                                </a>
+                            </div>
+
+                            <p style="color:#9ca3af;font-size:13px;line-height:1.6;text-align:center;">
+                                Log in to the admin dashboard to approve or reject this request.<br>
+                                On approval, the gift card number and PIN will be securely sent to the buyer's email.
+                            </p>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding:20px 40px 40px;border-top:1px solid rgba(255,255,255,0.05);">
+                            <p style="color:#6b7280;font-size:12px;line-height:1.6;margin:0;text-align:center;">
+                                This is an automated notification from SourcePoint. You are receiving this because you
+                                are an admin.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

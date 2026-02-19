@@ -44,6 +44,11 @@ class GiftCardStatus(enum.Enum):
     SENT = "Sent"
     EXPIRED = "Expired"
 
+class VoucherOrderStatus(enum.Enum):
+    PENDING = "Pending"
+    APPROVED = "Approved"
+    REJECTED = "Rejected"
+
 class GiftCardBrand(enum.Enum):
     ZOMATO = "Zomato"
     DOMINOS = "Domino's"

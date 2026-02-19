@@ -44,6 +44,10 @@
                         class="bg-white/10 text-white px-5 py-3 rounded-xl font-black hover:bg-white/20 transition-all border border-white/20 cursor-pointer backdrop-blur-sm hover:shadow-lg">
                         <i class="fas fa-history mr-2"></i> Orders
                     </a>
+                    <a hx-get="{{ url_for('buyer.browse_vouchers') }}" hx-target="#main-content" hx-push-url="true"
+                        class="bg-amber-500/20 text-amber-300 px-5 py-3 rounded-xl font-black hover:bg-amber-500/30 transition-all border border-amber-500/30 cursor-pointer backdrop-blur-sm hover:shadow-lg hover:shadow-amber-500/10">
+                        <i class="fas fa-gift mr-2"></i> Gift Vouchers
+                    </a>
                 </div>
             </div>
 

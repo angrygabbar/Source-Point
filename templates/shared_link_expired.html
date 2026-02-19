@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Expired — SourcePoint</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: #00000a;
+            color: #f3f4f6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .starfield {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .starfield::before,
+        .starfield::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+        }
+
+        .starfield::before {
+            background-image:
+                radial-gradient(1.5px 1.5px at 10% 20%, rgba(255, 255, 255, 0.7) 50%, transparent 50%),
+                radial-gradient(1px 1px at 30% 65%, rgba(255, 255, 255, 0.5) 50%, transparent 50%),
+                radial-gradient(1.5px 1.5px at 55% 15%, rgba(255, 255, 255, 0.6) 50%, transparent 50%),
+                radial-gradient(2px 2px at 85% 40%, rgba(255, 255, 255, 0.8) 50%, transparent 50%),
+                radial-gradient(1px 1px at 15% 90%, rgba(255, 255, 255, 0.5) 50%, transparent 50%);
+        }
+
+        .starfield::after {
+            background: radial-gradient(ellipse at 50% 50%, transparent 40%, #00000a 100%);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="starfield"></div>
+
+    <header class="bg-[#00000a]/80 backdrop-blur-xl border-b border-white/5">
+        <div class="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-3">
+                <div
+                    class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                    <i class="fas fa-layer-group text-white text-xs"></i>
+                </div>
+                <span
+                    class="text-base font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">SourcePoint</span>
+            </a>
+            <a href="/login_register"
+                class="px-5 py-2.5 rounded-xl bg-white hover:bg-gray-100 text-black text-sm font-bold shadow-lg shadow-white/10 transition-all hover:-translate-y-0.5">
+                Login
+            </a>
+        </div>
+    </header>
+
+    <main class="flex-1 flex items-center justify-center px-4">
+        <div class="text-center max-w-md">
+            <div
+                class="w-24 h-24 rounded-full bg-gradient-to-br from-red-600/20 to-orange-600/20 flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-link-slash text-5xl text-red-400/70"></i>
+            </div>
+            <h1 class="text-3xl font-black text-white mb-3">Link Unavailable</h1>
+            <p class="text-gray-400 mb-8 leading-relaxed">
+                This shared catalog link has expired or been deactivated by the seller. Please contact them for a new
+                link.
+            </p>
+            <a href="/"
+                class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-black hover:from-indigo-500 hover:to-purple-500 transition-all shadow-xl shadow-indigo-600/30 hover:-translate-y-0.5">
+                <i class="fas fa-home"></i> Go to Homepage
+            </a>
+        </div>
+    </main>
+
+    <footer class="border-t border-white/5 py-6">
+        <div class="max-w-[1920px] mx-auto px-4 text-center">
+            <p class="text-gray-600 text-xs">&copy; SourcePoint. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+
+</html>

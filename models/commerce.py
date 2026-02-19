@@ -2,7 +2,7 @@
 from extensions import db
 from datetime import datetime
 from sqlalchemy import Numeric
-from enums import OrderStatus, InvoiceStatus
+from enums import OrderStatus, InvoiceStatus, VoucherOrderStatus
 
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -130,3 +130,27 @@ class AffiliateAd(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     ad_name = db.Column(db.String(100), nullable=False, unique=True)
     affiliate_link = db.Column(db.Text, nullable=False)
+
+class ShareableLink(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    seller = db.relationship('User', backref='shareable_links')
+
+
+class VoucherOrder(db.Model):
+    __tablename__ = 'voucher_order'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    gift_card_id = db.Column(db.Integer, db.ForeignKey('gift_card.id'), nullable=False)
+    status = db.Column(db.String(20), default=VoucherOrderStatus.PENDING.value, nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    reviewed_at = db.Column(db.DateTime, nullable=True)
+    reviewed_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    rejection_reason = db.Column(db.Text, nullable=True)
+
+    user = db.relationship('User', foreign_keys=[user_id], backref='voucher_orders')
+    gift_card = db.relationship('GiftCard', backref='voucher_orders')
+    reviewed_by = db.relationship('User', foreign_keys=[reviewed_by_id])
