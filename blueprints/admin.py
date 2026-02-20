@@ -354,6 +354,21 @@ def toggle_user_status(user_id):
     
     log_user_action("Toggle User Status", f"{status.title()} user {user_to_toggle.username}")
 
+    # Send account status notification email
+    try:
+        login_url = url_for('auth.login_register', _external=True)
+        send_email(
+            to=user_to_toggle.email,
+            subject=f"SourcePoint: Your account has been {status}",
+            template="mail/account_status_email.html",
+            user=user_to_toggle,
+            is_active=user_to_toggle.is_active,
+            now=datetime.utcnow(),
+            login_url=login_url
+        )
+    except Exception as e:
+        print(f"[WARN] Account status email failed: {e}")
+
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({
             'success': True,

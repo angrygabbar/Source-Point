@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scheduled Maintenance Notice — SourcePoint</title>
+</head>
+
+<body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Arial,sans-serif;">
+
+    <!-- Preheader -->
+    <span style="display:none;max-height:0;overflow:hidden;">
+        SourcePoint will be undergoing scheduled maintenance. We'll be back shortly!
+    </span>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#07070f;padding:40px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            style="background:linear-gradient(135deg,#1a0533 0%,#0d1a40 50%,#1a1a00 100%);border-radius:20px 20px 0 0;padding:40px 40px 26px;text-align:center;">
+                            <div
+                                style="display:inline-block;width:60px;height:60px;border-radius:18px;background:linear-gradient(135deg,#f59e0b,#ef4444);text-align:center;line-height:60px;margin-bottom:18px;box-shadow:0 8px 32px rgba(245,158,11,0.35);">
+                                <span style="font-size:28px;">🛠️</span>
+                            </div>
+                            <h1 style="margin:0;font-size:26px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">
+                                SourcePoint</h1>
+                            <p
+                                style="margin:4px 0 0;font-size:12px;color:#fbbf24;letter-spacing:1.5px;text-transform:uppercase;font-weight:600;">
+                                Maintenance Notice</p>
+                        </td>
+                    </tr>
+
+                    <!-- Alert Banner -->
+                    <tr>
+                        <td>
+                            <div
+                                style="background:linear-gradient(90deg,#451a03,#422006);border-left:4px solid #f59e0b;border-right:4px solid #f59e0b;padding:16px 40px;text-align:center;">
+                                <span style="font-size:15px;font-weight:700;color:#fbbf24;letter-spacing:0.5px;">⚠️
+                                    &nbsp;Scheduled Maintenance Ahead</span>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="background:#0f0f1a;padding:36px 40px;">
+                            <p style="margin:0 0 20px;font-size:16px;color:#e2e8f0;">
+                                Hi <strong style="color:#a78bfa;">{{ user.username }}</strong>,
+                            </p>
+                            <p style="font-size:15px;color:#cbd5e1;line-height:1.75;margin:0 0 26px;">
+                                We're writing to inform you that <strong style="color:#ffffff;">SourcePoint will be
+                                    undergoing scheduled maintenance</strong>. During this window, the platform may be
+                                temporarily unavailable. We sincerely apologize for any inconvenience.
+                            </p>
+
+                            <!-- Maintenance Details Card -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:#1a1a2e;border:1px solid #2d2d4e;border-radius:14px;margin-bottom:28px;overflow:hidden;">
+                                <tr>
+                                    <td style="padding:22px 26px;">
+                                        <p
+                                            style="margin:0 0 14px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#f59e0b;font-weight:700;">
+                                            Maintenance Information</p>
+
+                                        {% if start_time %}
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding:7px 0;color:#94a3b8;font-size:13px;width:130px;">
+                                                    Start Time</td>
+                                                <td style="padding:7px 0;color:#fbbf24;font-size:13px;font-weight:600;">
+                                                    {{ start_time }}</td>
+                                            </tr>
+                                            {% if end_time %}
+                                            <tr>
+                                                <td style="padding:7px 0;color:#94a3b8;font-size:13px;">Expected End
+                                                </td>
+                                                <td style="padding:7px 0;color:#fbbf24;font-size:13px;font-weight:600;">
+                                                    {{ end_time }}</td>
+                                            </tr>
+                                            {% endif %}
+                                        </table>
+                                        {% endif %}
+
+                                        {% if reason %}
+                                        <div
+                                            style="margin-top:16px;padding:14px;background:#0f0f1a;border-radius:10px;border:1px solid #2d2d4e;">
+                                            <p
+                                                style="margin:0 0 6px;font-size:11px;color:#6366f1;text-transform:uppercase;letter-spacing:1px;font-weight:600;">
+                                                Reason / Details</p>
+                                            <p style="margin:0;font-size:14px;color:#e2e8f0;line-height:1.6;">{{ reason
+                                                }}</p>
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- What happens during maintenance -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+                                <tr>
+                                    <td
+                                        style="background:#100a20;border:1px solid #2d1f5e;border-radius:12px;padding:20px 24px;">
+                                        <p
+                                            style="margin:0 0 14px;font-size:13px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;">
+                                            What to Expect</p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding:5px 0;vertical-align:top;width:22px;font-size:14px;">
+                                                    🔒</td>
+                                                <td style="padding:5px 0;font-size:13px;color:#cbd5e1;">Platform
+                                                    temporarily inaccessible</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:5px 0;vertical-align:top;font-size:14px;">💾</td>
+                                                <td style="padding:5px 0;font-size:13px;color:#cbd5e1;">Your data is
+                                                    safe — no action needed</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:5px 0;vertical-align:top;font-size:14px;">🚀</td>
+                                                <td style="padding:5px 0;font-size:13px;color:#cbd5e1;">We'll be back
+                                                    with improvements as quickly as possible</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:5px 0;vertical-align:top;font-size:14px;">🔔</td>
+                                                <td style="padding:5px 0;font-size:13px;color:#cbd5e1;">We'll notify you
+                                                    once services are restored</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p
+                                style="font-size:14px;color:#94a3b8;line-height:1.6;margin:0;text-align:center;padding:12px 20px;background:#0d0d1a;border-radius:10px;border:1px solid #1e1e3a;">
+                                Questions? Contact us at
+                                <a href="mailto:support@sourcepoint.in"
+                                    style="color:#a78bfa;text-decoration:none;font-weight:600;">support@sourcepoint.in</a>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background:#07070f;border-top:1px solid #1e1e30;padding:24px 40px;text-align:center;border-radius:0 0 20px 20px;">
+                            <p style="margin:0 0 8px;font-size:13px;color:#64748b;font-weight:600;">— The SourcePoint
+                                Team</p>
+                            <p style="margin:0 0 4px;font-size:12px;color:#475569;">© {{ now.year }} SourcePoint. All
+                                rights reserved.</p>
+                            <p style="margin:0;font-size:11px;color:#334155;">This is an automated notification sent to
+                                all registered users.</p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

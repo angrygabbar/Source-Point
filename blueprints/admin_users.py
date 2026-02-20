@@ -87,6 +87,22 @@ def toggle_user_status(user_id):
     
     log_user_action("Toggle User Status", f"{status.title()} user {user_to_toggle.username}")
 
+    # Send account status notification email
+    try:
+        from flask import url_for as flask_url_for
+        login_url = flask_url_for('auth.login_register', _external=True)
+        send_email(
+            to=user_to_toggle.email,
+            subject=f"SourcePoint: Your account has been {status}",
+            template="mail/account_status_email.html",
+            user=user_to_toggle,
+            is_active=user_to_toggle.is_active,
+            now=datetime.utcnow(),
+            login_url=login_url
+        )
+    except Exception as e:
+        print(f"[WARN] Account status email failed: {e}")
+
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({
             'success': True,
@@ -193,4 +209,40 @@ def admin_change_user_password(user_id):
     db.session.commit()
     log_user_action("Admin Change Password", f"Admin changed password for {user_to_update.username}")
     flash(f'Password for {user_to_update.username} has been updated.', 'success')
+    return redirect(url_for('admin_users.manage_users'))
+
+
+@admin_users_bp.route('/notify/maintenance', methods=['POST'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def send_maintenance_notification():
+    """Send maintenance notification email to all registered users."""
+    start_time = request.form.get('start_time', '').strip()
+    end_time = request.form.get('end_time', '').strip()
+    reason = request.form.get('reason', '').strip()
+
+    if not reason:
+        flash('Please provide a reason / description for the maintenance.', 'danger')
+        return redirect(url_for('admin_users.manage_users'))
+
+    users = User.query.filter(User.email.isnot(None)).all()
+    count = 0
+    for user in users:
+        try:
+            send_email(
+                to=user.email,
+                subject="⚠️ SourcePoint — Scheduled Maintenance Notice",
+                template="mail/maintenance_email.html",
+                user=user,
+                start_time=start_time or None,
+                end_time=end_time or None,
+                reason=reason,
+                now=datetime.utcnow()
+            )
+            count += 1
+        except Exception as e:
+            print(f"[WARN] Maintenance email failed for {user.email}: {e}")
+
+    log_user_action("Maintenance Notification", f"Sent maintenance notice to {count} users")
+    flash(f'✅ Maintenance notification sent to {count} users.', 'success')
     return redirect(url_for('admin_users.manage_users'))
