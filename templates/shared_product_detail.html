@@ -159,11 +159,11 @@
                     <div class="flex items-end gap-3">
                         <div>
                             <span class="text-xs text-gray-500 font-bold uppercase tracking-wider">Price</span>
-                            <p class="text-4xl font-black text-white">${{ "{:,.2f}".format(product.price) }}</p>
+                            <p class="text-4xl font-black text-white">₹{{ "{:,.2f}".format(product.price) }}</p>
                         </div>
                         {% if product.mrp and product.mrp > product.price %}
                         <div class="mb-1">
-                            <span class="text-lg text-gray-600 line-through">${{ "{:,.2f}".format(product.mrp) }}</span>
+                            <span class="text-lg text-gray-600 line-through">₹{{ "{:,.2f}".format(product.mrp) }}</span>
                             {% set discount = ((product.mrp - product.price) / product.mrp * 100)|int %}
                             <span class="ml-2 text-sm font-black text-emerald-400">{{ discount }}% OFF</span>
                         </div>
