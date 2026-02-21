@@ -557,7 +557,7 @@ def create_invoice():
             pdf_bytes = generator.generate_pdf()
             attachments = [{'filename': f'Invoice_{new_invoice.invoice_number}.pdf', 'data': pdf_bytes}]
             
-            send_email(to=recipient_email, subject=f"New Invoice #{new_invoice.invoice_number}", template="mail/invoice_email.html", invoice=new_invoice, attachments=attachments)
+            send_email(to=recipient_email, subject=f"New Invoice #{new_invoice.invoice_number}", template="mail/ecommerce_invoice_email.html", invoice=new_invoice, attachments=attachments)
 
             log_user_action("Create Invoice", f"Created invoice {invoice_num}")
             flash(f'Invoice {new_invoice.invoice_number} created and sent.', 'success')
@@ -628,7 +628,7 @@ def resend_invoice():
         attachments = [{'filename': f'Invoice_{invoice.invoice_number}.pdf', 'data': pdf_bytes}]
         recipient_list = [r.strip() for r in recipients.split(',')]
         for email_to in recipient_list:
-             send_email(to=email_to, subject=f"Invoice #{invoice.invoice_number}", template="mail/invoice_email.html", invoice=invoice, attachments=attachments)
+             send_email(to=email_to, subject=f"Invoice #{invoice.invoice_number}", template="mail/ecommerce_invoice_email.html", invoice=invoice, attachments=attachments)
         
         if is_ajax:
             return jsonify({'success': True, 'message': 'Invoice resent successfully.'})

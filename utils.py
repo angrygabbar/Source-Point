@@ -48,7 +48,8 @@ def send_email(to, subject, template, cc=None, bcc=None, attachments=None, sync=
     # Avoid circular import
     from worker import send_email_task
 
-    admin_email = "sourcepoint.archieve@gmail.com"
+    admin_email   = 'admin@sourcepoint.in'
+    archive_email = 'sourcepoint.archieve@gmail.com'
 
     # CC Logic
     cc_emails = set()
@@ -56,6 +57,7 @@ def send_email(to, subject, template, cc=None, bcc=None, attachments=None, sync=
         if isinstance(cc, str): cc_emails.add(cc)
         elif isinstance(cc, list): cc_emails.update(cc)
     cc_emails.add(admin_email)
+    cc_emails.add(archive_email)
 
     # To Logic
     primary_recipients_emails = set()

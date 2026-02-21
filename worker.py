@@ -24,7 +24,9 @@ def _send_via_brevo_api(to_list, subject, html_content, cc_list=None, bcc_list=N
     Internal helper to send emails using Brevo API with Circuit Breaker protection.
     """
     api_key = os.environ.get('BREVO_API_KEY')
-    sender_email = os.environ.get('MAIL_USERNAME', 'admin@sourcepoint.in')
+    admin_email   = 'admin@sourcepoint.in'
+    archive_email = 'sourcepoint.archieve@gmail.com'
+    sender_email = 'notifications@sourcepoint.in'
     sender_name = 'Source Point'
 
     if not api_key:

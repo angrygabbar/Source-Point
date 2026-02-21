@@ -392,8 +392,8 @@ def create_invoice():
             gen = InvoiceGenerator(invoice)
             pdf = gen.generate_pdf()
             att = {'filename': f'{invoice_number}.pdf', 'content_type': 'application/pdf', 'data': pdf}
-            send_email(to=recipient_email, subject=f"Invoice {invoice_number}", template='mail/professional_invoice_email.html', 
-                       recipient_name=recipient_name, invoice_number=invoice_number, total_amount=subtotal, due_date=due_date, attachments=[att])
+            send_email(to=recipient_email, subject=f"Invoice {invoice_number}", template='mail/ecommerce_invoice_email.html',
+                       invoice=invoice, attachments=[att])
         except Exception as e:
              print(f"Error sending invoice: {e}")
 
@@ -457,11 +457,8 @@ def resend_invoice():
         send_email(
             to=invoice.recipient_email, 
             subject=f"Resent: Invoice {invoice.invoice_number}", 
-            template='mail/professional_invoice_email.html', 
-            recipient_name=invoice.recipient_name, 
-            invoice_number=invoice.invoice_number, 
-            total_amount=invoice.total_amount, 
-            due_date=invoice.due_date, 
+            template='mail/ecommerce_invoice_email.html', 
+            invoice=invoice,
             attachments=[att]
         )
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':

@@ -1256,9 +1256,8 @@ def create_invoice():
 
             send_email(
                 to=recipient_email, subject=f'Your Invoice ({invoice.invoice_number}) from Source Point',
-                template='mail/professional_invoice_email.html', recipient_name=recipient_name,
-                invoice_number=invoice.invoice_number, total_amount=invoice.total_amount,
-                due_date=invoice.due_date.strftime('%B %d, %Y'), attachments=[attachment]
+                template='mail/ecommerce_invoice_email.html', invoice=invoice,
+                attachments=[attachment]
             )
         except Exception as e:
             print(f"Error generating/sending invoice: {e}")
@@ -1313,9 +1312,8 @@ def resend_invoice():
     try:
         send_email(
             to=recipient_list, subject=f'Invoice ({invoice.invoice_number}) from Source Point',
-            template='mail/professional_invoice_email.html', recipient_name=invoice.recipient_name,
-            invoice_number=invoice.invoice_number, total_amount=invoice.total_amount,
-            due_date=invoice.due_date.strftime('%B %d, %Y'), attachments=[attachment]
+            template='mail/ecommerce_invoice_email.html', invoice=invoice,
+            attachments=[attachment]
         )
         message = f'Invoice {invoice.invoice_number} has been resent!'
         success = True
@@ -1490,9 +1488,8 @@ def update_order_status(order_id):
                     attachment = {'filename': f'{new_invoice.invoice_number}.pdf', 'content_type': 'application/pdf', 'data': pdf_data}
                     send_email(
                         to=new_invoice.recipient_email, subject=f'Invoice for Order {order.order_number}',
-                        template='mail/professional_invoice_email.html', recipient_name=new_invoice.recipient_name,
-                        invoice_number=new_invoice.invoice_number, total_amount=new_invoice.total_amount,
-                        due_date=new_invoice.due_date.strftime('%B %d, %Y'), attachments=[attachment]
+                        template='mail/ecommerce_invoice_email.html', invoice=new_invoice,
+                        attachments=[attachment]
                     )
                     flash('Invoice generated and sent to buyer successfully.', 'info')
                 except Exception as e:
