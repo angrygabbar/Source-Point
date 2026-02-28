@@ -24,37 +24,51 @@ def buyer_dashboard():
     # 1. Filters & Search
     category_filter = request.args.get('category')
     search_query = request.args.get('q', '').strip()
-    
+    page = request.args.get('page', 1, type=int)
+    per_page = 24
+
     # 2. Build Query
     query = Product.query.filter(Product.stock > 0).order_by(Product.stock.desc(), Product.id.desc())
-    
+
     if search_query:
         query = query.filter(or_(
             Product.name.ilike(f'%{search_query}%'),
             Product.description.ilike(f'%{search_query}%'),
             Product.category.ilike(f'%{search_query}%')
         ))
-    
+
     if category_filter:
         query = query.filter_by(category=category_filter)
-    
-    products = query.all()
-    
-    # 3. Optimized Categories (Redis)
-    categories = cache.get('all_product_categories')
+
+    # Paginate — only load 24 products at a time instead of ALL
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    products = pagination.items
+
+    # 3. Optimized Categories (Redis with graceful fallback)
+    categories = None
+    try:
+        categories = cache.get('all_product_categories')
+    except Exception as e:
+        print(f"[WARN] Cache GET failed (Redis unreachable?): {e}")
+
     if categories is None:
         categories_query = db.session.query(Product.category).distinct().all()
         categories = [c[0] for c in categories_query if c[0]]
-        cache.set('all_product_categories', categories, timeout=3600)
-    
+        try:
+            cache.set('all_product_categories', categories, timeout=3600)
+        except Exception as e:
+            print(f"[WARN] Cache SET failed (Redis unreachable?): {e}")
+
     # 4. Global Data
     cart = Cart.query.filter_by(user_id=current_user.id).first()
     cart_count = len(cart.items) if cart else 0
 
-    return render_template('buyer_dashboard.html', 
-                           products=products, 
-                           categories=categories, 
+    return render_template('buyer_dashboard.html',
+                           products=products,
+                           pagination=pagination,
+                           categories=categories,
                            current_category=category_filter,
+
                            cart_count=cart_count,
                            search_query=search_query,
                            partial=is_htmx())

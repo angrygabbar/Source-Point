@@ -1,42 +1,720 @@
 {% extends "layout.html" %}
 {% block title %}Broadcast Email{% endblock %}
 {% block content %}
-<div class="bg-white/5 dark:bg-gray-800/20 rounded-lg shadow-xl p-6 animate-dynamic backdrop-blur-sm border border-white/10">
-    <h1 class="text-3xl font-bold text-white mb-4">Broadcast Email to All Users</h1>
-    <form action="{{ url_for('admin_core.broadcast_email') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
-        <div>
-            <label for="subject" class="block text-sm font-medium text-gray-300">Subject</label>
-            <input type="text" name="subject" required class="mt-1 appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-700/50 text-white transition">
+
+<style>
+    @keyframes fadeSlideUp {
+        from {
+            opacity: 0;
+            transform: translateY(24px)
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0)
+        }
+    }
+
+    @keyframes pulseRing {
+
+        0%,
+        100% {
+            box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.35)
+        }
+
+        50% {
+            box-shadow: 0 0 0 8px rgba(6, 182, 212, 0)
+        }
+    }
+
+    @keyframes orbitSpin {
+        from {
+            transform: rotate(0deg)
+        }
+
+        to {
+            transform: rotate(360deg)
+        }
+    }
+
+    .compose-wrap {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 1.5rem;
+        align-items: start;
+        animation: fadeSlideUp 0.5s ease;
+    }
+
+    @media(max-width:900px) {
+        .compose-wrap {
+            grid-template-columns: 1fr
+        }
+    }
+
+    .glass-card {
+        background: rgba(15, 20, 40, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 18px;
+        backdrop-filter: blur(20px);
+    }
+
+    /* Exclusion list */
+    .excl-search {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 9px 12px 9px 36px;
+        color: #e2e8f0;
+        font-size: 13px;
+        width: 100%;
+        outline: none;
+        transition: border-color .2s, box-shadow .2s;
+    }
+
+    .excl-search:focus {
+        border-color: rgba(239, 68, 68, .5);
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, .12);
+    }
+
+    .excl-list {
+        height: 340px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(239, 68, 68, .4) transparent;
+    }
+
+    .excl-list::-webkit-scrollbar {
+        width: 4px
+    }
+
+    .excl-list::-webkit-scrollbar-thumb {
+        background: rgba(239, 68, 68, .4);
+        border-radius: 4px
+    }
+
+    .excl-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 12px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background .15s;
+        user-select: none;
+    }
+
+    .excl-item:hover {
+        background: rgba(239, 68, 68, .08);
+    }
+
+    .excl-item.excluded {
+        background: rgba(239, 68, 68, .14);
+    }
+
+    .excl-item input[type=checkbox] {
+        accent-color: #ef4444;
+        width: 15px;
+        height: 15px;
+        flex-shrink: 0;
+    }
+
+    .avatar-chip {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+        flex-shrink: 0;
+        color: #fff;
+    }
+
+    .excl-meta {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .excl-meta .name {
+        font-size: 12px;
+        font-weight: 600;
+        color: #e2e8f0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .excl-meta .email {
+        font-size: 10px;
+        color: #64748b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Exclusion chips */
+    .chips-area {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        min-height: 36px;
+        padding: 6px 8px;
+        background: rgba(255, 255, 255, .03);
+        border: 1px solid rgba(255, 255, 255, .08);
+        border-radius: 10px;
+    }
+
+    .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: rgba(239, 68, 68, .15);
+        border: 1px solid rgba(239, 68, 68, .3);
+        color: #fca5a5;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 20px;
+        animation: fadeSlideUp .2s ease;
+    }
+
+    .chip button {
+        background: none;
+        border: none;
+        color: #f87171;
+        cursor: pointer;
+        padding: 0;
+        font-size: 12px;
+        line-height: 1;
+    }
+
+    .chip button:hover {
+        color: #dc2626;
+    }
+
+    /* Compose fields */
+    .compose-field {
+        background: rgba(255, 255, 255, .04);
+        border: 1px solid rgba(255, 255, 255, .1);
+        border-radius: 10px;
+        padding: 11px 14px;
+        color: #e2e8f0;
+        font-size: 14px;
+        width: 100%;
+        outline: none;
+        transition: border-color .2s, box-shadow .2s;
+        caret-color: #818cf8;
+    }
+
+    .compose-field:focus {
+        border-color: rgba(6, 182, 212, .5);
+        box-shadow: 0 0 0 3px rgba(6, 182, 212, .1);
+    }
+
+    .compose-field::placeholder {
+        color: #475569;
+    }
+
+    /* Drop zone */
+    .drop-zone {
+        border: 2px dashed rgba(255, 255, 255, .12);
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        transition: border-color .2s, background .2s;
+        cursor: pointer;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.drag-over {
+        border-color: rgba(6, 182, 212, .5);
+        background: rgba(6, 182, 212, .05);
+    }
+
+    /* Send button */
+    .btn-send {
+        background: linear-gradient(135deg, #06b6d4, #0891b2);
+        color: #fff;
+        font-weight: 700;
+        font-size: 14px;
+        border: none;
+        border-radius: 12px;
+        padding: 12px 28px;
+        cursor: pointer;
+        transition: all .2s;
+        animation: pulseRing 2.5s infinite;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-send:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(6, 182, 212, .4);
+        animation: none;
+    }
+
+    .btn-send:disabled {
+        opacity: .6;
+        animation: none;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .stat-badge {
+        background: rgba(6, 182, 212, .15);
+        border: 1px solid rgba(6, 182, 212, .25);
+        border-radius: 20px;
+        padding: 3px 12px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #67e8f9;
+    }
+
+    .excl-badge {
+        background: rgba(239, 68, 68, .15);
+        border: 1px solid rgba(239, 68, 68, .25);
+        border-radius: 20px;
+        padding: 3px 12px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #fca5a5;
+    }
+
+    .orbit-ring {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        width: 28px;
+        height: 28px;
+        border: 2px solid rgba(6, 182, 212, .3);
+        border-top-color: #06b6d4;
+        border-radius: 50%;
+        animation: orbitSpin 2s linear infinite;
+    }
+</style>
+
+<!-- Page header -->
+<div class="flex items-center justify-between mb-6" style="animation:fadeSlideUp .4s ease">
+    <div class="flex items-center gap-4">
+        <div class="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-600 to-teal-700
+                    flex items-center justify-center shadow-lg shadow-cyan-500/30">
+            <i class="fas fa-broadcast-tower text-white text-lg"></i>
+            <div class="orbit-ring"></div>
         </div>
-        
         <div>
-            <label for="attachment" class="block text-sm font-medium text-gray-300">Attachment (Optional)</label>
-            <input type="file" name="attachment" class="mt-1 block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700">
+            <h1 class="text-2xl font-extrabold text-white tracking-tight">Broadcast Email</h1>
+            <p class="text-xs text-gray-500 mt-0.5">Send to all platform users — exclude specific people if needed</p>
+        </div>
+    </div>
+    <div class="flex gap-2 items-center">
+        <span class="stat-badge"><i class="fas fa-users mr-1"></i>{{ users|length }} Total Users</span>
+        <span class="excl-badge" id="exclBadge" style="display:none"><i class="fas fa-ban mr-1"></i><span
+                id="exclCount">0</span> Excluded</span>
+    </div>
+</div>
+
+<form action="{{ url_for('admin_core.broadcast_email') }}" method="POST" enctype="multipart/form-data"
+    id="broadcastForm">
+
+    <!-- Hidden excluded_ids are injected by JS before submit -->
+
+    <div class="compose-wrap">
+
+        <!-- ══════════════════════════════════ LEFT: EXCLUDE PANEL ══ -->
+        <div class="glass-card p-5 space-y-4" style="animation:fadeSlideUp .45s ease">
+            <div class="flex items-center justify-between">
+                <h2 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i class="fas fa-ban text-red-400 text-xs"></i> Exclude Users
+                </h2>
+                <div class="flex gap-2">
+                    <button type="button" id="excludeNoneBtn"
+                        class="text-[10px] font-bold text-cyan-400 hover:text-cyan-300 transition-colors px-2 py-1 rounded-md hover:bg-cyan-500/10">
+                        Send to All
+                    </button>
+                    <button type="button" id="excludeAllBtn"
+                        class="text-[10px] font-bold text-gray-500 hover:text-red-400 transition-colors px-2 py-1 rounded-md hover:bg-red-500/10">
+                        Exclude All
+                    </button>
+                </div>
+            </div>
+
+            <div class="relative">
+                <i
+                    class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 text-xs pointer-events-none"></i>
+                <input type="text" id="exclSearch" placeholder="Search to exclude…" class="excl-search">
+            </div>
+
+            <div class="excl-list space-y-1" id="exclList">
+                {% for user in users %}
+                <label class="excl-item" data-name="{{ user.username|lower }}" data-email="{{ user.email|lower }}">
+                    <input type="checkbox" class="excl-checkbox" data-uid="{{ user.id }}">
+                    <div class="avatar-chip" style="background:hsl({{ (loop.index * 47) % 360 }},55%,32%)">
+                        {{ user.username[0].upper() }}
+                    </div>
+                    <div class="excl-meta">
+                        <div class="name">{{ user.username }}</div>
+                        <div class="email">{{ user.email }}</div>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-white/5">
+                <span class="text-[11px] text-gray-600">
+                    <span id="exclSelectedCount" class="text-red-400 font-bold">0</span> excluded
+                </span>
+                <span class="text-[11px] text-gray-600" id="exclVisibleCount">{{ users|length }} shown</span>
+            </div>
         </div>
 
-        <div>
-            <label for="body" class="block text-sm font-medium text-gray-300">Message Body</label>
-            <textarea name="body" id="body" rows="10" class="rich-editor mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-700/50 text-white"></textarea>
+        <!-- ══════════════════════════════════ RIGHT: COMPOSE PANEL ══ -->
+        <div class="space-y-4" style="animation:fadeSlideUp .5s ease">
+
+            <!-- Excluded chips -->
+            <div class="glass-card p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Excluded from broadcast</p>
+                    <p class="text-[10px] text-cyan-500 font-semibold" id="sendingToLabel">Sending to all {{
+                        users|length }} users</p>
+                </div>
+                <div class="chips-area" id="chipsArea">
+                    <span class="text-gray-600 text-xs self-center pl-1" id="chipsPlaceholder">
+                        <i class="fas fa-check-circle text-cyan-500 mr-1"></i>All users will receive this email
+                    </span>
+                </div>
+            </div>
+
+            <!-- Fields -->
+            <div class="glass-card p-5 space-y-4">
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                        <i class="fas fa-heading mr-1 text-cyan-400"></i>Subject
+                    </label>
+                    <input type="text" name="subject" required placeholder="Broadcast subject…" class="compose-field">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                            <i class="fas fa-tag mr-1 text-purple-400"></i>Label
+                        </label>
+                        <select id="labelSelect" class="compose-field text-sm cursor-pointer"
+                            style="background:#0d0d1a;color:#e2e8f0;">
+                            <option value="">— None —</option>
+                            <option value="[IMPORTANT] ">🔴 Important</option>
+                            <option value="[INFO] ">🔵 Info</option>
+                            <option value="[ACTION REQUIRED] ">🟠 Action Required</option>
+                            <option value="[ANNOUNCEMENT] ">📢 Announcement</option>
+                            <option value="[UPDATE] ">🟢 Update</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                            <i class="fas fa-magic mr-1 text-pink-400"></i>Template
+                        </label>
+                        <select id="templateSelect" class="compose-field text-sm cursor-pointer"
+                            style="background:#0d0d1a;color:#e2e8f0;">
+                            <option value="">— Blank —</option>
+                            <option value="announcement">📢 Announcement</option>
+                            <option value="maintenance">🔧 Maintenance</option>
+                            <option value="update">🚀 Platform Update</option>
+                            <option value="reminder">⏰ Reminder</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                        <i class="fas fa-align-left mr-1 text-emerald-400"></i>Message Body
+                    </label>
+                    <textarea name="body" id="body" rows="14" class="rich-editor compose-field"
+                        placeholder="Write your broadcast message here…"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                        <i class="fas fa-paperclip mr-1 text-amber-400"></i>Attachment
+                        <span class="text-gray-700 normal-case font-normal">(optional)</span>
+                    </label>
+                    <div class="drop-zone" id="dropZone">
+                        <input type="file" name="attachment" id="fileInput" class="hidden"
+                            onchange="handleFileSelect(this)">
+                        <div id="dropContent">
+                            <i class="fas fa-cloud-upload-alt text-2xl text-gray-600 mb-2"></i>
+                            <p class="text-xs text-gray-500">Click to attach or drag & drop</p>
+                            <p class="text-[10px] text-gray-700 mt-1">PDF, DOC, XLS, images up to 10MB</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-3 border-t border-white/5">
+                    <div class="flex gap-3 items-center">
+                        <button type="button" id="previewBtn"
+                            class="text-xs font-bold text-gray-400 hover:text-white px-4 py-2 rounded-xl border border-white/10 hover:border-cyan-500/30 transition-all">
+                            <i class="fas fa-eye mr-1"></i>Preview
+                        </button>
+                        <button type="button" onclick="clearCompose()"
+                            class="text-xs font-bold text-gray-600 hover:text-red-400 transition-colors">
+                            <i class="fas fa-trash-alt mr-1"></i>Discard
+                        </button>
+                    </div>
+                    <button type="submit" class="btn-send" id="sendBtn">
+                        <i class="fas fa-broadcast-tower"></i>
+                        Send Broadcast
+                        <span class="text-xs bg-white/20 px-2 py-0.5 rounded-full" id="sendCountBadge">
+                            {{ users|length }}
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div><!-- end right -->
+    </div>
+</form>
+
+<!-- Preview Modal -->
+<div id="previewModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+    onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="bg-[#0f1629] border border-white/10 rounded-2xl w-full max-w-2xl mx-4 overflow-hidden shadow-2xl"
+        style="max-height:85vh;display:flex;flex-direction:column;">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-white/10">
+            <h3 class="font-bold text-white flex items-center gap-2">
+                <i class="fas fa-eye text-cyan-400"></i> Broadcast Preview
+            </h3>
+            <button onclick="document.getElementById('previewModal').classList.add('hidden')"
+                class="text-gray-500 hover:text-white text-lg"><i class="fas fa-times"></i></button>
         </div>
-        
-        <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition-all duration-200 hover:scale-[1.02]">
-            <i class="fas fa-paper-plane mr-2 mt-1"></i> Send Broadcast
-        </button>
-    </form>
+        <div class="overflow-y-auto p-6 flex-1">
+            <div class="text-xs text-gray-500 mb-1">Subject</div>
+            <div class="text-white font-bold text-lg mb-4" id="previewSubject">—</div>
+            <div class="text-xs text-gray-500 mb-1">Sending to</div>
+            <div class="text-cyan-300 text-sm mb-4" id="previewTo">All users</div>
+            <div class="border-t border-white/10 pt-4">
+                <div class="text-xs text-gray-500 mb-2">Body</div>
+                <div id="previewBody" class="text-gray-300 text-sm leading-relaxed prose prose-invert max-w-none"></div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
+    /* ── Broadcast templates ─────────────────────────────────── */
+    /* ── Broadcast templates ─────────────────────────────────── */
+    const TEMPLATES = {
+        announcement: `<p>Dear Team,</p><p>We have an important announcement to share with the Source Point community.</p><p><strong>Details:</strong></p><p>...</p><p>Thank you for your continued support.</p><p>Best regards,<br>Source Point Team</p>`,
+        maintenance:  `<p>Dear User,</p><p>Source Point will be undergoing scheduled maintenance.</p><p><strong>Maintenance Window:</strong> [Date and Time]</p><p>During this period, the platform may be temporarily unavailable. We apologise for any inconvenience.</p><p>Regards,<br>Source Point Team</p>`,
+        update:       `<p>Dear User,</p><p>We are excited to announce a new platform update! 🚀</p><p><strong>Whats New:</strong></p><ul><li>Feature 1</li><li>Feature 2</li><li>Improvement 3</li></ul><p>Log in to experience the latest improvements.</p><p>Warmly,<br>Source Point Team</p>`,
+        reminder:     `<p>Dear User,</p><p>This is a friendly reminder from the Source Point team regarding your pending action.</p><p>Please log in at your earliest convenience to complete the required steps.</p><p>Thank you,<br>Source Point Team</p>`
+    };
+
+    /* ── User data map ────────────────────────────────────────── */
+    const userMap = {};
+    const TOTAL = {{users|length}};
+    {% for user in users %}
+    userMap[{{user.id}}] = { name: {{user.username|tojson}}, email: {{user.email|tojson}} };
+    {% endfor %}
+
+    /* ── Exclusion management ─────────────────────────────────── */
+    function updateExclusions() {
+        const excluded = Array.from(document.querySelectorAll('.excl-checkbox:checked'));
+        const area = document.getElementById('chipsArea');
+        const ph = document.getElementById('chipsPlaceholder');
+        const badge = document.getElementById('exclBadge');
+        const cnt = document.getElementById('exclCount');
+        const selCnt = document.getElementById('exclSelectedCount');
+        const sendBadge = document.getElementById('sendCountBadge');
+        const sendLabel = document.getElementById('sendingToLabel');
+
+        // Row highlights
+        document.querySelectorAll('.excl-item').forEach(item =>
+            item.classList.toggle('excluded', item.querySelector('input').checked));
+
+        // Chips
+        area.querySelectorAll('.chip').forEach(c => c.remove());
+        if (excluded.length === 0) {
+            ph.style.display = '';
+            badge.style.display = 'none';
+            sendLabel.textContent = 'Sending to all ' + TOTAL + ' users';
+        } else {
+            ph.style.display = 'none';
+            badge.style.display = '';
+            excluded.forEach(cb => {
+                const u = userMap[parseInt(cb.dataset.uid, 10)];
+                if (!u) return;
+                const chip = document.createElement('span');
+                chip.className = 'chip';
+                const btn = document.createElement('button');
+                btn.type = 'button'; btn.title = 'Re-include'; btn.textContent = '✕';
+                btn.addEventListener('click', () => { cb.checked = false; updateExclusions(); });
+                chip.textContent = u.name + ' '; chip.appendChild(btn);
+                area.appendChild(chip);
+            });
+            sendLabel.textContent = 'Sending to ' + (TOTAL - excluded.length) + ' users';
+        }
+        cnt.textContent = excluded.length;
+        selCnt.textContent = excluded.length;
+        sendBadge.textContent = TOTAL - excluded.length;
+    }
+
+    /* ── Search ──────────────────────────────────────────────── */
+    document.getElementById('exclSearch').addEventListener('input', function () {
+        const q = this.value.toLowerCase();
+        let visible = 0;
+        document.querySelectorAll('.excl-item').forEach(item => {
+            const show = !q || item.dataset.name.includes(q) || item.dataset.email.includes(q);
+            item.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+        document.getElementById('exclVisibleCount').textContent = visible + ' shown';
+    });
+
+    /* ── Delegated change listener on the list (most reliable) ── */
+    document.getElementById('exclList').addEventListener('change', function(e) {
+        if (e.target.classList.contains('excl-checkbox')) updateExclusions();
+    });
+
+    /* ── Exclude / include all ──────────────────────────────── */
+    document.getElementById('excludeAllBtn').addEventListener('click', function() {
+        document.querySelectorAll('.excl-item').forEach(item => {
+            if (item.style.display !== 'none') item.querySelector('input').checked = true;
+        });
+        updateExclusions();
+    });
+    document.getElementById('excludeNoneBtn').addEventListener('click', function() {
+        document.querySelectorAll('.excl-checkbox').forEach(cb => cb.checked = false);
+        updateExclusions();
+    });
+
+    /* ── Label prefix ────────────────────────────────────────── */
+    document.getElementById('labelSelect').addEventListener('change', function () {
+        const subEl = document.querySelector('input[name=subject]');
+        subEl.value = subEl.value.replace(/^\[.*?\]\s*/, '');
+        if (this.value) subEl.value = this.value + subEl.value;
+    });
+
+    /* ── Helper: get active TinyMCE editor reliably ──────────── */
+    function getTinyMCE() {
+        if (typeof tinymce === 'undefined') return null;
+        return tinymce.get('body') || (tinymce.editors && tinymce.editors[0]) || null;
+    }
+
+    /* ── Template loader ─────────────────────────────────────── */
+    document.getElementById('templateSelect').addEventListener('change', function () {
+        if (!this.value) return;
+        const key = this.value;
+        this.value = ''; // Reset dropdown first to prevent re-trigger
+        const html = TEMPLATES[key] || '';
+        const ed = getTinyMCE();
+        if (ed) {
+            ed.setContent(html);
+        } else {
+            document.getElementById('body').value = html;
+        }
+    });
+
+    /* ── Attachment ──────────────────────────────────────────── */
+    function handleFileSelect(input) {
+        const file = input.files[0];
+        if (!file) return;
+        document.getElementById('dropContent').innerHTML =
+            '<div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap">' +
+            '<i class="fas fa-file-alt text-2xl" style="color:#67e8f9"></i>' +
+            '<div style="text-align:left">' +
+            '<p style="font-size:12px;color:#fff;font-weight:600;margin:0">' + file.name + '</p>' +
+            '<p style="font-size:10px;color:#6b7280;margin:2px 0 0">' + (file.size/1024).toFixed(1) + ' KB</p>' +
+            '</div>' +
+            '<button type="button" id="removeFileBtn" ' +
+            'style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.35);color:#fca5a5;' +
+            'font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;cursor:pointer" ' +
+            'onclick="removeAttachment()" title="Remove attachment">&#x2715; Remove</button>' +
+            '</div>';
+    }
+
+    function removeAttachment() {
+        const fi = document.getElementById('fileInput');
+        fi.value = '';                           // reset file input
+        document.getElementById('dropContent').innerHTML =
+            '<i class="fas fa-cloud-upload-alt text-2xl text-gray-600" style="display:block;margin-bottom:8px"></i>' +
+            '<p style="font-size:12px;color:#94a3b8">Click to attach or drag &amp; drop</p>' +
+            '<p style="font-size:10px;color:#475569;margin-top:4px">PDF, DOC, XLS, images up to 10MB</p>';
+    }
+    document.getElementById('dropZone').addEventListener('click', function (e) {
+        /* Stop if the click came from the file input itself to avoid infinite loop */
+        if (e.target.tagName === 'INPUT' && e.target.type === 'file') return;
+        document.getElementById('fileInput').click();
+    });
+    const dz = document.getElementById('dropZone');
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+    dz.addEventListener('drop', e => {
+        e.preventDefault(); dz.classList.remove('drag-over');
+        const fi = document.getElementById('fileInput');
+        const dt = new DataTransfer();
+        if (e.dataTransfer.files[0]) { dt.items.add(e.dataTransfer.files[0]); fi.files = dt.files; handleFileSelect(fi); }
+    });
+
+    /* ── Preview ─────────────────────────────────────────────── */
+    document.getElementById('previewBtn').addEventListener('click', function () {
+        const subject = document.querySelector('input[name=subject]').value || '(no subject)';
+        const exclCount = document.querySelectorAll('.excl-checkbox:checked').length;
+        const ed = getTinyMCE();
+        const body = ed ? ed.getContent() : document.getElementById('body').value;
+        document.getElementById('previewSubject').textContent = subject;
+        document.getElementById('previewTo').textContent =
+            exclCount ? (TOTAL - exclCount) + ' users (' + exclCount + ' excluded)' : 'All ' + TOTAL + ' users';
+        document.getElementById('previewBody').innerHTML = body || '<em style="color:#6b7280">Empty body</em>';
+        document.getElementById('previewModal').classList.remove('hidden');
+    });
+
+    /* ── Discard ─────────────────────────────────────────────── */
+    function clearCompose() {
+        if (!confirm('Discard this draft?')) return;
+        document.querySelectorAll('.excl-checkbox').forEach(cb => cb.checked = false);
+        document.querySelector('input[name=subject]').value = '';
+        const ed = getTinyMCE();
+        if (ed) ed.setContent(''); else document.getElementById('body').value = '';
+        updateExclusions();
+    }
+
+    /* ── Form submit — inject excluded_ids, sync TinyMCE ────── */
+    document.getElementById('broadcastForm').addEventListener('submit', function (e) {
+        if (typeof tinymce !== 'undefined') tinymce.triggerSave();
+
+        const body = document.getElementById('body').value.trim();
+        if (!body) { e.preventDefault(); alert('Message body cannot be empty.'); return; }
+
+        // Inject hidden excluded_ids inputs
+        document.querySelectorAll('input[name=excluded_ids]').forEach(el => el.remove());
+        document.querySelectorAll('.excl-checkbox:checked').forEach(cb => {
+            const inp = document.createElement('input');
+            inp.type = 'hidden'; inp.name = 'excluded_ids'; inp.value = cb.dataset.uid;
+            this.appendChild(inp);
+        });
+
+        const exclCount = document.querySelectorAll('.excl-checkbox:checked').length;
+        const sendingTo = TOTAL - exclCount;
+        if (!confirm('Send broadcast to ' + sendingTo + ' users' + (exclCount ? ' (' + exclCount + ' excluded)' : '') + '?')) {
+            e.preventDefault(); return;
+        }
+
+        const btn = document.getElementById('sendBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
+    });
+
+    /* ── TinyMCE ─────────────────────────────────────────────── */
     document.addEventListener('DOMContentLoaded', () => {
+        if (typeof tinymce === 'undefined') return;
         tinymce.init({
-            selector: '.rich-editor',
-            plugins: 'lists link image table code',
-            toolbar: 'undo redo | formatselect | bold italic underline | alignleft aligncenter alignright | bullist numlist | link table',
-            height: 400,
-            skin: 'oxide-dark',
-            content_css: 'dark',
-            menubar: false,
-            statusbar: false,
-            content_style: "body { font-family: Inter, sans-serif; font-size: 14px; line-height: 1.4; } p { margin: 0; padding: 0; }"
+            selector: '#body',
+            plugins: 'lists link table code emoticons',
+            toolbar: 'undo redo | formatselect | bold italic underline | forecolor | alignleft aligncenter alignright | bullist numlist | link emoticons | code',
+            height: 320, skin: 'oxide-dark', content_css: 'dark', menubar: false, statusbar: false,
+            content_style: 'body{font-family:Inter,system-ui,sans-serif;font-size:14px;background:#0f172a;color:#e2e8f0;padding:12px 16px}p{margin:0 0 8px}a{color:#67e8f9}'
         });
     });
 </script>

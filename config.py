@@ -19,6 +19,11 @@ class Config:
     CACHE_REDIS_URL = REDIS_URL
     CACHE_DEFAULT_TIMEOUT = 300
     CACHE_THRESHOLD = 500
+    # Fail-fast if Redis is unreachable — prevents slow page loads
+    CACHE_OPTIONS = {
+        'socket_connect_timeout': 0.5,  # fail in 500ms if Redis unreachable
+        'socket_timeout': 0.5,           # fail in 500ms waiting for response
+    }
 
     # Celery Configuration
     CELERY_BROKER_URL = REDIS_URL

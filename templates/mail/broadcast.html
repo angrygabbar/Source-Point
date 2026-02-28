@@ -51,7 +51,8 @@
                         <td style="padding: 0 40px 40px 40px;">
 
                             <p style="font-size: 18px; color: #f1f5f9; margin: 0 0 24px 0; line-height: 1.6;">
-                                Hello <strong style="color: #22d3ee;">{{ recipient.username }}</strong>,
+                                Hello <strong style="color: #22d3ee;">{{ (recipient or user).username if (recipient is
+                                    defined and recipient) or (user is defined and user) else 'User' }}</strong>,
                             </p>
 
                             <!-- Message Content Card -->
@@ -60,7 +61,7 @@
                                 <tr>
                                     <td style="padding: 24px;">
                                         <div style="font-size: 16px; color: #e5e7eb; line-height: 1.8;">
-                                            {{ message|safe }}
+                                            {{ (message if message is defined and message else body)|safe }}
                                         </div>
                                     </td>
                                 </tr>

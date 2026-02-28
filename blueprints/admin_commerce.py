@@ -103,13 +103,46 @@ def manage_inventory():
             flash(f'Product "{name}" added to Master Inventory.', 'success')
         return redirect(url_for('admin_commerce.manage_inventory'))
     
-    products = Product.query.order_by(Product.name).all()
-    sellers = User.query.filter_by(role=UserRole.SELLER.value).all()
-    total_inventory_value = sum(int(p.stock) * float(p.price) for p in products)
-    low_stock_count = sum(1 for p in products if int(p.stock) < 10)
+    search_query = request.args.get('q', '').strip()
+    page = request.args.get('page', 1, type=int)
+    per_page = 50
 
-    return render_template('manage_inventory.html', products=products, sellers=sellers, 
-                           total_inventory_value=total_inventory_value, total_products_count=len(products), low_stock_count=low_stock_count)
+    # ── Stats via SQL (fast, no Python loops) ──────────────────────────────
+    from sqlalchemy import func as sqlfunc
+    total_products_count = Product.query.count()
+    low_stock_count = Product.query.filter(Product.stock < 10).count()
+    value_row = db.session.query(
+        sqlfunc.coalesce(sqlfunc.sum(Product.stock * Product.price), 0)
+    ).scalar()
+    total_inventory_value = float(value_row or 0)
+
+    # ── Paginated product list (with optional search) ───────────────────────
+    base_query = Product.query
+    if search_query:
+        base_query = base_query.filter(
+            db.or_(
+                Product.name.ilike(f'%{search_query}%'),
+                Product.product_code.ilike(f'%{search_query}%'),
+                Product.category.ilike(f'%{search_query}%')
+            )
+        )
+    pagination = base_query.order_by(Product.name).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    products = pagination.items
+
+    sellers = User.query.filter_by(role=UserRole.SELLER.value).with_entities(
+        User.id, User.username, User.email
+    ).all()
+
+    return render_template('manage_inventory.html',
+                           products=products,
+                           pagination=pagination,
+                           sellers=sellers,
+                           total_inventory_value=total_inventory_value,
+                           total_products_count=total_products_count,
+                           low_stock_count=low_stock_count,
+                           search_query=search_query)
 
 @admin_commerce_bp.route('/inventory/add', methods=['GET', 'POST'])
 @login_required

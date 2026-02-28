@@ -178,6 +178,8 @@ def broadcast_email():
         subject = request.form.get('subject')
         body = request.form.get('body')
         file = request.files.get('attachment')
+        # IDs the admin chose to EXCLUDE from this broadcast
+        excluded_ids = set(request.form.getlist('excluded_ids'))
 
         if not subject or not body:
             flash('Subject and body are required.', 'danger')
@@ -186,19 +188,21 @@ def broadcast_email():
         attachments = []
         if file and file.filename != '':
             file_data = file.read()
+            ct = getattr(file, 'mimetype', None) or 'application/octet-stream'
             attachments.append({
                 'filename': secure_filename(file.filename),
-                'content_type': file.content_type,
+                'content_type': ct,
                 'data': file_data
             })
 
-        signature = """<br><br>...Source Point Team...""" 
-        final_body = body + signature
+        all_users = User.query.filter_by(is_active=True).order_by(User.username).all()
+        # Send to every active user EXCEPT those explicitly excluded
+        bcc_recipients = [
+            u.email for u in all_users
+            if u.email and str(u.id) not in excluded_ids
+        ]
 
-        users = User.query.all()
-        bcc_recipients = [u.email for u in users if u.email]
         to_email = os.environ.get('MAIL_DEFAULT_SENDER_EMAIL', 'admin@sourcepoint.in')
-        
         if to_email in bcc_recipients:
             bcc_recipients.remove(to_email)
 
@@ -209,17 +213,20 @@ def broadcast_email():
                 subject=subject,
                 template="mail/broadcast.html",
                 user=current_user,
-                body=final_body,
+                body=body,
                 attachments=attachments
             )
             count = len(bcc_recipients)
-            log_user_action("Broadcast Email", f"Sent broadcast email to {count} users")
-            flash(f'Broadcast sent successfully to {count} users.', 'success')
+            skipped = len(excluded_ids)
+            log_user_action("Broadcast Email", f"Sent broadcast to {count} users, skipped {skipped}")
+            flash(f'Broadcast sent to {count} users ({skipped} excluded).', 'success')
         else:
-            flash('No recipients found.', 'warning')
+            flash('No recipients after exclusions.', 'warning')
 
         return redirect(url_for('admin_core.admin_dashboard'))
-    return render_template('broadcast_email.html')
+
+    users = User.query.filter_by(is_active=True).order_by(User.username).all()
+    return render_template('broadcast_email.html', users=users)
 
 @admin_core_bp.route('/send_specific_email', methods=['GET', 'POST'])
 @login_required
@@ -242,27 +249,33 @@ def send_specific_email():
         attachments = []
         if file and file.filename != '':
             file_data = file.read()
+            ct = getattr(file, 'mimetype', None) or 'application/octet-stream'
             attachments.append({
                 'filename': secure_filename(file.filename),
-                'content_type': file.content_type,
+                'content_type': ct,
                 'data': file_data
             })
-
-        signature = """<br><br>...Source Point Team..."""
-        final_body = body + signature
 
         users = User.query.filter(User.id.in_(user_ids)).all()
         count = 0
         for user in users:
             if user.email:
-                send_email(to=user.email, subject=subject, template="mail/broadcast.html", user=user, body=final_body, attachments=attachments)
+                # mail/broadcast.html needs: recipient, subject, message|safe
+                send_email(
+                    to=user.email,
+                    subject=subject,
+                    template="mail/broadcast.html",
+                    recipient=user,
+                    message=body,
+                    attachments=attachments
+                )
                 count += 1
-        
+
         log_user_action("Send Specific Email", f"Sent email to {count} recipients.")
-        flash(f'Email has been sent to {count} users.', 'success')
+        flash(f'Email sent to {count} user(s) successfully.', 'success')
         return redirect(url_for('admin_core.admin_dashboard'))
 
-    users = User.query.all()
+    users = User.query.order_by(User.username).all()
     return render_template('send_specific_email.html', users=users)
 
 @admin_core_bp.route('/update_learning_content', methods=['POST'])

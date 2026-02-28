@@ -153,14 +153,26 @@ def create_app():
         # --- FIX: Check if current_user exists and is not None (for Celery tasks) ---
         if current_user and hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
             cache_key = f"user_messages_{current_user.id}"
-            messages = cache.get(cache_key)
-            
+            messages = None
+            try:
+                messages = cache.get(cache_key)
+            except Exception as e:
+                app.logger.warning(f"[inject_messages] Cache GET failed (Redis down?): {e}")
+
             if messages is None:
-                messages = Message.query.filter(
-                    (Message.sender_id == current_user.id) | (Message.recipient_id == current_user.id)
-                ).order_by(Message.timestamp.desc()).all()
-                cache.set(cache_key, messages, timeout=60)
-                
+                try:
+                    messages = Message.query.filter(
+                        (Message.sender_id == current_user.id) | (Message.recipient_id == current_user.id)
+                    ).order_by(Message.timestamp.desc()).all()
+                except Exception as e:
+                    app.logger.warning(f"[inject_messages] DB query failed: {e}")
+                    messages = []
+
+                try:
+                    cache.set(cache_key, messages, timeout=60)
+                except Exception as e:
+                    app.logger.warning(f"[inject_messages] Cache SET failed (Redis down?): {e}")
+
             return dict(messages=messages)
         return dict(messages=[])
 

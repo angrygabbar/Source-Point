@@ -1,127 +1,242 @@
-{% if not partial %}{% extends "layout.html" %}{% endif %}
+{% extends "layout.html" %}
 
-{% block title %}My Orders{% endblock %}
+{% block title %}My Orders — SourcePoint{% endblock %}
 
 {% block content %}
-<div id="main-content" class="max-w-4xl mx-auto animate-dynamic p-4 md:p-8">
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+    style="animation:fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) forwards;">
 
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <div>
-            <h1 class="text-3xl font-black text-white tracking-tight">Order History</h1>
-            <p class="text-gray-400 text-sm mt-1">Track and manage your recent purchases.</p>
+    <!-- ══════════════════════════════════════════
+         HUD HEADER
+    ══════════════════════════════════════════ -->
+    <div class="relative rounded-2xl overflow-hidden mb-8 border border-cyan-500/20"
+        style="background:linear-gradient(135deg,rgba(8,8,25,0.98),rgba(5,5,15,0.99));">
+
+        <!-- Hex grid bg -->
+        <svg class="absolute inset-0 w-full h-full opacity-[0.04]" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <pattern id="ohex" width="46" height="40" patternUnits="userSpaceOnUse">
+                    <polygon points="23,2 44,13 44,28 23,39 2,28 2,13" fill="none" stroke="rgba(6,182,212,1)"
+                        stroke-width="0.8" />
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#ohex)" />
+        </svg>
+
+        <!-- Glow orb -->
+        <div
+            style="position:absolute;top:-80px;right:-40px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(6,182,212,0.12),transparent 70%);pointer-events:none;">
+        </div>
+        <div
+            style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#06b6d4 40%,#3b82f6 60%,transparent);box-shadow:0 0 10px #06b6d4;">
         </div>
 
-        <a hx-get="{{ url_for('buyer.buyer_dashboard') }}" hx-target="#main-content" hx-push-url="true"
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-indigo-400 font-bold text-sm transition-all border border-white/5 hover:border-white/10 cursor-pointer">
-            <i class="fas fa-arrow-left"></i> Back to Market
-        </a>
+        <div class="relative z-10 px-6 py-7 sm:px-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <!-- Icon -->
+                <div class="relative w-14 h-14 flex-shrink-0">
+                    <div class="absolute inset-0 rounded-full border border-cyan-500/30"
+                        style="animation:orbit-spin 6s linear infinite;"></div>
+                    <div
+                        class="w-14 h-14 rounded-full flex items-center justify-center bg-cyan-500/10 border border-cyan-500/20">
+                        <i class="fas fa-history text-cyan-400 text-lg"></i>
+                    </div>
+                    <div class="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-gray-900"
+                        style="box-shadow:0 0 8px #10b981;animation:dotBlink 2s ease-in-out infinite;"></div>
+                </div>
+                <div>
+                    <div class="text-[9px] font-black tracking-[0.25em] uppercase text-cyan-400 mb-0.5">SourcePoint ·
+                        Order History</div>
+                    <h1 class="text-2xl font-black text-white">My Orders</h1>
+                    <p class="text-gray-500 text-xs mt-0.5">
+                        <span class="text-cyan-400 font-bold">{{ orders|length }}</span> order{{ 's' if orders|length !=
+                        1 else '' }} on record
+                    </p>
+                </div>
+            </div>
+
+            <a href="{{ url_for('buyer.buyer_dashboard') }}" hx-get="{{ url_for('buyer.buyer_dashboard') }}"
+                hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true"
+                hx-push-url="true" class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-black text-gray-300
+                      border border-white/10 bg-white/4 hover:text-white hover:border-cyan-500/30
+                      hover:bg-cyan-500/8 transition-all cursor-pointer self-start sm:self-center">
+                <i class="fas fa-chevron-left text-xs"></i> Back to Catalog
+            </a>
+        </div>
     </div>
 
-    <div class="space-y-6">
+    <!-- ══════════════════════════════════════════
+         ORDERS LIST
+    ══════════════════════════════════════════ -->
+    {% if orders %}
+    <div class="space-y-4">
         {% for order in orders %}
-        <div
-            class="group bg-[#0f1115] border border-white/5 rounded-2xl overflow-hidden hover:border-indigo-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/5">
+        <div class="order-card group relative rounded-2xl overflow-hidden border border-white/5
+                    hover:border-cyan-500/25 transition-all duration-400 hover:shadow-xl hover:shadow-cyan-500/8"
+            style="background:linear-gradient(145deg,rgba(12,12,28,0.98),rgba(8,8,20,0.99));animation:cardIn 0.4s cubic-bezier(0.16,1,0.3,1) {{ loop.index0 * 0.06 }}s both;">
 
-            <div
-                class="bg-white/[0.02] p-5 flex flex-wrap gap-y-4 justify-between items-center border-b border-white/5">
-                <div class="flex gap-8">
+            <!-- Top accent -->
+            <div class="absolute top-0 left-0 right-0 h-[1px] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                style="background:linear-gradient(90deg,transparent,#06b6d4,transparent);box-shadow:0 0 8px #06b6d4;">
+            </div>
+
+            <!-- Order Header -->
+            <div class="px-5 py-4 border-b border-white/5 flex flex-wrap items-center justify-between gap-3">
+                <!-- Left: order meta -->
+                <div class="flex flex-wrap items-center gap-5">
+                    <!-- Order number -->
                     <div>
-                        <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Order Placed</p>
-                        <p class="text-sm font-medium text-gray-200">{{ order.created_at.strftime('%d %b %Y') }}</p>
+                        <p class="text-[9px] text-gray-600 uppercase tracking-[0.2em] font-black mb-0.5">Order ID</p>
+                        <span
+                            class="font-mono text-xs text-cyan-400 bg-cyan-500/8 border border-cyan-500/20 px-2 py-0.5 rounded-lg">
+                            #{{ order.order_number }}
+                        </span>
                     </div>
+                    <!-- Date -->
                     <div>
-                        <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Total Amount</p>
-                        <p class="text-sm font-bold text-white">₹{{ "{:,.2f}".format(order.total_amount) }}</p>
+                        <p class="text-[9px] text-gray-600 uppercase tracking-[0.2em] font-black mb-0.5">Placed</p>
+                        <p class="text-xs font-bold text-gray-300">{{ order.created_at.strftime('%d %b %Y') }}</p>
+                        <p class="text-[9px] text-gray-600">{{ order.created_at.strftime('%I:%M %p') }} IST</p>
+                    </div>
+                    <!-- Total -->
+                    <div>
+                        <p class="text-[9px] text-gray-600 uppercase tracking-[0.2em] font-black mb-0.5">Total</p>
+                        <p class="text-sm font-black text-white">₹{{ "{:,.2f}".format(order.total_amount) }}</p>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3">
-                    <span class="text-xs font-mono text-gray-500 bg-white/5 px-2 py-1 rounded border border-white/5">
-                        #{{ order.order_number }}
-                    </span>
+                <!-- Right: status badge -->
+                <div>
                     {% if order.status == 'Delivered' %}
-                    <span
-                        class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
-                        <i class="fas fa-check-circle"></i> Delivered
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider
+                                 bg-emerald-500/10 text-emerald-400 border border-emerald-500/25"
+                        style="box-shadow:0 0 10px rgba(16,185,129,0.1);">
+                        <i class="fas fa-check-circle text-[9px]"></i> Delivered
                     </span>
                     {% elif 'Cancelled' in order.status %}
-                    <span
-                        class="px-3 py-1 rounded-full text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20">
-                        {{ order.status }}
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider
+                                 bg-red-500/10 text-red-400 border border-red-500/25">
+                        <i class="fas fa-times-circle text-[9px]"></i> {{ order.status }}
+                    </span>
+                    {% elif order.status == 'Placed' %}
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider
+                                 bg-indigo-500/10 text-indigo-400 border border-indigo-500/25"
+                        style="box-shadow:0 0 10px rgba(99,102,241,0.1);">
+                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"
+                            style="animation:dotBlink 1.5s ease-in-out infinite;box-shadow:0 0 6px #6366f1;"></span>
+                        Processing
                     </span>
                     {% else %}
-                    <span
-                        class="px-3 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1">
-                        <i class="fas fa-truck-loading"></i> {{ order.status }}
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider
+                                 bg-amber-500/10 text-amber-400 border border-amber-500/25">
+                        <i class="fas fa-truck text-[9px]"></i> {{ order.status }}
                     </span>
                     {% endif %}
                 </div>
             </div>
 
-            <div class="p-6">
-                <div class="space-y-4">
+            <!-- Order Items -->
+            <div class="px-5 py-4">
+                <div class="space-y-3">
                     {% for item in order.items %}
-                    <div class="flex justify-between items-center py-2 border-b border-white/5 last:border-0 last:pb-0">
-                        <div class="flex items-center gap-4">
-                            <div
-                                class="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center text-gray-500 border border-white/5">
-                                <i class="fas fa-cube text-xs"></i>
+                    <div class="flex items-center justify-between py-2.5 border-b border-white/4 last:border-0">
+                        <div class="flex items-center gap-3">
+                            <!-- Product icon -->
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                                style="background:rgba(6,182,212,0.07);border:1px solid rgba(6,182,212,0.15);">
+                                <i class="fas fa-cube text-cyan-500/60 text-xs"></i>
                             </div>
                             <div>
-                                <p class="text-sm font-bold text-gray-200">{{ item.product_name }}</p>
-                                <p class="text-xs text-gray-500">Qty: {{ item.quantity }}</p>
+                                <p class="text-sm font-black text-gray-200 leading-tight">{{ item.product_name }}</p>
+                                <p class="text-[10px] text-gray-600 mt-0.5">
+                                    Qty: <span class="text-gray-400 font-bold">{{ item.quantity }}</span>
+                                    &nbsp;·&nbsp; Unit: <span class="text-gray-400 font-bold">₹{{
+                                        "{:,.0f}".format(item.price_at_purchase) }}</span>
+                                </p>
                             </div>
                         </div>
-                        <span class="text-sm font-medium text-gray-300">₹{{ "{:,.2f}".format(item.price_at_purchase)
-                            }}</span>
+                        <p class="text-sm font-black text-white flex-shrink-0">
+                            ₹{{ "{:,.2f}".format(item.price_at_purchase * item.quantity) }}
+                        </p>
                     </div>
                     {% endfor %}
                 </div>
 
+                <!-- Footer: shipping + total -->
                 <div
-                    class="mt-6 pt-4 border-t border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div class="flex items-start gap-2">
-                        <i class="fas fa-map-marker-alt text-gray-500 mt-1 text-xs"></i>
-                        <p class="text-xs text-gray-400 max-w-md leading-relaxed">
-                            <span class="font-bold text-gray-300">Shipping to:</span> {{ order.shipping_address }}
-                        </p>
+                    class="mt-4 pt-4 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <!-- Shipping address -->
+                    <div class="flex items-start gap-2 max-w-md">
+                        <i class="fas fa-location-dot text-gray-600 text-xs mt-1 flex-shrink-0"></i>
+                        <div>
+                            <p class="text-[9px] text-gray-600 uppercase tracking-wider font-black mb-0.5">Ship To</p>
+                            <p class="text-xs text-gray-400 leading-relaxed">{{ order.shipping_address }}</p>
+                        </div>
                     </div>
 
-                    {% if order.status not in ['Placed', 'Cancelled'] %}
-                    <button
-                        class="text-xs font-bold text-indigo-400 hover:text-white transition-colors flex items-center gap-2">
-                        <i class="fas fa-file-invoice"></i> Download Invoice
-                    </button>
-                    {% endif %}
+                    <!-- Right actions -->
+                    <div class="flex items-center gap-3 flex-shrink-0">
+                        <!-- Order total pill -->
+                        <div class="text-right">
+                            <p class="text-[9px] text-gray-600 uppercase tracking-wider font-black">Order Total</p>
+                            <p class="text-base font-black text-white">₹{{ "{:,.2f}".format(order.total_amount) }}</p>
+                        </div>
+                        {% if order.status not in ['Placed', 'Cancelled'] %}
+                        <button class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black
+                                       text-cyan-400 border border-cyan-500/20 bg-cyan-500/6
+                                       hover:bg-cyan-500/12 hover:border-cyan-500/35 transition-all"
+                            title="Download Invoice">
+                            <i class="fas fa-file-invoice text-[10px]"></i> Invoice
+                        </button>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
-        {% else %}
-        <div
-            class="flex flex-col items-center justify-center py-20 text-center bg-white/[0.02] border border-white/5 rounded-2xl border-dashed">
-            <div class="w-16 h-16 bg-gray-800/50 rounded-full flex items-center justify-center mb-4 text-gray-600">
-                <i class="fas fa-box-open text-2xl"></i>
-            </div>
-            <h3 class="text-lg font-bold text-white mb-1">No orders yet</h3>
-            <p class="text-gray-500 text-sm mb-6">Looks like you haven't bought anything yet.</p>
-            <a hx-get="{{ url_for('buyer.buyer_dashboard') }}" hx-target="#main-content"
-                class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-xl transition-all cursor-pointer">
-                Start Shopping
-            </a>
-        </div>
         {% endfor %}
     </div>
+
+    {% else %}
+    <!-- ── Empty State ── -->
+    <div class="flex flex-col items-center justify-center py-24 px-4 text-center">
+        <div class="relative mb-6">
+            <div class="w-28 h-28 rounded-full flex items-center justify-center"
+                style="background:rgba(6,182,212,0.06);border:1px solid rgba(6,182,212,0.15);">
+                <i class="fas fa-box-open text-5xl text-cyan-500/30"></i>
+            </div>
+            <div class="absolute inset-0 rounded-full"
+                style="animation:orbit-spin 8s linear infinite;border:1px dashed rgba(6,182,212,0.12);"></div>
+        </div>
+        <h3 class="text-xl font-black text-white mb-2">No Orders Yet</h3>
+        <p class="text-gray-600 text-sm max-w-xs mb-6">You haven't placed any orders. Start exploring the marketplace!
+        </p>
+        <a href="{{ url_for('buyer.buyer_dashboard') }}" hx-get="{{ url_for('buyer.buyer_dashboard') }}"
+            hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true"
+            class="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-black text-white cursor-pointer
+                  bg-gradient-to-r from-cyan-600 to-indigo-600 hover:-translate-y-0.5 transition-all shadow-lg shadow-cyan-500/25">
+            <i class="fas fa-store text-xs"></i> Browse Catalog
+        </a>
+    </div>
+    {% endif %}
 </div>
 
 <style>
-    .animate-dynamic {
-        animation: fadeIn 0.4s ease-out forwards;
-    }
-
-    @keyframes fadeIn {
+    @keyframes fadeUp {
         from {
             opacity: 0;
-            transform: translateY(10px);
+            transform: translateY(16px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes cardIn {
+        from {
+            opacity: 0;
+            transform: translateY(12px);
         }
 
         to {
@@ -130,4 +245,4 @@
         }
     }
 </style>
-{% endblock %}a
+{% endblock %}

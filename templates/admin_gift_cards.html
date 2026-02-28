@@ -3,7 +3,7 @@
 {% block title %}Gift Card Manager{% endblock %}
 
 {% block content %}
-<div id="main-content" class="space-y-8">
+<div class="space-y-8">
     <!-- Page Header -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
@@ -201,7 +201,8 @@
                                     data-masked="{{ card.masked_card_number }}" title="Send Gift Card">
                                     <i class="fas fa-paper-plane text-sm"></i>
                                 </button>
-                                <!-- Edit Button -->
+                                {% endif %}
+                                <!-- Edit Button — always visible -->
                                 <button
                                     class="edit-card-btn w-9 h-9 rounded-xl bg-blue-500/20 hover:bg-blue-500/40 text-blue-400 flex items-center justify-center transition-all"
                                     data-id="{{ card.id }}" data-brand="{{ card.brand|e }}"
@@ -210,7 +211,6 @@
                                     data-notes="{{ card.notes|e if card.notes else '' }}" title="Edit">
                                     <i class="fas fa-edit text-sm"></i>
                                 </button>
-                                {% endif %}
                                 <!-- Delete Button -->
                                 <form method="POST"
                                     action="{{ url_for('admin_giftcards.delete_gift_card', card_id=card.id) }}"
@@ -333,7 +333,7 @@
                                 <!-- Approve -->
                                 <form method="POST"
                                     action="{{ url_for('admin_giftcards.approve_voucher_order', order_id=vo.id) }}"
-                                    onsubmit="return confirm('Approve this voucher request? The card PIN and number will be emailed to {{ vo.user.username }}.')">
+                                    class="approve-voucher-form" data-username="{{ vo.user.username | e }}">
                                     <button type="submit"
                                         class="px-4 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 text-xs font-bold border border-emerald-500/30 transition-all"
                                         title="Approve & Send">
@@ -342,9 +342,9 @@
                                 </form>
                                 <!-- Reject -->
                                 <button
-                                    onclick="showRejectModal({{ vo.id }}, '{{ vo.user.username }}', '{{ vo.gift_card.brand }}')"
-                                    class="px-4 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs font-bold border border-red-500/30 transition-all"
-                                    title="Reject">
+                                    class="reject-voucher-btn px-4 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs font-bold border border-red-500/30 transition-all"
+                                    data-order-id="{{ vo.id }}" data-username="{{ vo.user.username | e }}"
+                                    data-brand="{{ vo.gift_card.brand | e }}" title="Reject">
                                     <i class="fas fa-times mr-1"></i> Reject
                                 </button>
                             </div>
@@ -613,14 +613,30 @@
         }
     });
 
-    // Reject voucher order
-    const REJECT_URL_BASE = "{{ url_for('admin_giftcards.reject_voucher_order', order_id=0) }}".replace('/0/', '/{id}/');
+    // ── Approve form: safe confirm using data-username ─────────────────────
+    document.querySelectorAll('.approve-voucher-form').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var username = form.dataset.username || 'this buyer';
+            if (confirm('Approve this voucher request? The card PIN and number will be emailed to ' + username + '.')) {
+                form.submit();
+            }
+        });
+    });
 
-    function showRejectModal(orderId, buyerName, brand) {
-        document.getElementById('rejectOrderForm').action = REJECT_URL_BASE.replace('{id}', orderId);
-        document.getElementById('rejectOrderInfo').textContent = 'Reject ' + buyerName + "'s request for " + brand + ' voucher';
-        document.getElementById('rejectOrderModal').classList.remove('hidden');
-    }
+    // ── Reject voucher order (safe — uses data-* attributes) ──────────────
+    const REJECT_URL_BASE = "{{ url_for('admin_giftcards.reject_voucher_order', order_id=0) }}".replace('/0/reject', '/{id}/reject');
+
+    document.querySelectorAll('.reject-voucher-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var orderId = btn.dataset.orderId;
+            var username = btn.dataset.username || 'buyer';
+            var brand = btn.dataset.brand || 'voucher';
+            document.getElementById('rejectOrderForm').action = REJECT_URL_BASE.replace('{id}', orderId);
+            document.getElementById('rejectOrderInfo').textContent = 'Reject ' + username + "'s request for " + brand;
+            document.getElementById('rejectOrderModal').classList.remove('hidden');
+        });
+    });
 </script>
 
 <!-- ==================== REJECT ORDER MODAL ==================== -->

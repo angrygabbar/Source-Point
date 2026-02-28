@@ -2,162 +2,440 @@
 {% block title %}Master Command Center{% endblock %}
 
 {% block content %}
-<div class="space-y-8 pb-10 max-w-7xl mx-auto animate-fade-in">
+<div class="space-y-8 pb-12 max-w-7xl mx-auto section-fade">
 
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/10 pb-6">
-        <div>
-            <h1 class="text-3xl font-bold text-white tracking-tight">System Overview</h1>
-            <p class="text-gray-400 mt-1">Welcome back, <span class="text-indigo-400 font-medium">{{
-                    current_user.username }}</span>. Select a domain to manage.</p>
+    <!-- ══════════════════════════════════════════════════════
+         HUD HEADER — System Overview
+    ══════════════════════════════════════════════════════ -->
+    <div class="relative overflow-hidden rounded-2xl border border-indigo-500/20 p-6 sm:p-8"
+        style="background:linear-gradient(135deg,rgba(10,10,30,0.95) 0%,rgba(5,5,15,0.98) 100%);">
+
+        <!-- Animated hex grid background -->
+        <svg class="absolute inset-0 w-full h-full opacity-[0.04]" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <pattern id="hex" width="56" height="48" patternUnits="userSpaceOnUse">
+                    <polygon points="28,2 54,16 54,32 28,46 2,32 2,16" fill="none" stroke="rgba(99,102,241,1)"
+                        stroke-width="1" />
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#hex)" />
+        </svg>
+
+        <!-- Glowing corner orbs -->
+        <div
+            style="position:absolute;top:-80px;right:-60px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,0.2),transparent 70%);pointer-events:none;">
         </div>
-        <div class="flex flex-wrap gap-2 md:gap-3 w-full md:w-auto">
-            <a href="{{ url_for('admin.activity_tracker') }}" target="_blank"
-                class="group flex items-center gap-2 px-3 md:px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 border border-purple-500/30 rounded-lg text-xs md:text-sm font-medium transition-all text-white shadow-lg shadow-purple-500/20 whitespace-nowrap">
-                <i class="fas fa-chart-line group-hover:scale-110 transition-transform"></i> <span
-                    class="hidden sm:inline">Activity Tracker</span><span class="sm:hidden">Activity</span>
-            </a>
+        <div
+            style="position:absolute;bottom:-60px;left:10%;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(16,185,129,0.12),transparent 70%);pointer-events:none;">
+        </div>
 
-            <a hx-get="{{ url_for('admin_core.send_specific_email') }}" hx-target="#main-content"
-                hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
-                class="group flex items-center gap-2 px-3 md:px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs md:text-sm font-medium transition-all text-gray-300 hover:text-white cursor-pointer whitespace-nowrap">
-                <i class="fas fa-paper-plane group-hover:text-blue-400 transition-colors"></i> <span
-                    class="hidden sm:inline">Email User</span><span class="sm:hidden">Email</span>
-            </a>
+        <div class="relative z-10">
+            <!-- Top bar: system label + status chips -->
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <div class="flex items-center gap-3">
+                    <!-- Radar sweep icon -->
+                    <div class="relative w-12 h-12 flex-shrink-0">
+                        <div class="absolute inset-0 rounded-full border border-indigo-500/40"
+                            style="animation: orbit-spin 6s linear infinite;"></div>
+                        <div class="absolute inset-1 rounded-full border border-indigo-500/20"
+                            style="animation: orbit-spin 4s linear infinite reverse;"></div>
+                        <div class="w-12 h-12 rounded-full bg-indigo-600/20 flex items-center justify-center">
+                            <i class="fas fa-crosshairs text-indigo-400 text-lg"
+                                style="animation: orbit-spin 8s linear infinite;"></i>
+                        </div>
+                        <div class="absolute top-0 left-0 w-full h-full rounded-full"
+                            style="background:conic-gradient(from 0deg, transparent 75%, rgba(99,102,241,0.5) 100%);animation:orbit-spin 2s linear infinite;">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 mb-0.5">
+                            <span class="text-[9px] font-black tracking-[0.25em] uppercase text-indigo-400">SourcePoint
+                                OS</span>
+                            <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"
+                                style="animation:dotBlink 1.5s ease-in-out infinite;"></span>
+                        </div>
+                        <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight leading-none">
+                            Master Command Center
+                        </h1>
+                    </div>
+                </div>
 
-            <a hx-get="{{ url_for('admin_core.broadcast_email') }}" hx-target="#main-content" hx-select="#main-content"
-                hx-push-url="true" hx-swap="outerHTML transition:true"
-                class="group flex items-center gap-2 px-3 md:px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs md:text-sm font-medium transition-all text-gray-300 hover:text-white cursor-pointer whitespace-nowrap">
-                <i class="fas fa-bullhorn group-hover:text-indigo-400 transition-colors"></i> Broadcast
-            </a>
+                <!-- System status chips -->
+                <div class="flex flex-wrap gap-2">
+                    <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold"
+                        style="background:rgba(16,185,129,0.08);border-color:rgba(16,185,129,0.3);color:#34d399;">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"
+                            style="animation:dotBlink 2s ease-in-out infinite;"></span>
+                        Systems Online
+                    </div>
+                    <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold"
+                        style="background:rgba(99,102,241,0.08);border-color:rgba(99,102,241,0.3);color:#818cf8;">
+                        <i class="fas fa-shield-alt text-[9px]"></i>
+                        Secure Mode
+                    </div>
+                </div>
+            </div>
 
-            <a hx-get="{{ url_for('admin_core.admin_analytics') }}" hx-target="#main-content" hx-select="#main-content"
-                hx-push-url="true" hx-swap="outerHTML transition:true"
-                class="flex items-center gap-2 px-3 md:px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs md:text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all cursor-pointer whitespace-nowrap">
-                <i class="fas fa-chart-pie"></i> Analytics
-            </a>
+            <!-- Welcome + action bar -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <p class="text-gray-400 text-sm">
+                        Welcome back, <span class="text-white font-bold">{{ current_user.username }}</span>.
+                        <span class="text-gray-600 mx-1">·</span>
+                        <span class="text-gray-500 text-xs">Select a domain to deploy.</span>
+                    </p>
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                    <a href="{{ url_for('admin.activity_tracker') }}" target="_blank" class="glow-btn inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-white
+                              bg-gradient-to-r from-purple-700 to-blue-700 shadow-lg shadow-purple-500/25
+                              hover:shadow-purple-400/40 hover:-translate-y-0.5 transition-all">
+                        <i class="fas fa-chart-line text-[11px]"></i>
+                        <span class="hidden sm:inline">Activity Tracker</span>
+                        <span class="sm:hidden">Activity</span>
+                    </a>
+                    <a hx-get="{{ url_for('admin_core.send_specific_email') }}" hx-target="#main-content"
+                        hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true" class="glow-btn inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold
+                              text-blue-300 border border-blue-500/30 bg-blue-500/8
+                              hover:bg-blue-500/15 hover:-translate-y-0.5 transition-all cursor-pointer">
+                        <i class="fas fa-paper-plane text-[11px]"></i>
+                        <span class="hidden sm:inline">Email User</span>
+                        <span class="sm:hidden">Email</span>
+                    </a>
+                    <a hx-get="{{ url_for('admin_core.broadcast_email') }}" hx-target="#main-content"
+                        hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true" class="glow-btn inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold
+                              text-orange-300 border border-orange-500/30 bg-orange-500/8
+                              hover:bg-orange-500/15 hover:-translate-y-0.5 transition-all cursor-pointer">
+                        <i class="fas fa-bullhorn text-[11px]"></i> Broadcast
+                    </a>
+                    <a hx-get="{{ url_for('admin_core.admin_analytics') }}" hx-target="#main-content"
+                        hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true" class="glow-btn inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-white
+                              bg-gradient-to-r from-indigo-600 to-violet-700 shadow-lg shadow-indigo-500/30
+                              hover:shadow-indigo-400/50 hover:-translate-y-0.5 transition-all cursor-pointer">
+                        <i class="fas fa-chart-pie text-[11px]"></i> Analytics
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <!-- ══════════════════════════════════════════════════════
+         SYSTEM STATUS BAR — quick counts
+    ══════════════════════════════════════════════════════ -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 scroll-reveal-stagger">
+        <div class="neon-card emerald holo-shimmer px-4 py-3 flex items-center gap-3">
+            <div class="card-accent-bar"></div>
+            <div class="icon-glow emerald w-9 h-9 text-emerald-400 text-sm flex-shrink-0">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <div class="relative z-10">
+                <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Orders</p>
+                <p class="text-xl font-black text-white count-up-number" data-target="{{ pending_orders_count }}">{{
+                    pending_orders_count }}</p>
+            </div>
+        </div>
+        <div class="neon-card indigo holo-shimmer px-4 py-3 flex items-center gap-3">
+            <div class="card-accent-bar"></div>
+            <div class="icon-glow indigo w-9 h-9 text-indigo-400 text-sm flex-shrink-0">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            <div class="relative z-10">
+                <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Applications</p>
+                <p class="text-xl font-black text-white count-up-number" data-target="{{ pending_apps_count }}">{{
+                    pending_apps_count }}</p>
+            </div>
+        </div>
+        <div class="neon-card cyan holo-shimmer px-4 py-3 flex items-center gap-3">
+            <div class="card-accent-bar"></div>
+            <div class="icon-glow cyan w-9 h-9 text-cyan-400 text-sm flex-shrink-0">
+                <i class="fas fa-video"></i>
+            </div>
+            <div class="relative z-10">
+                <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Interviews</p>
+                <p class="text-xl font-black text-white count-up-number"
+                    data-target="{{ scheduled_candidates|length }}">{{ scheduled_candidates|length }}</p>
+            </div>
+        </div>
+        <div class="neon-card pink holo-shimmer px-4 py-3 flex items-center gap-3">
+            <div class="card-accent-bar"></div>
+            <div class="icon-glow pink w-9 h-9 text-pink-400 text-sm flex-shrink-0">
+                <i class="fas fa-user-clock"></i>
+            </div>
+            <div class="relative z-10">
+                <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Pending Reg.</p>
+                <p class="text-xl font-black text-white count-up-number" data-target="{{ pending_users_count }}">{{
+                    pending_users_count }}</p>
+            </div>
+        </div>
+    </div>
 
-        <div
-            class="relative group rounded-3xl p-1 bg-gradient-to-br from-emerald-500/50 to-emerald-900/20 hover:from-emerald-400 hover:to-emerald-800 transition-all duration-300 shadow-2xl shadow-emerald-900/20">
-            <div class="absolute inset-0 bg-black/40 rounded-3xl backdrop-blur-xl"></div>
-            <div
-                class="relative h-full bg-[#0a0a0a] rounded-[22px] p-8 flex flex-col justify-between border border-white/5 group-hover:border-emerald-500/30 transition-colors overflow-hidden">
+    <!-- ══════════════════════════════════════════════════════
+         DOMAIN PORTALS — Commerce + Hiring
+    ══════════════════════════════════════════════════════ -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                <div
-                    class="absolute -right-6 -bottom-6 opacity-10 group-hover:opacity-20 transition-opacity duration-500 rotate-12">
-                    <i class="fas fa-shopping-cart text-9xl text-emerald-500"></i>
+        <!-- ── Commerce Portal ── -->
+        <div class="relative group rounded-2xl overflow-hidden border border-emerald-500/20
+                    transition-all duration-500 hover:border-emerald-400/50
+                    hover:shadow-2xl hover:shadow-emerald-500/20"
+            style="background:linear-gradient(145deg,rgba(10,20,15,0.97),rgba(5,10,8,0.99));">
+
+            <!-- Animated hex overlay -->
+            <svg class="absolute inset-0 w-full h-full opacity-[0.05] group-hover:opacity-[0.09] transition-opacity duration-500"
+                xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <pattern id="hex-em" width="40" height="35" patternUnits="userSpaceOnUse">
+                        <polygon points="20,2 38,12 38,24 20,34 2,24 2,12" fill="none" stroke="rgba(16,185,129,1)"
+                            stroke-width="0.8" />
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#hex-em)" />
+            </svg>
+
+            <!-- Glowing arc decoration -->
+            <div class="absolute -right-16 -top-16 w-56 h-56 rounded-full border-2 border-emerald-500/15
+                        group-hover:border-emerald-400/30 transition-all duration-500"
+                style="animation:orbit-spin 20s linear infinite;"></div>
+            <div class="absolute -right-8 -top-8 w-32 h-32 rounded-full border border-emerald-500/10
+                        group-hover:border-emerald-400/20 transition-all duration-500"
+                style="animation:orbit-spin 12s linear infinite reverse;"></div>
+            <div class="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+                <i class="fas fa-store text-[120px] text-emerald-400"></i>
+            </div>
+
+            <!-- Scan line sweep on hover -->
+            <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                style="background:linear-gradient(180deg,transparent 0%,rgba(16,185,129,0.04) 50%,transparent 100%);animation:holoSwipe 3s ease-in-out infinite;">
+            </div>
+
+            <!-- Top accent line -->
+            <div class="absolute top-0 left-0 right-0 h-[2px]"
+                style="background:linear-gradient(90deg,transparent,#10b981,transparent);box-shadow:0 0 10px #10b981;">
+            </div>
+
+            <div class="relative z-10 p-7">
+                <!-- Icon + label row -->
+                <div class="flex items-start justify-between mb-6">
+                    <div class="flex items-center gap-4">
+                        <div class="relative">
+                            <div class="w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/30
+                                        flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
+                                style="box-shadow:0 0 20px rgba(16,185,129,0.2);">
+                                <i class="fas fa-store text-2xl text-emerald-400"></i>
+                            </div>
+                            <!-- status indicator -->
+                            <div class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-gray-900"
+                                style="animation:dotBlink 2.5s ease-in-out infinite;box-shadow:0 0 8px #10b981;"></div>
+                        </div>
+                        <div>
+                            <p class="text-[9px] font-black tracking-[0.2em] uppercase text-emerald-500 mb-0.5">Domain ·
+                                01</p>
+                            <h2 class="text-2xl font-black text-white leading-tight">Commerce HQ</h2>
+                        </div>
+                    </div>
+                    <!-- Mini metric badges -->
+                    <div class="text-right">
+                        <div class="text-2xl font-black text-emerald-400
+                                    count-up-number" data-target="{{ pending_orders_count }}">{{ pending_orders_count
+                            }}</div>
+                        <p class="text-[9px] text-gray-500 uppercase tracking-wider">Active</p>
+                    </div>
                 </div>
 
-                <div>
-                    <div
-                        class="w-14 h-14 bg-emerald-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                        <i class="fas fa-store text-2xl text-emerald-400"></i>
-                    </div>
-                    <h2 class="text-3xl font-bold text-white mb-2">Commerce HQ</h2>
-                    <p class="text-gray-400 text-sm leading-relaxed mb-6">Manage marketplace inventory, process orders,
-                        handle stock requests, and generate invoices.</p>
+                <p class="text-gray-500 text-sm leading-relaxed mb-5">
+                    Manage marketplace inventory, process orders, handle stock requests, and generate invoices in
+                    real-time.
+                </p>
 
-                    <div class="flex flex-wrap gap-2 mb-6">
-                        <span
-                            class="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                            {{ pending_orders_count }} New Orders
-                        </span>
-                        <span
-                            class="px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs font-bold">
-                            {{ pending_requests_count }} Stock Requests
-                        </span>
-                    </div>
+                <!-- Live stats pills -->
+                <div class="flex flex-wrap gap-2 mb-6">
+                    <span class="badge-glow placed" style="font-size:0.7rem;">
+                        {{ pending_orders_count }} New Orders
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold
+                                 bg-yellow-500/10 border border-yellow-500/25 text-yellow-400">
+                        {{ pending_requests_count }} Stock Requests
+                    </span>
                 </div>
 
+                <!-- CTA -->
                 <a hx-get="{{ url_for('admin_commerce.admin_commerce_dashboard') }}" hx-target="#main-content"
-                    hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
-                    class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-center shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-2 group-hover:translate-y-[-2px] cursor-pointer">
-                    Enter Commerce Dashboard <i class="fas fa-arrow-right"></i>
+                    hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true" class="glow-btn w-full py-3.5 flex items-center justify-center gap-2.5 rounded-xl text-sm font-black
+                          text-white cursor-pointer transition-all duration-300
+                          bg-gradient-to-r from-emerald-700 to-teal-700
+                          hover:from-emerald-600 hover:to-teal-600
+                          shadow-lg shadow-emerald-900/50 hover:shadow-emerald-500/30 hover:-translate-y-0.5">
+                    <i class="fas fa-arrow-right text-xs"></i>
+                    Enter Commerce Dashboard
+                    <span class="ml-auto text-emerald-300/60 text-xs font-normal">[01]</span>
                 </a>
             </div>
         </div>
 
-        <div
-            class="relative group rounded-3xl p-1 bg-gradient-to-br from-indigo-500/50 to-purple-900/20 hover:from-indigo-400 hover:to-purple-800 transition-all duration-300 shadow-2xl shadow-indigo-900/20">
-            <div class="absolute inset-0 bg-black/40 rounded-3xl backdrop-blur-xl"></div>
-            <div
-                class="relative h-full bg-[#0a0a0a] rounded-[22px] p-8 flex flex-col justify-between border border-white/5 group-hover:border-indigo-500/30 transition-colors overflow-hidden">
+        <!-- ── Hiring Portal ── -->
+        <div class="relative group rounded-2xl overflow-hidden border border-indigo-500/20
+                    transition-all duration-500 hover:border-indigo-400/50
+                    hover:shadow-2xl hover:shadow-indigo-500/20"
+            style="background:linear-gradient(145deg,rgba(10,10,25,0.97),rgba(5,5,15,0.99));">
 
-                <div
-                    class="absolute -right-6 -bottom-6 opacity-10 group-hover:opacity-20 transition-opacity duration-500 rotate-12">
-                    <i class="fas fa-users text-9xl text-indigo-500"></i>
+            <!-- Animated hex overlay -->
+            <svg class="absolute inset-0 w-full h-full opacity-[0.05] group-hover:opacity-[0.09] transition-opacity duration-500"
+                xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <pattern id="hex-in" width="40" height="35" patternUnits="userSpaceOnUse">
+                        <polygon points="20,2 38,12 38,24 20,34 2,24 2,12" fill="none" stroke="rgba(99,102,241,1)"
+                            stroke-width="0.8" />
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#hex-in)" />
+            </svg>
+
+            <div class="absolute -right-16 -top-16 w-56 h-56 rounded-full border-2 border-indigo-500/15
+                        group-hover:border-indigo-400/30 transition-all duration-500"
+                style="animation:orbit-spin 20s linear infinite;"></div>
+            <div class="absolute -right-8 -top-8 w-32 h-32 rounded-full border border-indigo-500/10
+                        group-hover:border-indigo-400/20 transition-all duration-500"
+                style="animation:orbit-spin 12s linear infinite reverse;"></div>
+            <div class="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+                <i class="fas fa-user-astronaut text-[120px] text-indigo-400"></i>
+            </div>
+
+            <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                style="background:linear-gradient(180deg,transparent 0%,rgba(99,102,241,0.04) 50%,transparent 100%);animation:holoSwipe 3s ease-in-out infinite 1.5s;">
+            </div>
+
+            <!-- Top accent line -->
+            <div class="absolute top-0 left-0 right-0 h-[2px]"
+                style="background:linear-gradient(90deg,transparent,#6366f1,transparent);box-shadow:0 0 10px #6366f1;">
+            </div>
+
+            <div class="relative z-10 p-7">
+                <div class="flex items-start justify-between mb-6">
+                    <div class="flex items-center gap-4">
+                        <div class="relative">
+                            <div class="w-14 h-14 rounded-2xl bg-indigo-500/15 border border-indigo-500/30
+                                        flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
+                                style="box-shadow:0 0 20px rgba(99,102,241,0.2);">
+                                <i class="fas fa-user-astronaut text-2xl text-indigo-400"></i>
+                            </div>
+                            <div class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-indigo-400 rounded-full border-2 border-gray-900"
+                                style="animation:dotBlink 2s ease-in-out infinite;box-shadow:0 0 8px #6366f1;"></div>
+                        </div>
+                        <div>
+                            <p class="text-[9px] font-black tracking-[0.2em] uppercase text-indigo-500 mb-0.5">Domain ·
+                                02</p>
+                            <h2 class="text-2xl font-black text-white leading-tight">Recruitment Hub</h2>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-black text-indigo-400
+                                    count-up-number" data-target="{{ pending_apps_count }}">{{ pending_apps_count }}
+                        </div>
+                        <p class="text-[9px] text-gray-500 uppercase tracking-wider">Active</p>
+                    </div>
                 </div>
 
-                <div>
-                    <div
-                        class="w-14 h-14 bg-indigo-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                        <i class="fas fa-user-astronaut text-2xl text-indigo-400"></i>
-                    </div>
-                    <h2 class="text-3xl font-bold text-white mb-2">Recruitment Hub</h2>
-                    <p class="text-gray-400 text-sm leading-relaxed mb-6">Oversee candidate applications, schedule
-                        technical interviews, and assign coding tests.</p>
+                <p class="text-gray-500 text-sm leading-relaxed mb-5">
+                    Oversee candidate applications, schedule technical interviews, assign coding environments, and
+                    review feedback.
+                </p>
 
-                    <div class="flex flex-wrap gap-2 mb-6">
-                        <span
-                            class="px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
-                            {{ pending_apps_count }} Applications
-                        </span>
-                        <span
-                            class="px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-bold">
-                            {{ scheduled_candidates|length }} Interviews
-                        </span>
-                    </div>
+                <div class="flex flex-wrap gap-2 mb-6">
+                    <span class="badge-glow pending" style="font-size:0.7rem;">
+                        {{ pending_apps_count }} Applications
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold
+                                 bg-cyan-500/10 border border-cyan-500/25 text-cyan-400">
+                        {{ scheduled_candidates|length }} Interviews
+                    </span>
                 </div>
 
                 <a hx-get="{{ url_for('admin_hiring.admin_hiring_dashboard') }}" hx-target="#main-content"
-                    hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
-                    class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-center shadow-lg shadow-indigo-500/25 transition-all flex items-center justify-center gap-2 group-hover:translate-y-[-2px] cursor-pointer">
-                    Enter Hiring Dashboard <i class="fas fa-arrow-right"></i>
+                    hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true" class="glow-btn w-full py-3.5 flex items-center justify-center gap-2.5 rounded-xl text-sm font-black
+                          text-white cursor-pointer transition-all duration-300
+                          bg-gradient-to-r from-indigo-700 to-violet-800
+                          hover:from-indigo-600 hover:to-violet-700
+                          shadow-lg shadow-indigo-900/50 hover:shadow-indigo-500/30 hover:-translate-y-0.5">
+                    <i class="fas fa-arrow-right text-xs"></i>
+                    Enter Hiring Dashboard
+                    <span class="ml-auto text-indigo-300/60 text-xs font-normal">[02]</span>
                 </a>
             </div>
         </div>
-
     </div>
 
+    <!-- ══════════════════════════════════════════════════════
+         BOTTOM SECTION — Pending Registrations + Live Feed
+    ══════════════════════════════════════════════════════ -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        <div class="glass-panel p-6 rounded-2xl border border-white/10 lg:col-span-2">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-white flex items-center gap-2">
-                    <i class="fas fa-user-clock text-blue-400"></i> Pending User Registrations
-                </h3>
-                <span class="bg-blue-500/20 text-blue-400 px-2 py-1 rounded text-xs font-bold">{{ pending_users_count }}
-                    Pending</span>
+        <!-- Pending Users: 2/3 width -->
+        <div class="glass-panel rounded-2xl border border-white/8 lg:col-span-2 overflow-hidden">
+            <!-- Panel header -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-white/6"
+                style="background:linear-gradient(90deg,rgba(59,130,246,0.06),transparent);">
+                <div class="flex items-center gap-3">
+                    <div class="icon-glow blue w-9 h-9 text-blue-400 text-sm">
+                        <i class="fas fa-user-clock"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-white">Pending Registrations</h3>
+                        <p class="text-[10px] text-gray-600">Awaiting identity verification</p>
+                    </div>
+                </div>
+                <span class="badge-glow pending" style="font-size:0.62rem;">{{ pending_users_count }} Queued</span>
             </div>
 
             {% if pending_users %}
             <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left text-gray-400">
-                    <tbody class="divide-y divide-white/5">
+                <table class="w-full text-sm neon-table">
+                    <thead>
+                        <tr class="text-[10px] text-gray-600 uppercase tracking-widest border-b border-white/4">
+                            <th class="px-6 py-3 text-left bg-white/2">Identity</th>
+                            <th class="px-4 py-3 text-left bg-white/2">Endpoint</th>
+                            <th class="px-4 py-3 text-left bg-white/2">Access Level</th>
+                            <th class="px-4 py-3 text-right bg-white/2">Clearance</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/4">
                         {% for user in pending_users %}
-                        <tr class="hover:bg-white/5 transition-colors">
-                            <td class="py-3 px-2 text-white font-medium">{{ user.username }}</td>
-                            <td class="py-3 px-2 text-xs">{{ user.email }}</td>
-                            <td class="py-3 px-2">
-                                <span class="px-2 py-1 rounded bg-white/10 text-xs uppercase font-bold text-gray-300">{{
-                                    user.role }}</span>
+                        <tr class="hover:bg-white/4 transition-all group">
+                            <td class="px-6 py-3.5">
+                                <div class="flex items-center gap-3">
+                                    <!-- Biometric avatar -->
+                                    <div class="relative flex-shrink-0">
+                                        <div
+                                            class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-700
+                                                    flex items-center justify-center text-white font-black text-xs
+                                                    group-hover:shadow-lg group-hover:shadow-indigo-500/30 transition-shadow">
+                                            {{ user.username[:2]|upper }}
+                                        </div>
+                                        <div class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full
+                                                    bg-yellow-400 border border-gray-900"
+                                            style="animation:dotBlink 1.8s ease-in-out infinite;"></div>
+                                    </div>
+                                    <span class="text-white font-bold text-sm">{{ user.username }}</span>
+                                </div>
                             </td>
-                            <td class="py-3 px-2 text-right">
-                                <div class="flex justify-end gap-2">
+                            <td class="px-4 py-3.5 text-gray-500 text-xs font-mono">{{ user.email }}</td>
+                            <td class="px-4 py-3.5">
+                                <span class="badge-glow pending" style="font-size:0.6rem;padding:2px 8px;">
+                                    {{ user.role|upper }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3.5 text-right">
+                                <div class="flex items-center justify-end gap-2">
                                     <a hx-get="{{ url_for('admin_users.approve_user', user_id=user.id) }}"
-                                        hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
-                                        class="text-emerald-400 hover:text-white cursor-pointer" title="Approve">
-                                        <i class="fas fa-check-circle text-lg"></i>
+                                        hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML" class="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-500/10
+                                              text-emerald-400 hover:bg-emerald-500 hover:text-white
+                                              transition-all cursor-pointer" title="Grant Access">
+                                        <i class="fas fa-check text-xs"></i>
                                     </a>
                                     <a hx-get="{{ url_for('admin_users.reject_user', user_id=user.id) }}"
-                                        hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
-                                        class="text-red-400 hover:text-white cursor-pointer" title="Reject">
-                                        <i class="fas fa-times-circle text-lg"></i>
+                                        hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML" class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-500/10
+                                              text-red-400 hover:bg-red-500 hover:text-white
+                                              transition-all cursor-pointer" title="Deny Access">
+                                        <i class="fas fa-times text-xs"></i>
                                     </a>
                                 </div>
                             </td>
@@ -166,43 +444,102 @@
                     </tbody>
                 </table>
             </div>
-            <div class="mt-4 pt-4 border-t border-white/5 text-center">
+            <div class="flex justify-end px-6 py-3 border-t border-white/4">
                 <a hx-get="{{ url_for('admin_users.manage_users') }}" hx-target="#main-content"
-                    hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
-                    class="text-xs text-gray-500 hover:text-white transition-colors cursor-pointer">
-                    View All Users &rarr;
+                    hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true" class="text-[10px] font-bold text-indigo-400 hover:text-white transition-colors cursor-pointer
+                          flex items-center gap-1.5 uppercase tracking-widest">
+                    View All Users <i class="fas fa-arrow-right text-[9px]"></i>
                 </a>
             </div>
             {% else %}
-            <div
-                class="py-8 text-center text-gray-500 text-sm bg-white/5 rounded-xl border border-dashed border-white/10">
-                No pending registrations.
+            <div class="flex flex-col items-center justify-center py-14 text-gray-700">
+                <div
+                    class="w-16 h-16 rounded-2xl bg-white/3 border border-white/5 flex items-center justify-center mb-4">
+                    <i class="fas fa-user-check text-2xl text-gray-700"></i>
+                </div>
+                <p class="text-sm font-medium text-gray-600">No pending registrations.</p>
+                <p class="text-xs text-gray-700 mt-1">All clearances processed.</p>
             </div>
             {% endif %}
         </div>
 
-        <div class="glass-panel p-6 rounded-2xl border border-white/10">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-white">Live Activity</h3>
+        <!-- Live Activity Log: 1/3 width -->
+        <div class="glass-panel rounded-2xl border border-white/8 overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-white/6"
+                style="background:linear-gradient(90deg,rgba(168,85,247,0.06),transparent);">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-purple-400"
+                        style="animation:dotBlink 1.2s ease-in-out infinite;box-shadow:0 0 6px #a855f7;"></span>
+                    <h3 class="text-sm font-bold text-white">Live Telemetry</h3>
+                </div>
                 <a hx-get="{{ url_for('admin_core.admin_activity_logs') }}" hx-target="#main-content"
                     hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
-                    class="text-xs text-indigo-400 hover:text-white cursor-pointer">Full Logs</a>
+                    class="text-[10px] font-bold text-purple-400 hover:text-white transition-colors cursor-pointer uppercase tracking-widest">
+                    Full Logs →
+                </a>
             </div>
-            <div class="space-y-4 max-h-[250px] overflow-y-auto custom-scrollbar pr-2">
+
+            <div class="p-4 space-y-1 max-h-[340px] overflow-y-auto custom-scrollbar">
                 {% for log in recent_logs %}
-                <div class="relative pl-4 border-l border-white/10 pb-1">
-                    <div class="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-black border border-gray-600">
+                <div class="relative flex gap-3 py-2.5 px-3 rounded-xl hover:bg-white/3 transition-colors group">
+                    <!-- Timeline dot -->
+                    <div class="flex flex-col items-center flex-shrink-0 mt-1">
+                        <div class="w-2 h-2 rounded-full bg-indigo-500 group-hover:bg-indigo-400 transition-colors
+                                    ring-2 ring-indigo-500/20 group-hover:ring-indigo-400/40"
+                            style="box-shadow:0 0 4px #6366f1;"></div>
+                        <div class="w-px flex-1 bg-white/5 mt-1.5" style="min-height:16px;"></div>
                     </div>
-                    <p class="text-xs text-white font-bold">{{ log.user.username }}</p>
-                    <p class="text-[10px] text-gray-400 truncate">{{ log.action }}</p>
-                    <p class="text-[10px] text-gray-600 mt-0.5">{{ log.timestamp.strftime('%H:%M') }}</p>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-white text-xs font-bold leading-tight truncate">{{ log.user.username }}</p>
+                        <p class="text-gray-500 text-[10px] truncate mt-0.5 leading-tight">{{ log.action }}</p>
+                        <p class="text-gray-700 text-[9px] mt-1 font-mono">{{ log.timestamp.strftime('%H:%M:%S') }}</p>
+                    </div>
                 </div>
                 {% else %}
-                <p class="text-sm text-gray-500 italic text-center">No recent activity.</p>
+                <div class="flex flex-col items-center justify-center py-12 text-gray-700">
+                    <i class="fas fa-satellite-dish text-3xl mb-3 opacity-20"></i>
+                    <p class="text-xs font-medium text-gray-600">No signals detected.</p>
+                </div>
                 {% endfor %}
             </div>
         </div>
 
     </div>
 </div>
+
+<script>
+    // Count-Up Animation
+    function animateCounters() {
+        document.querySelectorAll('.count-up-number[data-target]').forEach(el => {
+            if (el.dataset.animated) return;
+            el.dataset.animated = true;
+            const target = parseInt(el.dataset.target, 10) || 0;
+            if (target === 0) return;
+            let current = 0;
+            const step = target / (1200 / 16);
+            const timer = setInterval(() => {
+                current = Math.min(current + step, target);
+                el.textContent = Math.floor(current);
+                if (current >= target) clearInterval(timer);
+            }, 16);
+        });
+    }
+
+    // Ripple on glow-btn
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.glow-btn');
+        if (!btn) return;
+        const rect = btn.getBoundingClientRect();
+        const r = document.createElement('span');
+        const size = Math.max(rect.width, rect.height);
+        r.className = 'ripple';
+        r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - rect.left - size / 2}px;top:${e.clientY - rect.top - size / 2}px`;
+        btn.appendChild(r);
+        r.addEventListener('animationend', () => r.remove());
+    });
+
+    document.addEventListener('DOMContentLoaded', animateCounters);
+    document.addEventListener('htmx:afterSwap', animateCounters);
+</script>
+
 {% endblock %}
