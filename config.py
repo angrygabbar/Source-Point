@@ -16,6 +16,9 @@ class Config:
     CACHE_TYPE = 'RedisCache'
     REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379/0')
     
+    # FIX FOR FLASK-LIMITER IN-MEMORY WARNING:
+    RATELIMIT_STORAGE_URI = REDIS_URL
+    
     CACHE_REDIS_URL = REDIS_URL
     CACHE_DEFAULT_TIMEOUT = 300
     CACHE_THRESHOLD = 500

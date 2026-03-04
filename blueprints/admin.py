@@ -730,30 +730,42 @@ def send_specific_email():
             flash('Subject and body are required.', 'danger')
             return redirect(url_for('admin.send_specific_email'))
 
+        ct = getattr(file, 'mimetype', None) or 'application/octet-stream' if file and file.filename != '' else None
+
         attachments = []
         if file and file.filename != '':
             file_data = file.read()
+            ct = getattr(file, 'mimetype', None) or 'application/octet-stream'
             attachments.append({
                 'filename': secure_filename(file.filename),
-                'content_type': file.content_type,
+                'content_type': ct,
                 'data': file_data
             })
 
-        signature = """<br><br>...Source Point Team..."""
-        final_body = body + signature
-
+        # Single BCC send — avoids N serial SMTP connections blocking the worker
         users = User.query.filter(User.id.in_(user_ids)).all()
-        count = 0
-        for user in users:
-            if user.email:
-                send_email(to=user.email, subject=subject, template="mail/broadcast.html", user=user, body=final_body, attachments=attachments)
-                count += 1
-        
+        bcc_list = [u.email for u in users if u.email]
+        to_email = os.environ.get('MAIL_DEFAULT_SENDER_EMAIL', 'admin@sourcepoint.in')
+
+        if bcc_list:
+            send_email(
+                to=to_email,
+                bcc=bcc_list,
+                subject=subject,
+                template="mail/broadcast.html",
+                user=current_user,
+                body=body,
+                attachments=attachments
+            )
+            count = len(bcc_list)
+        else:
+            count = 0
+
         log_user_action("Send Specific Email", f"Sent email to {count} recipients.")
         flash(f'Email has been sent to {count} users.', 'success')
         return redirect(url_for('admin.admin_dashboard'))
 
-    users = User.query.all()
+    users = User.query.filter_by(is_active=True).order_by(User.username).all()
     return render_template('send_specific_email.html', users=users)
 
 # =========================================================
