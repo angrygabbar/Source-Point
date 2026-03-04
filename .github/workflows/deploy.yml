@@ -1,4 +1,4 @@
-name: Deploy to Production
+name: Deploy to Mac Mini Server
 
 on:
   push:
@@ -10,32 +10,32 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      # 1. Thes step Authenticates & Downloads code to a temp folder (SUCCESS)
+      # 1. Authenticates & Downloads code to a temp folder (Updated to v4)
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      # 2. Sync the downloaded code to your live folder
-      # We use rsync to update only changed files (Faster & Safer than git pull here)
+      # 2. Sync the downloaded code to your live folder on the Mac Mini
       - name: Sync Files to Live Folder
         run: |
-          # Create folder if missing
-          mkdir -p /var/www/sourcepoint/Source-Point
+          # Ensure the Mac Mini developer folder exists
+          mkdir -p /Users/gaurav/Developer/Source-Point
           
           # Copy files from Runner -> Live Server
-          # -a: preserve permissions, -v: verbose, --delete: remove deleted files
-          # --exclude: don't copy .git folder or venv to avoid messing up local configs
-          rsync -av --exclude='.git' --exclude='venv' --exclude='__pycache__' ./ /var/www/sourcepoint/Source-Point/
+          # -a: preserve permissions, -v: verbose
+          # --exclude: protect local environments and configs
+          rsync -av --exclude='.git' --exclude='venv' --exclude='__pycache__' ./ /Users/gaurav/Developer/Source-Point/
 
-      # 3. Rebuild Docker
+      # 3. Rebuild Docker (Updated to include Celery workers and scheduler)
       - name: Rebuild Application
         run: |
-          cd /var/www/sourcepoint/Source-Point
-          docker compose up -d --build --no-deps web
+          cd /Users/gaurav/Developer/Source-Point
+          # We rebuild web, worker, and scheduler so background tasks get the new code too
+          docker compose up -d --build web worker scheduler
 
       # 4. Database Migrations
       - name: Run Database Migrations
         run: |
-          cd /var/www/sourcepoint/Source-Point
+          cd /Users/gaurav/Developer/Source-Point
           docker compose exec -T web flask db upgrade
 
       # 5. Cleanup
