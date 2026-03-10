@@ -661,7 +661,7 @@ def resend_invoice():
         attachments = [{'filename': f'Invoice_{invoice.invoice_number}.pdf', 'data': pdf_bytes}]
         recipient_list = [r.strip() for r in recipients.split(',')]
         for email_to in recipient_list:
-             send_email(to=email_to, subject=f"Invoice #{invoice.invoice_number}", template="mail/ecommerce_invoice_email.html", invoice=invoice, attachments=attachments)
+             send_email(to=email_to, subject=f"Invoice #{invoice.invoice_number}", template="mail/ecommerce_invoice_email.html", invoice=invoice, attachments=attachments, sync=True)
         
         if is_ajax:
             return jsonify({'success': True, 'message': 'Invoice resent successfully.'})

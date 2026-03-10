@@ -1345,7 +1345,8 @@ def resend_invoice():
         send_email(
             to=recipient_list, subject=f'Invoice ({invoice.invoice_number}) from Source Point',
             template='mail/ecommerce_invoice_email.html', invoice=invoice,
-            attachments=[attachment]
+            attachments=[attachment],
+            sync=True
         )
         message = f'Invoice {invoice.invoice_number} has been resent!'
         success = True

@@ -459,7 +459,8 @@ def resend_invoice():
             subject=f"Resent: Invoice {invoice.invoice_number}", 
             template='mail/ecommerce_invoice_email.html', 
             invoice=invoice,
-            attachments=[att]
+            attachments=[att],
+            sync=True
         )
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({'success': True, 'message': 'Invoice email resent.'})
