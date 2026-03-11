@@ -2,19 +2,19 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scheduled Maintenance Notice — SourcePoint</title>
 </head>
 
-<body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Arial,sans-serif;">
+<body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
 
     <!-- Preheader -->
     <span style="display:none;max-height:0;overflow:hidden;">
-        SourcePoint will be undergoing scheduled maintenance. We'll be back shortly!
+        ⚠️ SourcePoint will undergo scheduled maintenance. Your data is safe — we'll be back shortly!
     </span>
 
-    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#07070f;padding:40px 0;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#07070f;padding:40px 20px;">
         <tr>
             <td align="center">
                 <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
@@ -22,75 +22,79 @@
                     <!-- Header -->
                     <tr>
                         <td
-                            style="background:linear-gradient(135deg,#1a0533 0%,#0d1a40 50%,#1a1a00 100%);border-radius:20px 20px 0 0;padding:40px 40px 26px;text-align:center;">
+                            style="background:linear-gradient(135deg,#78350f,#d97706,#f59e0b);border-radius:20px 20px 0 0;padding:40px 40px 50px;text-align:center;">
                             <div
-                                style="display:inline-block;width:60px;height:60px;border-radius:18px;background:linear-gradient(135deg,#f59e0b,#ef4444);text-align:center;line-height:60px;margin-bottom:18px;box-shadow:0 8px 32px rgba(245,158,11,0.35);">
-                                <span style="font-size:28px;">🛠️</span>
+                                style="display:inline-block;background:rgba(255,255,255,0.15);border-radius:16px;padding:14px;margin-bottom:20px;">
+                                <img src="https://img.icons8.com/fluency/48/maintenance.png" alt="Maintenance"
+                                    width="48" height="48" style="display:block;">
                             </div>
-                            <h1 style="margin:0;font-size:26px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">
-                                SourcePoint</h1>
-                            <p
-                                style="margin:4px 0 0;font-size:12px;color:#fbbf24;letter-spacing:1.5px;text-transform:uppercase;font-weight:600;">
-                                Maintenance Notice</p>
+                            <h1 style="margin:0;font-size:28px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">
+                                🛠️ Scheduled Maintenance
+                            </h1>
+                            <p style="margin:10px 0 0;font-size:15px;color:rgba(255,255,255,0.9);">Important
+                                notification from the SourcePoint team</p>
                         </td>
                     </tr>
 
-                    <!-- Alert Banner -->
+                    <!-- Wave Divider -->
                     <tr>
-                        <td>
-                            <div
-                                style="background:linear-gradient(90deg,#451a03,#422006);border-left:4px solid #f59e0b;border-right:4px solid #f59e0b;padding:16px 40px;text-align:center;">
-                                <span style="font-size:15px;font-weight:700;color:#fbbf24;letter-spacing:0.5px;">⚠️
-                                    &nbsp;Scheduled Maintenance Ahead</span>
-                            </div>
+                        <td style="background:linear-gradient(135deg,#78350f,#d97706);height:30px;">
+                            <div style="background:#0f0f1e;height:30px;border-radius:30px 30px 0 0;"></div>
                         </td>
                     </tr>
 
                     <!-- Body -->
                     <tr>
-                        <td style="background:#0f0f1a;padding:36px 40px;">
-                            <p style="margin:0 0 20px;font-size:16px;color:#e2e8f0;">
-                                Hi <strong style="color:#a78bfa;">{{ user.username }}</strong>,
-                            </p>
-                            <p style="font-size:15px;color:#cbd5e1;line-height:1.75;margin:0 0 26px;">
-                                We're writing to inform you that <strong style="color:#ffffff;">SourcePoint will be
+                        <td style="background:#0f0f1e;padding:0 40px 36px;">
+
+                            <p style="font-size:17px;color:#f1f5f9;margin:0 0 6px;">Hi <strong style="color:#fbbf24;">{{
+                                    user.username }}</strong>,</p>
+                            <p style="font-size:15px;color:#94a3b8;line-height:1.7;margin:0 0 28px;">
+                                We're reaching out to inform you that <strong style="color:#ffffff;">SourcePoint will be
                                     undergoing scheduled maintenance</strong>. During this window, the platform may be
-                                temporarily unavailable. We sincerely apologize for any inconvenience.
+                                temporarily unavailable. We sincerely apologize for any inconvenience and assure you
+                                that your data remains completely safe.
                             </p>
 
-                            <!-- Maintenance Details Card -->
+                            <!-- Maintenance Info Card -->
                             <table width="100%" cellpadding="0" cellspacing="0"
-                                style="background:#1a1a2e;border:1px solid #2d2d4e;border-radius:14px;margin-bottom:28px;overflow:hidden;">
+                                style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:14px;margin-bottom:20px;">
                                 <tr>
                                     <td style="padding:22px 26px;">
                                         <p
-                                            style="margin:0 0 14px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#f59e0b;font-weight:700;">
-                                            Maintenance Information</p>
-
-                                        {% if start_time %}
+                                            style="margin:0 0 14px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#fbbf24;font-weight:700;">
+                                            🗓️ Maintenance Schedule
+                                        </p>
                                         <table width="100%" cellpadding="0" cellspacing="0">
+                                            {% if start_time %}
                                             <tr>
-                                                <td style="padding:7px 0;color:#94a3b8;font-size:13px;width:130px;">
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;width:140px;">
                                                     Start Time</td>
-                                                <td style="padding:7px 0;color:#fbbf24;font-size:13px;font-weight:600;">
+                                                <td style="padding:7px 0;color:#fbbf24;font-size:15px;font-weight:700;">
                                                     {{ start_time }}</td>
                                             </tr>
+                                            {% endif %}
                                             {% if end_time %}
                                             <tr>
-                                                <td style="padding:7px 0;color:#94a3b8;font-size:13px;">Expected End
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Expected End
                                                 </td>
-                                                <td style="padding:7px 0;color:#fbbf24;font-size:13px;font-weight:600;">
+                                                <td style="padding:7px 0;color:#fbbf24;font-size:15px;font-weight:700;">
                                                     {{ end_time }}</td>
                                             </tr>
                                             {% endif %}
+                                            {% if duration %}
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Duration</td>
+                                                <td style="padding:7px 0;color:#e2e8f0;font-size:14px;">Approx. {{
+                                                    duration }}</td>
+                                            </tr>
+                                            {% endif %}
                                         </table>
-                                        {% endif %}
-
                                         {% if reason %}
                                         <div
-                                            style="margin-top:16px;padding:14px;background:#0f0f1a;border-radius:10px;border:1px solid #2d2d4e;">
+                                            style="margin-top:16px;padding:14px;background:#0a0a15;border-radius:10px;border:1px solid rgba(245,158,11,0.15);">
                                             <p
-                                                style="margin:0 0 6px;font-size:11px;color:#6366f1;text-transform:uppercase;letter-spacing:1px;font-weight:600;">
+                                                style="margin:0 0 6px;font-size:11px;color:#f59e0b;text-transform:uppercase;letter-spacing:1px;font-weight:600;">
                                                 Reason / Details</p>
                                             <p style="margin:0;font-size:14px;color:#e2e8f0;line-height:1.6;">{{ reason
                                                 }}</p>
@@ -100,47 +104,72 @@
                                 </tr>
                             </table>
 
-                            <!-- What happens during maintenance -->
-                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+                            <!-- What to Expect -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.15);border-radius:14px;margin-bottom:20px;">
                                 <tr>
-                                    <td
-                                        style="background:#100a20;border:1px solid #2d1f5e;border-radius:12px;padding:20px 24px;">
+                                    <td style="padding:20px 24px;">
                                         <p
-                                            style="margin:0 0 14px;font-size:13px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;">
-                                            What to Expect</p>
+                                            style="margin:0 0 14px;font-size:13px;font-weight:700;color:#818cf8;text-transform:uppercase;letter-spacing:1px;">
+                                            💡 What to Expect</p>
                                         <table width="100%" cellpadding="0" cellspacing="0">
                                             <tr>
-                                                <td style="padding:5px 0;vertical-align:top;width:22px;font-size:14px;">
-                                                    🔒</td>
-                                                <td style="padding:5px 0;font-size:13px;color:#cbd5e1;">Platform
-                                                    temporarily inaccessible</td>
+                                                <td width="28" valign="top" style="padding:6px 0;font-size:16px;">🔒
+                                                </td>
+                                                <td style="padding:6px 0;color:#c7d2fe;font-size:13px;line-height:1.6;">
+                                                    The platform will be temporarily inaccessible during maintenance.
+                                                </td>
                                             </tr>
                                             <tr>
-                                                <td style="padding:5px 0;vertical-align:top;font-size:14px;">💾</td>
-                                                <td style="padding:5px 0;font-size:13px;color:#cbd5e1;">Your data is
-                                                    safe — no action needed</td>
+                                                <td width="28" valign="top" style="padding:6px 0;font-size:16px;">💾
+                                                </td>
+                                                <td style="padding:6px 0;color:#c7d2fe;font-size:13px;line-height:1.6;">
+                                                    All your data is completely safe — no action is needed from you.
+                                                </td>
                                             </tr>
                                             <tr>
-                                                <td style="padding:5px 0;vertical-align:top;font-size:14px;">🚀</td>
-                                                <td style="padding:5px 0;font-size:13px;color:#cbd5e1;">We'll be back
-                                                    with improvements as quickly as possible</td>
+                                                <td width="28" valign="top" style="padding:6px 0;font-size:16px;">🚀
+                                                </td>
+                                                <td style="padding:6px 0;color:#c7d2fe;font-size:13px;line-height:1.6;">
+                                                    We'll be back with performance improvements and enhanced stability.
+                                                </td>
                                             </tr>
                                             <tr>
-                                                <td style="padding:5px 0;vertical-align:top;font-size:14px;">🔔</td>
-                                                <td style="padding:5px 0;font-size:13px;color:#cbd5e1;">We'll notify you
-                                                    once services are restored</td>
+                                                <td width="28" valign="top" style="padding:6px 0;font-size:16px;">🔔
+                                                </td>
+                                                <td style="padding:6px 0;color:#c7d2fe;font-size:13px;line-height:1.6;">
+                                                    You'll receive a notification once services are fully restored.</td>
+                                            </tr>
+                                            <tr>
+                                                <td width="28" valign="top" style="padding:6px 0;font-size:16px;">📧
+                                                </td>
+                                                <td style="padding:6px 0;color:#c7d2fe;font-size:13px;line-height:1.6;">
+                                                    In-progress work will be saved automatically where applicable.</td>
                                             </tr>
                                         </table>
                                     </td>
                                 </tr>
                             </table>
 
-                            <p
-                                style="font-size:14px;color:#94a3b8;line-height:1.6;margin:0;text-align:center;padding:12px 20px;background:#0d0d1a;border-radius:10px;border:1px solid #1e1e3a;">
-                                Questions? Contact us at
-                                <a href="mailto:support@sourcepoint.in"
-                                    style="color:#a78bfa;text-decoration:none;font-weight:600;">support@sourcepoint.in</a>
+                            <!-- Support Box -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:#0a0a15;border:1px solid #1e1e30;border-radius:12px;margin-bottom:28px;">
+                                <tr>
+                                    <td style="padding:16px 20px;text-align:center;">
+                                        <p style="margin:0;font-size:14px;color:#94a3b8;line-height:1.6;">
+                                            Questions or concerns? Reach us at
+                                            <a href="mailto:support@sourcepoint.in"
+                                                style="color:#a78bfa;text-decoration:none;font-weight:600;">support@sourcepoint.in</a>
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="font-size:15px;color:#e2e8f0;margin:0;">
+                                Thank you for your patience and understanding.<br>
+                                <strong style="color:#fbbf24;">The Source Point Team</strong>
                             </p>
+
                         </td>
                     </tr>
 
@@ -148,12 +177,16 @@
                     <tr>
                         <td
                             style="background:#07070f;border-top:1px solid #1e1e30;padding:24px 40px;text-align:center;border-radius:0 0 20px 20px;">
-                            <p style="margin:0 0 8px;font-size:13px;color:#64748b;font-weight:600;">— The SourcePoint
-                                Team</p>
-                            <p style="margin:0 0 4px;font-size:12px;color:#475569;">© {{ now.year }} SourcePoint. All
-                                rights reserved.</p>
-                            <p style="margin:0;font-size:11px;color:#334155;">This is an automated notification sent to
-                                all registered users.</p>
+                            <p style="margin:0 0 4px;font-size:13px;color:#64748b;font-weight:600;">⚡ SourcePoint
+                                Operations</p>
+                            <p style="margin:0 0 8px;font-size:12px;color:#334155;">
+                                <a href="mailto:support@sourcepoint.in"
+                                    style="color:#f59e0b;text-decoration:none;">support@sourcepoint.in</a>
+                            </p>
+                            <p style="margin:0;font-size:11px;color:#1e293b;">
+                                © {{ now.year }} Source Point. All rights reserved. · This is an automated notification
+                                sent to all registered users.
+                            </p>
                         </td>
                     </tr>
 

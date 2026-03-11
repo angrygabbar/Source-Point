@@ -4,132 +4,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EMI Reminder</title>
+    <title>EMI Payment Reminder — SourcePoint</title>
 </head>
 
-<body
-    style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #e2e8f0;">
+<body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
 
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0f172a;">
+    <!-- Preheader -->
+    <span style="display:none;max-height:0;overflow:hidden;">
+        ⏰ Friendly reminder: Your EMI payment is due soon. Please ensure timely payment to avoid penalties.
+    </span>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#07070f;padding:40px 20px;">
         <tr>
-            <td align="center" style="padding: 40px 20px;">
-
-                <table role="presentation" width="600" cellspacing="0" cellpadding="0"
-                    style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
 
                     <!-- Header -->
                     <tr>
                         <td
-                            style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%); padding: 40px 40px 50px 40px; text-align: center;">
-                            <table role="presentation" cellspacing="0" cellpadding="0"
-                                style="margin: 0 auto 20px auto;">
-                                <tr>
-                                    <td style="background: rgba(255,255,255,0.2); border-radius: 16px; padding: 16px;">
-                                        <img src="https://img.icons8.com/fluency/48/calendar.png" alt="EMI" width="48"
-                                            height="48" style="display: block;">
-                                    </td>
-                                </tr>
-                            </table>
-                            <h1
-                                style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">
-                                EMI Reminder 📅</h1>
-                            <p style="margin: 12px 0 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">Your payment
-                                is due soon</p>
+                            style="background:linear-gradient(135deg,#78350f,#d97706,#f59e0b);border-radius:20px 20px 0 0;padding:40px 40px 50px;text-align:center;">
+                            <div
+                                style="display:inline-block;background:rgba(255,255,255,0.15);border-radius:16px;padding:14px;margin-bottom:20px;">
+                                <img src="https://img.icons8.com/fluency/48/calendar.png" alt="EMI" width="48"
+                                    height="48" style="display:block;">
+                            </div>
+                            <h1 style="margin:0;font-size:28px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">
+                                📅 EMI Payment Reminder
+                            </h1>
+                            <p style="margin:10px 0 0;font-size:15px;color:rgba(255,255,255,0.9);">Your EMI payment is
+                                due soon — please don't miss it</p>
                         </td>
                     </tr>
 
                     <!-- Wave Divider -->
                     <tr>
-                        <td
-                            style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%); height: 30px;">
-                            <div style="background: #1e293b; height: 30px; border-radius: 30px 30px 0 0;"></div>
+                        <td style="background:linear-gradient(135deg,#78350f,#d97706);height:30px;">
+                            <div style="background:#0f0f1e;height:30px;border-radius:30px 30px 0 0;"></div>
                         </td>
                     </tr>
 
-                    <!-- Content -->
+                    <!-- Body -->
                     <tr>
-                        <td style="padding: 0 40px 40px 40px;">
+                        <td style="background:#0f0f1e;padding:0 40px 36px;">
 
-                            <p style="font-size: 18px; color: #f1f5f9; margin: 0 0 24px 0; line-height: 1.6;">
-                                Hello <strong style="color: #fbbf24;">{{ borrower.username }}</strong>,
+                            <p style="font-size:17px;color:#f1f5f9;margin:0 0 6px;">Hello <strong
+                                    style="color:#fbbf24;">{{ borrower.username }}</strong>,</p>
+                            <p style="font-size:15px;color:#94a3b8;line-height:1.7;margin:0 0 28px;">
+                                This is a friendly reminder that your upcoming EMI payment is due. Please review the
+                                details below and make your payment on time to avoid any late fees or penalties.
                             </p>
 
-                            <p style="font-size: 16px; color: #d1d5db; margin: 0 0 24px 0; line-height: 1.6;">
-                                This is a friendly reminder about your upcoming EMI payment.
-                            </p>
-
-                            <!-- EMI Details Card -->
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.1) 100%); border: 2px solid rgba(245, 158, 11, 0.3); border-radius: 16px; margin-bottom: 24px;">
+                            <!-- EMI Amount Highlight -->
+                            {% if emi_amount %}
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(217,119,6,0.08));border:2px solid rgba(245,158,11,0.3);border-radius:14px;margin-bottom:20px;">
                                 <tr>
-                                    <td style="padding: 24px;">
-                                        <h2
-                                            style="margin: 0 0 20px 0; font-size: 18px; color: #fbbf24; font-weight: 600;">
+                                    <td style="padding:26px;text-align:center;">
+                                        <p
+                                            style="margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:2px;color:#6b7280;font-weight:600;">
+                                            Amount Due</p>
+                                        <p
+                                            style="margin:0;font-size:42px;font-weight:800;color:#fbbf24;letter-spacing:-1px;">
+                                            ₹{{ emi_amount }}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            <!-- EMI Details -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:14px;margin-bottom:20px;">
+                                <tr>
+                                    <td style="padding:22px 26px;">
+                                        <p
+                                            style="margin:0 0 14px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#fbbf24;font-weight:700;">
                                             💰 EMI Details
-                                        </h2>
-                                        {% if emi_amount %}
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                            style="margin-bottom: 12px;">
+                                        </p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            {% if loan_id %}
                                             <tr>
-                                                <td width="120" style="font-size: 13px; color: #9ca3af;">Amount Due</td>
-                                                <td style="font-size: 20px; color: #fbbf24; font-weight: 700;">₹{{
-                                                    emi_amount }}</td>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;width:140px;">Loan
+                                                    ID</td>
+                                                <td
+                                                    style="padding:7px 0;color:#c7d2fe;font-size:13px;font-family:'Courier New',monospace;letter-spacing:1px;">
+                                                    {{ loan_id }}</td>
                                             </tr>
-                                        </table>
-                                        {% endif %}
-                                        {% if due_date %}
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                            style="margin-bottom: 12px;">
+                                            {% endif %}
+                                            {% if due_date %}
                                             <tr>
-                                                <td width="120" style="font-size: 13px; color: #9ca3af;">Due Date</td>
-                                                <td style="font-size: 15px; color: #f87171; font-weight: 600;">{{
-                                                    due_date }}</td>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Due Date</td>
+                                                <td style="padding:7px 0;color:#f87171;font-size:15px;font-weight:700;">
+                                                    {{ due_date }}</td>
                                             </tr>
-                                        </table>
-                                        {% endif %}
-                                        {% if loan_id %}
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            {% endif %}
+                                            {% if installment_no %}
                                             <tr>
-                                                <td width="120" style="font-size: 13px; color: #9ca3af;">Loan ID</td>
-                                                <td style="font-size: 14px; color: #d1d5db; font-family: monospace;">{{
-                                                    loan_id }}</td>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Installment #
+                                                </td>
+                                                <td style="padding:7px 0;color:#e2e8f0;font-size:14px;">{{
+                                                    installment_no }}</td>
                                             </tr>
+                                            {% endif %}
+                                            {% if remaining_installments %}
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Remaining EMIs
+                                                </td>
+                                                <td style="padding:7px 0;color:#e2e8f0;font-size:14px;">{{
+                                                    remaining_installments }}</td>
+                                            </tr>
+                                            {% endif %}
                                         </table>
-                                        {% endif %}
                                     </td>
                                 </tr>
                             </table>
 
-                            <!-- Closing -->
-                            <p style="font-size: 16px; color: #e2e8f0; margin: 0;">
+                            <!-- Warning -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(239,68,68,0.07);border-left:4px solid #ef4444;border-radius:0 12px 12px 0;margin-bottom:24px;">
+                                <tr>
+                                    <td style="padding:14px 20px;">
+                                        <p style="margin:0;font-size:14px;color:#fca5a5;line-height:1.6;">
+                                            ⚠️ <strong>Late payments may incur additional charges.</strong> Please
+                                            ensure payment is made by the due date. Contact your lender immediately if
+                                            you anticipate any issues.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="font-size:15px;color:#e2e8f0;margin:0;">
                                 Please ensure timely payment.<br>
-                                <strong style="color: #fbbf24;">The Source Point Team</strong>
+                                <strong style="color:#fbbf24;">The Source Point Team</strong>
                             </p>
+
                         </td>
                     </tr>
 
                     <!-- Footer -->
                     <tr>
                         <td
-                            style="background: rgba(15, 23, 42, 0.8); padding: 24px 40px; border-top: 1px solid rgba(148, 163, 184, 0.1);">
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-                                <tr>
-                                    <td align="center">
-                                        <p style="margin: 0; font-size: 12px; color: #6b7280;">
-                                            © 2025 Source Point. All rights reserved.
-                                        </p>
-                                    </td>
-                                </tr>
-                            </table>
+                            style="background:#07070f;border-top:1px solid #1e1e30;padding:24px 40px;text-align:center;border-radius:0 0 20px 20px;">
+                            <p style="margin:0 0 4px;font-size:13px;color:#64748b;font-weight:600;">⚡ SourcePoint
+                                Finance</p>
+                            <p style="margin:0 0 8px;font-size:12px;color:#334155;">
+                                Need help? <a href="mailto:support@sourcepoint.in"
+                                    style="color:#f59e0b;text-decoration:none;">support@sourcepoint.in</a>
+                            </p>
+                            <p style="margin:0;font-size:11px;color:#1e293b;">
+                                © {{ now.year if now is defined else '2025' }} Source Point. All rights reserved. · This
+                                is an automated EMI reminder.
+                            </p>
                         </td>
                     </tr>
 
                 </table>
-
             </td>
         </tr>
     </table>
-
 </body>
 
 </html>

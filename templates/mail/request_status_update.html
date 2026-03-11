@@ -1,46 +1,218 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
-        .header { padding: 15px; text-align: center; border-radius: 5px 5px 0 0; color: white; }
-        .approved { background-color: #10B981; }
-        .rejected { background-color: #EF4444; }
-        .content { padding: 20px; }
-        .details { background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 15px 0; }
-        .footer { text-align: center; font-size: 12px; color: #666; margin-top: 20px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header {{ 'approved' if status == 'Approved' else 'rejected' }}">
-            <h2>Stock Request {{ status }}</h2>
-        </div>
-        <div class="content">
-            <p>Hello <strong>{{ request.seller.username }}</strong>,</p>
-            <p>Your request for <strong>{{ product.name }}</strong> has been processed.</p>
-            
-            <div class="details">
-                <p><strong>Status:</strong> {{ status }}</p>
-                <p><strong>Quantity:</strong> {{ request.quantity }}</p>
-                {% if status == 'Approved' %}
-                <p><strong>New Stock Balance:</strong> {{ current_stock }}</p>
-                {% endif %}
-                {% if request.admin_note %}
-                <p><strong>Admin Note:</strong> {{ request.admin_note }}</p>
-                {% endif %}
-            </div>
+<html lang="en">
 
-            {% if status == 'Approved' %}
-            <p>The inventory has been added to your account and is ready for sale.</p>
-            {% else %}
-            <p>If you have questions, please contact the administrator.</p>
-            {% endif %}
-        </div>
-        <div class="footer">
-            <p>&copy; Source Point System</p>
-        </div>
-    </div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Request {{ status }} — SourcePoint</title>
+</head>
+
+<body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+
+    <!-- Preheader -->
+    <span style="display:none;max-height:0;overflow:hidden;">
+        Your stock request for {{ product.name }} has been {{ status }}.
+    </span>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#07070f;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            style="{% if status == 'Approved' %}background:linear-gradient(135deg,#065f46,#059669,#10b981);{% else %}background:linear-gradient(135deg,#7f1d1d,#dc2626,#ef4444);{% endif %}border-radius:20px 20px 0 0;padding:40px 40px 50px;text-align:center;">
+                            <div
+                                style="display:inline-block;background:rgba(255,255,255,0.15);border-radius:16px;padding:14px;margin-bottom:20px;">
+                                {% if status == 'Approved' %}
+                                <img src="https://img.icons8.com/fluency/48/ok.png" alt="Approved" width="48"
+                                    height="48" style="display:block;">
+                                {% else %}
+                                <img src="https://img.icons8.com/fluency/48/cancel.png" alt="Rejected" width="48"
+                                    height="48" style="display:block;">
+                                {% endif %}
+                            </div>
+                            <h1 style="margin:0;font-size:28px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">
+                                {% if status == 'Approved' %}✅ Request Approved!{% else %}❌ Request Rejected{% endif %}
+                            </h1>
+                            <p style="margin:10px 0 0;font-size:15px;color:rgba(255,255,255,0.85);">
+                                {% if status == 'Approved' %}Your stock has been updated and is ready for sale{% else
+                                %}Your stock request could not be processed{% endif %}
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Wave Divider -->
+                    <tr>
+                        <td
+                            style="{% if status == 'Approved' %}background:linear-gradient(135deg,#065f46,#059669);{% else %}background:linear-gradient(135deg,#7f1d1d,#dc2626);{% endif %}height:30px;">
+                            <div style="background:#0f0f1e;height:30px;border-radius:30px 30px 0 0;"></div>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="background:#0f0f1e;padding:0 40px 36px;">
+
+                            <p style="font-size:17px;color:#f1f5f9;margin:0 0 6px;">Hello <strong
+                                    style="color:{% if status == 'Approved' %}#34d399{% else %}#f87171{% endif %};">{{
+                                    request.seller.username }}</strong>,</p>
+                            <p style="font-size:15px;color:#94a3b8;line-height:1.7;margin:0 0 28px;">
+                                {% if status == 'Approved' %}
+                                Great news! Your stock replenishment request has been reviewed and <strong
+                                    style="color:#34d399;">approved</strong> by our admin team. Your inventory has been
+                                updated and is ready for sale.
+                                {% else %}
+                                Your stock replenishment request has been reviewed and unfortunately <strong
+                                    style="color:#f87171;">rejected</strong> by our admin team. Please see the details
+                                below.
+                                {% endif %}
+                            </p>
+
+                            <!-- Request Details Card -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:{% if status == 'Approved' %}rgba(16,185,129,0.08){% else %}rgba(239,68,68,0.08){% endif %};border:1px solid {% if status == 'Approved' %}rgba(16,185,129,0.2){% else %}rgba(239,68,68,0.2){% endif %};border-radius:14px;margin-bottom:20px;">
+                                <tr>
+                                    <td style="padding:22px 26px;">
+                                        <p
+                                            style="margin:0 0 14px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:{% if status == 'Approved' %}#34d399{% else %}#f87171{% endif %};font-weight:700;">
+                                            📦 Request Summary
+                                        </p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;width:130px;">
+                                                    Product</td>
+                                                <td style="padding:7px 0;color:#f1f5f9;font-size:15px;font-weight:700;">
+                                                    {{ product.name }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Quantity
+                                                    Requested</td>
+                                                <td style="padding:7px 0;color:#e2e8f0;font-size:14px;font-weight:600;">
+                                                    {{ request.quantity }} Units</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Decision</td>
+                                                <td style="padding:7px 0;">
+                                                    <span
+                                                        style="background:{% if status == 'Approved' %}rgba(16,185,129,0.15){% else %}rgba(239,68,68,0.15){% endif %};color:{% if status == 'Approved' %}#34d399{% else %}#f87171{% endif %};font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;">
+                                                        ● {{ status }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            {% if status == 'Approved' %}
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">New Stock
+                                                    Balance</td>
+                                                <td style="padding:7px 0;color:#34d399;font-size:16px;font-weight:700;">
+                                                    {{ current_stock }} Units</td>
+                                            </tr>
+                                            {% endif %}
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            {% if request.admin_note %}
+                            <!-- Admin Note -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(251,191,36,0.07);border-left:4px solid #f59e0b;border-radius:0 12px 12px 0;margin-bottom:24px;">
+                                <tr>
+                                    <td style="padding:16px 20px;">
+                                        <p
+                                            style="margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#f59e0b;font-weight:600;">
+                                            📝 Admin Note</p>
+                                        <p style="margin:0;font-size:14px;color:#fcd34d;line-height:1.6;">{{
+                                            request.admin_note }}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            {% if status == 'Approved' %}
+                            <!-- What happens next -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:14px;margin-bottom:24px;">
+                                <tr>
+                                    <td style="padding:20px 24px;">
+                                        <p style="margin:0 0 12px;font-size:14px;font-weight:700;color:#34d399;">✅ What
+                                            happens next?</p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding:5px 0;color:#a7f3d0;font-size:13px;line-height:1.6;">
+                                                    → Your product inventory has been updated in real time.</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:5px 0;color:#a7f3d0;font-size:13px;line-height:1.6;">
+                                                    → The new stock is immediately available for sale on the platform.
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:5px 0;color:#a7f3d0;font-size:13px;line-height:1.6;">
+                                                    → Visit your seller dashboard to view updated inventory.</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% else %}
+                            <!-- Rejection guidance -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);border-radius:14px;margin-bottom:24px;">
+                                <tr>
+                                    <td style="padding:20px 24px;">
+                                        <p style="margin:0 0 12px;font-size:14px;font-weight:700;color:#f87171;">What
+                                            can you do?</p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding:5px 0;color:#fca5a5;font-size:13px;line-height:1.6;">
+                                                    → Review the admin note above for the reason.</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:5px 0;color:#fca5a5;font-size:13px;line-height:1.6;">
+                                                    → Contact your administrator if you believe this is an error.</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:5px 0;color:#fca5a5;font-size:13px;line-height:1.6;">
+                                                    → Submit a new request with updated details if applicable.</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            <p style="font-size:15px;color:#e2e8f0;margin:0;">
+                                Best regards,<br>
+                                <strong
+                                    style="color:{% if status == 'Approved' %}#34d399{% else %}#f87171{% endif %};">The
+                                    Source Point Team</strong>
+                            </p>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background:#07070f;border-top:1px solid #1e1e30;padding:24px 40px;text-align:center;border-radius:0 0 20px 20px;">
+                            <p style="margin:0 0 4px;font-size:13px;color:#64748b;font-weight:600;">⚡ SourcePoint
+                                Platform</p>
+                            <p style="margin:0 0 8px;font-size:12px;color:#334155;">
+                                Need help? <a href="mailto:support@sourcepoint.in"
+                                    style="color:#6366f1;text-decoration:none;">support@sourcepoint.in</a>
+                            </p>
+                            <p style="margin:0;font-size:11px;color:#1e293b;">
+                                © {{ now.year }} Source Point. All rights reserved. · This is an automated notification.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
+
 </html>

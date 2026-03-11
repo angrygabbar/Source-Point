@@ -4,155 +4,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Request Submitted</title>
+    <title>Stock Request Submitted — SourcePoint</title>
 </head>
 
-<body
-    style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #e2e8f0;">
+<body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
 
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0f172a;">
+    <!-- Preheader -->
+    <span style="display:none;max-height:0;overflow:hidden;">
+        ✅ Your stock request has been submitted and is pending admin approval. We'll notify you soon!
+    </span>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#07070f;padding:40px 20px;">
         <tr>
-            <td align="center" style="padding: 40px 20px;">
-
-                <table role="presentation" width="600" cellspacing="0" cellpadding="0"
-                    style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
 
                     <!-- Header -->
                     <tr>
                         <td
-                            style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%); padding: 40px 40px 50px 40px; text-align: center;">
-                            <table role="presentation" cellspacing="0" cellpadding="0"
-                                style="margin: 0 auto 20px auto;">
-                                <tr>
-                                    <td style="background: rgba(255,255,255,0.2); border-radius: 16px; padding: 16px;">
-                                        <img src="https://img.icons8.com/fluency/48/in-stock.png" alt="Stock" width="48"
-                                            height="48" style="display: block;">
-                                    </td>
-                                </tr>
-                            </table>
-                            <h1
-                                style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">
-                                Stock Request Submitted 📋</h1>
-                            <p style="margin: 12px 0 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">Your request
-                                is being processed</p>
+                            style="background:linear-gradient(135deg,#1d4ed8,#2563eb,#3b82f6);border-radius:20px 20px 0 0;padding:40px 40px 50px;text-align:center;">
+                            <div
+                                style="display:inline-block;background:rgba(255,255,255,0.15);border-radius:16px;padding:14px;margin-bottom:20px;">
+                                <img src="https://img.icons8.com/fluency/48/in-stock.png" alt="Stock" width="48"
+                                    height="48" style="display:block;">
+                            </div>
+                            <h1 style="margin:0;font-size:28px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">
+                                📋 Stock Request Submitted
+                            </h1>
+                            <p style="margin:10px 0 0;font-size:15px;color:rgba(255,255,255,0.9);">Your request is under
+                                review — we'll notify you shortly</p>
                         </td>
                     </tr>
 
                     <!-- Wave Divider -->
                     <tr>
-                        <td
-                            style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%); height: 30px;">
-                            <div style="background: #1e293b; height: 30px; border-radius: 30px 30px 0 0;"></div>
+                        <td style="background:linear-gradient(135deg,#1d4ed8,#2563eb);height:30px;">
+                            <div style="background:#0f0f1e;height:30px;border-radius:30px 30px 0 0;"></div>
                         </td>
                     </tr>
 
-                    <!-- Content -->
+                    <!-- Body -->
                     <tr>
-                        <td style="padding: 0 40px 40px 40px;">
+                        <td style="background:#0f0f1e;padding:0 40px 36px;">
 
-                            <p style="font-size: 18px; color: #f1f5f9; margin: 0 0 24px 0; line-height: 1.6;">
-                                Hello <strong style="color: #60a5fa;">{{ user.username }}</strong>,
+                            <p style="font-size:17px;color:#f1f5f9;margin:0 0 6px;">Hello <strong
+                                    style="color:#60a5fa;">{{ user.username }}</strong>,</p>
+                            <p style="font-size:15px;color:#94a3b8;line-height:1.7;margin:0 0 28px;">
+                                Great news — your stock replenishment request has been successfully submitted! Our admin
+                                team will review it and get back to you as quickly as possible. Here's a summary of what
+                                you submitted:
                             </p>
 
-                            <p style="font-size: 16px; color: #d1d5db; margin: 0 0 24px 0; line-height: 1.6;">
-                                Your stock request has been submitted successfully and is awaiting approval.
-                            </p>
-
-                            <!-- Request Details Card -->
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 16px; margin-bottom: 24px;">
+                            <!-- Request Details -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:14px;margin-bottom:20px;">
                                 <tr>
-                                    <td style="padding: 24px;">
-                                        <h2
-                                            style="margin: 0 0 20px 0; font-size: 18px; color: #60a5fa; font-weight: 600;">
-                                            📦 Request Details
-                                        </h2>
-                                        {% if request_id %}
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                            style="margin-bottom: 12px;">
+                                    <td style="padding:22px 26px;">
+                                        <p
+                                            style="margin:0 0 14px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#60a5fa;font-weight:700;">
+                                            📦 Request Summary
+                                        </p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            {% if request_id %}
                                             <tr>
-                                                <td width="120" style="font-size: 13px; color: #9ca3af;">Request ID</td>
-                                                <td style="font-size: 14px; color: #f1f5f9; font-family: monospace;">{{
-                                                    request_id }}</td>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;width:140px;">
+                                                    Request ID</td>
+                                                <td
+                                                    style="padding:7px 0;color:#c7d2fe;font-size:13px;font-weight:700;font-family:'Courier New',monospace;letter-spacing:1px;">
+                                                    {{ request_id }}</td>
                                             </tr>
-                                        </table>
-                                        {% endif %}
-                                        {% if item_name %}
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                            style="margin-bottom: 12px;">
+                                            {% endif %}
+                                            {% if item_name %}
                                             <tr>
-                                                <td width="120" style="font-size: 13px; color: #9ca3af;">Item</td>
-                                                <td style="font-size: 15px; color: #f1f5f9; font-weight: 500;">{{
-                                                    item_name }}</td>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Product</td>
+                                                <td style="padding:7px 0;color:#f1f5f9;font-size:15px;font-weight:600;">
+                                                    {{ item_name }}</td>
                                             </tr>
-                                        </table>
-                                        {% endif %}
-                                        {% if quantity %}
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                            style="margin-bottom: 12px;">
+                                            {% endif %}
+                                            {% if quantity %}
                                             <tr>
-                                                <td width="120" style="font-size: 13px; color: #9ca3af;">Quantity</td>
-                                                <td style="font-size: 15px; color: #f1f5f9;">{{ quantity }}</td>
-                                            </tr>
-                                        </table>
-                                        {% endif %}
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-                                            <tr>
-                                                <td width="120" style="font-size: 13px; color: #9ca3af;">Status</td>
-                                                <td>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Quantity
+                                                    Requested</td>
+                                                <td style="padding:7px 0;">
                                                     <span
-                                                        style="display: inline-block; background: rgba(245, 158, 11, 0.2); color: #fbbf24; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">⏳
-                                                        Pending</span>
+                                                        style="background:rgba(59,130,246,0.15);color:#60a5fa;font-size:14px;font-weight:700;padding:4px 14px;border-radius:20px;">{{
+                                                        quantity }} Units</span>
                                                 </td>
                                             </tr>
+                                            {% endif %}
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Status</td>
+                                                <td style="padding:7px 0;">
+                                                    <span
+                                                        style="background:rgba(245,158,11,0.15);color:#fbbf24;font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;">⏳
+                                                        Pending Review</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Submitted At
+                                                </td>
+                                                <td style="padding:7px 0;color:#e2e8f0;font-size:13px;">{{
+                                                    now.strftime('%d %b %Y, %I:%M %p') if now is defined else 'Just now'
+                                                    }} IST</td>
+                                            </tr>
                                         </table>
                                     </td>
                                 </tr>
                             </table>
 
-                            <!-- Info Note -->
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                style="background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; border-radius: 0 12px 12px 0; margin-bottom: 24px;">
+                            <!-- What Happens Next -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.15);border-radius:14px;margin-bottom:24px;">
                                 <tr>
-                                    <td style="padding: 16px 20px;">
-                                        <p style="margin: 0; font-size: 14px; color: #93c5fd;">
-                                            <strong>ℹ️ Note:</strong> You'll receive a notification once your request is
-                                            approved.
-                                        </p>
+                                    <td style="padding:20px 24px;">
+                                        <p
+                                            style="margin:0 0 12px;font-size:13px;font-weight:700;color:#818cf8;text-transform:uppercase;letter-spacing:1px;">
+                                            📢 What Happens Next?</p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding:5px 0;color:#c7d2fe;font-size:13px;line-height:1.6;">
+                                                    → Our admin team will review your request.</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:5px 0;color:#c7d2fe;font-size:13px;line-height:1.6;">
+                                                    → You'll receive an email notification once approved or rejected.
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:5px 0;color:#c7d2fe;font-size:13px;line-height:1.6;">
+                                                    → If approved, your inventory will be updated automatically.</td>
+                                            </tr>
+                                        </table>
                                     </td>
                                 </tr>
                             </table>
 
-                            <!-- Closing -->
-                            <p style="font-size: 16px; color: #e2e8f0; margin: 0;">
+                            <p style="font-size:15px;color:#e2e8f0;margin:0;">
                                 Thank you for your request!<br>
-                                <strong style="color: #60a5fa;">The Source Point Team</strong>
+                                <strong style="color:#60a5fa;">The Source Point Team</strong>
                             </p>
+
                         </td>
                     </tr>
 
                     <!-- Footer -->
                     <tr>
                         <td
-                            style="background: rgba(15, 23, 42, 0.8); padding: 24px 40px; border-top: 1px solid rgba(148, 163, 184, 0.1);">
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-                                <tr>
-                                    <td align="center">
-                                        <p style="margin: 0; font-size: 12px; color: #6b7280;">
-                                            © 2025 Source Point. All rights reserved.
-                                        </p>
-                                    </td>
-                                </tr>
-                            </table>
+                            style="background:#07070f;border-top:1px solid #1e1e30;padding:24px 40px;text-align:center;border-radius:0 0 20px 20px;">
+                            <p style="margin:0 0 4px;font-size:13px;color:#64748b;font-weight:600;">⚡ SourcePoint
+                                Commerce</p>
+                            <p style="margin:0 0 8px;font-size:12px;color:#334155;">
+                                Questions? <a href="mailto:support@sourcepoint.in"
+                                    style="color:#3b82f6;text-decoration:none;">support@sourcepoint.in</a>
+                            </p>
+                            <p style="margin:0;font-size:11px;color:#1e293b;">
+                                © {{ now.year if now is defined else '2025' }} Source Point. All rights reserved. · This
+                                is an automated notification.
+                            </p>
                         </td>
                     </tr>
 
                 </table>
-
             </td>
         </tr>
     </table>
-
 </body>
 
 </html>

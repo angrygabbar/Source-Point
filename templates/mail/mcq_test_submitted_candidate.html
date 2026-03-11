@@ -7,10 +7,14 @@
     <title>Test Submitted - Thank You</title>
 </head>
 
-<body
-    style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #e2e8f0;">
+<body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
 
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0f172a;">
+    <!-- Preheader -->
+    <span style="display:none;max-height:0;overflow:hidden;">
+        ✨ Your SourcePoint MCQ test has been submitted successfully! View your results inside.
+    </span>
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#07070f;">
         <tr>
             <td align="center" style="padding: 40px 20px;">
 
@@ -146,19 +150,14 @@
                     <!-- Footer -->
                     <tr>
                         <td
-                            style="background: rgba(15, 23, 42, 0.8); padding: 24px 40px; border-top: 1px solid rgba(148, 163, 184, 0.1);">
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-                                <tr>
-                                    <td align="center">
-                                        <p style="margin: 0 0 8px 0; font-size: 14px; color: #9ca3af;">
-                                            This is an automated email from Source Point Platform
-                                        </p>
-                                        <p style="margin: 0; font-size: 12px; color: #6b7280;">
-                                            © {{ now.year if now else '2026' }} Source Point. All rights reserved.
-                                        </p>
-                                    </td>
-                                </tr>
-                            </table>
+                            style="background:#07070f;border-top:1px solid #1e1e30;padding:24px 40px;text-align:center;border-radius:0 0 20px 20px;">
+                            <p style="margin:0 0 4px;font-size:13px;color:#64748b;font-weight:600;">⚡ SourcePoint Career
+                            </p>
+                            <p style="margin:0 0 8px;font-size:12px;color:#334155;">Questions? <a
+                                    href="mailto:support@sourcepoint.in"
+                                    style="color:#8b5cf6;text-decoration:none;">support@sourcepoint.in</a></p>
+                            <p style="margin:0;font-size:11px;color:#1e293b;">© {{ now.year if now else '2025' }} Source
+                                Point. All rights reserved. · This is an automated MCQ submission notification.</p>
                         </td>
                     </tr>
 

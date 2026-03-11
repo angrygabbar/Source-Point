@@ -7,9 +7,14 @@
     <title>MCQ Test Assigned</title>
 </head>
 
-<body
-    style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #e2e8f0;">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0f172a;">
+<body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+
+    <!-- Preheader -->
+    <span style="display:none;max-height:0;overflow:hidden;">
+        📝 You've been assigned an MCQ test on SourcePoint. Complete it before the scheduled time!
+    </span>
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#07070f;">
         <tr>
             <td align="center" style="padding: 40px 20px;">
                 <table role="presentation" width="600" cellspacing="0" cellpadding="0"
@@ -51,9 +56,9 @@
                                 Hello <strong style="color: #8b5cf6;">{{ candidate.username }}</strong>,
                             </p>
 
-                            <p style="font-size: 16px; color: #d1d5db; margin: 0 0 24px 0; line-height: 1.6;">
-                                You have been assigned a new MCQ test. Please review the details below and complete the
-                                test before the scheduled time.
+                            <p style="font-size: 15px; color: #94a3b8; line-height: 1.7; margin: 0 0 24px;">
+                                A new MCQ test has been assigned to you on SourcePoint. Please review the details below
+                                carefully and complete the test before the scheduled time. Good luck!
                             </p>
 
                             <!-- Test Details Card -->
@@ -164,16 +169,15 @@
                     <!-- Footer -->
                     <tr>
                         <td
-                            style="background: rgba(15, 23, 42, 0.8); padding: 24px 40px; border-top: 1px solid rgba(148, 163, 184, 0.1);">
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-                                <tr>
-                                    <td align="center">
-                                        <p style="margin: 0; font-size: 12px; color: #6b7280;">
-                                            © 2025 Source Point. All rights reserved.
-                                        </p>
-                                    </td>
-                                </tr>
-                            </table>
+                            style="background:#07070f;border-top:1px solid #1e1e30;padding:24px 40px;text-align:center;border-radius:0 0 20px 20px;">
+                            <p style="margin:0 0 4px;font-size:13px;color:#64748b;font-weight:600;">⚡ SourcePoint Career
+                            </p>
+                            <p style="margin:0 0 8px;font-size:12px;color:#334155;">Questions? <a
+                                    href="mailto:support@sourcepoint.in"
+                                    style="color:#8b5cf6;text-decoration:none;">support@sourcepoint.in</a></p>
+                            <p style="margin:0;font-size:11px;color:#1e293b;">© {{ now.year if now is defined else
+                                '2025' }} Source Point. All rights reserved. · This is an automated MCQ test assignment
+                                notification.</p>
                         </td>
                     </tr>
 

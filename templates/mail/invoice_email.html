@@ -4,107 +4,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice</title>
+    <title>Invoice — SourcePoint</title>
 </head>
 
-<body
-    style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #e2e8f0;">
+<body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
 
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0f172a;">
+    <!-- Preheader -->
+    <span style="display:none;max-height:0;overflow:hidden;">
+        Your invoice {{ invoice.invoice_number }} from SourcePoint is ready for your records.
+    </span>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#07070f;padding:40px 20px;">
         <tr>
-            <td align="center" style="padding: 40px 20px;">
-
-                <table role="presentation" width="600" cellspacing="0" cellpadding="0"
-                    style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
 
                     <!-- Header -->
                     <tr>
                         <td
-                            style="background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%); padding: 40px 40px 50px 40px; text-align: center;">
-                            <table role="presentation" cellspacing="0" cellpadding="0"
-                                style="margin: 0 auto 20px auto;">
-                                <tr>
-                                    <td style="background: rgba(255,255,255,0.2); border-radius: 16px; padding: 16px;">
-                                        <img src="https://img.icons8.com/fluency/48/invoice.png" alt="Invoice"
-                                            width="48" height="48" style="display: block;">
-                                    </td>
-                                </tr>
-                            </table>
-                            <h1
-                                style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">
-                                Invoice 📄</h1>
-                            <p style="margin: 12px 0 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">Payment
-                                Details</p>
+                            style="background:linear-gradient(135deg,#065f46,#059669,#10b981);border-radius:20px 20px 0 0;padding:40px 40px 50px;text-align:center;">
+                            <div
+                                style="display:inline-block;background:rgba(255,255,255,0.15);border-radius:16px;padding:14px;margin-bottom:20px;">
+                                <img src="https://img.icons8.com/fluency/48/invoice.png" alt="Invoice" width="48"
+                                    height="48" style="display:block;">
+                            </div>
+                            <h1 style="margin:0;font-size:28px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">
+                                📄 Invoice Issued
+                            </h1>
+                            <p style="margin:10px 0 0;font-size:15px;color:rgba(255,255,255,0.85);">Please review and
+                                keep for your records</p>
                         </td>
                     </tr>
 
                     <!-- Wave Divider -->
                     <tr>
-                        <td
-                            style="background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%); height: 30px;">
-                            <div style="background: #1e293b; height: 30px; border-radius: 30px 30px 0 0;"></div>
+                        <td style="background:linear-gradient(135deg,#065f46,#059669);height:30px;">
+                            <div style="background:#0f0f1e;height:30px;border-radius:30px 30px 0 0;"></div>
                         </td>
                     </tr>
 
-                    <!-- Content -->
+                    <!-- Body -->
                     <tr>
-                        <td style="padding: 0 40px 40px 40px;">
+                        <td style="background:#0f0f1e;padding:0 40px 36px;">
 
-                            <p style="font-size: 18px; color: #f1f5f9; margin: 0 0 24px 0; line-height: 1.6;">
-                                Hello <strong style="color: #10b981;">{{ invoice.recipient_name }}</strong>,
-                            </p>
-
-                            <p style="font-size: 16px; color: #d1d5db; margin: 0 0 24px 0; line-height: 1.6;">
-                                Please find the invoice details below for your records.
+                            <p style="font-size:17px;color:#f1f5f9;margin:0 0 6px;">Hello <strong
+                                    style="color:#34d399;">{{ invoice.recipient_name }}</strong>,</p>
+                            <p style="font-size:15px;color:#94a3b8;line-height:1.7;margin:0 0 28px;">
+                                Thank you for doing business with us. Please find your invoice details below. Keep this
+                                email as a record of your transaction.
                             </p>
 
                             <!-- Invoice Details Card -->
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 16px; margin-bottom: 24px;">
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:14px;margin-bottom:20px;">
                                 <tr>
-                                    <td style="padding: 24px;">
-                                        <h2
-                                            style="margin: 0 0 20px 0; font-size: 18px; color: #10b981; font-weight: 600;">
+                                    <td style="padding:22px 26px;">
+                                        <p
+                                            style="margin:0 0 14px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#34d399;font-weight:700;">
                                             📋 Invoice Details
-                                        </h2>
-                                        {% if invoice.invoice_number %}
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                            style="margin-bottom: 12px;">
+                                        </p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            {% if invoice.invoice_number %}
                                             <tr>
-                                                <td width="120" style="font-size: 13px; color: #9ca3af;">Invoice #</td>
-                                                <td style="font-size: 15px; color: #f1f5f9; font-weight: 600;">{{
-                                                    invoice.invoice_number }}</td>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;width:140px;">
+                                                    Invoice #</td>
+                                                <td
+                                                    style="padding:7px 0;color:#c7d2fe;font-size:14px;font-weight:700;font-family:'Courier New',monospace;letter-spacing:1px;">
+                                                    {{ invoice.invoice_number }}</td>
                                             </tr>
-                                        </table>
-                                        {% endif %}
-                                        {% if invoice.total_amount %}
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                            style="margin-bottom: 12px;">
+                                            {% endif %}
                                             <tr>
-                                                <td width="120" style="font-size: 13px; color: #9ca3af;">Amount</td>
-                                                <td style="font-size: 20px; color: #10b981; font-weight: 700;">₹{{
-                                                    invoice.total_amount }}</td>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Billed To</td>
+                                                <td style="padding:7px 0;color:#e2e8f0;font-size:14px;font-weight:600;">
+                                                    {{ invoice.recipient_name }}</td>
                                             </tr>
-                                        </table>
-                                        {% endif %}
-                                        {% if invoice.due_date %}
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                            style="margin-bottom: 12px;">
+                                            {% if invoice.recipient_email %}
                                             <tr>
-                                                <td width="120" style="font-size: 13px; color: #9ca3af;">Due Date</td>
-                                                <td style="font-size: 15px; color: #fbbf24; font-weight: 500;">{{
-                                                    invoice.due_date.strftime('%B %d, %Y') if invoice.due_date else
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Email</td>
+                                                <td style="padding:7px 0;color:#e2e8f0;font-size:13px;">{{
+                                                    invoice.recipient_email }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% if invoice.issued_date %}
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Issue Date</td>
+                                                <td style="padding:7px 0;color:#e2e8f0;font-size:14px;">{{
+                                                    invoice.issued_date.strftime('%B %d, %Y') if invoice.issued_date
+                                                    else '' }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% if invoice.due_date %}
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Due Date</td>
+                                                <td style="padding:7px 0;color:#fbbf24;font-size:14px;font-weight:600;">
+                                                    {{ invoice.due_date.strftime('%B %d, %Y') if invoice.due_date else
                                                     'Immediate' }}</td>
                                             </tr>
-                                        </table>
-                                        {% endif %}
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            {% endif %}
                                             <tr>
-                                                <td width="120" style="font-size: 13px; color: #9ca3af;">Status</td>
-                                                <td>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Status</td>
+                                                <td style="padding:7px 0;">
                                                     <span
-                                                        style="display: inline-block; background: rgba(16, 185, 129, 0.2); color: #10b981; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">{{
-                                                        invoice.status|default('Pending') }}</span>
+                                                        style="background:rgba(16,185,129,0.15);color:#34d399;font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;">
+                                                        ● {{ invoice.status | default('Pending') }}
+                                                    </span>
                                                 </td>
                                             </tr>
                                         </table>
@@ -112,36 +115,94 @@
                                 </tr>
                             </table>
 
-                            <!-- Closing -->
-                            <p style="font-size: 16px; color: #e2e8f0; margin: 0;">
+                            <!-- Amount Highlight -->
+                            {% if invoice.total_amount %}
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:linear-gradient(135deg,rgba(16,185,129,0.12),rgba(5,150,105,0.08));border:1px solid rgba(16,185,129,0.25);border-radius:14px;margin-bottom:20px;">
+                                <tr>
+                                    <td style="padding:24px;text-align:center;">
+                                        <p
+                                            style="margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:#6b7280;font-weight:600;">
+                                            Total Amount Due</p>
+                                        <p
+                                            style="margin:0;font-size:40px;font-weight:800;color:#34d399;letter-spacing:-1px;">
+                                            ₹{{ "%.2f"|format(invoice.total_amount) }}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            {% if invoice.notes %}
+                            <!-- Notes -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(251,191,36,0.07);border-left:4px solid #f59e0b;border-radius:0 12px 12px 0;margin-bottom:24px;">
+                                <tr>
+                                    <td style="padding:16px 20px;">
+                                        <p
+                                            style="margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#f59e0b;font-weight:600;">
+                                            📝 Notes</p>
+                                        <p style="margin:0;font-size:14px;color:#fcd34d;line-height:1.6;">{{
+                                            invoice.notes }}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            <!-- Payment Instructions -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.15);border-radius:14px;margin-bottom:28px;">
+                                <tr>
+                                    <td style="padding:20px 24px;">
+                                        <p
+                                            style="margin:0 0 12px;font-size:13px;font-weight:700;color:#818cf8;text-transform:uppercase;letter-spacing:1px;">
+                                            💳 Payment Instructions</p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding:4px 0;color:#c7d2fe;font-size:13px;line-height:1.6;">
+                                                    → Please make payment by the due date shown above.</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:4px 0;color:#c7d2fe;font-size:13px;line-height:1.6;">
+                                                    → Reference Invoice # in your payment description.</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:4px 0;color:#c7d2fe;font-size:13px;line-height:1.6;">
+                                                    → Retain this email as proof of invoice.</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="font-size:15px;color:#e2e8f0;margin:0;">
                                 Thank you for your business!<br>
-                                <strong style="color: #10b981;">The Source Point Team</strong>
+                                <strong style="color:#34d399;">The Source Point Team</strong>
                             </p>
+
                         </td>
                     </tr>
 
                     <!-- Footer -->
                     <tr>
                         <td
-                            style="background: rgba(15, 23, 42, 0.8); padding: 24px 40px; border-top: 1px solid rgba(148, 163, 184, 0.1);">
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-                                <tr>
-                                    <td align="center">
-                                        <p style="margin: 0; font-size: 12px; color: #6b7280;">
-                                            © 2025 Source Point. All rights reserved.
-                                        </p>
-                                    </td>
-                                </tr>
-                            </table>
+                            style="background:#07070f;border-top:1px solid #1e1e30;padding:24px 40px;text-align:center;border-radius:0 0 20px 20px;">
+                            <p style="margin:0 0 4px;font-size:13px;color:#64748b;font-weight:600;">⚡ SourcePoint
+                                Finance</p>
+                            <p style="margin:0 0 8px;font-size:12px;color:#334155;">
+                                Queries? <a href="mailto:support@sourcepoint.in"
+                                    style="color:#10b981;text-decoration:none;">support@sourcepoint.in</a>
+                            </p>
+                            <p style="margin:0;font-size:11px;color:#1e293b;">
+                                © {{ now.year if now is defined else '2025' }} Source Point. All rights reserved. · This
+                                is an automated invoice notification.
+                            </p>
                         </td>
                     </tr>
 
                 </table>
-
             </td>
         </tr>
     </table>
-
 </body>
 
 </html>

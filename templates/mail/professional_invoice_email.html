@@ -4,13 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional Invoice</title>
+    <title>Professional Invoice — SourcePoint</title>
 </head>
 
-<body
-    style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #e2e8f0;">
+<body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
 
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0f172a;">
+    <!-- Preheader -->
+    <span style="display:none;max-height:0;overflow:hidden;">
+        💸 Your SourcePoint professional invoice is ready. Review and process payment at your earliest convenience.
+    </span>
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#07070f;">
         <tr>
             <td align="center" style="padding: 40px 20px;">
 
@@ -54,8 +58,9 @@
                                 Hello <strong style="color: #a78bfa;">{{ recipient_name }}</strong>,
                             </p>
 
-                            <p style="font-size: 16px; color: #d1d5db; margin: 0 0 24px 0; line-height: 1.6;">
-                                Please find your professional invoice attached. Here are the details:
+                            <p style="font-size: 15px; color: #94a3b8; line-height: 1.7; margin: 0 0 24px;">
+                                Please find your professional invoice details below. Kindly review them and ensure
+                                payment is made by the due date shown. Contact us if you have any questions or concerns.
                             </p>
 
                             <!-- Invoice Details Card -->
@@ -137,16 +142,15 @@
                     <!-- Footer -->
                     <tr>
                         <td
-                            style="background: rgba(15, 23, 42, 0.8); padding: 24px 40px; border-top: 1px solid rgba(148, 163, 184, 0.1);">
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-                                <tr>
-                                    <td align="center">
-                                        <p style="margin: 0; font-size: 12px; color: #6b7280;">
-                                            © 2025 Source Point. All rights reserved.
-                                        </p>
-                                    </td>
-                                </tr>
-                            </table>
+                            style="background:#07070f;border-top:1px solid #1e1e30;padding:24px 40px;text-align:center;border-radius:0 0 20px 20px;">
+                            <p style="margin:0 0 4px;font-size:13px;color:#64748b;font-weight:600;">⚡ SourcePoint
+                                Finance</p>
+                            <p style="margin:0 0 8px;font-size:12px;color:#334155;">Questions? <a
+                                    href="mailto:support@sourcepoint.in"
+                                    style="color:#8b5cf6;text-decoration:none;">support@sourcepoint.in</a></p>
+                            <p style="margin:0;font-size:11px;color:#1e293b;">© {{ now.year if now is defined else
+                                '2025' }} Source Point. All rights reserved. · This is an automated invoice
+                                notification.</p>
                         </td>
                     </tr>
 

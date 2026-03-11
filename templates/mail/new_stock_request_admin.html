@@ -1,41 +1,195 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
-        .header { background-color: #9333ea; color: white; padding: 15px; text-align: center; border-radius: 5px 5px 0 0; }
-        .content { padding: 20px; }
-        .details { background-color: #f9fafb; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #9333ea; }
-        .btn { display: inline-block; padding: 10px 20px; background-color: #9333ea; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px; font-weight: bold; }
-        .footer { text-align: center; font-size: 12px; color: #666; margin-top: 20px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h2>📢 New Stock Request</h2>
-        </div>
-        <div class="content">
-            <p>Hello Admin,</p>
-            <p><strong>{{ seller.username }}</strong> has requested additional stock.</p>
-            
-            <div class="details">
-                <p><strong>Product:</strong> {{ product.name }}</p>
-                <p><strong>Code:</strong> {{ product.product_code }}</p>
-                <p><strong>Requested Qty:</strong> {{ request.quantity }} Units</p>
-                <p><strong>Date:</strong> {{ now.strftime('%Y-%m-%d %H:%M') }}</p>
-            </div>
+<html lang="en">
 
-            <p>Please login to the dashboard to Approve or Reject this request.</p>
-            
-            <center>
-                <a href="{{ url_for('admin_commerce.manage_stock_requests_page', _external=True) }}" class="btn">Process Request</a>
-            </center>
-        </div>
-        <div class="footer">
-            <p>&copy; {{ now.year }} Source Point System</p>
-        </div>
-    </div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Stock Request — SourcePoint Admin</title>
+</head>
+
+<body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+
+    <!-- Preheader -->
+    <span style="display:none;max-height:0;overflow:hidden;">
+        Action Required: {{ seller.username }} has submitted a new stock request for {{ product.name }}.
+    </span>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#07070f;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            style="background:linear-gradient(135deg,#7c3aed,#9333ea,#a855f7);border-radius:20px 20px 0 0;padding:40px 40px 50px;text-align:center;">
+                            <!-- Icon -->
+                            <div
+                                style="display:inline-block;background:rgba(255,255,255,0.15);border-radius:16px;padding:14px;margin-bottom:20px;">
+                                <img src="https://img.icons8.com/fluency/48/box.png" alt="Stock" width="48" height="48"
+                                    style="display:block;">
+                            </div>
+                            <h1 style="margin:0;font-size:28px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">
+                                📦 New Stock Request
+                            </h1>
+                            <p style="margin:10px 0 0;font-size:15px;color:rgba(255,255,255,0.85);">Action Required —
+                                Review &amp; Respond</p>
+                        </td>
+                    </tr>
+
+                    <!-- Wave Divider -->
+                    <tr>
+                        <td style="background:linear-gradient(135deg,#7c3aed,#9333ea);height:30px;">
+                            <div style="background:#0f0f1e;height:30px;border-radius:30px 30px 0 0;"></div>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="background:#0f0f1e;padding:0 40px 36px;">
+
+                            <p style="font-size:17px;color:#f1f5f9;margin:0 0 6px;">Hello <strong
+                                    style="color:#a78bfa;">Admin</strong>,</p>
+                            <p style="font-size:15px;color:#94a3b8;line-height:1.7;margin:0 0 28px;">
+                                A seller on the Source Point platform has submitted a stock replenishment request.
+                                Please review the details below and take appropriate action from the admin dashboard.
+                            </p>
+
+                            <!-- Seller Info -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);border-radius:14px;margin-bottom:20px;">
+                                <tr>
+                                    <td style="padding:22px 26px;">
+                                        <p
+                                            style="margin:0 0 14px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#a78bfa;font-weight:700;">
+                                            🧑‍💼 Seller Information
+                                        </p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;width:130px;">
+                                                    Seller Name</td>
+                                                <td style="padding:7px 0;color:#e2e8f0;font-size:14px;font-weight:600;">
+                                                    {{ seller.username }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Email</td>
+                                                <td style="padding:7px 0;font-size:14px;">
+                                                    <a href="mailto:{{ seller.email }}"
+                                                        style="color:#a78bfa;text-decoration:none;">{{ seller.email
+                                                        }}</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Submitted At
+                                                </td>
+                                                <td style="padding:7px 0;color:#e2e8f0;font-size:14px;">{{
+                                                    now.strftime('%d %b %Y, %I:%M %p') }} IST</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Product Info -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:14px;margin-bottom:20px;">
+                                <tr>
+                                    <td style="padding:22px 26px;">
+                                        <p
+                                            style="margin:0 0 14px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#818cf8;font-weight:700;">
+                                            📦 Product Details
+                                        </p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;width:130px;">
+                                                    Product Name</td>
+                                                <td style="padding:7px 0;color:#f1f5f9;font-size:15px;font-weight:700;">
+                                                    {{ product.name }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Product Code
+                                                </td>
+                                                <td
+                                                    style="padding:7px 0;color:#c7d2fe;font-size:13px;font-family:'Courier New',monospace;letter-spacing:1px;">
+                                                    {{ product.product_code }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Requested Qty
+                                                </td>
+                                                <td style="padding:7px 0;">
+                                                    <span
+                                                        style="background:rgba(139,92,246,0.15);color:#a78bfa;font-size:14px;font-weight:700;padding:4px 14px;border-radius:20px;">
+                                                        {{ request.quantity }} Units
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            {% if product.category %}
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Category</td>
+                                                <td style="padding:7px 0;color:#e2e8f0;font-size:14px;">{{
+                                                    product.category }}</td>
+                                            </tr>
+                                            {% endif %}
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            {% if request.note %}
+                            <!-- Seller Note -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(251,191,36,0.07);border-left:4px solid #f59e0b;border-radius:0 12px 12px 0;margin-bottom:20px;">
+                                <tr>
+                                    <td style="padding:16px 20px;">
+                                        <p
+                                            style="margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#f59e0b;font-weight:600;">
+                                            📝 Seller Note</p>
+                                        <p style="margin:0;font-size:14px;color:#fcd34d;line-height:1.6;">{{
+                                            request.note }}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            <!-- CTA -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{ url_for('admin_commerce.manage_stock_requests_page', _external=True) }}"
+                                            style="display:inline-block;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#ffffff;text-decoration:none;padding:15px 44px;border-radius:12px;font-size:15px;font-weight:700;letter-spacing:0.3px;box-shadow:0 8px 24px rgba(139,92,246,0.35);">
+                                            ⚡ Process This Request
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="font-size:13px;color:#475569;line-height:1.6;text-align:center;margin:0;">
+                                You can Approve or Reject this request from the Stock Requests Management page.
+                            </p>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background:#07070f;border-top:1px solid #1e1e30;padding:24px 40px;text-align:center;border-radius:0 0 20px 20px;">
+                            <p style="margin:0 0 4px;font-size:13px;color:#64748b;font-weight:600;">⚡ SourcePoint Admin
+                                System</p>
+                            <p style="margin:0 0 8px;font-size:12px;color:#334155;">
+                                Questions? Contact <a href="mailto:support@sourcepoint.in"
+                                    style="color:#7c3aed;text-decoration:none;">support@sourcepoint.in</a>
+                            </p>
+                            <p style="margin:0;font-size:11px;color:#1e293b;">
+                                © {{ now.year }} Source Point. All rights reserved. · This is an automated notification.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
+
 </html>

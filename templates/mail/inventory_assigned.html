@@ -4,131 +4,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventory Assigned</title>
+    <title>Inventory Assigned — SourcePoint</title>
 </head>
 
-<body
-    style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #e2e8f0;">
+<body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
 
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0f172a;">
+    <!-- Preheader -->
+    <span style="display:none;max-height:0;overflow:hidden;">
+        📦 New inventory items have been assigned to your seller account on SourcePoint.
+    </span>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#07070f;padding:40px 20px;">
         <tr>
-            <td align="center" style="padding: 40px 20px;">
-
-                <table role="presentation" width="600" cellspacing="0" cellpadding="0"
-                    style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
 
                     <!-- Header -->
                     <tr>
                         <td
-                            style="background: linear-gradient(135deg, #a855f7 0%, #9333ea 50%, #7e22ce 100%); padding: 40px 40px 50px 40px; text-align: center;">
-                            <table role="presentation" cellspacing="0" cellpadding="0"
-                                style="margin: 0 auto 20px auto;">
-                                <tr>
-                                    <td style="background: rgba(255,255,255,0.2); border-radius: 16px; padding: 16px;">
-                                        <img src="https://img.icons8.com/fluency/48/box.png" alt="Inventory" width="48"
-                                            height="48" style="display: block;">
-                                    </td>
-                                </tr>
-                            </table>
-                            <h1
-                                style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">
-                                Inventory Assigned 📦</h1>
-                            <p style="margin: 12px 0 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">New item(s)
-                                assigned to you</p>
+                            style="background:linear-gradient(135deg,#6b21a8,#9333ea,#a855f7);border-radius:20px 20px 0 0;padding:40px 40px 50px;text-align:center;">
+                            <div
+                                style="display:inline-block;background:rgba(255,255,255,0.15);border-radius:16px;padding:14px;margin-bottom:20px;">
+                                <img src="https://img.icons8.com/fluency/48/box.png" alt="Inventory" width="48"
+                                    height="48" style="display:block;">
+                            </div>
+                            <h1 style="margin:0;font-size:28px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">
+                                📦 Inventory Assigned!
+                            </h1>
+                            <p style="margin:10px 0 0;font-size:15px;color:rgba(255,255,255,0.9);">New items are ready
+                                in your seller account</p>
                         </td>
                     </tr>
 
                     <!-- Wave Divider -->
                     <tr>
-                        <td
-                            style="background: linear-gradient(135deg, #a855f7 0%, #9333ea 50%, #7e22ce 100%); height: 30px;">
-                            <div style="background: #1e293b; height: 30px; border-radius: 30px 30px 0 0;"></div>
+                        <td style="background:linear-gradient(135deg,#6b21a8,#9333ea);height:30px;">
+                            <div style="background:#0f0f1e;height:30px;border-radius:30px 30px 0 0;"></div>
                         </td>
                     </tr>
 
-                    <!-- Content -->
+                    <!-- Body -->
                     <tr>
-                        <td style="padding: 0 40px 40px 40px;">
+                        <td style="background:#0f0f1e;padding:0 40px 36px;">
 
-                            <p style="font-size: 18px; color: #f1f5f9; margin: 0 0 24px 0; line-height: 1.6;">
-                                Hello <strong style="color: #c084fc;">{{ user.username }}</strong>,
+                            <p style="font-size:17px;color:#f1f5f9;margin:0 0 6px;">Hello <strong
+                                    style="color:#c084fc;">{{ user.username }}</strong>,</p>
+                            <p style="font-size:15px;color:#94a3b8;line-height:1.7;margin:0 0 28px;">
+                                Inventory items have been assigned to your seller account by the admin team. The new
+                                stock is now available for you to manage and sell. Please review the details below and
+                                update your listings accordingly.
                             </p>
 
-                            <p style="font-size: 16px; color: #d1d5db; margin: 0 0 24px 0; line-height: 1.6;">
-                                Inventory items have been assigned to you. Please review the details below.
-                            </p>
-
-                            <!-- Inventory Details Card -->
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 16px; margin-bottom: 24px;">
+                            <!-- Assignment Details -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.2);border-radius:14px;margin-bottom:20px;">
                                 <tr>
-                                    <td style="padding: 24px;">
-                                        <h2
-                                            style="margin: 0 0 16px 0; font-size: 18px; color: #c084fc; font-weight: 600;">
+                                    <td style="padding:22px 26px;">
+                                        <p
+                                            style="margin:0 0 14px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#c084fc;font-weight:700;">
                                             📋 Assignment Details
-                                        </h2>
-                                        {% if item %}
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                            style="margin-bottom: 12px;">
+                                        </p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            {% if item %}
                                             <tr>
-                                                <td width="100" style="font-size: 13px; color: #9ca3af;">Item</td>
-                                                <td style="font-size: 15px; color: #f1f5f9; font-weight: 500;">{{
-                                                    item.name }}</td>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;width:130px;">
+                                                    Product Name</td>
+                                                <td style="padding:7px 0;color:#f1f5f9;font-size:15px;font-weight:700;">
+                                                    {{ item.name }}</td>
                                             </tr>
-                                        </table>
-                                        {% endif %}
-                                        {% if quantity %}
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                            style="margin-bottom: 12px;">
+                                            {% if item.product_code %}
                                             <tr>
-                                                <td width="100" style="font-size: 13px; color: #9ca3af;">Quantity</td>
-                                                <td style="font-size: 15px; color: #f1f5f9;">{{ quantity }}</td>
-                                            </tr>
-                                        </table>
-                                        {% endif %}
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-                                            <tr>
-                                                <td width="100" style="font-size: 13px; color: #9ca3af;">Status</td>
-                                                <td>
-                                                    <span
-                                                        style="display: inline-block; background: rgba(168, 85, 247, 0.2); color: #c084fc; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">Assigned</span>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Product Code
                                                 </td>
+                                                <td
+                                                    style="padding:7px 0;color:#c7d2fe;font-size:13px;font-family:'Courier New',monospace;letter-spacing:1px;">
+                                                    {{ item.product_code }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% endif %}
+                                            {% if quantity %}
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Quantity
+                                                    Assigned</td>
+                                                <td style="padding:7px 0;">
+                                                    <span
+                                                        style="background:rgba(168,85,247,0.15);color:#c084fc;font-size:14px;font-weight:700;padding:4px 14px;border-radius:20px;">{{
+                                                        quantity }} Units</span>
+                                                </td>
+                                            </tr>
+                                            {% endif %}
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Status</td>
+                                                <td style="padding:7px 0;">
+                                                    <span
+                                                        style="background:rgba(168,85,247,0.15);color:#c084fc;font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;">●
+                                                        Assigned</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Assigned On</td>
+                                                <td style="padding:7px 0;color:#e2e8f0;font-size:13px;">{{
+                                                    now.strftime('%d %b %Y') if now is defined else 'Today' }}</td>
                                             </tr>
                                         </table>
                                     </td>
                                 </tr>
                             </table>
 
-                            <!-- Closing -->
-                            <p style="font-size: 16px; color: #e2e8f0; margin: 0;">
+                            <!-- Action Note -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.15);border-radius:14px;margin-bottom:24px;">
+                                <tr>
+                                    <td style="padding:20px 24px;">
+                                        <p
+                                            style="margin:0 0 12px;font-size:13px;font-weight:700;color:#34d399;text-transform:uppercase;letter-spacing:1px;">
+                                            ✅ Next Steps</p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding:5px 0;color:#a7f3d0;font-size:13px;line-height:1.6;">
+                                                    → The inventory is now visible in your seller dashboard.</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:5px 0;color:#a7f3d0;font-size:13px;line-height:1.6;">
+                                                    → Update product listings and pricing as needed.</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:5px 0;color:#a7f3d0;font-size:13px;line-height:1.6;">
+                                                    → Items are immediately available for sale on the platform.</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="font-size:15px;color:#e2e8f0;margin:0;">
                                 Best regards,<br>
-                                <strong style="color: #c084fc;">The Source Point Team</strong>
+                                <strong style="color:#c084fc;">The Source Point Team</strong>
                             </p>
+
                         </td>
                     </tr>
 
                     <!-- Footer -->
                     <tr>
                         <td
-                            style="background: rgba(15, 23, 42, 0.8); padding: 24px 40px; border-top: 1px solid rgba(148, 163, 184, 0.1);">
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-                                <tr>
-                                    <td align="center">
-                                        <p style="margin: 0; font-size: 12px; color: #6b7280;">
-                                            © 2025 Source Point. All rights reserved.
-                                        </p>
-                                    </td>
-                                </tr>
-                            </table>
+                            style="background:#07070f;border-top:1px solid #1e1e30;padding:24px 40px;text-align:center;border-radius:0 0 20px 20px;">
+                            <p style="margin:0 0 4px;font-size:13px;color:#64748b;font-weight:600;">⚡ SourcePoint
+                                Commerce</p>
+                            <p style="margin:0 0 8px;font-size:12px;color:#334155;">
+                                Questions? <a href="mailto:support@sourcepoint.in"
+                                    style="color:#a855f7;text-decoration:none;">support@sourcepoint.in</a>
+                            </p>
+                            <p style="margin:0;font-size:11px;color:#1e293b;">
+                                © {{ now.year if now is defined else '2025' }} Source Point. All rights reserved. · This
+                                is an automated inventory notification.
+                            </p>
                         </td>
                     </tr>
 
                 </table>
-
             </td>
         </tr>
     </table>
-
 </body>
 
 </html>

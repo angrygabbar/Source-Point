@@ -2,12 +2,16 @@
 <html>
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Voucher Request — SourcePoint Admin</title>
 </head>
 
-<body style="margin:0;padding:0;background-color:#0f0f23;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
-    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0f0f23;padding:40px 20px;">
+<body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+
+    <!-- Preheader -->
+    <span style="display:none;max-height:0;overflow:hidden;">
+        ⏳ Action required: A buyer has requested a gift voucher and needs your approval.
+    </span>
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#07070f;padding:40px 20px;">
         <tr>
             <td align="center">
                 <table width="600" cellpadding="0" cellspacing="0"
@@ -97,9 +101,14 @@
                     <!-- Footer -->
                     <tr>
                         <td style="padding:20px 40px 40px;border-top:1px solid rgba(255,255,255,0.05);">
-                            <p style="color:#6b7280;font-size:12px;line-height:1.6;margin:0;text-align:center;">
+                            <p style="color:#6b7280;font-size:12px;line-height:1.6;margin:0 0 6px;text-align:center;">
                                 This is an automated notification from SourcePoint. You are receiving this because you
                                 are an admin.
+                            </p>
+                            <p style="margin:0;font-size:11px;color:#374151;text-align:center;">
+                                © {{ now.year if now is defined else '2025' }} Source Point · <a
+                                    href="mailto:support@sourcepoint.in"
+                                    style="color:#f59e0b;text-decoration:none;">support@sourcepoint.in</a>
                             </p>
                         </td>
                     </tr>
