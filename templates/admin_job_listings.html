@@ -1,0 +1,387 @@
+{% extends "layout.html" %}
+{% block title %}Job Listings | Admin — SourcePoint{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in">
+
+    <!-- Page Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-white flex items-center gap-3">
+                    <div
+                        class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg">
+                        <i class="fas fa-briefcase text-white text-sm"></i>
+                    </div>
+                    Job Listings
+                </h1>
+                <p class="text-gray-400 text-sm mt-1">Manage open positions and invite candidates</p>
+            </div>
+            <button onclick="document.getElementById('post-job-modal').classList.remove('hidden')"
+                class="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40">
+                <i class="fas fa-plus"></i> Post New Job
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="bg-white/5 border border-white/10 rounded-2xl p-5 hover:border-indigo-500/30 transition-all">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">Total Jobs</span>
+                <div class="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                    <i class="fas fa-briefcase text-indigo-400 text-xs"></i>
+                </div>
+            </div>
+            <p class="text-3xl font-black text-white">{{ total_jobs }}</p>
+        </div>
+        <div class="bg-white/5 border border-white/10 rounded-2xl p-5 hover:border-emerald-500/30 transition-all">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">Open</span>
+                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                    <i class="fas fa-circle-check text-emerald-400 text-xs"></i>
+                </div>
+            </div>
+            <p class="text-3xl font-black text-emerald-400">{{ open_jobs }}</p>
+        </div>
+        <div class="bg-white/5 border border-white/10 rounded-2xl p-5 hover:border-red-500/30 transition-all">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">Closed</span>
+                <div class="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
+                    <i class="fas fa-circle-xmark text-red-400 text-xs"></i>
+                </div>
+            </div>
+            <p class="text-3xl font-black text-red-400">{{ closed_jobs }}</p>
+        </div>
+        <div class="bg-white/5 border border-white/10 rounded-2xl p-5 hover:border-blue-500/30 transition-all">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">Applications</span>
+                <div class="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                    <i class="fas fa-file-alt text-blue-400 text-xs"></i>
+                </div>
+            </div>
+            <p class="text-3xl font-black text-blue-400">{{ total_applications }}</p>
+        </div>
+    </div>
+
+    <!-- Job Cards Grid -->
+    {% if jobs %}
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5">
+        {% for job in jobs %}
+        <div id="job-card-{{ job.id }}"
+            class="bg-white/5 border {{ 'border-emerald-500/20' if job.is_open else 'border-white/5' }} rounded-2xl p-6 flex flex-col gap-4 hover:border-indigo-500/30 transition-all group">
+
+            <!-- Job Header -->
+            <div class="flex items-start justify-between gap-3">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-2">
+                        {% if job.is_open %}
+                        <span
+                            class="px-2.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold rounded-full uppercase tracking-wider">
+                            ● Open
+                        </span>
+                        {% else %}
+                        <span
+                            class="px-2.5 py-0.5 bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] font-bold rounded-full uppercase tracking-wider">
+                            ● Closed
+                        </span>
+                        {% endif %}
+                        <span class="text-[10px] text-gray-600">{{ job.applications | length }} applicant{{ 's' if
+                            job.applications | length != 1 }}</span>
+                    </div>
+                    <h3 class="text-base font-bold text-white leading-tight truncate" title="{{ job.title }}">
+                        {{ job.title }}
+                    </h3>
+                </div>
+                <div
+                    class="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-500/20 transition-colors">
+                    <i class="fas fa-briefcase text-indigo-400 text-sm"></i>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <p class="text-sm text-gray-400 leading-relaxed line-clamp-3">
+                {{ job.description[:180] }}{% if job.description | length > 180 %}…{% endif %}
+            </p>
+
+            <!-- Meta -->
+            <div class="flex items-center gap-3 pt-1 border-t border-white/5">
+                <span class="text-xs text-gray-600 flex items-center gap-1.5">
+                    <i class="fas fa-calendar-alt"></i>
+                    {{ job.created_at.strftime('%b %d, %Y') }}
+                </span>
+                <span class="text-xs text-gray-600 flex items-center gap-1.5 ml-auto">
+                    <i class="fas fa-hashtag"></i>
+                    ID: {{ job.job_id[:8] }}
+                </span>
+            </div>
+
+            <!-- Actions -->
+            <div class="grid grid-cols-2 gap-2">
+                <!-- Edit -->
+                <button
+                    onclick="openEditModal({{ job.id }}, '{{ job.title | replace("'", "\\'") }}', {{ 'true' if job.is_open else 'false' }})"
+                    class="flex items-center justify-center gap-1.5 px-3 py-2 bg-white/5 hover:bg-indigo-500/20 text-gray-300 hover:text-indigo-300 text-xs font-medium rounded-xl border border-white/5 hover:border-indigo-500/30 transition-all">
+                    <i class="fas fa-pen text-[10px]"></i> Edit
+                </button>
+
+                <!-- Toggle Status -->
+                <button
+                    onclick="handleAjaxUrl(event, '{{ url_for('admin_hiring.toggle_job_status', job_id=job.id) }}', 'Toggle job status?')"
+                    class="flex items-center justify-center gap-1.5 px-3 py-2 {{ 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 hover:text-orange-300 border-orange-500/20 hover:border-orange-500/30' if job.is_open else 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 border-emerald-500/20 hover:border-emerald-500/30' }} text-xs font-medium rounded-xl border transition-all">
+                    <i class="fas {{ 'fa-ban' if job.is_open else 'fa-check-circle' }} text-[10px]"></i>
+                    {{ 'Close' if job.is_open else 'Reopen' }}
+                </button>
+
+                <!-- Invite Candidate -->
+                <button onclick="openInviteModal({{ job.id }}, '{{ job.title | replace("'", "\\'") }}')"
+                    class="flex items-center justify-center gap-1.5 px-3 py-2 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 hover:text-violet-200 text-xs font-medium rounded-xl border border-violet-500/20 hover:border-violet-500/30 transition-all">
+                    <i class="fas fa-paper-plane text-[10px]"></i> Invite
+                </button>
+
+                <!-- Delete -->
+                <button
+                    onclick="handleAjaxUrl(event, '{{ url_for('admin_hiring.delete_job_opening', job_id=job.id) }}', 'Delete this job listing? All applications will also be deleted.')"
+                    class="flex items-center justify-center gap-1.5 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 text-xs font-medium rounded-xl border border-red-500/20 hover:border-red-500/30 transition-all">
+                    <i class="fas fa-trash text-[10px]"></i> Delete
+                </button>
+            </div>
+
+            <!-- Applications List (collapsible) -->
+            {% if job.applications %}
+            <div x-data="{ open: false }">
+                <button @click="open = !open"
+                    class="w-full flex items-center justify-between px-3 py-2 bg-white/3 hover:bg-white/5 rounded-xl text-xs text-gray-500 hover:text-gray-300 transition-all border border-white/5">
+                    <span><i class="fas fa-users mr-1.5"></i> View Applicants ({{ job.applications | length }})</span>
+                    <i class="fas fa-chevron-down transition-transform" :class="open ? 'rotate-180' : ''"></i>
+                </button>
+                <div x-show="open" x-collapse class="mt-2 space-y-1.5">
+                    {% for app in job.applications %}
+                    <div
+                        class="flex items-center justify-between bg-white/3 rounded-xl px-3 py-2.5 border border-white/5">
+                        <div class="flex items-center gap-2">
+                            <img src="{{ app.candidate.avatar_url }}"
+                                class="w-6 h-6 rounded-full object-cover border border-white/10">
+                            <span class="text-xs text-gray-300 font-medium">{{ app.candidate.username }}</span>
+                        </div>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full font-bold
+                            {% if app.status == 'Selected' %} bg-emerald-500/10 text-emerald-400 border border-emerald-500/20
+                            {% elif app.status == 'Rejected' %} bg-red-500/10 text-red-400 border border-red-500/20
+                            {% else %} bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 {% endif %}">
+                            {{ app.status }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="flex flex-col items-center justify-center py-24 text-center">
+        <div class="w-20 h-20 rounded-2xl bg-white/5 flex items-center justify-center mb-6">
+            <i class="fas fa-briefcase text-gray-600 text-3xl"></i>
+        </div>
+        <h3 class="text-xl font-bold text-white mb-2">No Job Listings Yet</h3>
+        <p class="text-gray-500 text-sm mb-6 max-w-xs">Post your first job opening to start receiving applications from
+            candidates.</p>
+        <button onclick="document.getElementById('post-job-modal').classList.remove('hidden')"
+            class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-bold rounded-xl hover:from-indigo-500 hover:to-violet-500 transition-all shadow-lg">
+            <i class="fas fa-plus mr-2"></i> Post First Job
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+
+<!-- ============ POST NEW JOB MODAL ============ -->
+<div id="post-job-modal"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div class="bg-[#12121f] border border-white/10 rounded-2xl shadow-2xl w-full max-w-lg">
+        <div class="flex items-center justify-between p-6 border-b border-white/5">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <i class="fas fa-plus-circle text-indigo-400"></i> Post New Job Opening
+            </h3>
+            <button onclick="document.getElementById('post-job-modal').classList.add('hidden')"
+                class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-white hover:bg-white/10 transition-all">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form action="{{ url_for('admin_hiring.post_job') }}" method="POST" class="p-6 space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Job Title *</label>
+                <input type="text" name="job_title" required placeholder="e.g. Senior Backend Developer"
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Job Description
+                    *</label>
+                <textarea name="job_description" required rows="5"
+                    placeholder="Describe the role, requirements, and responsibilities..."
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors resize-none"></textarea>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('post-job-modal').classList.add('hidden')"
+                    class="flex-1 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-white/10 transition-all font-medium">
+                    Cancel
+                </button>
+                <button type="submit"
+                    class="flex-1 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg">
+                    <i class="fas fa-plus mr-1.5"></i> Post Job
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ============ EDIT JOB MODAL ============ -->
+<div id="edit-job-modal"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div class="bg-[#12121f] border border-white/10 rounded-2xl shadow-2xl w-full max-w-lg">
+        <div class="flex items-center justify-between p-6 border-b border-white/5">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <i class="fas fa-pen text-indigo-400"></i> Edit Job Listing
+            </h3>
+            <button onclick="document.getElementById('edit-job-modal').classList.add('hidden')"
+                class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-white hover:bg-white/10 transition-all">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="edit-job-form" method="POST" class="p-6 space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Job Title *</label>
+                <input type="text" name="title" id="edit-title" required
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Description
+                    *</label>
+                <textarea name="description" id="edit-description" required rows="6"
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors resize-none"></textarea>
+            </div>
+            <div class="flex items-center gap-3 bg-white/3 border border-white/5 rounded-xl px-4 py-3">
+                <input type="checkbox" id="edit-is-open" name="is_open_checkbox" value="true"
+                    class="w-4 h-4 accent-indigo-500 rounded">
+                <label for="edit-is-open" class="text-sm text-gray-300 cursor-pointer">Mark as <strong>Open</strong>
+                    (visible to candidates)</label>
+            </div>
+            <input type="hidden" name="is_open" id="edit-is-open-hidden" value="false">
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('edit-job-modal').classList.add('hidden')"
+                    class="flex-1 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-white/10 transition-all font-medium">
+                    Cancel
+                </button>
+                <button type="submit"
+                    class="flex-1 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-sm font-bold rounded-xl transition-all">
+                    <i class="fas fa-save mr-1.5"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ============ INVITE CANDIDATE MODAL ============ -->
+<div id="invite-modal"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div class="bg-[#12121f] border border-white/10 rounded-2xl shadow-2xl w-full max-w-lg">
+        <div class="flex items-center justify-between p-6 border-b border-white/5">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <i class="fas fa-paper-plane text-violet-400"></i> Invite Candidate
+            </h3>
+            <button onclick="document.getElementById('invite-modal').classList.add('hidden')"
+                class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-white hover:bg-white/10 transition-all">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="invite-form" method="POST" class="p-6 space-y-4">
+            <p id="invite-job-name"
+                class="text-sm text-indigo-300 font-semibold bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-4 py-3">
+            </p>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Select Candidate
+                    *</label>
+                {% if candidates %}
+                <select name="candidate_id" required
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500 transition-colors">
+                    <option value="" disabled selected>Choose a candidate...</option>
+                    {% for c in candidates %}
+                    <option value="{{ c.id }}">{{ c.username }} — {{ c.email }}</option>
+                    {% endfor %}
+                </select>
+                {% else %}
+                <div class="bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-3 text-sm text-yellow-400">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>No approved candidates found.
+                </div>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Personal Message
+                    <span class="text-gray-600 lowercase font-normal">(optional)</span></label>
+                <textarea name="custom_message" rows="4"
+                    placeholder="Add a personal note — e.g. 'We reviewed your profile and think you'd be a great fit...'"
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-violet-500 transition-colors resize-none"></textarea>
+            </div>
+
+            <div class="bg-white/3 border border-white/5 rounded-xl px-4 py-3 text-xs text-gray-500">
+                <i class="fas fa-info-circle text-indigo-400 mr-1.5"></i>
+                The candidate will receive a branded invitation email with the job details and a link to apply.
+            </div>
+
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('invite-modal').classList.add('hidden')"
+                    class="flex-1 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-white/10 transition-all font-medium">
+                    Cancel
+                </button>
+                <button type="submit" {% if not candidates %}disabled{% endif %}
+                    class="flex-1 px-4 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg disabled:opacity-40 disabled:cursor-not-allowed">
+                    <i class="fas fa-paper-plane mr-1.5"></i> Send Invitation
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<script>
+    // Edit Job Modal — populate description from server data
+    const jobDescriptions = {
+        {% for job in jobs %}
+    { { job.id } }: `{{ job.description | replace('`', '\\`') | replace('\\', '\\\\') }}`,
+        {% endfor %}
+    };
+
+    function openEditModal(jobId, jobTitle, isOpen) {
+        document.getElementById('edit-job-form').action = `/admin/hiring/job/edit/${jobId}`;
+        document.getElementById('edit-title').value = jobTitle;
+        document.getElementById('edit-description').value = jobDescriptions[jobId] || '';
+        const checkbox = document.getElementById('edit-is-open');
+        checkbox.checked = isOpen;
+        document.getElementById('edit-is-open-hidden').value = isOpen ? 'true' : 'false';
+        document.getElementById('edit-job-modal').classList.remove('hidden');
+    }
+
+    // Sync checkbox to hidden field
+    document.getElementById('edit-is-open').addEventListener('change', function () {
+        document.getElementById('edit-is-open-hidden').value = this.checked ? 'true' : 'false';
+    });
+
+    function openInviteModal(jobId, jobTitle) {
+        document.getElementById('invite-form').action = `/admin/hiring/job/invite/${jobId}`;
+        document.getElementById('invite-job-name').innerHTML = `<i class="fas fa-briefcase mr-2"></i>Inviting for: <strong>${jobTitle}</strong>`;
+        document.getElementById('invite-modal').classList.remove('hidden');
+    }
+
+    // Close modals on backdrop click
+    ['post-job-modal', 'edit-job-modal', 'invite-modal'].forEach(id => {
+        document.getElementById(id).addEventListener('click', function (e) {
+            if (e.target === this) this.classList.add('hidden');
+        });
+    });
+</script>
+{% endblock %}

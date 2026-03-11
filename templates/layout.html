@@ -128,6 +128,13 @@
                         class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
                         <i class="fas fa-calendar-alt w-6 text-center mr-2"></i> Events
                     </a>
+                    <a hx-get="{{ url_for('admin_hiring.manage_job_listings') }}" hx-target="#main-content"
+                        hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer {{ 'bg-white/10 text-white border border-white/5' if request.endpoint == 'admin_hiring.manage_job_listings' else '' }}">
+                        <i
+                            class="fas fa-briefcase w-6 text-center mr-2 {{ 'text-indigo-400' if request.endpoint == 'admin_hiring.manage_job_listings' else '' }}"></i>
+                        Job Listings
+                    </a>
                     <a hx-get="{{ url_for('admin_core.emi_manager') }}" hx-target="#main-content"
                         hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true"
                         class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">

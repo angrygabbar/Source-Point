@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Invitation — SourcePoint</title>
+</head>
+
+<body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+
+    <!-- Preheader -->
+    <span style="display:none;max-height:0;overflow:hidden;">
+        🎯 You've been personally invited to apply for {{ job.title }} at SourcePoint. Don't miss this opportunity!
+    </span>
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#07070f;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0"
+                    style="background: linear-gradient(135deg, #1a1a3e 0%, #141428 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6); border: 1px solid rgba(99,102,241,0.2);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #7c3aed 100%); padding: 44px 40px 54px 40px; text-align: center;">
+                            <table role="presentation" cellspacing="0" cellpadding="0"
+                                style="margin: 0 auto 22px auto;">
+                                <tr>
+                                    <td style="background: rgba(255,255,255,0.18); border-radius: 18px; padding: 18px;">
+                                        <img src="https://img.icons8.com/fluency/48/briefcase.png" alt="Briefcase"
+                                            width="48" height="48" style="display: block;">
+                                    </td>
+                                </tr>
+                            </table>
+                            <h1
+                                style="margin: 0 0 10px 0; font-size: 30px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">
+                                You're Invited! 🎯
+                            </h1>
+                            <p style="margin: 0; font-size: 16px; color: rgba(255,255,255,0.85); line-height: 1.5;">
+                                Personal invitation from the SourcePoint team
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Wave Divider -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #7c3aed 100%); height: 30px;">
+                            <div style="background: #1a1a3e; height: 30px; border-radius: 30px 30px 0 0;"></div>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 0 40px 40px 40px;">
+
+                            <p style="font-size: 18px; color: #f1f5f9; margin: 32px 0 8px 0; line-height: 1.6;">
+                                Hello <strong style="color: #a78bfa;">{{ candidate.username }}</strong>,
+                            </p>
+
+                            <p style="font-size: 15px; color: #94a3b8; line-height: 1.8; margin: 0 0 28px 0;">
+                                We've reviewed your profile at SourcePoint and we're impressed! <strong
+                                    style="color: #e2e8f0;">{{ admin_user.username }}</strong>
+                                from our team has personally selected you for an exciting opportunity and would love for
+                                you to apply.
+                            </p>
+
+                            <!-- Job Card -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.1) 100%); border: 1px solid rgba(99,102,241,0.3); border-radius: 16px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 28px;">
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            style="margin-bottom: 16px;">
+                                            <tr>
+                                                <td>
+                                                    <span
+                                                        style="display: inline-block; background: rgba(34,197,94,0.15); color: #4ade80; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(34,197,94,0.3); letter-spacing: 0.5px; text-transform: uppercase;">
+                                                        ● Open Position
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        <h2
+                                            style="margin: 0 0 14px 0; font-size: 22px; color: #ffffff; font-weight: 700; letter-spacing: -0.3px;">
+                                            💼 {{ job.title }}
+                                        </h2>
+                                        <p
+                                            style="margin: 0 0 20px 0; font-size: 14px; color: #94a3b8; line-height: 1.7;">
+                                            {{ job.description[:300] }}{% if job.description|length > 300 %}...{% endif
+                                            %}
+                                        </p>
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td width="120"
+                                                    style="font-size: 12px; color: #6b7280; padding-bottom: 8px;">📍
+                                                    Location</td>
+                                                <td style="font-size: 13px; color: #d1d5db; padding-bottom: 8px;">
+                                                    SourcePoint (Remote / On-site)</td>
+                                            </tr>
+                                            <tr>
+                                                <td width="120"
+                                                    style="font-size: 12px; color: #6b7280; padding-bottom: 8px;">📅
+                                                    Posted</td>
+                                                <td style="font-size: 13px; color: #d1d5db; padding-bottom: 8px;">{{
+                                                    job.created_at.strftime('%B %d, %Y') }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td width="120" style="font-size: 12px; color: #6b7280;">🏢 Company</td>
+                                                <td style="font-size: 13px; color: #d1d5db;">Source Point</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            {% if custom_message %}
+                            <!-- Personal Message -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(139,92,246,0.08); border-left: 4px solid #8b5cf6; border-radius: 0 12px 12px 0; margin-bottom: 28px;">
+                                <tr>
+                                    <td style="padding: 18px 20px;">
+                                        <p
+                                            style="margin: 0 0 6px 0; font-size: 12px; color: #a78bfa; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                                            💬 Personal Note from {{ admin_user.username }}
+                                        </p>
+                                        <p
+                                            style="margin: 0; font-size: 14px; color: #d1d5db; line-height: 1.7; font-style: italic;">
+                                            "{{ custom_message }}"
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            <!-- CTA Button -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="margin-bottom: 28px;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{ url_for('candidate.candidate_dashboard', _external=True) }}"
+                                            style="display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: #ffffff; text-decoration: none; padding: 18px 48px; border-radius: 14px; font-size: 16px; font-weight: 700; box-shadow: 0 10px 30px -5px rgba(99,102,241,0.5); letter-spacing: 0.3px;">
+                                            🚀 View & Apply Now
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Steps -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; margin-bottom: 28px;">
+                                <tr>
+                                    <td style="padding: 20px 24px;">
+                                        <p
+                                            style="margin: 0 0 14px 0; font-size: 13px; color: #a78bfa; font-weight: 700;">
+                                            How to Apply</p>
+                                        <table role="presentation" cellspacing="0" cellpadding="0" width="100%">
+                                            <tr>
+                                                <td style="font-size: 13px; color: #94a3b8; padding-bottom: 8px;">
+                                                    <span style="color: #6366f1; font-weight: 700;">1.</span> Log in to
+                                                    your SourcePoint account
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 13px; color: #94a3b8; padding-bottom: 8px;">
+                                                    <span style="color: #6366f1; font-weight: 700;">2.</span> Go to your
+                                                    Dashboard and find the job listing
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 13px; color: #94a3b8;">
+                                                    <span style="color: #6366f1; font-weight: 700;">3.</span> Click
+                                                    "Apply Now" and upload your resume
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Closing -->
+                            <p style="font-size: 15px; color: #e2e8f0; margin: 0; line-height: 1.7;">
+                                We look forward to receiving your application!<br>
+                                <strong style="color: #a78bfa;">{{ admin_user.username }} &amp; The Source Point
+                                    Team</strong>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background:#07070f;border-top:1px solid #1e1e30;padding:24px 40px;text-align:center;border-radius:0 0 20px 20px;">
+                            <p style="margin:0 0 4px;font-size:13px;color:#64748b;font-weight:600;">⚡ SourcePoint Career
+                                Portal</p>
+                            <p style="margin:0 0 8px;font-size:12px;color:#334155;">Questions? <a
+                                    href="mailto:support@sourcepoint.in"
+                                    style="color:#8b5cf6;text-decoration:none;">support@sourcepoint.in</a></p>
+                            <p style="margin:0;font-size:11px;color:#1e293b;">© {{ now.year if now is defined else
+                                '2025' }} Source Point. All rights reserved. · You received this because an admin
+                                personally selected you.</p>
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>

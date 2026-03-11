@@ -217,6 +217,101 @@ def delete_coding_event(user_id):
     return redirect(url_for('admin_hiring.manage_records'))
 
 
+# ==================== JOB LISTINGS MANAGEMENT ====================
+
+@admin_hiring_bp.route('/jobs')
+@login_required
+@role_required(UserRole.ADMIN.value)
+def manage_job_listings():
+    jobs = JobOpening.query.order_by(JobOpening.created_at.desc()).all()
+    candidates = User.query.filter_by(role=UserRole.CANDIDATE.value, is_approved=True).all()
+    
+    total_jobs = len(jobs)
+    open_jobs = sum(1 for j in jobs if j.is_open)
+    closed_jobs = total_jobs - open_jobs
+    total_applications = JobApplication.query.count()
+
+    return render_template('admin_job_listings.html',
+                           jobs=jobs,
+                           candidates=candidates,
+                           total_jobs=total_jobs,
+                           open_jobs=open_jobs,
+                           closed_jobs=closed_jobs,
+                           total_applications=total_applications,
+                           now=datetime.utcnow())
+
+
+@admin_hiring_bp.route('/job/edit/<int:job_id>', methods=['POST'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def edit_job(job_id):
+    job = JobOpening.query.get_or_404(job_id)
+    title = request.form.get('title', '').strip()
+    description = request.form.get('description', '').strip()
+    is_open = request.form.get('is_open') == 'true'
+
+    if not title or not description:
+        flash('Title and description are required.', 'danger')
+        return redirect(url_for('admin_hiring.manage_job_listings'))
+
+    job.title = title
+    job.description = description
+    job.is_open = is_open
+    db.session.commit()
+
+    log_user_action("Edit Job", f"Edited job opening: {title}")
+    flash(f'Job listing "{title}" updated successfully.', 'success')
+    return redirect(url_for('admin_hiring.manage_job_listings'))
+
+
+@admin_hiring_bp.route('/job/toggle/<int:job_id>')
+@login_required
+@role_required(UserRole.ADMIN.value)
+def toggle_job_status(job_id):
+    job = JobOpening.query.get_or_404(job_id)
+    job.is_open = not job.is_open
+    db.session.commit()
+    status_str = "Open" if job.is_open else "Closed"
+    log_user_action("Toggle Job", f"Set job '{job.title}' to {status_str}")
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': True, 'message': f'Job is now {status_str}.', 'is_open': job.is_open})
+    flash(f'Job "{job.title}" is now {status_str}.', 'success')
+    return redirect(url_for('admin_hiring.manage_job_listings'))
+
+
+@admin_hiring_bp.route('/job/invite/<int:job_id>', methods=['POST'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def invite_candidate(job_id):
+    job = JobOpening.query.get_or_404(job_id)
+    candidate_id = request.form.get('candidate_id')
+    custom_message = request.form.get('custom_message', '').strip()
+
+    if not candidate_id:
+        flash('Please select a candidate to invite.', 'danger')
+        return redirect(url_for('admin_hiring.manage_job_listings'))
+
+    candidate = User.query.get(candidate_id)
+    if not candidate or candidate.role != UserRole.CANDIDATE.value:
+        flash('Invalid candidate selected.', 'danger')
+        return redirect(url_for('admin_hiring.manage_job_listings'))
+
+    send_email(
+        to=candidate.email,
+        subject=f"You're Invited to Apply — {job.title} at SourcePoint",
+        template="mail/job_invite_candidate.html",
+        candidate=candidate,
+        job=job,
+        admin_user=current_user,
+        custom_message=custom_message,
+        now=datetime.utcnow()
+    )
+
+    log_user_action("Invite Candidate", f"Invited {candidate.username} to apply for '{job.title}'")
+    flash(f'Invitation sent to {candidate.username} for "{job.title}".', 'success')
+    return redirect(url_for('admin_hiring.manage_job_listings'))
+
+
 # ==================== INTERVIEW SCHEDULING ROUTES ====================
 
 @admin_hiring_bp.route('/interviews/schedule', methods=['GET'])
