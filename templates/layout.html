@@ -209,8 +209,7 @@
                         class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
                         <i class="fas fa-book w-6 text-center mr-2"></i> Learning Hub
                     </a>
-                    <a hx-get="{{ url_for('candidate.code_test') }}" hx-target="#main-content" hx-select="#main-content"
-                        hx-swap="outerHTML transition:true" hx-push-url="true"
+                    <a href="{{ url_for('candidate.code_test') }}"
                         class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
                         <i class="fas fa-code w-6 text-center mr-2"></i> Code Test
                     </a>
@@ -302,7 +301,9 @@
                     {% endif %}
                 </div>
             </header>
-            <main class="flex-1 overflow-y-auto p-4 sm:p-8 relative custom-scrollbar" id="main-content">
+            <main
+                class="{% block main_class %}flex-1 overflow-y-auto p-4 sm:p-8 relative custom-scrollbar{% endblock %}"
+                id="main-content">
                 <div id="flash-container" class="fixed top-24 right-6 z-50 space-y-3 pointer-events-none">
                     {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
