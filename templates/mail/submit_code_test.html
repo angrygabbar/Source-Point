@@ -4,14 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coding Test Available — SourcePoint</title>
+    <title>New Code Submission — SourcePoint</title>
 </head>
 
 <body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
 
     <!-- Preheader -->
     <span style="display:none;max-height:0;overflow:hidden;">
-        💻 Action required: A coding test is waiting for you on SourcePoint. Submit before the deadline!
+        💻 {{ candidate.username }} has submitted a code test on SourcePoint. Review it now.
     </span>
 
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#07070f;">
@@ -19,12 +19,12 @@
             <td align="center" style="padding: 40px 20px;">
 
                 <table role="presentation" width="600" cellspacing="0" cellpadding="0"
-                    style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+                    style="background: linear-gradient(135deg, #1a1a3e 0%, #141428 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid rgba(99,102,241,0.2);">
 
                     <!-- Header -->
                     <tr>
                         <td
-                            style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%); padding: 40px 40px 50px 40px; text-align: center;">
+                            style="background: linear-gradient(135deg, #6366f1 0%, #7c3aed 50%, #4f46e5 100%); padding: 40px 40px 50px 40px; text-align: center;">
                             <table role="presentation" cellspacing="0" cellpadding="0"
                                 style="margin: 0 auto 20px auto;">
                                 <tr>
@@ -36,17 +36,17 @@
                             </table>
                             <h1
                                 style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">
-                                Complete Your Test 💻</h1>
-                            <p style="margin: 12px 0 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">Your coding
-                                test is waiting</p>
+                                New Code Submission 💻</h1>
+                            <p style="margin: 12px 0 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">
+                                A candidate has submitted their solution</p>
                         </td>
                     </tr>
 
                     <!-- Wave Divider -->
                     <tr>
                         <td
-                            style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%); height: 30px;">
-                            <div style="background: #1e293b; height: 30px; border-radius: 30px 30px 0 0;"></div>
+                            style="background: linear-gradient(135deg, #6366f1 0%, #7c3aed 50%, #4f46e5 100%); height: 30px;">
+                            <div style="background: #1a1a3e; height: 30px; border-radius: 30px 30px 0 0;"></div>
                         </td>
                     </tr>
 
@@ -54,61 +54,120 @@
                     <tr>
                         <td style="padding: 0 40px 40px 40px;">
 
-                            <p style="font-size: 18px; color: #f1f5f9; margin: 0 0 24px 0; line-height: 1.6;">
-                                Hello <strong style="color: #60a5fa;">{{ candidate.username }}</strong>,
+                            <p style="font-size: 18px; color: #f1f5f9; margin: 0 0 8px 0; line-height: 1.6;">
+                                Hello <strong style="color: #a78bfa;">{{ recipient.username }}</strong>,
                             </p>
 
                             <p style="font-size: 15px; color: #94a3b8; line-height: 1.7; margin: 0 0 24px;">
-                                You have been assigned a coding test on SourcePoint. Please complete and submit your
-                                solution <strong style="color:#f87171;">before the deadline</strong> shown below. We
-                                look forward to seeing your solution!
+                                <strong style="color:#f1f5f9;">{{ candidate.username }}</strong> has submitted their
+                                code test on SourcePoint. The full solution and output are included below.
                             </p>
 
-                            <!-- Test Details Card -->
+                            <!-- Submission Details Card -->
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 16px; margin-bottom: 24px;">
+                                style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 16px; margin-bottom: 20px;">
                                 <tr>
                                     <td style="padding: 24px;">
                                         <h2
-                                            style="margin: 0 0 16px 0; font-size: 18px; color: #60a5fa; font-weight: 600;">
-                                            📋 Test Details
+                                            style="margin: 0 0 16px 0; font-size: 16px; color: #a78bfa; font-weight: 600;">
+                                            📋 Submission Details
                                         </h2>
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                            style="margin-bottom: 12px;">
-                                            <tr>
-                                                <td width="100" style="font-size: 13px; color: #9ca3af;">Problem</td>
-                                                <td style="font-size: 15px; color: #f1f5f9; font-weight: 500;">{{
-                                                    problem.title }}</td>
-                                            </tr>
-                                        </table>
                                         <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                                             <tr>
-                                                <td width="100" style="font-size: 13px; color: #9ca3af;">Deadline</td>
-                                                <td style="font-size: 15px; color: #f87171; font-weight: 500;">{{
-                                                    end_time_ist.strftime('%B %d, %Y at %I:%M %p') }} IST</td>
+                                                <td width="120"
+                                                    style="font-size: 13px; color: #9ca3af; padding-bottom: 10px;">
+                                                    Candidate</td>
+                                                <td
+                                                    style="font-size: 14px; color: #f1f5f9; font-weight: 600; padding-bottom: 10px;">
+                                                    {{ candidate.username }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td width="120"
+                                                    style="font-size: 13px; color: #9ca3af; padding-bottom: 10px;">
+                                                    Problem</td>
+                                                <td style="font-size: 14px; color: #f1f5f9; padding-bottom: 10px;">
+                                                    {{ problem_title }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td width="120"
+                                                    style="font-size: 13px; color: #9ca3af; padding-bottom: 10px;">
+                                                    Language</td>
+                                                <td style="font-size: 14px; color: #d1d5db; padding-bottom: 10px;">
+                                                    {{ language | title }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td width="120" style="font-size: 13px; color: #9ca3af;">Submitted</td>
+                                                <td style="font-size: 14px; color: #d1d5db;">
+                                                    {{ now.strftime('%B %d, %Y at %I:%M %p') if now else 'Just now' }}
+                                                </td>
                                             </tr>
                                         </table>
                                     </td>
                                 </tr>
                             </table>
 
-                            <!-- CTA Button -->
+                            <!-- Code Block -->
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                style="margin-bottom: 24px;">
+                                style="background: #0d1117; border: 1px solid rgba(99,102,241,0.2); border-radius: 12px; margin-bottom: 20px;">
                                 <tr>
-                                    <td align="center">
-                                        <a href="{{ url_for('candidate.code_test', _external=True) }}"
-                                            style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-size: 16px; font-weight: 600; box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);">
-                                            🚀 Take Code Test
-                                        </a>
+                                    <td
+                                        style="padding: 6px 16px; background: rgba(99,102,241,0.15); border-radius: 12px 12px 0 0;">
+                                        <p style="margin:0; font-size:12px; color:#a78bfa; font-weight:600;">📝
+                                            Submitted Code (Java)</p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 16px;">
+                                        <pre
+                                            style="margin:0; font-family: 'Courier New', monospace; font-size:12px; color:#e2e8f0; white-space:pre-wrap; word-break:break-all; line-height:1.6;">{{ code }}</pre>
                                     </td>
                                 </tr>
                             </table>
 
+                            <!-- Output Block -->
+                            {% if output %}
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: #010409; border: 1px solid rgba(34,197,94,0.2); border-radius: 12px; margin-bottom: 20px;">
+                                <tr>
+                                    <td
+                                        style="padding: 6px 16px; background: rgba(34,197,94,0.1); border-radius: 12px 12px 0 0;">
+                                        <p style="margin:0; font-size:12px; color:#4ade80; font-weight:600;">⚡ Program
+                                            Output</p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 16px;">
+                                        <pre
+                                            style="margin:0; font-family: 'Courier New', monospace; font-size:12px; color:#86efac; white-space:pre-wrap; line-height:1.6;">{{ output }}</pre>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            <!-- AI Feedback Block -->
+                            {% if ai_feedback %}
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.2); border-radius: 12px; margin-bottom: 24px;">
+                                <tr>
+                                    <td
+                                        style="padding: 6px 16px; background: rgba(139,92,246,0.15); border-radius: 12px 12px 0 0;">
+                                        <p style="margin:0; font-size:12px; color:#c4b5fd; font-weight:600;">🤖 AI Code
+                                            Analysis</p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 16px;">
+                                        <p style="margin:0; font-size:13px; color:#d1d5db; line-height:1.7;">{{
+                                            ai_feedback }}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
                             <!-- Closing -->
-                            <p style="font-size: 16px; color: #e2e8f0; margin: 0;">
-                                Good luck! 🍀<br>
-                                <strong style="color: #60a5fa;">The Source Point Team</strong>
+                            <p style="font-size: 15px; color: #e2e8f0; margin: 0;">
+                                Review the submission in your SourcePoint dashboard.<br>
+                                <strong style="color: #a78bfa;">The Source Point Team</strong>
                             </p>
                         </td>
                     </tr>
@@ -117,13 +176,13 @@
                     <tr>
                         <td
                             style="background:#07070f;border-top:1px solid #1e1e30;padding:24px 40px;text-align:center;border-radius:0 0 20px 20px;">
-                            <p style="margin:0 0 4px;font-size:13px;color:#64748b;font-weight:600;">⚡ SourcePoint Career
-                            </p>
-                            <p style="margin:0 0 8px;font-size:12px;color:#334155;">Need help? <a
+                            <p style="margin:0 0 4px;font-size:13px;color:#64748b;font-weight:600;">⚡ SourcePoint
+                                Career</p>
+                            <p style="margin:0 0 8px;font-size:12px;color:#334155;">Questions? <a
                                     href="mailto:support@sourcepoint.in"
-                                    style="color:#3b82f6;text-decoration:none;">support@sourcepoint.in</a></p>
+                                    style="color:#8b5cf6;text-decoration:none;">support@sourcepoint.in</a></p>
                             <p style="margin:0;font-size:11px;color:#1e293b;">© {{ now.year if now is defined else
-                                '2025' }} Source Point. All rights reserved. · This is an automated test notification.
+                                '2025' }} Source Point. All rights reserved. · Automated code submission notification.
                             </p>
                         </td>
                     </tr>
