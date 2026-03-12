@@ -241,6 +241,15 @@ def manage_job_listings():
                            now=datetime.utcnow())
 
 
+@admin_hiring_bp.route('/job/view/<int:job_id>')
+@login_required
+@role_required(UserRole.ADMIN.value)
+def view_job(job_id):
+    job = JobOpening.query.get_or_404(job_id)
+    candidates = User.query.filter_by(role=UserRole.CANDIDATE.value, is_approved=True).all()
+    return render_template('admin_job_detail.html', job=job, candidates=candidates, now=datetime.utcnow())
+
+
 @admin_hiring_bp.route('/job/edit/<int:job_id>', methods=['POST'])
 @login_required
 @role_required(UserRole.ADMIN.value)
