@@ -1,79 +1,618 @@
 {% extends "layout.html" %}
-{% block title %}Contact Us{% endblock %}
+{% block title %}Contact Us — SourcePoint{% endblock %}
+
 {% block content %}
+<style>
+    @keyframes borderFlow  { 0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%} }
+    @keyframes floatY      { 0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)} }
+    @keyframes pulseRing   { 0%{transform:scale(1);opacity:.6}100%{transform:scale(1.8);opacity:0} }
+    @keyframes scanLine    { 0%{top:-4%}100%{top:104%} }
+    @keyframes radarSpin   { to{transform:rotate(360deg)} }
+    @keyframes dotBlink    { 0%,100%{opacity:1}50%{opacity:.2} }
+    @keyframes shimmerSlide{ 0%{background-position:-200% 0}100%{background-position:200% 0} }
+    @keyframes fadeSlideUp { from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)} }
+    @keyframes countUp     {}
 
-<div class="mb-10 text-center animate-dynamic">
-    <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400 mb-2">
-        Get in Touch
-    </h1>
-    <p class="text-gray-400 text-lg">We're here to help. Reach out for support or general queries.</p>
-</div>
+    /* Hero */
+    .contact-hero {
+        position:relative;overflow:hidden;
+        background:linear-gradient(135deg,rgba(8,8,24,0.98),rgba(3,3,12,0.99));
+        border-radius:1.5rem;padding:4rem 2rem;text-align:center;
+        border:1px solid rgba(99,102,241,.2);
+    }
+    .hero-hex-bg { position:absolute;inset:0;opacity:.04;pointer-events:none; }
+    .hero-orb {
+        position:absolute;border-radius:50%;pointer-events:none;
+        background:radial-gradient(circle,var(--clr),transparent 70%);
+    }
+    .scan-sweep {
+        position:absolute;left:0;right:0;height:5px;pointer-events:none;
+        background:linear-gradient(180deg,transparent,rgba(99,102,241,.18),transparent);
+        animation:scanLine 5s linear infinite;
+    }
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto animate-dynamic" style="animation-delay: 0.1s;">
-    
-    <div class="lg:col-span-2">
-        <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 backdrop-blur-md p-8">
-            <h2 class="text-2xl font-bold text-white mb-6 flex items-center">
-                <i class="fas fa-headset text-pink-400 mr-3"></i> Technical Support
-            </h2>
-            
-            <form action="{{ url_for('main.submit_contact') }}" method="POST" class="space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-400 uppercase mb-1">Your Name</label>
-                        <input type="text" name="Name" placeholder="John Doe" required class="w-full px-4 py-3 rounded-lg bg-gray-900/50 border border-gray-600 text-white placeholder-gray-500 focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-400 uppercase mb-1">Your Email</label>
-                        <input type="email" name="Email" placeholder="john@example.com" required class="w-full px-4 py-3 rounded-lg bg-gray-900/50 border border-gray-600 text-white placeholder-gray-500 focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all">
-                    </div>
+    /* Service cards */
+    .svc-card {
+        position:relative;overflow:hidden;border-radius:1.25rem;padding:1.75rem;
+        background:linear-gradient(145deg,rgba(10,10,25,.97),rgba(5,5,14,.99));
+        border:1px solid transparent;transition:transform .25s ease,box-shadow .25s ease;
+        animation:fadeSlideUp .5s ease both;
+    }
+    .svc-card::before {
+        content:'';position:absolute;inset:0;border-radius:inherit;
+        padding:1px;
+        background:var(--border-grad);
+        -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+        -webkit-mask-composite:xor;mask-composite:exclude;
+        opacity:.5;transition:opacity .25s;
+    }
+    .svc-card:hover { transform:translateY(-5px); }
+    .svc-card:hover::before { opacity:1; }
+    .svc-card::after {
+        content:'';position:absolute;inset:0;border-radius:inherit;
+        background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.04) 50%,transparent 70%);
+        background-size:200% 100%;
+        animation:shimmerSlide 5s linear infinite;pointer-events:none;
+    }
+    .svc-icon {
+        width:3rem;height:3rem;border-radius:.875rem;display:flex;align-items:center;justify-content:center;
+        font-size:1.2rem;margin-bottom:1rem;flex-shrink:0;
+    }
+    .pulse-ring {
+        position:absolute;inset:0;border-radius:50%;border:2px solid;
+        animation:pulseRing 2s ease-out infinite;
+    }
+
+    /* Stat cards */
+    .stat-card {
+        text-align:center;padding:1.5rem 1rem;border-radius:1rem;
+        background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
+        transition:transform .2s ease;
+    }
+    .stat-card:hover { transform:translateY(-3px); }
+
+    /* Contact info cards */
+    .info-card {
+        display:flex;align-items:flex-start;gap:1rem;padding:1.25rem;
+        border-radius:1rem;background:rgba(255,255,255,.03);
+        border:1px solid rgba(255,255,255,.06);
+        transition:background .2s ease,border-color .2s ease;
+    }
+    .info-card:hover { background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1); }
+    .info-icon {
+        width:2.75rem;height:2.75rem;border-radius:.75rem;flex-shrink:0;
+        display:flex;align-items:center;justify-content:center;font-size:.95rem;
+    }
+
+    /* Form styling */
+    .sp-field {
+        width:100%;padding:.875rem 1rem;border-radius:.75rem;font-size:.9rem;
+        background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+        color:#f1f5f9;outline:none;transition:border-color .2s ease,box-shadow .2s ease;
+    }
+    .sp-field:focus { border-color:rgba(99,102,241,.6);box-shadow:0 0 0 3px rgba(99,102,241,.1); }
+    .sp-field::placeholder { color:#475569; }
+    select.sp-field option { background:#0a0a18;color:#f1f5f9; }
+
+    .animated-border-btn {
+        position:relative;padding:1px;border-radius:.875rem;
+        background:linear-gradient(90deg,#6366f1,#8b5cf6,#06b6d4,#6366f1);
+        background-size:300% 100%;
+        animation:borderFlow 4s linear infinite;
+    }
+    .animated-border-btn-inner {
+        display:flex;align-items:center;justify-content:center;gap:.6rem;
+        width:100%;padding:.9rem 1.5rem;border-radius:calc(.875rem - 1px);
+        background:#0a0a18;font-weight:800;font-size:.9rem;color:white;
+        transition:background .2s ease;cursor:pointer;border:none;
+    }
+    .animated-border-btn:hover .animated-border-btn-inner { background:transparent; }
+
+    /* Section divider label */
+    .section-label {
+        display:inline-flex;align-items:center;gap:.5rem;
+        padding:.3rem .9rem;border-radius:99px;font-size:.65rem;font-weight:800;
+        letter-spacing:.15em;text-transform:uppercase;
+        background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.25);color:#818cf8;
+        margin-bottom:1rem;
+    }
+</style>
+
+<div class="max-w-7xl mx-auto space-y-14 pb-16">
+
+    <!-- ══════════════════════════════════════
+         HERO SECTION
+    ══════════════════════════════════════ -->
+    <div class="contact-hero">
+        <div class="scan-sweep"></div>
+        <!-- Hex SVG bg -->
+        <svg class="hero-hex-bg" xmlns="http://www.w3.org/2000/svg">
+            <defs><pattern id="ch" width="56" height="48" patternUnits="userSpaceOnUse">
+                <polygon points="28,2 54,16 54,32 28,46 2,32 2,16" fill="none" stroke="rgba(99,102,241,1)" stroke-width="1"/>
+            </pattern></defs>
+            <rect width="100%" height="100%" fill="url(#ch)"/>
+        </svg>
+        <!-- Orbs -->
+        <div class="hero-orb" style="--clr:rgba(99,102,241,0.2);width:340px;height:340px;top:-80px;right:-80px;"></div>
+        <div class="hero-orb" style="--clr:rgba(16,185,129,0.12);width:220px;height:220px;bottom:-60px;left:5%;"></div>
+        <div class="hero-orb" style="--clr:rgba(6,182,212,0.1);width:180px;height:180px;top:10%;left:-40px;"></div>
+
+        <div class="relative z-10">
+            <!-- Radar icon -->
+            <div class="relative w-16 h-16 mx-auto mb-6">
+                <div style="position:absolute;inset:0;border-radius:50%;border:1px solid rgba(99,102,241,.4);animation:radarSpin 7s linear infinite;"></div>
+                <div style="position:absolute;inset:5px;border-radius:50%;border:1px solid rgba(99,102,241,.2);animation:radarSpin 4s linear infinite reverse;"></div>
+                <div class="absolute inset-0 rounded-full bg-indigo-600/15 flex items-center justify-center">
+                    <i class="fas fa-satellite-dish text-indigo-400 text-2xl"></i>
                 </div>
-                
+                <div class="absolute inset-0 rounded-full" style="background:conic-gradient(from 0deg,transparent 80%,rgba(99,102,241,.7) 100%);animation:radarSpin 2s linear infinite;"></div>
+            </div>
+
+            <div class="section-label mx-auto w-fit mb-4">
+                <span class="w-1.5 h-1.5 rounded-full bg-indigo-400" style="animation:dotBlink 1.5s infinite;"></span>
+                SourcePoint · Established 2023
+            </div>
+
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight mb-4 leading-tight">
+                Let's Build Something
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-cyan-400 to-emerald-400"> Extraordinary</span>
+            </h1>
+            <p class="text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed mb-8">
+                We are a full-spectrum technology company delivering software development, intelligent recruitment pipelines,
+                e-commerce infrastructure, and AI-powered solutions — all from one unified platform.
+            </p>
+
+            <!-- Quick stat row -->
+            <div class="flex flex-wrap justify-center gap-8 text-center">
                 <div>
-                    <label class="block text-xs font-medium text-gray-400 uppercase mb-1">Issue Description</label>
-                    <textarea name="Query" rows="5" placeholder="Describe the problem you're facing..." required class="w-full px-4 py-3 rounded-lg bg-gray-900/50 border border-gray-600 text-white placeholder-gray-500 focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all resize-none"></textarea>
+                    <div class="text-3xl font-black text-white">20<span class="text-indigo-400">+</span></div>
+                    <div class="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5 font-bold">Engineers</div>
                 </div>
-
-                <button type="submit" class="w-full py-3 px-6 rounded-lg text-white bg-pink-600 hover:bg-pink-500 font-bold shadow-lg shadow-pink-600/20 transition-all transform hover:scale-[1.02]">
-                    <i class="fas fa-paper-plane mr-2"></i> Send Support Request
-                </button>
-            </form>
+                <div class="w-px bg-white/10"></div>
+                <div>
+                    <div class="text-3xl font-black text-white">3</div>
+                    <div class="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5 font-bold">Core Domains</div>
+                </div>
+                <div class="w-px bg-white/10"></div>
+                <div>
+                    <div class="text-3xl font-black text-white">99.9<span class="text-emerald-400">%</span></div>
+                    <div class="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5 font-bold">Uptime</div>
+                </div>
+                <div class="w-px bg-white/10"></div>
+                <div>
+                    <div class="text-3xl font-black text-white">$200K<span class="text-cyan-400">+</span></div>
+                    <div class="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5 font-bold">Transacted</div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="lg:col-span-1 space-y-6">
-        
-        <div class="bg-gradient-to-br from-indigo-900/40 to-purple-900/40 rounded-xl shadow-lg border border-indigo-500/20 backdrop-blur-md p-8 text-center">
-            <div class="h-16 w-16 bg-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-300">
-                <i class="fas fa-comments text-3xl"></i>
+
+    <!-- ══════════════════════════════════════
+         WHAT WE DO — Services
+    ══════════════════════════════════════ -->
+    <div>
+        <div class="text-center mb-10">
+            <div class="section-label mx-auto w-fit">
+                <i class="fas fa-cubes text-[10px]"></i> What We Do
             </div>
-            <h3 class="text-xl font-bold text-white mb-2">General Inquiries</h3>
-            <p class="text-gray-400 text-sm mb-6">Have a non-technical question? Chat with us directly.</p>
-            
-            <a href="https://wa.me/918779308036?text=Hi%2C%20I%20have%20a%20general%20question." target="_blank" rel="noopener noreferrer" 
-               class="block w-full py-3 px-4 rounded-lg bg-[#25D366] hover:bg-[#20BA5C] text-white font-bold transition-all shadow-lg transform hover:-translate-y-1">
-                <i class="fab fa-whatsapp text-lg mr-2"></i> Chat on WhatsApp
-            </a>
+            <h2 class="text-3xl sm:text-4xl font-black text-white tracking-tight">Our Core Services</h2>
+            <p class="text-gray-500 mt-2 max-w-xl mx-auto text-sm">Three powerful domains. One integrated ecosystem.</p>
         </div>
 
-        <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 backdrop-blur-md p-6">
-            <h3 class="text-lg font-bold text-white mb-4">Direct Contact</h3>
-            <ul class="space-y-4">
-                <li class="flex items-center text-gray-300">
-                    <div class="h-8 w-8 rounded-lg bg-gray-700 flex items-center justify-center mr-3 text-gray-400">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+            <!-- Software Development -->
+            <div class="svc-card" style="--border-grad:linear-gradient(135deg,rgba(99,102,241,.8),transparent,rgba(139,92,246,.5));animation-delay:.05s;">
+                <div class="absolute top-0 right-0 w-32 h-32 rounded-full" style="background:radial-gradient(circle,rgba(99,102,241,.1),transparent 70%);pointer-events:none;"></div>
+                <div class="svc-icon" style="background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);color:#818cf8;">
+                    <i class="fas fa-code"></i>
+                </div>
+                <div class="text-[9px] font-black tracking-[.2em] uppercase text-indigo-500 mb-1">Domain · 01</div>
+                <h3 class="text-xl font-black text-white mb-3">Software Development</h3>
+                <p class="text-gray-500 text-sm leading-relaxed mb-4">
+                    End-to-end software delivery from architecture to deployment. We build scalable, cloud-native web apps,
+                    APIs, automation pipelines, and enterprise dashboards using modern stacks.
+                </p>
+                <ul class="space-y-1.5">
+                    {% for item in ['Full-Stack Web Applications','REST API & Microservices','Cloud Deployment (Docker/AWS)','Custom Admin Dashboards','Automation & AI Integration'] %}
+                    <li class="flex items-center gap-2 text-xs text-gray-400">
+                        <i class="fas fa-check-circle text-indigo-400 text-[10px] flex-shrink-0"></i> {{ item }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Recruitment Management -->
+            <div class="svc-card" style="--border-grad:linear-gradient(135deg,rgba(139,92,246,.8),transparent,rgba(6,182,212,.5));animation-delay:.12s;">
+                <div class="absolute top-0 right-0 w-32 h-32 rounded-full" style="background:radial-gradient(circle,rgba(139,92,246,.1),transparent 70%);pointer-events:none;"></div>
+                <div class="svc-icon" style="background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.25);color:#a78bfa;">
+                    <i class="fas fa-user-astronaut"></i>
+                </div>
+                <div class="text-[9px] font-black tracking-[.2em] uppercase text-violet-500 mb-1">Domain · 02</div>
+                <h3 class="text-xl font-black text-white mb-3">Recruitment Management</h3>
+                <p class="text-gray-500 text-sm leading-relaxed mb-4">
+                    An AI-augmented hiring pipeline that handles everything from job postings to onboarding —
+                    complete with automated code assessments, MCQ tests, interview scheduling and feedback.
+                </p>
+                <ul class="space-y-1.5">
+                    {% for item in ['Automated Job Listing & Applications','AI Resume Screening','Live Code Test Environment','MCQ Assessment Engine','Interview Scheduling & Feedback'] %}
+                    <li class="flex items-center gap-2 text-xs text-gray-400">
+                        <i class="fas fa-check-circle text-violet-400 text-[10px] flex-shrink-0"></i> {{ item }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- E-Commerce -->
+            <div class="svc-card" style="--border-grad:linear-gradient(135deg,rgba(16,185,129,.8),transparent,rgba(234,179,8,.5));animation-delay:.19s;">
+                <div class="absolute top-0 right-0 w-32 h-32 rounded-full" style="background:radial-gradient(circle,rgba(16,185,129,.1),transparent 70%);pointer-events:none;"></div>
+                <div class="svc-icon" style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25);color:#34d399;">
+                    <i class="fas fa-store"></i>
+                </div>
+                <div class="text-[9px] font-black tracking-[.2em] uppercase text-emerald-500 mb-1">Domain · 03</div>
+                <h3 class="text-xl font-black text-white mb-3">E-Commerce Platform</h3>
+                <p class="text-gray-500 text-sm leading-relaxed mb-4">
+                    A white-label marketplace infrastructure with multi-seller support, real-time inventory management,
+                    invoice generation, gift cards, and buyer-seller analytics in one place.
+                </p>
+                <ul class="space-y-1.5">
+                    {% for item in ['Multi-Seller Marketplace','Real-Time Inventory Management','Automated Invoice Generation','Gift Cards & Vouchers','Shareable Product Catalogues'] %}
+                    <li class="flex items-center gap-2 text-xs text-gray-400">
+                        <i class="fas fa-check-circle text-emerald-400 text-[10px] flex-shrink-0"></i> {{ item }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- Additional services row -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
+            {% set addl = [
+                ('fa-brain','rgba(168,85,247,.1)','rgba(168,85,247,.3)','#c084fc','AI & Automation','Gemini-powered grading, smart matching, intelligent recommendations.'),
+                ('fa-project-diagram','rgba(59,130,246,.1)','rgba(59,130,246,.3)','#60a5fa','Project Management','BRD authoring, milestone tracking, EMI finance management.'),
+                ('fa-book-open','rgba(234,179,8,.1)','rgba(234,179,8,.3)','#fbbf24','Learning Hub','Structured courses in Java, C, C++, SQL, DBMS, PL/SQL for teams.'),
+                ('fa-shield-alt','rgba(16,185,129,.1)','rgba(16,185,129,.3)','#34d399','Secure Infrastructure','Docker-containerised, Redis-backed, Cloudinary-powered cloud apps.')
+            ] %}
+            {% for icon,bg,bdr,clr,title,desc in addl %}
+            <div class="svc-card" style="--border-grad:linear-gradient(135deg,{{ bdr }},transparent);">
+                <div class="svc-icon" style="background:{{ bg }};border:1px solid {{ bdr }};color:{{ clr }};width:2.25rem;height:2.25rem;font-size:.85rem;">
+                    <i class="fas {{ icon }}"></i>
+                </div>
+                <h4 class="text-sm font-black text-white mb-1.5">{{ title }}</h4>
+                <p class="text-gray-600 text-xs leading-relaxed">{{ desc }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════
+         WHY CHOOSE US — Stats Row
+    ══════════════════════════════════════ -->
+    <div class="rounded-2xl border border-white/8 overflow-hidden"
+         style="background:linear-gradient(135deg,rgba(8,8,22,.98),rgba(4,4,12,.99));">
+        <div class="px-6 py-5 border-b border-white/6 flex items-center gap-3">
+            <div style="width:10px;height:10px;border-radius:50%;background:#6366f1;box-shadow:0 0 8px #6366f1;animation:dotBlink 1.5s infinite;"></div>
+            <h3 class="font-black text-white text-lg">Why Choose SourcePoint</h3>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-px bg-white/5">
+            {% set why = [
+                ('fa-bolt','#fbbf24','rgba(234,179,8,.1)','24h','Turnaround on support requests'),
+                ('fa-lock','#34d399','rgba(16,185,129,.1)','100%','Data privacy & secure architecture'),
+                ('fa-sitemap','#818cf8','rgba(99,102,241,.1)','3-in-1','Platform covering dev + hiring + commerce'),
+                ('fa-headset','#60a5fa','rgba(59,130,246,.1)','Dedicated','Account manager for every client')
+            ] %}
+            {% for icon,clr,bg,val,desc in why %}
+            <div class="stat-card bg-transparent rounded-none border-none flex flex-col items-center justify-center py-8 px-4 gap-3">
+                <div style="width:3rem;height:3rem;border-radius:.875rem;background:{{ bg }};display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:{{ clr }};">
+                    <i class="fas {{ icon }}"></i>
+                </div>
+                <div class="text-2xl font-black text-white">{{ val }}</div>
+                <p class="text-gray-500 text-xs text-center leading-relaxed">{{ desc }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════
+         CONTACT DETAILS + ENQUIRY FORM
+    ══════════════════════════════════════ -->
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+        <!-- LEFT: Contact info -->
+        <div class="lg:col-span-2 space-y-5">
+            <div>
+                <div class="section-label">
+                    <i class="fas fa-map-pin text-[10px]"></i> Get In Touch
+                </div>
+                <h2 class="text-2xl font-black text-white">We'd love to<br>hear from you</h2>
+                <p class="text-gray-500 text-sm mt-2 leading-relaxed">
+                    Reach out for a demo, partnership inquiry, support request or just a conversation about how SourcePoint can power your next big idea.
+                </p>
+            </div>
+
+            <!-- Info items -->
+            <div class="space-y-3">
+                <div class="info-card">
+                    <div class="info-icon" style="background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.2);color:#818cf8;">
                         <i class="fas fa-envelope"></i>
                     </div>
-                    <a href="mailto:admin@sourcepoint.in" class="hover:text-white transition-colors">admin@sourcepoint.in</a>
-                </li>
-                <li class="flex items-center text-gray-300">
-                    <div class="h-8 w-8 rounded-lg bg-gray-700 flex items-center justify-center mr-3 text-gray-400">
-                        <i class="fas fa-map-marker-alt"></i>
+                    <div>
+                        <p class="text-[10px] text-gray-600 uppercase tracking-widest font-bold mb-0.5">Email</p>
+                        <a href="mailto:admin@sourcepoint.in" class="text-white font-bold text-sm hover:text-indigo-300 transition-colors">admin@sourcepoint.in</a>
+                        <p class="text-gray-600 text-xs mt-0.5">We respond within 24 hours</p>
                     </div>
-                    <span>123 Tech Park, Pune, India</span>
-                </li>
-            </ul>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-icon" style="background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.2);color:#25D366;">
+                        <i class="fab fa-whatsapp"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-gray-600 uppercase tracking-widest font-bold mb-0.5">WhatsApp</p>
+                        <a href="https://wa.me/918779308036?text=Hi%2C%20I%27d%20like%20to%20learn%20more%20about%20SourcePoint." target="_blank"
+                           class="text-white font-bold text-sm hover:text-emerald-300 transition-colors">Chat with us on WhatsApp</a>
+                        <p class="text-gray-600 text-xs mt-0.5">Instant response during business hours</p>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-icon" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);color:#60a5fa;">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-gray-600 uppercase tracking-widest font-bold mb-0.5">Location</p>
+                        <p class="text-white font-bold text-sm">100% Online Platform</p>
+                        <p class="text-gray-600 text-xs mt-0.5">Serving clients worldwide, remotely</p>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-icon" style="background:rgba(234,179,8,.1);border:1px solid rgba(234,179,8,.2);color:#fbbf24;">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-gray-600 uppercase tracking-widest font-bold mb-0.5">Business Hours</p>
+                        <p class="text-white font-bold text-sm">Mon – Sat: 9 AM – 7 PM IST</p>
+                        <p class="text-gray-600 text-xs mt-0.5">Sunday: Closed</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WhatsApp CTA -->
+            <a href="https://wa.me/918779308036?text=Hi%2C%20I%27d%20like%20to%20learn%20more%20about%20SourcePoint." target="_blank"
+               class="flex items-center justify-center gap-3 w-full py-3.5 rounded-xl font-black text-white text-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/20"
+               style="background:linear-gradient(135deg,#128C7E,#25D366);">
+                <i class="fab fa-whatsapp text-lg"></i> Chat on WhatsApp
+            </a>
+
+            <!-- Social links -->
+            <div class="pt-2">
+                <p class="text-[10px] text-gray-600 uppercase tracking-widest font-bold mb-3">Follow Us</p>
+                <div class="flex gap-3">
+                    {% for icon,href,clr,bg in [
+                        ('fa-linkedin','#','#0A66C2','rgba(10,102,194,.12)'),
+                        ('fa-twitter','#','#1DA1F2','rgba(29,161,242,.12)'),
+                        ('fa-github','#','#f1f5f9','rgba(255,255,255,.06)'),
+                        ('fa-instagram','#','#E1306C','rgba(225,48,108,.12)')
+                    ] %}
+                    <a href="{{ href }}" target="_blank"
+                       class="w-10 h-10 rounded-xl flex items-center justify-center text-sm transition-all hover:-translate-y-1 hover:scale-110"
+                       style="background:{{ bg }};border:1px solid {{ bg.replace('.12',',.3)').replace('(','(') }};color:{{ clr }};">
+                        <i class="fab {{ icon }}"></i>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
 
+        <!-- RIGHT: Enquiry form -->
+        <div class="lg:col-span-3">
+            <div class="relative rounded-2xl overflow-hidden border border-indigo-500/20 p-7"
+                 style="background:linear-gradient(145deg,rgba(10,10,25,.97),rgba(5,5,14,.99));">
+
+                <!-- Top accent line -->
+                <div class="absolute top-0 left-0 right-0 h-[2px]"
+                     style="background:linear-gradient(90deg,transparent,#6366f1,#06b6d4,transparent);box-shadow:0 0 12px rgba(99,102,241,.5);"></div>
+                <!-- Hex bg -->
+                <svg class="absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
+                    <defs><pattern id="fhex" width="40" height="35" patternUnits="userSpaceOnUse">
+                        <polygon points="20,2 38,12 38,24 20,34 2,24 2,12" fill="none" stroke="rgba(99,102,241,1)" stroke-width=".7"/>
+                    </pattern></defs>
+                    <rect width="100%" height="100%" fill="url(#fhex)"/>
+                </svg>
+                <!-- Glow orb -->
+                <div style="position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,.12),transparent 70%);pointer-events:none;"></div>
+
+                <div class="relative z-10">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div style="position:relative;width:2.5rem;height:2.5rem;">
+                            <div style="position:absolute;inset:0;border-radius:50%;border:1px solid rgba(99,102,241,.5);animation:radarSpin 6s linear infinite;"></div>
+                            <div style="position:absolute;inset:4px;border-radius:50%;background:rgba(99,102,241,.15);display:flex;align-items:center;justify-content:center;color:#818cf8;font-size:.85rem;">
+                                <i class="fas fa-paper-plane"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-black text-white">Send an Enquiry</h3>
+                            <p class="text-gray-600 text-xs">We'll get back to you within 24 hours</p>
+                        </div>
+                    </div>
+
+                    <form action="{{ url_for('main.submit_contact') }}" method="POST" class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1.5">Full Name *</label>
+                                <input type="text" name="Name" placeholder="Your Full Name" required
+                                       class="sp-field">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1.5">Email Address *</label>
+                                <input type="email" name="Email" placeholder="john@example.com" required
+                                       class="sp-field">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1.5">Phone / WhatsApp</label>
+                                <input type="tel" name="Phone" placeholder="+91 98765 43210"
+                                       class="sp-field">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1.5">Company / Organisation</label>
+                                <input type="text" name="Company" placeholder="Your company name"
+                                       class="sp-field">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1.5">Service You're Interested In *</label>
+                            <select name="Service" required class="sp-field">
+                                <option value="" disabled selected>Select a service…</option>
+                                <option value="Software Development">Software Development</option>
+                                <option value="Recruitment Management">Recruitment Management (Hiring Platform)</option>
+                                <option value="E-Commerce Platform">E-Commerce Platform</option>
+                                <option value="AI & Automation">AI & Automation</option>
+                                <option value="Project Management">Project Management</option>
+                                <option value="Learning Hub">Learning Hub</option>
+                                <option value="Full Platform">Full Platform (All Services)</option>
+                                <option value="Other">Other / General Inquiry</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1.5">Your Message *</label>
+                            <textarea name="Query" rows="5" required placeholder="Tell us about your project, requirements, or any questions you have..."
+                                      class="sp-field resize-none"></textarea>
+                        </div>
+
+                        <!-- How did you hear -->
+                        <div>
+                            <label class="block text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1.5">How Did You Hear About Us?</label>
+                            <select name="Source" class="sp-field">
+                                <option value="" disabled selected>Select…</option>
+                                <option>Google Search</option>
+                                <option>LinkedIn</option>
+                                <option>Referral / Word of Mouth</option>
+                                <option>Social Media</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+
+                        <div class="animated-border-btn w-full">
+                            <button type="submit" class="animated-border-btn-inner w-full">
+                                <i class="fas fa-paper-plane text-sm"></i>
+                                Send Enquiry
+                                <i class="fas fa-arrow-right text-xs ml-1 opacity-60"></i>
+                            </button>
+                        </div>
+
+                        <p class="text-center text-[10px] text-gray-600 pt-1">
+                            <i class="fas fa-lock text-[9px] mr-1"></i>
+                            Your information is secure and will never be shared with third parties.
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
+
+
+    <!-- ══════════════════════════════════════
+         MAP + CTA ROW
+    ══════════════════════════════════════ -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- Location card (replaces unreliable iframe embed) -->
+        <div class="relative rounded-2xl overflow-hidden border border-blue-500/20 flex flex-col items-center justify-center p-8 text-center"
+             style="background:linear-gradient(145deg,rgba(8,10,24,.98),rgba(4,6,16,.99));min-height:260px;">
+
+            <!-- Animated world grid SVG background -->
+            <svg class="absolute inset-0 w-full h-full opacity-[0.04]" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <pattern id="world-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(59,130,246,1)" stroke-width="0.8"/>
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#world-grid)"/>
+            </svg>
+
+            <!-- Glow orb -->
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,.1),transparent 70%);pointer-events:none;"></div>
+
+            <!-- Top accent line -->
+            <div class="absolute top-0 left-0 right-0 h-[2px]"
+                 style="background:linear-gradient(90deg,transparent,#3b82f6,transparent);"></div>
+
+            <div class="relative z-10">
+                <!-- Animated globe icon -->
+                <div class="relative w-16 h-16 mx-auto mb-5">
+                    <div style="position:absolute;inset:0;border-radius:50%;border:1px solid rgba(59,130,246,.4);animation:radarSpin 8s linear infinite;"></div>
+                    <div style="position:absolute;inset:5px;border-radius:50%;border:1px solid rgba(59,130,246,.2);animation:radarSpin 5s linear infinite reverse;"></div>
+                    <div class="absolute inset-0 rounded-full flex items-center justify-center"
+                         style="background:rgba(59,130,246,.12);">
+                        <i class="fas fa-globe-asia text-blue-400 text-2xl" style="animation:floatY 3s ease-in-out infinite;"></i>
+                    </div>
+                    <div class="absolute inset-0 rounded-full"
+                         style="background:conic-gradient(from 0deg,transparent 80%,rgba(59,130,246,.6) 100%);animation:radarSpin 2.5s linear infinite;"></div>
+                </div>
+
+                <p class="text-[9px] font-black tracking-[.25em] uppercase text-blue-500 mb-2">100% Online Platform</p>
+                <h3 class="text-xl font-black text-white mb-2">Serving Clients Worldwide</h3>
+                <p class="text-gray-500 text-sm mb-5 max-w-xs">
+                    We operate entirely online, delivering software, recruitment and e-commerce solutions to businesses across India and beyond.
+                </p>
+
+                <div class="flex flex-wrap justify-center gap-3">
+                    <a href="mailto:admin@sourcepoint.in"
+                       class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-blue-300 transition-all hover:-translate-y-0.5 hover:bg-blue-500/15"
+                       style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);">
+                        <i class="fas fa-envelope text-[11px]"></i> admin@sourcepoint.in
+                    </a>
+                    <a href="https://wa.me/918779308036" target="_blank"
+                       class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-300 transition-all hover:-translate-y-0.5 hover:bg-emerald-500/15"
+                       style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);">
+                        <i class="fab fa-whatsapp text-[11px]"></i> Chat on WhatsApp
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Final CTA card -->
+        <div class="relative rounded-2xl overflow-hidden border border-indigo-500/25 flex flex-col justify-between p-7"
+             style="background:linear-gradient(145deg,rgba(10,10,28,.97),rgba(5,5,16,.99));">
+            <div class="absolute top-0 left-0 right-0 h-[2px]" style="background:linear-gradient(90deg,transparent,#6366f1,transparent);"></div>
+            <div style="position:absolute;right:-30px;bottom:-30px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,.12),transparent 70%);pointer-events:none;"></div>
+
+            <div class="relative z-10">
+                <div class="w-12 h-12 rounded-xl mb-5 flex items-center justify-center text-indigo-400 text-xl"
+                     style="background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);">
+                    <i class="fas fa-rocket" style="animation:floatY 3s ease-in-out infinite;"></i>
+                </div>
+                <h3 class="text-2xl font-black text-white mb-3 leading-tight">Ready to transform<br>your business?</h3>
+                <p class="text-gray-500 text-sm leading-relaxed mb-6">
+                    Whether you're a startup looking to hire fast, an enterprise scaling e-commerce, or a team needing custom software —
+                    SourcePoint is your single platform for it all.
+                </p>
+
+                <div class="space-y-3">
+                    <a href="{{ url_for('auth.login_register') }}"
+                       class="glow-btn flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-black text-white
+                              bg-gradient-to-r from-indigo-600 to-violet-700 hover:from-indigo-500 hover:to-violet-600
+                              shadow-lg shadow-indigo-900/50 hover:shadow-indigo-500/25 hover:-translate-y-0.5 transition-all">
+                        <i class="fas fa-arrow-right text-xs"></i> Get Started Free
+                    </a>
+                    <a href="https://wa.me/918779308036?text=Hi%2C%20I%20want%20a%20demo%20of%20SourcePoint." target="_blank"
+                       class="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold text-gray-300
+                              border border-white/10 hover:bg-white/5 hover:border-white/20 transition-all">
+                        <i class="fab fa-whatsapp text-emerald-400"></i> Request a Demo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 {% endblock %}

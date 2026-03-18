@@ -229,7 +229,7 @@
                         </a>
                     </div>
                     
-                    <div class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-white/10">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-white/10">
                         <div class="p-4">
                             <p class="text-xs text-gray-500 uppercase font-bold mb-2">Source Code</p>
                             <pre class="text-sm font-mono text-gray-300 overflow-x-auto bg-black/20 p-3 rounded custom-scrollbar max-h-60"><code>{{ test.code }}</code></pre>
@@ -238,7 +238,26 @@
                             <p class="text-xs text-gray-500 uppercase font-bold mb-2">Output Console</p>
                             <pre class="text-sm font-mono text-green-400 overflow-x-auto bg-black/40 p-3 rounded custom-scrollbar max-h-60 h-full"><code>{{ test.output or 'No output captured.' }}</code></pre>
                         </div>
+                        <div class="p-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <p class="text-xs text-gray-500 uppercase font-bold">AI Analysis</p>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide"
+                                      style="background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.3);color:#a78bfa;">
+                                    <i class="fas fa-brain text-[9px]"></i> Gemini
+                                </span>
+                            </div>
+                            {% if test.ai_feedback and test.ai_feedback != 'AI Grading unavailable.' and test.ai_feedback != 'AI Analysis Failed (Service Error).' %}
+                                <div class="text-sm text-gray-300 leading-relaxed bg-violet-950/30 border border-violet-500/20 p-3 rounded overflow-y-auto custom-scrollbar max-h-60"
+                                     style="white-space:pre-wrap;">{{ test.ai_feedback }}</div>
+                            {% else %}
+                                <div class="flex flex-col items-center justify-center h-24 text-center text-gray-600 bg-black/20 rounded p-3">
+                                    <i class="fas fa-robot text-2xl mb-2 opacity-30"></i>
+                                    <p class="text-xs">{{ test.ai_feedback or 'AI feedback not available for this submission.' }}</p>
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
+
                 </div>
             {% else %}
                 <div class="text-center py-10 text-gray-500">

@@ -34,6 +34,7 @@ class CodeTestSubmission(db.Model):
     code = db.Column(db.Text, nullable=False)
     output = db.Column(db.Text, nullable=True)
     language = db.Column(db.String(50), nullable=False, default='java')
+    ai_feedback = db.Column(db.Text, nullable=True)  # AI Gemini analysis
     submitted_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)
 
     candidate = db.relationship('User', foreign_keys=[candidate_id], backref='test_submissions')

@@ -79,13 +79,13 @@ class HiringService:
             raise Exception(f"Database error: {e}")
 
         # 4. Notifications
-        # Use Enums for role lookup
+        # Notify admins and recruiters when a candidate applies
         admins = User.query.filter_by(role=UserRole.ADMIN.value).all()
         recruiters = User.query.filter_by(role=UserRole.RECRUITER.value).all()
         recipient_emails = [u.email for u in admins + recruiters]
         
         if recipient_emails:
-            admin_user = User.query.filter_by(role=UserRole.ADMIN.value).first()
+            admin_user = admins[0] if admins else None
             send_email(
                 to=recipient_emails, 
                 subject=f"New Job Application: {job.title}", 
@@ -155,10 +155,12 @@ class HiringService:
                 recipient_id=recipient_id, 
                 code=code, 
                 output=output, 
-                language='java'
+                language='java',
+                ai_feedback=ai_feedback  # ← persist AI analysis to DB
             )
             db.session.add(submission)
             db.session.commit()
+
         except Exception as e:
             db.session.rollback()
             print(f"DB Error: {e}")

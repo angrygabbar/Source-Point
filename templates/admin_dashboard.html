@@ -2,116 +2,188 @@
 {% block title %}Master Command Center{% endblock %}
 
 {% block content %}
-<div class="space-y-8 pb-12 max-w-7xl mx-auto section-fade">
+<style>
+    /* ── Sci-Fi Dashboard Styles ── */
+    @keyframes radarSpin   { to { transform: rotate(360deg); } }
+    @keyframes radarSpin2  { to { transform: rotate(-360deg); } }
+    @keyframes pulseGlow   { 0%,100%{opacity:.5;transform:scale(1)}  50%{opacity:1;transform:scale(1.08)} }
+    @keyframes scanLine    { 0%{top:-6%} 100%{top:106%} }
+    @keyframes holoSwipe   { 0%,100%{opacity:0;transform:translateY(-100%)} 40%,60%{opacity:1} 100%{transform:translateY(100%)} }
+    @keyframes dotBlink    { 0%,100%{opacity:1} 50%{opacity:.25} }
+    @keyframes dataScroll  { from{background-position:0 0} to{background-position:0 -100px} }
+    @keyframes borderFlow  { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+    @keyframes glitchIn    { 0%{opacity:0;clip-path:inset(40% 0 60% 0)} 20%{opacity:.8;clip-path:inset(60% 0 20% 0)} 40%{opacity:1;clip-path:inset(0% 0 0% 0)} 60%{clip-path:inset(10% 0 5% 0)} 80%{clip-path:inset(2% 0 1% 0)} 100%{clip-path:inset(0 0 0 0)} }
+    @keyframes floatUp     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+    @keyframes shimmer     { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+    @keyframes orbit-spin  { to{transform:rotate(360deg)} }
+    @keyframes countUp     {}
 
-    <!-- ══════════════════════════════════════════════════════
-         HUD HEADER — System Overview
-    ══════════════════════════════════════════════════════ -->
+    .cmd-section-header {
+        position: relative;
+        overflow: hidden;
+        border-radius: 1rem 1rem 0 0;
+    }
+    .cmd-section-header::before {
+        content:'';
+        position:absolute;inset:0;
+        background: repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(255,255,255,.025) 28px,rgba(255,255,255,.025) 29px),
+                    repeating-linear-gradient(90deg,transparent,transparent 28px,rgba(255,255,255,.025) 28px,rgba(255,255,255,.025) 29px);
+        pointer-events:none;
+    }
+    .scan-sweep {
+        position:absolute;left:0;right:0;height:6px;
+        background: linear-gradient(180deg,transparent,rgba(255,255,255,.15),transparent);
+        animation: scanLine 4s linear infinite;
+        pointer-events:none;
+    }
+    .holo-card {
+        position:relative;overflow:hidden;
+        transition: transform .25s ease, box-shadow .25s ease;
+    }
+    .holo-card::after {
+        content:'';
+        position:absolute;inset:0;
+        background: linear-gradient(120deg,transparent 30%,rgba(255,255,255,.06) 50%,transparent 70%);
+        background-size:200% 100%;
+        animation: shimmer 4s linear infinite;
+        pointer-events:none;border-radius:inherit;
+    }
+    .holo-card:hover { transform:translateY(-3px); }
+
+    .quick-btn {
+        display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;
+        padding:.9rem .5rem;border-radius:.875rem;
+        text-align:center;cursor:pointer;
+        transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+        position:relative;overflow:hidden;
+    }
+    .quick-btn:hover { transform:translateY(-4px) scale(1.04); }
+    .quick-btn .btn-icon {
+        width:2.4rem;height:2.4rem;border-radius:.6rem;
+        display:flex;align-items:center;justify-content:center;font-size:1rem;
+        transition:transform .2s;
+    }
+    .quick-btn:hover .btn-icon { transform:scale(1.15) rotate(-5deg); }
+
+    /* Commerce theme */
+    .commerce-btn { background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);color:#6ee7b7; }
+    .commerce-btn:hover { background:rgba(16,185,129,.14);border-color:rgba(16,185,129,.5);box-shadow:0 0 20px rgba(16,185,129,.2); }
+    .commerce-btn .btn-icon { background:rgba(16,185,129,.12);color:#34d399; }
+
+    /* Recruitment theme */
+    .recruit-btn { background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.2);color:#a5b4fc; }
+    .recruit-btn:hover { background:rgba(99,102,241,.14);border-color:rgba(99,102,241,.5);box-shadow:0 0 20px rgba(99,102,241,.2); }
+    .recruit-btn .btn-icon { background:rgba(99,102,241,.12);color:#818cf8; }
+
+    /* System theme */
+    .system-btn { background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);color:#93c5fd; }
+    .system-btn:hover { background:rgba(59,130,246,.14);border-color:rgba(59,130,246,.5);box-shadow:0 0 20px rgba(59,130,246,.2); }
+    .system-btn .btn-icon { background:rgba(59,130,246,.12);color:#60a5fa; }
+
+    .radar-ring {
+        position:absolute;border-radius:50%;border:1px solid;
+        pointer-events:none;
+    }
+    .neon-divider {
+        height:1px;
+        background: linear-gradient(90deg,transparent,currentColor,transparent);
+        opacity:.25;margin:0;
+    }
+    .section-wrap {
+        border-radius:1rem;overflow:hidden;
+    }
+    .section-body { padding:1.5rem; }
+    .cta-row { padding:0 1.5rem 1.5rem; }
+
+    /* Animated border wrapper */
+    .animated-border-wrap {
+        padding:1px;
+        background: linear-gradient(90deg,rgba(16,185,129,.6),rgba(5,150,105,.2),rgba(16,185,129,.6));
+        background-size:200% 100%;
+        animation: borderFlow 5s linear infinite;
+        border-radius:1rem;
+    }
+    .animated-border-wrap.indigo {
+        background: linear-gradient(90deg,rgba(99,102,241,.7),rgba(139,92,246,.2),rgba(99,102,241,.7));
+        background-size:200% 100%;
+    }
+    .animated-border-wrap.blue {
+        background: linear-gradient(90deg,rgba(59,130,246,.5),rgba(99,102,241,.2),rgba(59,130,246,.5));
+        background-size:200% 100%;
+    }
+    .section-inner { background:#05050f;border-radius:calc(1rem - 1px);overflow:hidden; }
+</style>
+
+<div class="space-y-6 pb-12 max-w-7xl mx-auto">
+
+    <!-- ══════════════════════════════════════════
+         HUD HEADER
+    ══════════════════════════════════════════ -->
     <div class="relative overflow-hidden rounded-2xl border border-indigo-500/20 p-6 sm:p-8"
-        style="background:linear-gradient(135deg,rgba(10,10,30,0.95) 0%,rgba(5,5,15,0.98) 100%);">
+         style="background:linear-gradient(135deg,rgba(8,8,24,0.97) 0%,rgba(3,3,12,0.99) 100%);">
 
-        <!-- Animated hex grid background -->
-        <svg class="absolute inset-0 w-full h-full opacity-[0.04]" xmlns="http://www.w3.org/2000/svg">
+        <!-- Circuit grid -->
+        <svg class="absolute inset-0 w-full h-full opacity-[0.035]" xmlns="http://www.w3.org/2000/svg">
             <defs>
-                <pattern id="hex" width="56" height="48" patternUnits="userSpaceOnUse">
-                    <polygon points="28,2 54,16 54,32 28,46 2,32 2,16" fill="none" stroke="rgba(99,102,241,1)"
-                        stroke-width="1" />
+                <pattern id="hud-hex" width="56" height="48" patternUnits="userSpaceOnUse">
+                    <polygon points="28,2 54,16 54,32 28,46 2,32 2,16" fill="none" stroke="rgba(99,102,241,1)" stroke-width="1"/>
                 </pattern>
             </defs>
-            <rect width="100%" height="100%" fill="url(#hex)" />
+            <rect width="100%" height="100%" fill="url(#hud-hex)"/>
         </svg>
+        <!-- Scan sweep -->
+        <div class="scan-sweep"></div>
 
-        <!-- Glowing corner orbs -->
-        <div
-            style="position:absolute;top:-80px;right:-60px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,0.2),transparent 70%);pointer-events:none;">
-        </div>
-        <div
-            style="position:absolute;bottom:-60px;left:10%;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(16,185,129,0.12),transparent 70%);pointer-events:none;">
-        </div>
+        <!-- Orbs -->
+        <div style="position:absolute;top:-80px;right:-60px;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,0.18),transparent 70%);pointer-events:none;"></div>
+        <div style="position:absolute;bottom:-60px;left:8%;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(16,185,129,0.1),transparent 70%);pointer-events:none;"></div>
 
         <div class="relative z-10">
-            <!-- Top bar: system label + status chips -->
-            <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-                <div class="flex items-center gap-3">
-                    <!-- Radar sweep icon -->
-                    <div class="relative w-12 h-12 flex-shrink-0">
-                        <div class="absolute inset-0 rounded-full border border-indigo-500/40"
-                            style="animation: orbit-spin 6s linear infinite;"></div>
-                        <div class="absolute inset-1 rounded-full border border-indigo-500/20"
-                            style="animation: orbit-spin 4s linear infinite reverse;"></div>
-                        <div class="w-12 h-12 rounded-full bg-indigo-600/20 flex items-center justify-center">
-                            <i class="fas fa-crosshairs text-indigo-400 text-lg"
-                                style="animation: orbit-spin 8s linear infinite;"></i>
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-5">
+                <div class="flex items-center gap-4">
+                    <!-- Radar icon -->
+                    <div class="relative w-14 h-14 flex-shrink-0">
+                        <div class="radar-ring" style="inset:0;border-color:rgba(99,102,241,.45);animation:radarSpin 8s linear infinite;"></div>
+                        <div class="radar-ring" style="inset:4px;border-color:rgba(99,102,241,.25);animation:radarSpin2 5s linear infinite;"></div>
+                        <div class="radar-ring" style="inset:8px;border-color:rgba(99,102,241,.12);animation:radarSpin 14s linear infinite;"></div>
+                        <div class="w-14 h-14 rounded-full bg-indigo-600/15 flex items-center justify-center" style="position:absolute;inset:0;">
+                            <i class="fas fa-crosshairs text-indigo-400 text-xl" style="animation:radarSpin 12s linear infinite;"></i>
                         </div>
-                        <div class="absolute top-0 left-0 w-full h-full rounded-full"
-                            style="background:conic-gradient(from 0deg, transparent 75%, rgba(99,102,241,0.5) 100%);animation:orbit-spin 2s linear infinite;">
-                        </div>
+                        <div class="absolute top-0 left-0 w-full h-full rounded-full" style="background:conic-gradient(from 0deg,transparent 75%,rgba(99,102,241,.6) 100%);animation:radarSpin 2.5s linear infinite;"></div>
                     </div>
                     <div>
                         <div class="flex items-center gap-2 mb-0.5">
-                            <span class="text-[9px] font-black tracking-[0.25em] uppercase text-indigo-400">SourcePoint
-                                OS</span>
-                            <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"
-                                style="animation:dotBlink 1.5s ease-in-out infinite;"></span>
+                            <span class="text-[9px] font-black tracking-[0.3em] uppercase text-indigo-400">SourcePoint OS</span>
+                            <span class="w-1.5 h-1.5 rounded-full bg-indigo-400" style="animation:dotBlink 1.5s ease-in-out infinite;"></span>
                         </div>
-                        <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight leading-none">
+                        <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight leading-none" style="animation:glitchIn .6s ease forwards;">
                             Master Command Center
                         </h1>
+                        <p class="text-gray-500 text-xs mt-1">
+                            Welcome back, <span class="text-indigo-300 font-bold">{{ current_user.username }}</span>
+                            <span class="text-gray-700 mx-1.5">·</span>
+                            <span class="text-gray-600">Select a domain module below</span>
+                        </p>
                     </div>
                 </div>
 
-                <!-- System status chips -->
-                <div class="flex flex-wrap gap-2">
+                <!-- Status + Quick-reach buttons -->
+                <div class="flex flex-wrap items-center gap-2">
                     <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold"
-                        style="background:rgba(16,185,129,0.08);border-color:rgba(16,185,129,0.3);color:#34d399;">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"
-                            style="animation:dotBlink 2s ease-in-out infinite;"></span>
+                         style="background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.3);color:#34d399;">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400" style="animation:dotBlink 2s ease-in-out infinite;"></span>
                         Systems Online
                     </div>
                     <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold"
-                        style="background:rgba(99,102,241,0.08);border-color:rgba(99,102,241,0.3);color:#818cf8;">
-                        <i class="fas fa-shield-alt text-[9px]"></i>
-                        Secure Mode
+                         style="background:rgba(99,102,241,.08);border-color:rgba(99,102,241,.3);color:#818cf8;">
+                        <i class="fas fa-shield-alt text-[9px]"></i> Secure Mode
                     </div>
-                </div>
-            </div>
-
-            <!-- Welcome + action bar -->
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                    <p class="text-gray-400 text-sm">
-                        Welcome back, <span class="text-white font-bold">{{ current_user.username }}</span>.
-                        <span class="text-gray-600 mx-1">·</span>
-                        <span class="text-gray-500 text-xs">Select a domain to deploy.</span>
-                    </p>
-                </div>
-
-                <div class="flex flex-wrap gap-2">
-                    <a href="{{ url_for('admin.activity_tracker') }}" target="_blank" class="glow-btn inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-white
-                              bg-gradient-to-r from-purple-700 to-blue-700 shadow-lg shadow-purple-500/25
-                              hover:shadow-purple-400/40 hover:-translate-y-0.5 transition-all">
-                        <i class="fas fa-chart-line text-[11px]"></i>
-                        <span class="hidden sm:inline">Activity Tracker</span>
-                        <span class="sm:hidden">Activity</span>
+                    <a href="{{ url_for('admin.activity_tracker') }}" target="_blank"
+                       class="glow-btn inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-purple-700 to-blue-700 hover:-translate-y-0.5 transition-all">
+                        <i class="fas fa-chart-line text-[11px]"></i> Activity Tracker
                     </a>
-                    <a hx-get="{{ url_for('admin_core.send_specific_email') }}" hx-target="#main-content"
-                        hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true" class="glow-btn inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold
-                              text-blue-300 border border-blue-500/30 bg-blue-500/8
-                              hover:bg-blue-500/15 hover:-translate-y-0.5 transition-all cursor-pointer">
-                        <i class="fas fa-paper-plane text-[11px]"></i>
-                        <span class="hidden sm:inline">Email User</span>
-                        <span class="sm:hidden">Email</span>
-                    </a>
-                    <a hx-get="{{ url_for('admin_core.broadcast_email') }}" hx-target="#main-content"
-                        hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true" class="glow-btn inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold
-                              text-orange-300 border border-orange-500/30 bg-orange-500/8
-                              hover:bg-orange-500/15 hover:-translate-y-0.5 transition-all cursor-pointer">
-                        <i class="fas fa-bullhorn text-[11px]"></i> Broadcast
-                    </a>
-                    <a hx-get="{{ url_for('admin_core.admin_analytics') }}" hx-target="#main-content"
-                        hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true" class="glow-btn inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-white
-                              bg-gradient-to-r from-indigo-600 to-violet-700 shadow-lg shadow-indigo-500/30
-                              hover:shadow-indigo-400/50 hover:-translate-y-0.5 transition-all cursor-pointer">
+                    <a hx-get="{{ url_for('admin_core.admin_analytics') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                       class="glow-btn inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-700 hover:-translate-y-0.5 transition-all cursor-pointer">
                         <i class="fas fa-chart-pie text-[11px]"></i> Analytics
                     </a>
                 </div>
@@ -119,271 +191,361 @@
         </div>
     </div>
 
-    <!-- ══════════════════════════════════════════════════════
-         SYSTEM STATUS BAR — quick counts
-    ══════════════════════════════════════════════════════ -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 scroll-reveal-stagger">
-        <div class="neon-card emerald holo-shimmer px-4 py-3 flex items-center gap-3">
-            <div class="card-accent-bar"></div>
-            <div class="icon-glow emerald w-9 h-9 text-emerald-400 text-sm flex-shrink-0">
-                <i class="fas fa-shopping-cart"></i>
+    <!-- ══════════════════════════════════════════
+         KPI STAT CARDS
+    ══════════════════════════════════════════ -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {% set stats = [
+            {'icon':'fa-shopping-cart','color':'emerald','label':'Orders','val': pending_orders_count},
+            {'icon':'fa-file-alt',     'color':'indigo', 'label':'Applications','val': pending_apps_count},
+            {'icon':'fa-video',        'color':'cyan',   'label':'Interviews','val': scheduled_candidates|length},
+            {'icon':'fa-user-clock',   'color':'pink',   'label':'Pending Reg.','val': pending_users_count}
+        ] %}
+        {% for s in stats %}
+        <div class="holo-card rounded-xl p-4 flex items-center gap-3 border"
+             style="background:linear-gradient(135deg,rgba(10,10,25,.97),rgba(5,5,12,.99));border-color:rgba({% if s.color=='emerald'%}16,185,129{% elif s.color=='indigo'%}99,102,241{% elif s.color=='cyan'%}6,182,212{% else %}236,72,153{% endif %},.2);">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-sm flex-shrink-0"
+                 style="background:rgba({% if s.color=='emerald'%}16,185,129{% elif s.color=='indigo'%}99,102,241{% elif s.color=='cyan'%}6,182,212{% else %}236,72,153{% endif %},.12);color:{% if s.color=='emerald'%}#34d399{% elif s.color=='indigo'%}#818cf8{% elif s.color=='cyan'%}#22d3ee{% else %}#f472b6{% endif %};">
+                <i class="fas {{ s.icon }}"></i>
             </div>
-            <div class="relative z-10">
-                <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Orders</p>
-                <p class="text-xl font-black text-white count-up-number" data-target="{{ pending_orders_count }}">{{
-                    pending_orders_count }}</p>
-            </div>
-        </div>
-        <div class="neon-card indigo holo-shimmer px-4 py-3 flex items-center gap-3">
-            <div class="card-accent-bar"></div>
-            <div class="icon-glow indigo w-9 h-9 text-indigo-400 text-sm flex-shrink-0">
-                <i class="fas fa-file-alt"></i>
-            </div>
-            <div class="relative z-10">
-                <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Applications</p>
-                <p class="text-xl font-black text-white count-up-number" data-target="{{ pending_apps_count }}">{{
-                    pending_apps_count }}</p>
+            <div>
+                <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">{{ s.label }}</p>
+                <p class="text-2xl font-black text-white count-up-number" data-target="{{ s.val }}">{{ s.val }}</p>
             </div>
         </div>
-        <div class="neon-card cyan holo-shimmer px-4 py-3 flex items-center gap-3">
-            <div class="card-accent-bar"></div>
-            <div class="icon-glow cyan w-9 h-9 text-cyan-400 text-sm flex-shrink-0">
-                <i class="fas fa-video"></i>
-            </div>
-            <div class="relative z-10">
-                <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Interviews</p>
-                <p class="text-xl font-black text-white count-up-number"
-                    data-target="{{ scheduled_candidates|length }}">{{ scheduled_candidates|length }}</p>
-            </div>
-        </div>
-        <div class="neon-card pink holo-shimmer px-4 py-3 flex items-center gap-3">
-            <div class="card-accent-bar"></div>
-            <div class="icon-glow pink w-9 h-9 text-pink-400 text-sm flex-shrink-0">
-                <i class="fas fa-user-clock"></i>
-            </div>
-            <div class="relative z-10">
-                <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Pending Reg.</p>
-                <p class="text-xl font-black text-white count-up-number" data-target="{{ pending_users_count }}">{{
-                    pending_users_count }}</p>
-            </div>
-        </div>
+        {% endfor %}
     </div>
 
-    <!-- ══════════════════════════════════════════════════════
-         DOMAIN PORTALS — Commerce + Hiring
-    ══════════════════════════════════════════════════════ -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- ══════════════════════════════════════════
+         E-COMMERCE COMMAND CENTER
+    ══════════════════════════════════════════ -->
+    <div class="animated-border-wrap">
+        <div class="section-inner">
+            <!-- Header -->
+            <div class="cmd-section-header px-6 py-5" style="background:linear-gradient(135deg,rgba(10,20,15,.98),rgba(5,12,8,.99));">
+                <div class="scan-sweep" style="background:linear-gradient(180deg,transparent,rgba(16,185,129,.12),transparent);"></div>
+                <!-- Hex bg -->
+                <svg class="absolute inset-0 w-full h-full opacity-[0.045]" xmlns="http://www.w3.org/2000/svg">
+                    <defs><pattern id="hex-ec" width="40" height="35" patternUnits="userSpaceOnUse">
+                        <polygon points="20,2 38,12 38,24 20,34 2,24 2,12" fill="none" stroke="rgba(16,185,129,1)" stroke-width=".8"/>
+                    </pattern></defs>
+                    <rect width="100%" height="100%" fill="url(#hex-ec)"/>
+                </svg>
+                <!-- Glow orb -->
+                <div style="position:absolute;right:-40px;top:-40px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(16,185,129,.15),transparent 70%);pointer-events:none;"></div>
 
-        <!-- ── Commerce Portal ── -->
-        <div class="relative group rounded-2xl overflow-hidden border border-emerald-500/20
-                    transition-all duration-500 hover:border-emerald-400/50
-                    hover:shadow-2xl hover:shadow-emerald-500/20"
-            style="background:linear-gradient(145deg,rgba(10,20,15,0.97),rgba(5,10,8,0.99));">
-
-            <!-- Animated hex overlay -->
-            <svg class="absolute inset-0 w-full h-full opacity-[0.05] group-hover:opacity-[0.09] transition-opacity duration-500"
-                xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <pattern id="hex-em" width="40" height="35" patternUnits="userSpaceOnUse">
-                        <polygon points="20,2 38,12 38,24 20,34 2,24 2,12" fill="none" stroke="rgba(16,185,129,1)"
-                            stroke-width="0.8" />
-                    </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#hex-em)" />
-            </svg>
-
-            <!-- Glowing arc decoration -->
-            <div class="absolute -right-16 -top-16 w-56 h-56 rounded-full border-2 border-emerald-500/15
-                        group-hover:border-emerald-400/30 transition-all duration-500"
-                style="animation:orbit-spin 20s linear infinite;"></div>
-            <div class="absolute -right-8 -top-8 w-32 h-32 rounded-full border border-emerald-500/10
-                        group-hover:border-emerald-400/20 transition-all duration-500"
-                style="animation:orbit-spin 12s linear infinite reverse;"></div>
-            <div class="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
-                <i class="fas fa-store text-[120px] text-emerald-400"></i>
-            </div>
-
-            <!-- Scan line sweep on hover -->
-            <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                style="background:linear-gradient(180deg,transparent 0%,rgba(16,185,129,0.04) 50%,transparent 100%);animation:holoSwipe 3s ease-in-out infinite;">
-            </div>
-
-            <!-- Top accent line -->
-            <div class="absolute top-0 left-0 right-0 h-[2px]"
-                style="background:linear-gradient(90deg,transparent,#10b981,transparent);box-shadow:0 0 10px #10b981;">
-            </div>
-
-            <div class="relative z-10 p-7">
-                <!-- Icon + label row -->
-                <div class="flex items-start justify-between mb-6">
+                <div class="relative z-10 flex flex-wrap items-center justify-between gap-4">
                     <div class="flex items-center gap-4">
-                        <div class="relative">
-                            <div class="w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/30
-                                        flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
-                                style="box-shadow:0 0 20px rgba(16,185,129,0.2);">
-                                <i class="fas fa-store text-2xl text-emerald-400"></i>
+                        <!-- Radar -->
+                        <div class="relative w-12 h-12 flex-shrink-0">
+                            <div class="radar-ring" style="inset:0;border-color:rgba(16,185,129,.5);animation:radarSpin 7s linear infinite;"></div>
+                            <div class="radar-ring" style="inset:4px;border-color:rgba(16,185,129,.25);animation:radarSpin2 4s linear infinite;"></div>
+                            <div class="absolute inset-0 rounded-full bg-emerald-500/15 flex items-center justify-center">
+                                <i class="fas fa-store text-emerald-400 text-lg"></i>
                             </div>
-                            <!-- status indicator -->
-                            <div class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-gray-900"
-                                style="animation:dotBlink 2.5s ease-in-out infinite;box-shadow:0 0 8px #10b981;"></div>
+                            <div class="absolute inset-0 rounded-full" style="background:conic-gradient(from 0deg,transparent 75%,rgba(16,185,129,.7) 100%);animation:radarSpin 2s linear infinite;"></div>
                         </div>
                         <div>
-                            <p class="text-[9px] font-black tracking-[0.2em] uppercase text-emerald-500 mb-0.5">Domain ·
-                                01</p>
-                            <h2 class="text-2xl font-black text-white leading-tight">Commerce HQ</h2>
+                            <p class="text-[9px] font-black tracking-[0.25em] uppercase text-emerald-500 mb-0.5">Domain · 01</p>
+                            <h2 class="text-xl font-black text-white leading-tight">E-Commerce Command Center</h2>
+                            <p class="text-xs text-gray-500 mt-0.5">Manage marketplace inventory, orders, invoices and seller operations</p>
                         </div>
                     </div>
-                    <!-- Mini metric badges -->
-                    <div class="text-right">
-                        <div class="text-2xl font-black text-emerald-400
-                                    count-up-number" data-target="{{ pending_orders_count }}">{{ pending_orders_count
-                            }}</div>
-                        <p class="text-[9px] text-gray-500 uppercase tracking-wider">Active</p>
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#34d399;">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400" style="animation:dotBlink 1.8s ease-in-out infinite;"></span>
+                            {{ pending_orders_count }} Active Orders
+                        </span>
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold" style="background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.25);color:#fbbf24;">
+                            {{ pending_requests_count }} Stock Req.
+                        </span>
                     </div>
                 </div>
+            </div>
+            <div class="neon-divider" style="color:#10b981;"></div>
 
-                <p class="text-gray-500 text-sm leading-relaxed mb-5">
-                    Manage marketplace inventory, process orders, handle stock requests, and generate invoices in
-                    real-time.
-                </p>
+            <!-- Quick Actions Grid -->
+            <div class="section-body" style="background:rgba(5,14,9,.98);">
+                <p class="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-4">⚡ Quick Actions</p>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-3">
 
-                <!-- Live stats pills -->
-                <div class="flex flex-wrap gap-2 mb-6">
-                    <span class="badge-glow placed" style="font-size:0.7rem;">
-                        {{ pending_orders_count }} New Orders
-                    </span>
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold
-                                 bg-yellow-500/10 border border-yellow-500/25 text-yellow-400">
-                        {{ pending_requests_count }} Stock Requests
-                    </span>
+                    <a hx-get="{{ url_for('admin_commerce.manage_orders') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                       class="quick-btn commerce-btn cursor-pointer">
+                        <div class="btn-icon"><i class="fas fa-shopping-cart"></i></div>
+                        <span class="text-xs font-bold leading-tight">Manage Orders</span>
+                        {% if pending_orders_count > 0 %}<span class="text-[9px] text-emerald-400 font-bold">{{ pending_orders_count }} new</span>{% endif %}
+                    </a>
+
+                    <a hx-get="{{ url_for('admin_commerce.manage_inventory') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                       class="quick-btn commerce-btn cursor-pointer">
+                        <div class="btn-icon"><i class="fas fa-boxes"></i></div>
+                        <span class="text-xs font-bold leading-tight">Inventory</span>
+                        <span class="text-[9px] text-gray-600">Product stock</span>
+                    </a>
+
+                    <a hx-get="{{ url_for('admin_commerce.manage_invoices') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                       class="quick-btn commerce-btn cursor-pointer">
+                        <div class="btn-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                        <span class="text-xs font-bold leading-tight">Invoices</span>
+                        <span class="text-[9px] text-gray-600">Billing records</span>
+                    </a>
+
+                    <a hx-get="{{ url_for('admin_commerce.admin_commerce_dashboard') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                       class="quick-btn commerce-btn cursor-pointer">
+                        <div class="btn-icon"><i class="fas fa-cubes"></i></div>
+                        <span class="text-xs font-bold leading-tight">Stock Requests</span>
+                        {% if pending_requests_count > 0 %}<span class="text-[9px] text-yellow-400 font-bold">{{ pending_requests_count }} pending</span>{% endif %}
+                    </a>
+
+                    <a hx-get="{{ url_for('admin_commerce.manage_ads') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                       class="quick-btn commerce-btn cursor-pointer">
+                        <div class="btn-icon"><i class="fas fa-ad"></i></div>
+                        <span class="text-xs font-bold leading-tight">Manage Ads</span>
+                        <span class="text-[9px] text-gray-600">Promotions</span>
+                    </a>
+
+                    <a hx-get="{{ url_for('admin_commerce.manage_seller_inventory') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                       class="quick-btn commerce-btn cursor-pointer">
+                        <div class="btn-icon"><i class="fas fa-store-alt"></i></div>
+                        <span class="text-xs font-bold leading-tight">Seller Inventory</span>
+                        <span class="text-[9px] text-gray-600">Seller stock</span>
+                    </a>
                 </div>
+            </div>
 
-                <!-- CTA -->
-                <a hx-get="{{ url_for('admin_commerce.admin_commerce_dashboard') }}" hx-target="#main-content"
-                    hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true" class="glow-btn w-full py-3.5 flex items-center justify-center gap-2.5 rounded-xl text-sm font-black
-                          text-white cursor-pointer transition-all duration-300
-                          bg-gradient-to-r from-emerald-700 to-teal-700
-                          hover:from-emerald-600 hover:to-teal-600
-                          shadow-lg shadow-emerald-900/50 hover:shadow-emerald-500/30 hover:-translate-y-0.5">
+            <!-- CTA -->
+            <div class="cta-row">
+                <a hx-get="{{ url_for('admin_commerce.admin_commerce_dashboard') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                   class="glow-btn w-full py-3 flex items-center justify-center gap-2.5 rounded-xl text-sm font-black text-white cursor-pointer transition-all duration-300
+                          bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-600 hover:to-teal-600
+                          shadow-lg shadow-emerald-900/50 hover:shadow-emerald-500/25 hover:-translate-y-0.5">
                     <i class="fas fa-arrow-right text-xs"></i>
-                    Enter Commerce Dashboard
-                    <span class="ml-auto text-emerald-300/60 text-xs font-normal">[01]</span>
-                </a>
-            </div>
-        </div>
-
-        <!-- ── Hiring Portal ── -->
-        <div class="relative group rounded-2xl overflow-hidden border border-indigo-500/20
-                    transition-all duration-500 hover:border-indigo-400/50
-                    hover:shadow-2xl hover:shadow-indigo-500/20"
-            style="background:linear-gradient(145deg,rgba(10,10,25,0.97),rgba(5,5,15,0.99));">
-
-            <!-- Animated hex overlay -->
-            <svg class="absolute inset-0 w-full h-full opacity-[0.05] group-hover:opacity-[0.09] transition-opacity duration-500"
-                xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <pattern id="hex-in" width="40" height="35" patternUnits="userSpaceOnUse">
-                        <polygon points="20,2 38,12 38,24 20,34 2,24 2,12" fill="none" stroke="rgba(99,102,241,1)"
-                            stroke-width="0.8" />
-                    </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#hex-in)" />
-            </svg>
-
-            <div class="absolute -right-16 -top-16 w-56 h-56 rounded-full border-2 border-indigo-500/15
-                        group-hover:border-indigo-400/30 transition-all duration-500"
-                style="animation:orbit-spin 20s linear infinite;"></div>
-            <div class="absolute -right-8 -top-8 w-32 h-32 rounded-full border border-indigo-500/10
-                        group-hover:border-indigo-400/20 transition-all duration-500"
-                style="animation:orbit-spin 12s linear infinite reverse;"></div>
-            <div class="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
-                <i class="fas fa-user-astronaut text-[120px] text-indigo-400"></i>
-            </div>
-
-            <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                style="background:linear-gradient(180deg,transparent 0%,rgba(99,102,241,0.04) 50%,transparent 100%);animation:holoSwipe 3s ease-in-out infinite 1.5s;">
-            </div>
-
-            <!-- Top accent line -->
-            <div class="absolute top-0 left-0 right-0 h-[2px]"
-                style="background:linear-gradient(90deg,transparent,#6366f1,transparent);box-shadow:0 0 10px #6366f1;">
-            </div>
-
-            <div class="relative z-10 p-7">
-                <div class="flex items-start justify-between mb-6">
-                    <div class="flex items-center gap-4">
-                        <div class="relative">
-                            <div class="w-14 h-14 rounded-2xl bg-indigo-500/15 border border-indigo-500/30
-                                        flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
-                                style="box-shadow:0 0 20px rgba(99,102,241,0.2);">
-                                <i class="fas fa-user-astronaut text-2xl text-indigo-400"></i>
-                            </div>
-                            <div class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-indigo-400 rounded-full border-2 border-gray-900"
-                                style="animation:dotBlink 2s ease-in-out infinite;box-shadow:0 0 8px #6366f1;"></div>
-                        </div>
-                        <div>
-                            <p class="text-[9px] font-black tracking-[0.2em] uppercase text-indigo-500 mb-0.5">Domain ·
-                                02</p>
-                            <h2 class="text-2xl font-black text-white leading-tight">Recruitment Hub</h2>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-2xl font-black text-indigo-400
-                                    count-up-number" data-target="{{ pending_apps_count }}">{{ pending_apps_count }}
-                        </div>
-                        <p class="text-[9px] text-gray-500 uppercase tracking-wider">Active</p>
-                    </div>
-                </div>
-
-                <p class="text-gray-500 text-sm leading-relaxed mb-5">
-                    Oversee candidate applications, schedule technical interviews, assign coding environments, and
-                    review feedback.
-                </p>
-
-                <div class="flex flex-wrap gap-2 mb-6">
-                    <span class="badge-glow pending" style="font-size:0.7rem;">
-                        {{ pending_apps_count }} Applications
-                    </span>
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold
-                                 bg-cyan-500/10 border border-cyan-500/25 text-cyan-400">
-                        {{ scheduled_candidates|length }} Interviews
-                    </span>
-                </div>
-
-                <a hx-get="{{ url_for('admin_hiring.admin_hiring_dashboard') }}" hx-target="#main-content"
-                    hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true" class="glow-btn w-full py-3.5 flex items-center justify-center gap-2.5 rounded-xl text-sm font-black
-                          text-white cursor-pointer transition-all duration-300
-                          bg-gradient-to-r from-indigo-700 to-violet-800
-                          hover:from-indigo-600 hover:to-violet-700
-                          shadow-lg shadow-indigo-900/50 hover:shadow-indigo-500/30 hover:-translate-y-0.5">
-                    <i class="fas fa-arrow-right text-xs"></i>
-                    Enter Hiring Dashboard
-                    <span class="ml-auto text-indigo-300/60 text-xs font-normal">[02]</span>
+                    Enter Full Commerce Dashboard
+                    <span class="ml-auto text-emerald-300/50 text-xs font-normal">[01]</span>
                 </a>
             </div>
         </div>
     </div>
 
-    <!-- ══════════════════════════════════════════════════════
-         BOTTOM SECTION — Pending Registrations + Live Feed
-    ══════════════════════════════════════════════════════ -->
+
+    <!-- ══════════════════════════════════════════
+         RECRUITMENT COMMAND CENTER
+    ══════════════════════════════════════════ -->
+    <div class="animated-border-wrap indigo">
+        <div class="section-inner">
+            <!-- Header -->
+            <div class="cmd-section-header px-6 py-5" style="background:linear-gradient(135deg,rgba(10,10,25,.98),rgba(5,5,15,.99));">
+                <div class="scan-sweep" style="background:linear-gradient(180deg,transparent,rgba(99,102,241,.12),transparent);"></div>
+                <svg class="absolute inset-0 w-full h-full opacity-[0.045]" xmlns="http://www.w3.org/2000/svg">
+                    <defs><pattern id="hex-rc" width="40" height="35" patternUnits="userSpaceOnUse">
+                        <polygon points="20,2 38,12 38,24 20,34 2,24 2,12" fill="none" stroke="rgba(99,102,241,1)" stroke-width=".8"/>
+                    </pattern></defs>
+                    <rect width="100%" height="100%" fill="url(#hex-rc)"/>
+                </svg>
+                <div style="position:absolute;right:-40px;top:-40px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,.15),transparent 70%);pointer-events:none;"></div>
+
+                <div class="relative z-10 flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="relative w-12 h-12 flex-shrink-0">
+                            <div class="radar-ring" style="inset:0;border-color:rgba(99,102,241,.5);animation:radarSpin 6s linear infinite;"></div>
+                            <div class="radar-ring" style="inset:4px;border-color:rgba(99,102,241,.25);animation:radarSpin2 3.5s linear infinite;"></div>
+                            <div class="absolute inset-0 rounded-full bg-indigo-500/15 flex items-center justify-center">
+                                <i class="fas fa-user-astronaut text-indigo-400 text-lg"></i>
+                            </div>
+                            <div class="absolute inset-0 rounded-full" style="background:conic-gradient(from 0deg,transparent 75%,rgba(99,102,241,.7) 100%);animation:radarSpin 1.8s linear infinite;"></div>
+                        </div>
+                        <div>
+                            <p class="text-[9px] font-black tracking-[0.25em] uppercase text-indigo-500 mb-0.5">Domain · 02</p>
+                            <h2 class="text-xl font-black text-white leading-tight">Recruitment Command Center</h2>
+                            <p class="text-xs text-gray-500 mt-0.5">Applications, interviews, assessments and candidate pipeline</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold" style="background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);color:#a5b4fc;">
+                            <span class="w-1.5 h-1.5 rounded-full bg-indigo-400" style="animation:dotBlink 1.8s ease-in-out infinite;"></span>
+                            {{ pending_apps_count }} Applications
+                        </span>
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold" style="background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.25);color:#22d3ee;">
+                            {{ scheduled_candidates|length }} Interviews
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="neon-divider" style="color:#6366f1;"></div>
+
+            <!-- Quick Actions Grid -->
+            <div class="section-body" style="background:rgba(5,5,14,.98);">
+                <p class="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-4">⚡ Quick Actions</p>
+                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-3 mb-3">
+
+                    <a hx-get="{{ url_for('admin_hiring.admin_hiring_dashboard') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                       class="quick-btn recruit-btn cursor-pointer">
+                        <div class="btn-icon"><i class="fas fa-file-alt"></i></div>
+                        <span class="text-xs font-bold leading-tight">Applications</span>
+                        {% if pending_apps_count > 0 %}<span class="text-[9px] text-indigo-400 font-bold">{{ pending_apps_count }} pending</span>{% endif %}
+                    </a>
+
+                    <a href="{{ url_for('admin_hiring.schedule_interview') }}"
+                       class="quick-btn recruit-btn cursor-pointer">
+                        <div class="btn-icon"><i class="fas fa-calendar-plus"></i></div>
+                        <span class="text-xs font-bold leading-tight">Schedule Interview</span>
+                        <span class="text-[9px] text-gray-600">Book a session</span>
+                    </a>
+
+                    <a href="{{ url_for('admin_hiring.view_interviews') }}"
+                       class="quick-btn recruit-btn cursor-pointer">
+                        <div class="btn-icon"><i class="fas fa-video"></i></div>
+                        <span class="text-xs font-bold leading-tight">View Interviews</span>
+                        {% if scheduled_candidates|length > 0 %}<span class="text-[9px] text-cyan-400 font-bold">{{ scheduled_candidates|length }} live</span>{% endif %}
+                    </a>
+
+                    <a hx-get="{{ url_for('admin_hiring.manage_job_listings') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                       class="quick-btn recruit-btn cursor-pointer">
+                        <div class="btn-icon"><i class="fas fa-briefcase"></i></div>
+                        <span class="text-xs font-bold leading-tight">Job Listings</span>
+                        <span class="text-[9px] text-gray-600">Post & manage</span>
+                    </a>
+
+                    <a hx-get="{{ url_for('admin_users.manage_users', role='candidate') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                       class="quick-btn recruit-btn cursor-pointer">
+                        <div class="btn-icon"><i class="fas fa-user-graduate"></i></div>
+                        <span class="text-xs font-bold leading-tight">Candidates</span>
+                        <span class="text-[9px] text-gray-600">All applicants</span>
+                    </a>
+
+                    <a hx-get="{{ url_for('admin_users.manage_users', role='moderator') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                       class="quick-btn recruit-btn cursor-pointer">
+                        <div class="btn-icon"><i class="fas fa-user-shield"></i></div>
+                        <span class="text-xs font-bold leading-tight">Moderators</span>
+                        <span class="text-[9px] text-gray-600">Interviewers</span>
+                    </a>
+
+                    <a hx-get="{{ url_for('admin_mcq.list_questions') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                       class="quick-btn recruit-btn cursor-pointer">
+                        <div class="btn-icon"><i class="fas fa-clipboard-question"></i></div>
+                        <span class="text-xs font-bold leading-tight">MCQ Tests</span>
+                        <span class="text-[9px] text-gray-600">Assessments</span>
+                    </a>
+
+                    <a hx-get="{{ url_for('admin_hiring.manage_records') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                       class="quick-btn recruit-btn cursor-pointer">
+                        <div class="btn-icon"><i class="fas fa-database"></i></div>
+                        <span class="text-xs font-bold leading-tight">Records</span>
+                        <span class="text-[9px] text-gray-600">Hiring archive</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- CTA -->
+            <div class="cta-row">
+                <a hx-get="{{ url_for('admin_hiring.admin_hiring_dashboard') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                   class="glow-btn w-full py-3 flex items-center justify-center gap-2.5 rounded-xl text-sm font-black text-white cursor-pointer transition-all duration-300
+                          bg-gradient-to-r from-indigo-700 to-violet-800 hover:from-indigo-600 hover:to-violet-700
+                          shadow-lg shadow-indigo-900/50 hover:shadow-indigo-500/25 hover:-translate-y-0.5">
+                    <i class="fas fa-arrow-right text-xs"></i>
+                    Enter Full Hiring Dashboard
+                    <span class="ml-auto text-indigo-300/50 text-xs font-normal">[02]</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════
+         SYSTEM TOOLS ROW
+    ══════════════════════════════════════════ -->
+    <div class="animated-border-wrap blue">
+        <div class="section-inner">
+            <div class="cmd-section-header px-6 py-4" style="background:linear-gradient(135deg,rgba(8,10,22,.98),rgba(4,6,14,.99));">
+                <div class="scan-sweep" style="background:linear-gradient(180deg,transparent,rgba(59,130,246,.1),transparent);"></div>
+                <div class="relative z-10 flex items-center gap-3">
+                    <div class="relative w-10 h-10 flex-shrink-0">
+                        <div class="radar-ring" style="inset:0;border-color:rgba(59,130,246,.45);animation:radarSpin 9s linear infinite;"></div>
+                        <div class="absolute inset-0 rounded-full bg-blue-500/15 flex items-center justify-center">
+                            <i class="fas fa-cog text-blue-400"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-[9px] font-black tracking-[0.25em] uppercase text-blue-500 mb-0.5">Domain · 03</p>
+                        <h2 class="text-lg font-black text-white leading-tight">System Tools</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="neon-divider" style="color:#3b82f6;"></div>
+            <div class="section-body" style="background:rgba(4,6,16,.98);">
+                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+
+                    <a hx-get="{{ url_for('admin_users.manage_users') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                       class="quick-btn system-btn cursor-pointer">
+                        <div class="btn-icon"><i class="fas fa-users-cog"></i></div>
+                        <span class="text-xs font-bold leading-tight">Users</span>
+                    </a>
+
+                    <a hx-get="{{ url_for('admin_core.admin_analytics') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                       class="quick-btn system-btn cursor-pointer">
+                        <div class="btn-icon"><i class="fas fa-chart-pie"></i></div>
+                        <span class="text-xs font-bold leading-tight">Analytics</span>
+                    </a>
+
+                    <a hx-get="{{ url_for('admin_core.admin_activity_logs') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                       class="quick-btn system-btn cursor-pointer">
+                        <div class="btn-icon"><i class="fas fa-satellite-dish"></i></div>
+                        <span class="text-xs font-bold leading-tight">Activity Logs</span>
+                    </a>
+
+                    <a hx-get="{{ url_for('admin_core.broadcast_email') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                       class="quick-btn system-btn cursor-pointer">
+                        <div class="btn-icon"><i class="fas fa-bullhorn"></i></div>
+                        <span class="text-xs font-bold leading-tight">Broadcast</span>
+                    </a>
+
+                    <a hx-get="{{ url_for('admin_core.send_specific_email') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                       class="quick-btn system-btn cursor-pointer">
+                        <div class="btn-icon"><i class="fas fa-paper-plane"></i></div>
+                        <span class="text-xs font-bold leading-tight">Email User</span>
+                    </a>
+
+                    <a hx-get="{{ url_for('admin_core.emi_manager') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                       class="quick-btn system-btn cursor-pointer">
+                        <div class="btn-icon"><i class="fas fa-coins"></i></div>
+                        <span class="text-xs font-bold leading-tight">Finance</span>
+                    </a>
+
+                    <a hx-get="{{ url_for('admin_giftcards.gift_cards_dashboard') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                       class="quick-btn system-btn cursor-pointer">
+                        <div class="btn-icon"><i class="fas fa-gift"></i></div>
+                        <span class="text-xs font-bold leading-tight">Gift Cards</span>
+                    </a>
+
+                    <a hx-get="{{ url_for('events.events') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                       class="quick-btn system-btn cursor-pointer">
+                        <div class="btn-icon"><i class="fas fa-calendar-alt"></i></div>
+                        <span class="text-xs font-bold leading-tight">Events</span>
+                    </a>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════
+         BOTTOM: Pending Registrations + Live Feed
+    ══════════════════════════════════════════ -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        <!-- Pending Users: 2/3 width -->
+        <!-- Pending Users -->
         <div class="glass-panel rounded-2xl border border-white/8 lg:col-span-2 overflow-hidden">
-            <!-- Panel header -->
             <div class="flex items-center justify-between px-6 py-4 border-b border-white/6"
-                style="background:linear-gradient(90deg,rgba(59,130,246,0.06),transparent);">
+                 style="background:linear-gradient(90deg,rgba(59,130,246,.06),transparent);">
                 <div class="flex items-center gap-3">
-                    <div class="icon-glow blue w-9 h-9 text-blue-400 text-sm">
-                        <i class="fas fa-user-clock"></i>
-                    </div>
+                    <div class="icon-glow blue w-9 h-9 text-blue-400 text-sm"><i class="fas fa-user-clock"></i></div>
                     <div>
                         <h3 class="text-sm font-bold text-white">Pending Registrations</h3>
                         <p class="text-[10px] text-gray-600">Awaiting identity verification</p>
                     </div>
                 </div>
-                <span class="badge-glow pending" style="font-size:0.62rem;">{{ pending_users_count }} Queued</span>
+                <span class="badge-glow pending" style="font-size:.62rem;">{{ pending_users_count }} Queued</span>
             </div>
 
             {% if pending_users %}
@@ -402,39 +564,27 @@
                         <tr class="hover:bg-white/4 transition-all group">
                             <td class="px-6 py-3.5">
                                 <div class="flex items-center gap-3">
-                                    <!-- Biometric avatar -->
                                     <div class="relative flex-shrink-0">
-                                        <div
-                                            class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-700
-                                                    flex items-center justify-center text-white font-black text-xs
-                                                    group-hover:shadow-lg group-hover:shadow-indigo-500/30 transition-shadow">
+                                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-700 flex items-center justify-center text-white font-black text-xs group-hover:shadow-lg group-hover:shadow-indigo-500/30 transition-shadow">
                                             {{ user.username[:2]|upper }}
                                         </div>
-                                        <div class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full
-                                                    bg-yellow-400 border border-gray-900"
-                                            style="animation:dotBlink 1.8s ease-in-out infinite;"></div>
+                                        <div class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-yellow-400 border border-gray-900" style="animation:dotBlink 1.8s ease-in-out infinite;"></div>
                                     </div>
                                     <span class="text-white font-bold text-sm">{{ user.username }}</span>
                                 </div>
                             </td>
                             <td class="px-4 py-3.5 text-gray-500 text-xs font-mono">{{ user.email }}</td>
                             <td class="px-4 py-3.5">
-                                <span class="badge-glow pending" style="font-size:0.6rem;padding:2px 8px;">
-                                    {{ user.role|upper }}
-                                </span>
+                                <span class="badge-glow pending" style="font-size:.6rem;padding:2px 8px;">{{ user.role|upper }}</span>
                             </td>
                             <td class="px-4 py-3.5 text-right">
                                 <div class="flex items-center justify-end gap-2">
-                                    <a hx-get="{{ url_for('admin_users.approve_user', user_id=user.id) }}"
-                                        hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML" class="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-500/10
-                                              text-emerald-400 hover:bg-emerald-500 hover:text-white
-                                              transition-all cursor-pointer" title="Grant Access">
+                                    <a hx-get="{{ url_for('admin_users.approve_user', user_id=user.id) }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
+                                       class="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all cursor-pointer" title="Grant Access">
                                         <i class="fas fa-check text-xs"></i>
                                     </a>
-                                    <a hx-get="{{ url_for('admin_users.reject_user', user_id=user.id) }}"
-                                        hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML" class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-500/10
-                                              text-red-400 hover:bg-red-500 hover:text-white
-                                              transition-all cursor-pointer" title="Deny Access">
+                                    <a hx-get="{{ url_for('admin_users.reject_user', user_id=user.id) }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML"
+                                       class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all cursor-pointer" title="Deny Access">
                                         <i class="fas fa-times text-xs"></i>
                                     </a>
                                 </div>
@@ -445,16 +595,14 @@
                 </table>
             </div>
             <div class="flex justify-end px-6 py-3 border-t border-white/4">
-                <a hx-get="{{ url_for('admin_users.manage_users') }}" hx-target="#main-content"
-                    hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true" class="text-[10px] font-bold text-indigo-400 hover:text-white transition-colors cursor-pointer
-                          flex items-center gap-1.5 uppercase tracking-widest">
+                <a hx-get="{{ url_for('admin_users.manage_users') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                   class="text-[10px] font-bold text-indigo-400 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5 uppercase tracking-widest">
                     View All Users <i class="fas fa-arrow-right text-[9px]"></i>
                 </a>
             </div>
             {% else %}
             <div class="flex flex-col items-center justify-center py-14 text-gray-700">
-                <div
-                    class="w-16 h-16 rounded-2xl bg-white/3 border border-white/5 flex items-center justify-center mb-4">
+                <div class="w-16 h-16 rounded-2xl bg-white/3 border border-white/5 flex items-center justify-center mb-4">
                     <i class="fas fa-user-check text-2xl text-gray-700"></i>
                 </div>
                 <p class="text-sm font-medium text-gray-600">No pending registrations.</p>
@@ -463,30 +611,24 @@
             {% endif %}
         </div>
 
-        <!-- Live Activity Log: 1/3 width -->
+        <!-- Live Telemetry -->
         <div class="glass-panel rounded-2xl border border-white/8 overflow-hidden">
             <div class="flex items-center justify-between px-5 py-4 border-b border-white/6"
-                style="background:linear-gradient(90deg,rgba(168,85,247,0.06),transparent);">
+                 style="background:linear-gradient(90deg,rgba(168,85,247,.06),transparent);">
                 <div class="flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-purple-400"
-                        style="animation:dotBlink 1.2s ease-in-out infinite;box-shadow:0 0 6px #a855f7;"></span>
+                    <span class="w-2 h-2 rounded-full bg-purple-400" style="animation:dotBlink 1.2s ease-in-out infinite;box-shadow:0 0 6px #a855f7;"></span>
                     <h3 class="text-sm font-bold text-white">Live Telemetry</h3>
                 </div>
-                <a hx-get="{{ url_for('admin_core.admin_activity_logs') }}" hx-target="#main-content"
-                    hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
-                    class="text-[10px] font-bold text-purple-400 hover:text-white transition-colors cursor-pointer uppercase tracking-widest">
+                <a hx-get="{{ url_for('admin_core.admin_activity_logs') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                   class="text-[10px] font-bold text-purple-400 hover:text-white transition-colors cursor-pointer uppercase tracking-widest">
                     Full Logs →
                 </a>
             </div>
-
             <div class="p-4 space-y-1 max-h-[340px] overflow-y-auto custom-scrollbar">
                 {% for log in recent_logs %}
                 <div class="relative flex gap-3 py-2.5 px-3 rounded-xl hover:bg-white/3 transition-colors group">
-                    <!-- Timeline dot -->
                     <div class="flex flex-col items-center flex-shrink-0 mt-1">
-                        <div class="w-2 h-2 rounded-full bg-indigo-500 group-hover:bg-indigo-400 transition-colors
-                                    ring-2 ring-indigo-500/20 group-hover:ring-indigo-400/40"
-                            style="box-shadow:0 0 4px #6366f1;"></div>
+                        <div class="w-2 h-2 rounded-full bg-indigo-500 group-hover:bg-indigo-400 transition-colors ring-2 ring-indigo-500/20 group-hover:ring-indigo-400/40" style="box-shadow:0 0 4px #6366f1;"></div>
                         <div class="w-px flex-1 bg-white/5 mt-1.5" style="min-height:16px;"></div>
                     </div>
                     <div class="min-w-0 flex-1">
@@ -503,8 +645,8 @@
                 {% endfor %}
             </div>
         </div>
-
     </div>
+
 </div>
 
 <script>
@@ -516,7 +658,7 @@
             const target = parseInt(el.dataset.target, 10) || 0;
             if (target === 0) return;
             let current = 0;
-            const step = target / (1200 / 16);
+            const step = target / (1000 / 16);
             const timer = setInterval(() => {
                 current = Math.min(current + step, target);
                 el.textContent = Math.floor(current);
@@ -526,14 +668,14 @@
     }
 
     // Ripple on glow-btn
-    document.addEventListener('click', function (e) {
+    document.addEventListener('click', function(e) {
         const btn = e.target.closest('.glow-btn');
         if (!btn) return;
         const rect = btn.getBoundingClientRect();
         const r = document.createElement('span');
         const size = Math.max(rect.width, rect.height);
         r.className = 'ripple';
-        r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - rect.left - size / 2}px;top:${e.clientY - rect.top - size / 2}px`;
+        r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - rect.left - size/2}px;top:${e.clientY - rect.top - size/2}px`;
         btn.appendChild(r);
         r.addEventListener('animationend', () => r.remove());
     });
