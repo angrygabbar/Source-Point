@@ -36,7 +36,7 @@
             <div class="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity"><i
                     class="fas fa-question-circle text-5xl text-green-400"></i></div>
             <p class="text-xs font-bold text-gray-400 uppercase">Total Questions</p>
-            <h3 class="text-3xl font-bold text-white mt-1">{{ questions|length }}</h3>
+            <h3 class="text-3xl font-bold text-white mt-1">{{ total_questions }}</h3>
             <button @click="currentTab = 'questions'" class="text-xs text-green-400 mt-2 hover:underline">Manage
                 &rarr;</button>
         </div>
@@ -78,160 +78,79 @@
     <div class="glass-panel rounded-2xl border border-white/10 min-h-[500px]">
 
         <!-- QUESTIONS TAB -->
-        <div x-show="currentTab === 'questions'" class="p-6">
+        <div x-show="currentTab === 'questions'" class="p-6" @open-question-modal.window="showQuestionModal = true">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold text-white">Question Bank</h2>
-                <span class="text-sm text-gray-400">{{ questions|length }} questions available</span>
+                <span class="text-sm text-gray-400">{{ total_questions }} questions total</span>
             </div>
 
-            {% if categories %}
+            {% if categories or uncategorised_count %}
+            <!-- Category Pill Nav -->
             <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-300 mb-2">Filter by Category</label>
-                <select x-model="selectedCategory"
-                    class="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-indigo-500 transition-colors">
-                    <option value="all">All Categories</option>
-                    {% for category in categories %}
-                    <option value="{{ category }}">{{ category }}</option>
+                <p class="text-xs font-bold text-gray-500 uppercase mb-3">Filter by Category</p>
+                <div class="flex flex-wrap gap-2" id="category-pills">
+                    <!-- All -->
+                    <button
+                        hx-get="{{ url_for('admin_mcq.questions_by_category') }}?category="
+                        hx-target="#question-rows"
+                        hx-indicator="#q-spinner"
+                        hx-swap="innerHTML"
+                        class="category-pill px-3 py-1.5 rounded-lg text-xs font-bold border transition-all
+                               bg-green-600/20 border-green-500/30 text-green-400"
+                        onclick="setActivePill(this)">
+                        <i class="fas fa-layer-group mr-1"></i> All
+                        <span class="ml-1 opacity-70">({{ total_questions }})</span>
+                    </button>
+
+                    {% for cat in categories %}
+                    <button
+                        hx-get="{{ url_for('admin_mcq.questions_by_category') }}?category={{ cat | urlencode }}"
+                        hx-target="#question-rows"
+                        hx-indicator="#q-spinner"
+                        hx-swap="innerHTML"
+                        class="category-pill px-3 py-1.5 rounded-lg text-xs font-bold border transition-all
+                               bg-white/5 border-white/10 text-gray-300 hover:bg-indigo-600/20 hover:border-indigo-500/30 hover:text-indigo-300"
+                        onclick="setActivePill(this)">
+                        <i class="fas fa-tag mr-1"></i> {{ cat }}
+                        <span class="ml-1 opacity-70">({{ category_counts[cat] }})</span>
+                    </button>
                     {% endfor %}
-                </select>
-            </div>
-            {% endif %}
 
-            {% if questions %}
-            <div class="space-y-2">
-                {% for question in questions %}
-                <div x-data="{ expanded: false }"
-                    x-show="selectedCategory === 'all' || selectedCategory === '{{ question.category }}' || (selectedCategory === 'all' && !{{ 'true' if question.category else 'false' }})"
-                    class="bg-white/5 border border-white/10 rounded-xl overflow-hidden transition-all"
-                    :class="expanded ? 'ring-1 ring-green-500/30 bg-white/[0.07]' : 'hover:bg-white/10'">
-
-                    <!-- Compact Header (Always Visible) -->
-                    <div @click="expanded = !expanded"
-                        class="flex items-center gap-3 p-4 cursor-pointer select-none group">
-                        <div
-                            class="flex-shrink-0 w-8 h-8 rounded-lg bg-green-600/20 border border-green-500/30 flex items-center justify-center">
-                            <span class="text-green-400 text-xs font-bold">Q{{ loop.index }}</span>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-white font-medium text-sm truncate">{{ question.question_text }}</p>
-                        </div>
-                        <div class="flex items-center gap-2 flex-shrink-0">
-                            {% if question.category %}
-                            <span
-                                class="px-2 py-0.5 bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 rounded text-xs font-bold">{{
-                                question.category }}</span>
-                            {% endif %}
-                            <span
-                                class="px-2 py-0.5 bg-green-600/20 border border-green-500/30 text-green-400 rounded text-xs font-bold">Ans:
-                                {{ question.correct_option }}</span>
-                            <i class="fas fa-chevron-down text-gray-500 text-xs transition-transform duration-300"
-                                :class="expanded && 'rotate-180'"></i>
-                        </div>
-                    </div>
-
-                    <!-- Expanded Details (Dropdown) -->
-                    <div x-show="expanded" x-collapse x-cloak>
-                        <div class="px-4 pb-4 border-t border-white/10">
-                            <!-- Full Question Text -->
-                            <div class="mt-4 mb-4">
-                                <p class="text-xs font-bold text-gray-400 uppercase mb-2">Question</p>
-                                <p class="text-white text-sm leading-relaxed">{{ question.question_text }}</p>
-                            </div>
-
-                            <!-- Options Grid -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
-                                <div
-                                    class="flex items-start gap-2 p-2.5 rounded-lg {{ 'bg-green-600/10 border border-green-500/20' if question.correct_option == 'A' else 'bg-white/5 border border-white/5' }}">
-                                    <span
-                                        class="flex-shrink-0 w-6 h-6 rounded-full {{ 'bg-green-600/30 text-green-400' if question.correct_option == 'A' else 'bg-white/10 text-gray-400' }} flex items-center justify-center text-xs font-bold">A</span>
-                                    <span
-                                        class="text-sm {{ 'text-green-400 font-semibold' if question.correct_option == 'A' else 'text-gray-300' }}">{{
-                                        question.option_a }}{% if question.correct_option == 'A' %} <i
-                                            class="fas fa-check-circle text-green-400 ml-1"></i>{% endif %}</span>
-                                </div>
-                                <div
-                                    class="flex items-start gap-2 p-2.5 rounded-lg {{ 'bg-green-600/10 border border-green-500/20' if question.correct_option == 'B' else 'bg-white/5 border border-white/5' }}">
-                                    <span
-                                        class="flex-shrink-0 w-6 h-6 rounded-full {{ 'bg-green-600/30 text-green-400' if question.correct_option == 'B' else 'bg-white/10 text-gray-400' }} flex items-center justify-center text-xs font-bold">B</span>
-                                    <span
-                                        class="text-sm {{ 'text-green-400 font-semibold' if question.correct_option == 'B' else 'text-gray-300' }}">{{
-                                        question.option_b }}{% if question.correct_option == 'B' %} <i
-                                            class="fas fa-check-circle text-green-400 ml-1"></i>{% endif %}</span>
-                                </div>
-                                <div
-                                    class="flex items-start gap-2 p-2.5 rounded-lg {{ 'bg-green-600/10 border border-green-500/20' if question.correct_option == 'C' else 'bg-white/5 border border-white/5' }}">
-                                    <span
-                                        class="flex-shrink-0 w-6 h-6 rounded-full {{ 'bg-green-600/30 text-green-400' if question.correct_option == 'C' else 'bg-white/10 text-gray-400' }} flex items-center justify-center text-xs font-bold">C</span>
-                                    <span
-                                        class="text-sm {{ 'text-green-400 font-semibold' if question.correct_option == 'C' else 'text-gray-300' }}">{{
-                                        question.option_c }}{% if question.correct_option == 'C' %} <i
-                                            class="fas fa-check-circle text-green-400 ml-1"></i>{% endif %}</span>
-                                </div>
-                                <div
-                                    class="flex items-start gap-2 p-2.5 rounded-lg {{ 'bg-green-600/10 border border-green-500/20' if question.correct_option == 'D' else 'bg-white/5 border border-white/5' }}">
-                                    <span
-                                        class="flex-shrink-0 w-6 h-6 rounded-full {{ 'bg-green-600/30 text-green-400' if question.correct_option == 'D' else 'bg-white/10 text-gray-400' }} flex items-center justify-center text-xs font-bold">D</span>
-                                    <span
-                                        class="text-sm {{ 'text-green-400 font-semibold' if question.correct_option == 'D' else 'text-gray-300' }}">{{
-                                        question.option_d }}{% if question.correct_option == 'D' %} <i
-                                            class="fas fa-check-circle text-green-400 ml-1"></i>{% endif %}</span>
-                                </div>
-                            </div>
-
-                            <!-- Metadata & Actions Row -->
-                            <div class="flex items-center justify-between pt-3 border-t border-white/5">
-                                <div class="flex items-center gap-4 text-xs text-gray-500">
-                                    <span><i class="fas fa-user text-gray-400 mr-1"></i> {{ question.created_by.username
-                                        }}</span>
-                                    <span><i class="fas fa-clock text-gray-400 mr-1"></i> {{
-                                        question.created_at.strftime('%b %d, %Y') }}</span>
-                                    <span><i class="fas fa-hashtag text-gray-400 mr-1"></i> ID: {{ question.id }}</span>
-                                </div>
-                                <div class="flex gap-2">
-                                    <button @click.stop="
-                                            $refs.questionForm.action = '{{ url_for('admin_mcq.edit_question', question_id=0) }}'.replace('0', $el.dataset.questionId);
-                                            $refs.questionForm.querySelector('[name=question_text]').value = $el.dataset.questionText;
-                                            $refs.questionForm.querySelector('[name=option_a]').value = $el.dataset.optionA;
-                                            $refs.questionForm.querySelector('[name=option_b]').value = $el.dataset.optionB;
-                                            $refs.questionForm.querySelector('[name=option_c]').value = $el.dataset.optionC;
-                                            $refs.questionForm.querySelector('[name=option_d]').value = $el.dataset.optionD;
-                                            $refs.questionForm.querySelector('[name=correct_option]').value = $el.dataset.correctOption;
-                                            $refs.questionForm.querySelector('[name=category]').value = $el.dataset.category;
-                                            showQuestionModal = true;
-                                        "
-                                        class="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-400 rounded-lg text-xs font-medium transition-all"
-                                        data-question-id="{{ question.id }}"
-                                        data-question-text="{{ question.question_text }}"
-                                        data-option-a="{{ question.option_a }}" data-option-b="{{ question.option_b }}"
-                                        data-option-c="{{ question.option_c }}" data-option-d="{{ question.option_d }}"
-                                        data-correct-option="{{ question.correct_option }}"
-                                        data-category="{{ question.category or '' }}">
-                                        <i class="fas fa-edit mr-1"></i> Edit
-                                    </button>
-                                    <button @click.stop
-                                        onclick="handleAjaxUrl(event, '{{ url_for('admin_mcq.delete_question', question_id=question.id) }}', 'Delete this question?')"
-                                        class="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-400 rounded-lg text-xs font-medium transition-all">
-                                        <i class="fas fa-trash mr-1"></i> Delete
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    {% if uncategorised_count %}
+                    <button
+                        hx-get="{{ url_for('admin_mcq.questions_by_category') }}?category=__uncategorised__"
+                        hx-target="#question-rows"
+                        hx-indicator="#q-spinner"
+                        hx-swap="innerHTML"
+                        class="category-pill px-3 py-1.5 rounded-lg text-xs font-bold border transition-all
+                               bg-white/5 border-white/10 text-gray-400 hover:bg-yellow-600/20 hover:border-yellow-500/30 hover:text-yellow-300"
+                        onclick="setActivePill(this)">
+                        <i class="fas fa-question mr-1"></i> Uncategorised
+                        <span class="ml-1 opacity-70">({{ uncategorised_count }})</span>
+                    </button>
+                    {% endif %}
                 </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <div class="text-center py-16">
-                <i class="fas fa-question-circle text-6xl text-gray-700 mb-4"></i>
-                <p class="text-gray-400 text-lg">No questions yet</p>
-                <p class="text-gray-500 text-sm mt-2">Create your first MCQ question to get started</p>
-                <button @click="showQuestionModal = true"
-                    class="mt-6 px-6 py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg font-medium transition-all">
-                    <i class="fas fa-plus mr-2"></i> Create Question
-                </button>
             </div>
             {% endif %}
+
+            <!-- Loading spinner (HTMX indicator) -->
+            <div id="q-spinner" class="htmx-indicator flex items-center justify-center py-12">
+                <div class="flex flex-col items-center gap-3 text-gray-500">
+                    <div class="w-8 h-8 border-2 border-green-500/40 border-t-green-400 rounded-full animate-spin"></div>
+                    <span class="text-xs">Loading questions…</span>
+                </div>
+            </div>
+
+            <!-- Question rows — populated by HTMX -->
+            <div id="question-rows">
+                <div class="text-center py-16 text-gray-500">
+                    <i class="fas fa-hand-pointer text-4xl mb-3 opacity-30"></i>
+                    <p class="text-sm">Select a category above to load questions</p>
+                </div>
+            </div>
+
         </div>
+
 
         <!-- TESTS TAB -->
         <div x-show="currentTab === 'tests'" class="p-6">
@@ -957,6 +876,24 @@
             }
         });
     });
+    // ── Category pill active state ───────────────────────────────────────
+    function setActivePill(el) {
+        document.querySelectorAll('.category-pill').forEach(p => {
+            p.classList.remove('bg-green-600/20','border-green-500/30','text-green-400',
+                               'bg-indigo-600/20','border-indigo-500/30','text-indigo-300',
+                               'bg-yellow-600/20','border-yellow-500/30','text-yellow-300');
+            p.classList.add('bg-white/5','border-white/10','text-gray-300');
+        });
+        el.classList.remove('bg-white/5','border-white/10','text-gray-300');
+        el.classList.add('bg-indigo-600/20','border-indigo-500/30','text-indigo-300');
+    }
 </script>
+
+<style>
+    /* Hide HTMX indicator by default; show only while request is in flight */
+    .htmx-indicator { display: none; }
+    .htmx-request .htmx-indicator { display: flex; }
+    .htmx-request.htmx-indicator { display: flex; }
+</style>
 
 {% endblock %}

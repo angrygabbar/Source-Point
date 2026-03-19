@@ -15,29 +15,75 @@ admin_mcq_bp = Blueprint('admin_mcq', __name__, url_prefix='/admin/mcq')
 @login_required
 @role_required(UserRole.ADMIN.value)
 def list_questions():
-    """MCQ Management Dashboard"""
-    questions = MCQQuestion.query.order_by(MCQQuestion.created_at.desc()).all()
+    """MCQ Management Dashboard — loads lightweight metadata only.
+    Questions are fetched lazily per-category via /questions/by-category.
+    """
+    # Lightweight: only counts needed for stat cards
+    total_questions = MCQQuestion.query.count()
     tests = Test.query.order_by(Test.created_at.desc()).all()
     assignments = TestAssignment.query.order_by(TestAssignment.scheduled_start_time.desc()).all()
-    
-    # Get unique categories for filtering
-    categories = db.session.query(MCQQuestion.category).distinct().filter(MCQQuestion.category.isnot(None)).order_by(MCQQuestion.category).all()
-    categories = [cat[0] for cat in categories]
-    
-    # Get data for creating assignments
+
+    # Category list with per-category counts
+    from sqlalchemy import func
+    cat_counts = (
+        db.session.query(MCQQuestion.category, func.count(MCQQuestion.id))
+        .filter(MCQQuestion.category.isnot(None))
+        .group_by(MCQQuestion.category)
+        .order_by(MCQQuestion.category)
+        .all()
+    )
+    # [(category_name, count), ...]
+    categories = [row[0] for row in cat_counts]
+    category_counts = {row[0]: row[1] for row in cat_counts}
+
+    # Uncategorised count
+    uncategorised_count = MCQQuestion.query.filter(
+        db.or_(MCQQuestion.category == None, MCQQuestion.category == '')
+    ).count()
+
+    # Data for create-assignment modal
     candidates = User.query.filter_by(role=UserRole.CANDIDATE.value, is_approved=True).order_by(User.username).all()
     reviewers = User.query.filter(
         User.role.in_([UserRole.MODERATOR.value, UserRole.DEVELOPER.value]),
         User.is_approved == True
     ).order_by(User.username).all()
-    
-    return render_template('admin_mcq_dashboard.html', 
-                         questions=questions,
-                         tests=tests,
-                         assignments=assignments,
-                         candidates=candidates,
-                         reviewers=reviewers,
-                         categories=categories)
+
+    # Pass lightweight question list only for the Create Test modal checkboxes
+    # (just id, text snippet, category — no eager loading of all fields)
+    questions_for_modal = db.session.query(
+        MCQQuestion.id, MCQQuestion.question_text, MCQQuestion.category
+    ).order_by(MCQQuestion.category, MCQQuestion.created_at.desc()).all()
+
+    return render_template('admin_mcq_dashboard.html',
+                           total_questions=total_questions,
+                           questions=questions_for_modal,   # lightweight, modal only
+                           tests=tests,
+                           assignments=assignments,
+                           candidates=candidates,
+                           reviewers=reviewers,
+                           categories=categories,
+                           category_counts=category_counts,
+                           uncategorised_count=uncategorised_count)
+
+
+@admin_mcq_bp.route('/questions/by-category')
+@login_required
+@role_required(UserRole.ADMIN.value)
+def questions_by_category():
+    """HTMX endpoint — returns question rows partial for a given category."""
+    category = request.args.get('category', '').strip()
+
+    query = MCQQuestion.query
+    if category == '__uncategorised__':
+        query = query.filter(
+            db.or_(MCQQuestion.category == None, MCQQuestion.category == '')
+        )
+    elif category:
+        query = query.filter(MCQQuestion.category == category)
+    # else: 'all' — no filter
+
+    questions = query.order_by(MCQQuestion.created_at.desc()).all()
+    return render_template('_mcq_question_rows.html', questions=questions)
 
 @admin_mcq_bp.route('/questions/create', methods=['POST'])
 @login_required

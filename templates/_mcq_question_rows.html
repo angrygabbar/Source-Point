@@ -1,0 +1,83 @@
+{# _mcq_question_rows.html — HTMX partial: rendered by /admin/mcq/questions/by-category #}
+{% if questions %}
+<div class="space-y-2" id="question-list">
+    {% for question in questions %}
+    <div x-data="{ expanded: false }"
+        class="bg-white/5 border border-white/10 rounded-xl overflow-hidden transition-all"
+        :class="expanded ? 'ring-1 ring-green-500/30 bg-white/[0.07]' : 'hover:bg-white/10'">
+
+        <!-- Compact Header (Always Visible) -->
+        <div @click="expanded = !expanded"
+            class="flex items-center gap-3 p-4 cursor-pointer select-none group">
+            <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-green-600/20 border border-green-500/30 flex items-center justify-center">
+                <span class="text-green-400 text-xs font-bold">Q{{ loop.index }}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-white font-medium text-sm truncate">{{ question.question_text }}</p>
+            </div>
+            <div class="flex items-center gap-2 flex-shrink-0">
+                {% if question.category %}
+                <span class="px-2 py-0.5 bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 rounded text-xs font-bold">{{ question.category }}</span>
+                {% endif %}
+                <span class="px-2 py-0.5 bg-green-600/20 border border-green-500/30 text-green-400 rounded text-xs font-bold">Ans: {{ question.correct_option }}</span>
+                <i class="fas fa-chevron-down text-gray-500 text-xs transition-transform duration-300" :class="expanded && 'rotate-180'"></i>
+            </div>
+        </div>
+
+        <!-- Expanded Details -->
+        <div x-show="expanded" x-collapse x-cloak>
+            <div class="px-4 pb-4 border-t border-white/10">
+                <div class="mt-4 mb-4">
+                    <p class="text-xs font-bold text-gray-400 uppercase mb-2">Question</p>
+                    <p class="text-white text-sm leading-relaxed">{{ question.question_text }}</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
+                    {% for opt, text in [('A', question.option_a), ('B', question.option_b), ('C', question.option_c), ('D', question.option_d)] %}
+                    <div class="flex items-start gap-2 p-2.5 rounded-lg {{ 'bg-green-600/10 border border-green-500/20' if question.correct_option == opt else 'bg-white/5 border border-white/5' }}">
+                        <span class="flex-shrink-0 w-6 h-6 rounded-full {{ 'bg-green-600/30 text-green-400' if question.correct_option == opt else 'bg-white/10 text-gray-400' }} flex items-center justify-center text-xs font-bold">{{ opt }}</span>
+                        <span class="text-sm {{ 'text-green-400 font-semibold' if question.correct_option == opt else 'text-gray-300' }}">{{ text }}{% if question.correct_option == opt %} <i class="fas fa-check-circle text-green-400 ml-1"></i>{% endif %}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="flex items-center justify-between pt-3 border-t border-white/5">
+                    <div class="flex items-center gap-4 text-xs text-gray-500">
+                        <span><i class="fas fa-user text-gray-400 mr-1"></i> {{ question.created_by.username }}</span>
+                        <span><i class="fas fa-clock text-gray-400 mr-1"></i> {{ question.created_at.strftime('%b %d, %Y') }}</span>
+                        <span><i class="fas fa-hashtag text-gray-400 mr-1"></i> ID: {{ question.id }}</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button @click.stop="
+                                document.getElementById('questionForm').action = '{{ url_for('admin_mcq.edit_question', question_id=0) }}'.replace('0', '{{ question.id }}');
+                                document.querySelector('#questionForm [name=question_text]').value = {{ question.question_text | tojson }};
+                                document.querySelector('#questionForm [name=option_a]').value = {{ question.option_a | tojson }};
+                                document.querySelector('#questionForm [name=option_b]').value = {{ question.option_b | tojson }};
+                                document.querySelector('#questionForm [name=option_c]').value = {{ question.option_c | tojson }};
+                                document.querySelector('#questionForm [name=option_d]').value = {{ question.option_d | tojson }};
+                                document.querySelector('#questionForm [name=correct_option]').value = '{{ question.correct_option }}';
+                                document.querySelector('#questionForm [name=category]').value = {{ (question.category or '') | tojson }};
+                                $dispatch('open-question-modal')
+                            "
+                            class="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-400 rounded-lg text-xs font-medium transition-all">
+                            <i class="fas fa-edit mr-1"></i> Edit
+                        </button>
+                        <button @click.stop
+                            onclick="handleAjaxUrl(event, '{{ url_for('admin_mcq.delete_question', question_id=question.id) }}', 'Delete this question?')"
+                            class="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-400 rounded-lg text-xs font-medium transition-all">
+                            <i class="fas fa-trash mr-1"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-16">
+    <i class="fas fa-search text-5xl text-gray-700 mb-4"></i>
+    <p class="text-gray-400 text-lg">No questions found</p>
+    <p class="text-gray-500 text-sm mt-2">Try a different category or create a new question.</p>
+</div>
+{% endif %}
