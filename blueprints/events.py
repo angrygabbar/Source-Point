@@ -43,20 +43,71 @@ def events():
 
     return render_template('events.html', candidates=candidates, problems=problems, scheduled_events=scheduled_events, completed_events=completed_events, received_tests=received_tests)
 
+@events_bp.route('/create_problem', methods=['GET'])
+@login_required
+@role_required(EVENT_MANAGERS)
+def create_problem_page():
+    return render_template('create_problem.html')
+
 @events_bp.route('/create_problem', methods=['POST'])
 @login_required
 @role_required(EVENT_MANAGERS)
 def create_problem():
     title = request.form.get('problem_title')
     description = request.form.get('problem_description')
+    difficulty = request.form.get('difficulty', 'Medium')
     if not title or not description:
         flash('Title and description are required.', 'danger')
+        return redirect(url_for('events.create_problem_page'))
     else:
-        new_problem = ProblemStatement(title=title, description=description, created_by_id=current_user.id)
+        new_problem = ProblemStatement(title=title, description=description, created_by_id=current_user.id, difficulty=difficulty)
         db.session.add(new_problem)
         db.session.commit()
         log_user_action("Create Problem", f"Created problem statement: {title}")
-        flash('New problem statement created.', 'success')
+        flash('New problem statement created successfully!', 'success')
+    return redirect(url_for('events.events'))
+
+@events_bp.route('/edit_problem/<int:problem_id>', methods=['GET'])
+@login_required
+@role_required(EVENT_MANAGERS)
+def edit_problem_page(problem_id):
+    problem = ProblemStatement.query.get_or_404(problem_id)
+    return render_template('edit_problem.html', problem=problem)
+
+@events_bp.route('/edit_problem/<int:problem_id>', methods=['POST'])
+@login_required
+@role_required(EVENT_MANAGERS)
+def edit_problem(problem_id):
+    problem = ProblemStatement.query.get_or_404(problem_id)
+    title = request.form.get('problem_title')
+    description = request.form.get('problem_description')
+    difficulty = request.form.get('difficulty', 'Medium')
+    if not title or not description:
+        flash('Title and description are required.', 'danger')
+        return redirect(url_for('events.edit_problem_page', problem_id=problem_id))
+    problem.title = title
+    problem.description = description
+    problem.difficulty = difficulty
+    db.session.commit()
+    log_user_action("Edit Problem", f"Edited problem statement: {title}")
+    flash('Problem updated successfully!', 'success')
+    return redirect(url_for('events.events'))
+
+@events_bp.route('/delete_problem/<int:problem_id>', methods=['POST'])
+@login_required
+@role_required(EVENT_MANAGERS)
+def delete_problem(problem_id):
+    problem = ProblemStatement.query.get_or_404(problem_id)
+    # Prevent deletion if currently assigned to a candidate
+    from models.auth import User
+    assigned = User.query.filter_by(problem_statement_id=problem_id).first()
+    if assigned:
+        flash(f'Cannot delete — "{problem.title}" is assigned to {assigned.username}.', 'danger')
+        return redirect(url_for('events.events'))
+    db.session.delete(problem)
+    db.session.commit()
+    log_user_action("Delete Problem", f"Deleted problem statement: {problem.title}")
+    flash(f'Problem "{problem.title}" deleted.', 'success')
     return redirect(url_for('events.events'))
 
 @events_bp.route('/assign_problem', methods=['POST'])

@@ -1,306 +1,815 @@
 {% extends "layout.html" %}
-{% block title %}Developer Assessment | SourcePoint IDE{% endblock %}
+{% block title %}Java Assessment | SourcePoint IDE{% endblock %}
 
 {% block main_class %}flex-1 overflow-hidden relative{% endblock %}
 
 {% block content %}
-<div class="flex flex-col h-full animate-fade-in bg-[#0d1117] border-t border-white/5">
+<!-- ═══════════════════════════════════════════════════════════
+     SOURCEPOINT FUTURISTIC IDE
+     ═══════════════════════════════════════════════════════════ -->
+<div id="ide-root" class="flex flex-col bg-[#07070f] text-white" style="height:100%;overflow:hidden;">
 
-    <div class="h-14 bg-[#161b22] border-b border-white/5 flex items-center justify-between px-4 flex-shrink-0">
+    <!-- ── TOP BAR ── -->
+    <div id="ide-topbar" class="flex items-center justify-between px-4 border-b flex-shrink-0"
+         style="height:52px;background:linear-gradient(90deg,#0d0d1a,#111128);border-color:rgba(99,102,241,0.2);">
+
+        <!-- Left: Branding + problem info -->
         <div class="flex items-center gap-4">
-            <div class="flex items-center gap-2">
-                <i class="fas fa-code text-indigo-500 text-lg"></i>
-                <h1 class="text-sm font-bold text-gray-200 tracking-wide">JAVA ASSESSMENT</h1>
+            <!-- Logo cluster -->
+            <div class="flex items-center gap-2.5">
+                <div class="relative w-8 h-8 flex items-center justify-center rounded-lg"
+                     style="background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 0 14px rgba(99,102,241,0.5);">
+                    <i class="fas fa-code text-white text-xs"></i>
+                    <div class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-green-400"
+                         style="animation:idePulse 2s ease-in-out infinite;box-shadow:0 0 6px #22c55e;"></div>
+                </div>
+                <div>
+                    <div class="text-[10px] font-bold tracking-widest text-indigo-400 uppercase leading-none">SourcePoint</div>
+                    <div class="text-xs font-black text-white tracking-wide leading-none mt-0.5">Java IDE</div>
+                </div>
             </div>
-            <div class="h-4 w-px bg-white/10"></div>
+
+            <div class="w-px h-6 opacity-20" style="background:#6366f1;"></div>
+
+            <!-- Problem badge -->
             {% if current_user.assigned_problem %}
-            <span class="text-xs text-gray-400 flex items-center gap-2">
-                <i class="fas fa-file-alt"></i> {{ current_user.assigned_problem.title }}
-            </span>
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs"
+                 style="background:rgba(99,102,241,0.08);border-color:rgba(99,102,241,0.25);">
+                <span class="w-1.5 h-1.5 rounded-full bg-indigo-400" style="animation:idePulse 2s 0.3s ease-in-out infinite;"></span>
+                <i class="fas fa-file-code text-indigo-400"></i>
+                <span class="text-indigo-200 font-medium max-w-[200px] truncate">{{ current_user.assigned_problem.title }}</span>
+            </div>
             {% else %}
-            <span class="text-xs text-amber-400 flex items-center gap-2">
-                <i class="fas fa-exclamation-triangle"></i> Sandbox Mode
-            </span>
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs"
+                 style="background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.3);">
+                <i class="fas fa-exclamation-triangle text-amber-400"></i>
+                <span class="text-amber-200">Sandbox Mode</span>
+            </div>
             {% endif %}
+
+            <!-- Live timer -->
+            <div id="session-timer" class="hidden sm:flex items-center gap-1.5 text-[11px] font-mono text-gray-500">
+                <i class="fas fa-clock text-indigo-500/60"></i>
+                <span id="timer-display">00:00:00</span>
+            </div>
         </div>
 
-        <div class="flex items-center gap-3">
-            <div class="flex items-center gap-2 px-3 py-1.5 bg-[#0d1117] border border-white/10 rounded-md">
-                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg" class="w-4 h-4"
-                    alt="Java">
-                <span class="text-xs font-mono text-gray-300">Java SE 17</span>
+        <!-- Right: Controls -->
+        <div class="flex items-center gap-2">
+            <!-- Language badge -->
+            <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-mono"
+                 style="background:#0d1117;border:1px solid rgba(255,255,255,0.08);">
+                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg" class="w-3.5 h-3.5" alt="Java">
+                <span class="text-gray-300">Java SE 17</span>
             </div>
 
+            <!-- Submit To selector -->
             <select id="recipient-select"
-                class="bg-[#0d1117] border border-white/10 text-xs text-gray-400 rounded-md px-2 py-1.5 focus:border-indigo-500 outline-none">
-                <option value="" disabled selected>Submit To...</option>
+                    class="text-xs text-gray-300 rounded-md px-2.5 py-1.5 outline-none font-medium"
+                    style="background:#0d1117;border:1px solid rgba(255,255,255,0.1);color:#d1d5db;">
+                <option value="" disabled selected>▸ Submit To...</option>
                 {% for user in messageable_users %}
                 <option value="{{ user.id }}">{{ user.username }} ({{ user.role.title() }})</option>
                 {% endfor %}
             </select>
 
-            <button type="button" id="runCodeBtn"
-                class="group flex items-center gap-2 px-4 py-1.5 bg-[#238636] hover:bg-[#2ea043] text-white text-xs font-bold rounded-md transition-all border border-[rgba(240,246,252,0.1)]">
+            <!-- Run -->
+            <button id="runCodeBtn" type="button"
+                    class="ide-btn-run flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-bold transition-all">
                 <i class="fas fa-play text-[10px]"></i> Run
             </button>
 
-            <button type="button" id="submit-test-trigger"
-                class="flex items-center gap-2 px-4 py-1.5 bg-[#1f6feb] hover:bg-[#388bfd] text-white text-xs font-bold rounded-md transition-all border border-[rgba(240,246,252,0.1)]">
+            <!-- Submit -->
+            <button id="submit-test-trigger" type="button"
+                    class="ide-btn-submit flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-bold transition-all">
                 <i class="fas fa-cloud-upload-alt"></i> Submit
             </button>
         </div>
     </div>
 
-    <div class="flex-1 flex min-h-0 relative">
+    <!-- ── THREE-PANEL LAYOUT ── -->
+    <div id="ide-panels" class="flex flex-1 min-h-0" style="overflow:hidden;">
 
-        <div class="w-1/4 min-w-[300px] border-r border-white/5 flex flex-col bg-[#0d1117]">
-            <div class="px-4 py-2 border-b border-white/5 bg-[#161b22] flex justify-between items-center">
-                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Problem Statement</span>
-                <i class="fas fa-book-open text-gray-600 text-xs"></i>
+        <!-- ══ PANEL 1: Problem Statement ══ -->
+        <div id="panel-problem" class="flex flex-col border-r" style="width:28%;min-width:220px;max-width:55%;border-color:rgba(99,102,241,0.15);background:#08090f;transition:width 0.25s ease;">
+
+            <!-- Panel header -->
+            <div class="panel-header flex items-center justify-between px-3 flex-shrink-0"
+                 style="height:36px;background:linear-gradient(90deg,rgba(99,102,241,0.07),transparent);border-bottom:1px solid rgba(99,102,241,0.12);">
+                <div class="flex items-center gap-2">
+                    <div class="w-1.5 h-4 rounded-sm" style="background:linear-gradient(180deg,#6366f1,#8b5cf6);"></div>
+                    <span class="text-[11px] font-bold text-indigo-300 uppercase tracking-widest">Problem</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <button onclick="toggleProblemPanel()" id="btn-maximize-problem"
+                            class="panel-ctrl-btn" title="Maximize">
+                        <i class="fas fa-expand-alt text-[10px]"></i>
+                    </button>
+                    <button onclick="collapseProblemPanel()" id="btn-collapse-problem"
+                            class="panel-ctrl-btn" title="Collapse">
+                        <i class="fas fa-chevron-left text-[10px]"></i>
+                    </button>
+                </div>
             </div>
-            <div class="flex-1 overflow-y-auto custom-scrollbar p-5 prose prose-invert prose-sm max-w-none">
+
+            <!-- Scrollable content -->
+            <div class="flex-1 overflow-y-auto ide-scrollbar p-5">
                 {% if current_user.assigned_problem %}
-                <h3 class="text-white font-bold mb-2">{{ current_user.assigned_problem.title }}</h3>
-                <div class="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap font-sans">
-                    {{ current_user.assigned_problem.description }}
+                <!-- Title -->
+                <div class="mb-4 pb-4" style="border-bottom:1px solid rgba(99,102,241,0.12);">
+                    <div class="flex items-center gap-2 mb-2">
+                        {% if current_user.assigned_problem.difficulty == 'Easy' %}
+                        <span class="difficulty-badge easy">Easy</span>
+                        {% elif current_user.assigned_problem.difficulty == 'Hard' %}
+                        <span class="difficulty-badge hard">Hard</span>
+                        {% else %}
+                        <span class="difficulty-badge medium">Medium</span>
+                        {% endif %}
+                    </div>
+                    <h3 class="text-white font-black text-base leading-snug">{{ current_user.assigned_problem.title }}</h3>
+                </div>
+                <!-- Rich content -->
+                <div class="problem-description text-gray-300 text-sm leading-relaxed">
+                    {{ current_user.assigned_problem.description | safe }}
                 </div>
                 {% else %}
-                <div class="text-center mt-10 text-gray-500">
-                    <i class="fas fa-wind text-4xl mb-3 opacity-30"></i>
-                    <p>No active problem assigned.</p>
+                <div class="flex flex-col items-center justify-center h-full text-center py-12">
+                    <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 opacity-30"
+                         style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);">
+                        <i class="fas fa-wind text-indigo-400 text-2xl"></i>
+                    </div>
+                    <p class="text-gray-600 text-sm">No problem assigned.</p>
+                    <p class="text-gray-700 text-xs mt-1">Sandbox mode active.</p>
                 </div>
                 {% endif %}
             </div>
         </div>
 
-        <div class="flex-1 flex flex-col min-w-0 relative">
-            <div id="monaco-editor-container" class="absolute inset-0"></div>
+        <!-- Problem panel collapse handle (shown when collapsed) -->
+        <div id="panel-problem-handle" class="hidden flex-col items-center justify-start pt-3 gap-2 border-r flex-shrink-0 cursor-pointer"
+             style="width:36px;background:#08090f;border-color:rgba(99,102,241,0.15);"
+             onclick="expandProblemPanel()">
+            <div class="w-1.5 h-4 rounded-sm" style="background:linear-gradient(180deg,#6366f1,#8b5cf6);"></div>
+            <span class="text-indigo-400 text-[10px] font-bold uppercase tracking-widest"
+                  style="writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:0.15em;">Problem</span>
+            <i class="fas fa-chevron-right text-indigo-500 text-[9px] mt-auto mb-4"></i>
         </div>
 
-        <div class="w-1/3 min-w-[300px] border-l border-white/5 flex flex-col bg-[#0d1117]">
-            <div class="flex border-b border-white/5 bg-[#161b22]" x-data="{ tab: 'output' }">
-                <button
-                    @click="document.getElementById('terminal-view').classList.remove('hidden'); document.getElementById('input-view').classList.add('hidden');"
-                    class="px-4 py-2 text-xs font-bold text-gray-300 border-b-2 border-indigo-500 bg-[#0d1117] transition-colors">
-                    <i class="fas fa-terminal mr-1"></i> Output
+        <!-- Resize drag bar (problem ↔ editor) -->
+        <div id="drag-1" class="drag-bar hidden sm:flex" style="cursor:col-resize;" title="Drag to resize"></div>
+
+        <!-- ══ PANEL 2: Code Editor ══ -->
+        <div id="panel-editor" class="flex flex-col flex-1 min-w-0" style="background:#0d1117;">
+
+            <!-- Editor toolbar -->
+            <div class="flex items-center justify-between px-3 flex-shrink-0 gap-2"
+                 style="height:36px;background:linear-gradient(90deg,rgba(34,197,94,0.05),transparent);border-bottom:1px solid rgba(255,255,255,0.05);">
+                <div class="flex items-center gap-2">
+                    <div class="flex gap-1.5">
+                        <div class="w-2.5 h-2.5 rounded-full" style="background:#ff5f57;box-shadow:0 0 4px #ff5f57;"></div>
+                        <div class="w-2.5 h-2.5 rounded-full" style="background:#febc2e;box-shadow:0 0 4px #febc2e;"></div>
+                        <div class="w-2.5 h-2.5 rounded-full" style="background:#28c840;box-shadow:0 0 4px #28c840;"></div>
+                    </div>
+                    <div class="w-px h-4 opacity-10 bg-white ml-1"></div>
+                    <i class="fas fa-file-code text-green-500/60 text-[11px]"></i>
+                    <span class="text-[11px] text-gray-500 font-mono">Main.java</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <button onclick="resetCode()" class="panel-ctrl-btn" title="Reset code">
+                        <i class="fas fa-undo text-[10px]"></i>
+                    </button>
+                    <button onclick="toggleEditorMaximize()" class="panel-ctrl-btn" title="Maximize editor">
+                        <i class="fas fa-expand-alt text-[10px]"></i>
+                    </button>
+                    <!-- Font size controls -->
+                    <button onclick="changeFontSize(-1)" class="panel-ctrl-btn text-[9px] font-bold w-auto px-2">A-</button>
+                    <button onclick="changeFontSize(1)"  class="panel-ctrl-btn text-[10px] font-bold w-auto px-2">A+</button>
+                </div>
+            </div>
+
+            <!-- Monaco editor -->
+            <div id="monaco-editor-container" class="flex-1 relative" style="overflow:hidden;"></div>
+        </div>
+
+        <!-- Resize drag bar (editor ↔ terminal) -->
+        <div id="drag-2" class="drag-bar hidden sm:flex" style="cursor:col-resize;" title="Drag to resize"></div>
+
+        <!-- ══ PANEL 3: Terminal & Input ══ -->
+        <div id="panel-terminal" class="flex flex-col border-l" style="width:30%;min-width:200px;max-width:55%;border-color:rgba(255,255,255,0.05);background:#07070e;transition:width 0.25s ease;">
+
+            <!-- Panel header / tabs -->
+            <div class="flex items-center border-b flex-shrink-0"
+                 style="height:36px;background:linear-gradient(90deg,rgba(16,185,129,0.05),transparent);border-color:rgba(255,255,255,0.05);">
+                <button id="tab-output" onclick="switchTab('output')"
+                        class="tab-btn active px-4 h-full text-[11px] font-bold flex items-center gap-1.5">
+                    <i class="fas fa-terminal text-[10px]"></i> Output
                 </button>
-                <button
-                    @click="document.getElementById('terminal-view').classList.add('hidden'); document.getElementById('input-view').classList.remove('hidden');"
-                    class="px-4 py-2 text-xs font-bold text-gray-500 hover:text-gray-300 border-b-2 border-transparent hover:border-gray-600 transition-colors">
-                    <i class="fas fa-keyboard mr-1"></i> Input (Stdin)
+                <button id="tab-input" onclick="switchTab('input')"
+                        class="tab-btn px-4 h-full text-[11px] font-bold flex items-center gap-1.5">
+                    <i class="fas fa-keyboard text-[10px]"></i> Stdin
                 </button>
                 <div class="flex-1"></div>
-                <button onclick="document.getElementById('outputConsole').textContent = 'Ready...'"
-                    class="px-3 text-gray-500 hover:text-white transition-colors" title="Clear Console">
-                    <i class="fas fa-trash-alt text-xs"></i>
+                <button onclick="clearConsole()" class="panel-ctrl-btn mr-1" title="Clear output">
+                    <i class="fas fa-trash-alt text-[10px]"></i>
+                </button>
+                <button onclick="collapseTerminalPanel()" id="btn-collapse-terminal" class="panel-ctrl-btn mr-1" title="Collapse">
+                    <i class="fas fa-chevron-right text-[10px]"></i>
+                </button>
+                <button onclick="toggleTerminalMaximize()" class="panel-ctrl-btn mr-2" title="Maximize terminal">
+                    <i class="fas fa-expand-alt text-[10px]"></i>
                 </button>
             </div>
 
-            <div id="terminal-view" class="flex-1 flex flex-col bg-[#010409] relative">
+            <!-- Output tab -->
+            <div id="terminal-view" class="flex-1 flex flex-col relative" style="background:#040409;">
+                <!-- Scanline overlay -->
+                <div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,128,0.012) 2px,rgba(0,255,128,0.012) 4px);pointer-events:none;z-index:1;"></div>
                 <pre id="outputConsole"
-                    class="flex-1 p-4 font-mono text-xs text-gray-300 overflow-auto custom-scrollbar whitespace-pre-wrap leading-5">
-<span class="text-gray-500">// Console ready. Click 'Run' to execute code.</span>
-</pre>
-                <div class="absolute bottom-2 right-2 opacity-50 text-[10px] text-gray-600 select-none">SourcePoint
-                    Shell</div>
+                     class="flex-1 p-4 font-mono text-xs overflow-auto ide-scrollbar relative z-10"
+                     style="white-space:pre-wrap;line-height:1.65;color:#a0ffb0;"><span style="color:#4a5568;">// SourcePoint Shell — Java SE 17
+// Console ready. Click ▶ Run to execute code.</span></pre>
+                <div class="absolute bottom-2 right-3 z-10" style="opacity:0.3;font-size:10px;font-family:monospace;color:#22c55e;letter-spacing:.05em;">SP-SHELL v2</div>
             </div>
 
-            <div id="input-view" class="flex-1 flex flex-col bg-[#0d1117] hidden">
+            <!-- Stdin tab -->
+            <div id="input-view" class="flex-1 hidden" style="background:#070710;">
                 <textarea id="stdinInput"
-                    class="w-full h-full bg-[#0d1117] text-gray-300 p-4 font-mono text-xs resize-none focus:outline-none placeholder-gray-600"
-                    placeholder="Enter custom input for your program (System.in)..."></textarea>
+                          class="w-full h-full font-mono text-xs resize-none outline-none p-4"
+                          style="background:transparent;color:#7ee787;caret-color:#22c55e;"
+                          placeholder="// Stdin — Enter custom input here (System.in)&#10;// Each line of input on a new line."></textarea>
             </div>
+        </div>
+
+        <!-- Terminal panel collapse handle -->
+        <div id="panel-terminal-handle" class="hidden flex-col items-center justify-start pt-3 gap-2 border-l flex-shrink-0 cursor-pointer"
+             style="width:36px;background:#07070e;border-color:rgba(255,255,255,0.05);"
+             onclick="expandTerminalPanel()">
+            <div class="w-1.5 h-4 rounded-sm" style="background:linear-gradient(180deg,#22c55e,#16a34a);"></div>
+            <span class="text-green-400 text-[10px] font-bold uppercase tracking-widest"
+                  style="writing-mode:vertical-rl;letter-spacing:0.15em;">Terminal</span>
+            <i class="fas fa-chevron-left text-green-500 text-[9px] mt-auto mb-4"></i>
         </div>
     </div>
 
-    <form action="{{ url_for('candidate.submit_code_test') }}" method="POST" id="real-submission-form" class="hidden"
-        hx-boost="false">
-        <input type="hidden" name="recipient_id" id="form-recipient">
-        <input type="hidden" name="code" id="form-code">
-        <input type="hidden" name="output" id="form-output">
-        <input type="hidden" name="language" value="java">
-    </form>
-
+    <!-- ── STATUS BAR ── -->
+    <div id="ide-statusbar" class="flex items-center justify-between px-4 flex-shrink-0"
+         style="height:24px;background:#07070e;border-top:1px solid rgba(99,102,241,0.12);font-size:10px;">
+        <div class="flex items-center gap-4 text-gray-600 font-mono">
+            <span><i class="fas fa-circle text-green-500 mr-1" style="font-size:6px;"></i>Connected</span>
+            <span>Java SE 17</span>
+            <span id="cursor-info">Ln 1, Col 1</span>
+        </div>
+        <div class="flex items-center gap-4 text-gray-600 font-mono">
+            <span id="word-count">0 chars</span>
+            <span>UTF-8</span>
+            <span>{{ current_user.username }}</span>
+        </div>
+    </div>
 </div>
 
+<!-- Hidden submission form -->
+<form action="{{ url_for('candidate.submit_code_test') }}" method="POST"
+      id="real-submission-form" class="hidden" hx-boost="false">
+    <input type="hidden" name="recipient_id" id="form-recipient">
+    <input type="hidden" name="code" id="form-code">
+    <input type="hidden" name="output" id="form-output">
+    <input type="hidden" name="language" value="java">
+</form>
+
+<!-- Floating Terminal Restore Button — appears when terminal is collapsed -->
+<button id="terminal-restore-btn"
+        onclick="expandTerminalPanel()"
+        title="Restore Terminal"
+        class="hidden"
+        style="position:fixed;bottom:36px;right:20px;z-index:9999;
+               align-items:center;gap:8px;
+               padding:9px 16px;border-radius:10px;cursor:pointer;
+               background:rgba(16,40,28,0.9);
+               border:1px solid rgba(34,197,94,0.5);
+               color:#86efac;font-size:12px;font-weight:700;font-family:inherit;
+               box-shadow:0 4px 24px rgba(34,197,94,0.3);
+               backdrop-filter:blur(12px);
+               animation:termRestorePulse 2s ease-in-out infinite;">
+    <i class="fas fa-terminal" style="font-size:11px;"></i>
+    Restore Terminal
+    <i class="fas fa-chevron-left" style="font-size:10px;"></i>
+</button>
+
+<style>
+@keyframes termRestorePulse {
+    0%,100% { box-shadow: 0 4px 24px rgba(34,197,94,0.25); }
+    50%      { box-shadow: 0 4px 32px rgba(34,197,94,0.5), 0 0 0 2px rgba(34,197,94,0.15); }
+}
+#terminal-restore-btn:not(.hidden) { display: flex !important; }
+</style>
+
+<!-- ─── Monaco ─── -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/loader.min.js"></script>
 
 <script>
-    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs' } });
-
-    require(['vs/editor/editor.main'], function () {
-
-        // --- 1. INTELLISENSE & AUTOCOMPLETE CONFIGURATION ---
-        // Register custom Java snippets to simulate a smarter IDE
-        monaco.languages.registerCompletionItemProvider('java', {
-            provideCompletionItems: function (model, position) {
-                var suggestions = [
-                    {
-                        label: 'sout',
-                        kind: monaco.languages.CompletionItemKind.Snippet,
-                        insertText: 'System.out.println(${1:msg});',
-                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-                        documentation: 'Print to standard output'
-                    },
-                    {
-                        label: 'psvm',
-                        kind: monaco.languages.CompletionItemKind.Snippet,
-                        insertText: 'public static void main(String[] args) {\n\t${1}\n}',
-                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-                        documentation: 'Public Static Void Main'
-                    },
-                    {
-                        label: 'fori',
-                        kind: monaco.languages.CompletionItemKind.Snippet,
-                        insertText: 'for (int i = 0; i < ${1:max}; i++) {\n\t${2}\n}',
-                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-                        documentation: 'For Loop'
-                    },
-                    {
-                        label: 'if',
-                        kind: monaco.languages.CompletionItemKind.Keyword,
-                        insertText: 'if (${1:condition}) {\n\t${2}\n}',
-                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-                        documentation: 'If Statement'
-                    },
-                    {
-                        label: 'class',
-                        kind: monaco.languages.CompletionItemKind.Keyword,
-                        insertText: 'public class ${1:Name} {\n\t${2}\n}',
-                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-                        documentation: 'Class Definition'
-                    }
-                ];
-                return { suggestions: suggestions };
-            }
-        });
-
-        // --- 2. EDITOR INITIALIZATION ---
-        // Ensure container is ready before mounting
-        const container = document.getElementById('monaco-editor-container');
-
-        window.editor = monaco.editor.create(container, {
-            value: `public class Main {
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+const DEFAULT_CODE = `public class Main {
     public static void main(String[] args) {
-        // SourcePoint IDE - Java Environment
-        System.out.println("Hello, Developer!");
-        
-        // Write your solution here...
+        // SourcePoint IDE — Java SE 17
+        // Write your solution below...
+        System.out.println("Hello, SourcePoint!");
     }
-}`,
-            language: 'java',
-            theme: 'vs-dark', // Professional Dark Theme
-            automaticLayout: true, // CRITICAL: Fixes the "typing not working" issue on resize
-            fontSize: 14,
-            fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
-            fontLigatures: true,
-            minimap: { enabled: false }, // Cleaner look
-            scrollBeyondLastLine: false,
-            roundedSelection: false,
-            cursorBlinking: "smooth",
-            contextmenu: true,
-            suggestOnTriggerCharacters: true, // Enable live suggestions
-            lineNumbers: "on",
-            renderLineHighlight: "line",
-            padding: { top: 20, bottom: 20 }
-        });
+}`;
+let editorFontSize = 14;
+let isProblemMaximized = false;
+let isTerminalMaximized = false;
+let isEditorMaximized  = false;
 
-        // --- 3. RESIZE HANDLER (Safety Net) ---
-        // If flex layout shifts, force editor to re-measure
-        window.addEventListener('resize', () => {
-            window.editor.layout();
-        });
+// ═══════════════════════════════════════════════════════════
+//  PANEL COLLAPSE / MAXIMIZE
+// ═══════════════════════════════════════════════════════════
+function collapseProblemPanel() {
+    document.getElementById('panel-problem').classList.add('hidden');
+    document.getElementById('panel-problem-handle').classList.remove('hidden');
+    document.getElementById('panel-problem-handle').classList.add('flex');
+    document.getElementById('drag-1').classList.add('hidden');
+    setTimeout(() => window.editor && window.editor.layout(), 300);
+}
+function expandProblemPanel() {
+    document.getElementById('panel-problem').classList.remove('hidden');
+    document.getElementById('panel-problem-handle').classList.add('hidden');
+    document.getElementById('panel-problem-handle').classList.remove('flex');
+    document.getElementById('drag-1').classList.remove('hidden');
+    document.getElementById('drag-1').classList.add('flex');
+    setTimeout(() => window.editor && window.editor.layout(), 300);
+}
+function toggleProblemPanel() {
+    const panel = document.getElementById('panel-problem');
+    const allPanels = document.getElementById('ide-panels');
+    isProblemMaximized = !isProblemMaximized;
+    if (isProblemMaximized) {
+        panel.style.width = '100%';
+        document.getElementById('panel-editor').classList.add('hidden');
+        document.getElementById('panel-terminal').classList.add('hidden');
+        document.getElementById('drag-1').classList.add('hidden');
+        document.getElementById('drag-2').classList.add('hidden');
+        document.getElementById('btn-maximize-problem').innerHTML = '<i class="fas fa-compress-alt text-[10px]"></i>';
+    } else {
+        panel.style.width = '28%';
+        document.getElementById('panel-editor').classList.remove('hidden');
+        document.getElementById('panel-terminal').classList.remove('hidden');
+        document.getElementById('drag-1').classList.add('flex');
+        document.getElementById('drag-2').classList.add('flex');
+        document.getElementById('btn-maximize-problem').innerHTML = '<i class="fas fa-expand-alt text-[10px]"></i>';
+        setTimeout(() => window.editor && window.editor.layout(), 320);
+    }
+}
 
-        // --- 4. RUN CODE LOGIC ---
-        const runBtn = document.getElementById('runCodeBtn');
-        const outputConsole = document.getElementById('outputConsole');
-        const stdinInput = document.getElementById('stdinInput');
+function collapseTerminalPanel() {
+    document.getElementById('panel-terminal').classList.add('hidden');
+    document.getElementById('panel-terminal-handle').classList.remove('hidden');
+    document.getElementById('panel-terminal-handle').classList.add('flex');
+    document.getElementById('drag-2').classList.add('hidden');
+    // Show floating restore button
+    document.getElementById('terminal-restore-btn').classList.remove('hidden');
+    setTimeout(() => window.editor && window.editor.layout(), 300);
+}
+function expandTerminalPanel() {
+    document.getElementById('panel-terminal').classList.remove('hidden');
+    document.getElementById('panel-terminal-handle').classList.add('hidden');
+    document.getElementById('panel-terminal-handle').classList.remove('flex');
+    document.getElementById('drag-2').classList.remove('hidden');
+    document.getElementById('drag-2').classList.add('flex');
+    // Hide floating restore button
+    document.getElementById('terminal-restore-btn').classList.add('hidden');
+    setTimeout(() => window.editor && window.editor.layout(), 300);
+}
+function toggleTerminalMaximize() {
+    const panel = document.getElementById('panel-terminal');
+    isTerminalMaximized = !isTerminalMaximized;
+    if (isTerminalMaximized) {
+        panel.style.width = '100%';
+        document.getElementById('panel-editor').classList.add('hidden');
+        document.getElementById('panel-problem').classList.add('hidden');
+        document.getElementById('drag-1').classList.add('hidden');
+        document.getElementById('drag-2').classList.add('hidden');
+    } else {
+        panel.style.width = '30%';
+        document.getElementById('panel-editor').classList.remove('hidden');
+        document.getElementById('panel-problem').classList.remove('hidden');
+        document.getElementById('drag-1').classList.add('flex');
+        document.getElementById('drag-2').classList.add('flex');
+        setTimeout(() => window.editor && window.editor.layout(), 320);
+    }
+}
+function toggleEditorMaximize() {
+    isEditorMaximized = !isEditorMaximized;
+    const editorPanel = document.getElementById('panel-editor');
+    if (isEditorMaximized) {
+        document.getElementById('panel-problem').classList.add('hidden');
+        document.getElementById('panel-terminal').classList.add('hidden');
+        document.getElementById('drag-1').classList.add('hidden');
+        document.getElementById('drag-2').classList.add('hidden');
+    } else {
+        document.getElementById('panel-problem').classList.remove('hidden');
+        document.getElementById('panel-terminal').classList.remove('hidden');
+        document.getElementById('drag-1').classList.add('flex');
+        document.getElementById('drag-2').classList.add('flex');
+    }
+    setTimeout(() => window.editor && window.editor.layout(), 320);
+}
 
-        runBtn.addEventListener('click', async () => {
-            const code = window.editor.getValue();
-            const stdin = stdinInput.value;
+// ═══════════════════════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════════════════════
+function switchTab(tab) {
+    const isOutput = tab === 'output';
+    document.getElementById('terminal-view').classList.toggle('hidden', !isOutput);
+    document.getElementById('input-view').classList.toggle('hidden', isOutput);
+    document.getElementById('tab-output').classList.toggle('active', isOutput);
+    document.getElementById('tab-input').classList.toggle('active', !isOutput);
+}
 
-            // Switch to output tab automatically
-            document.getElementById('terminal-view').classList.remove('hidden');
-            document.getElementById('input-view').classList.add('hidden');
+// ═══════════════════════════════════════════════════════════
+//  CONSOLE
+// ═══════════════════════════════════════════════════════════
+function clearConsole() {
+    document.getElementById('outputConsole').innerHTML = '<span style="color:#4a5568;">// Console cleared.</span>';
+}
 
-            outputConsole.innerHTML = '<span class="text-yellow-400"><i class="fas fa-cog fa-spin"></i> Compiling & Running...</span>';
-            runBtn.disabled = true;
-            runBtn.classList.add('opacity-50');
+function resetCode() {
+    if (window.editor && confirm('Reset code to default template?')) {
+        window.editor.setValue(DEFAULT_CODE);
+    }
+}
 
-            try {
-                const response = await fetch("{{ url_for('events.run_code') }}", {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ code: code, stdin: stdin }),
-                });
+// ═══════════════════════════════════════════════════════════
+//  FONT SIZE
+// ═══════════════════════════════════════════════════════════
+function changeFontSize(delta) {
+    editorFontSize = Math.min(24, Math.max(10, editorFontSize + delta));
+    if (window.editor) window.editor.updateOptions({ fontSize: editorFontSize });
+}
 
-                if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+// ═══════════════════════════════════════════════════════════
+//  SESSION TIMER
+// ═══════════════════════════════════════════════════════════
+(function startTimer() {
+    let secs = 0;
+    document.getElementById('session-timer').classList.remove('hidden');
+    setInterval(() => {
+        secs++;
+        const h = String(Math.floor(secs / 3600)).padStart(2,'0');
+        const m = String(Math.floor((secs % 3600) / 60)).padStart(2,'0');
+        const s = String(secs % 60).padStart(2,'0');
+        document.getElementById('timer-display').textContent = `${h}:${m}:${s}`;
+    }, 1000);
+})();
 
-                const result = await response.json();
-
-                let finalOutput = "";
-                if (result.statusCode >= 400) {
-                    finalOutput = `<span class="text-red-400 font-bold">Error:</span>\n<span class="text-red-300">${result.error || result.output}</span>`;
-                } else {
-                    finalOutput = `<span class="text-green-400 font-bold">Success (Exit Code 0):</span>\n<span class="text-gray-300">${result.output || "No Output"}</span>`;
-                }
-
-                // Append execution time if available (mock)
-                finalOutput += `\n\n<span class="text-gray-600 text-[10px]">Execution finished.</span>`;
-
-                outputConsole.innerHTML = finalOutput;
-
-            } catch (error) {
-                outputConsole.innerHTML = `<span class="text-red-500">System Error: ${error.message}</span>`;
-            } finally {
-                runBtn.disabled = false;
-                runBtn.classList.remove('opacity-50');
-            }
-        });
-
-        // --- 5. SUBMIT LOGIC ---
-        const submitTrigger = document.getElementById('submit-test-trigger');
-        const realForm = document.getElementById('real-submission-form');
-
-        submitTrigger.addEventListener('click', () => {
-            const recipient = document.getElementById('recipient-select').value;
-            if (!recipient) {
-                alert("Please select a Recipient (Admin/Developer) to submit your test to.");
-                return;
-            }
-
-            document.getElementById('form-recipient').value = recipient;
-            document.getElementById('form-code').value = window.editor.getValue();
-            document.getElementById('form-output').value = outputConsole.innerText;
-
-            if (confirm("Are you sure you want to submit your final solution? This will notify the recruiter.")) {
-                submitTrigger.disabled = true;
-                submitTrigger.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-                realForm.submit();
-            }
-        });
+// ═══════════════════════════════════════════════════════════
+//  DRAG-TO-RESIZE
+// ═══════════════════════════════════════════════════════════
+function initDragBar(dragEl, leftPanel, rightPanel) {
+    let dragging = false, startX = 0, startLeft = 0, startRight = 0;
+    dragEl.addEventListener('mousedown', e => {
+        dragging = true; startX = e.clientX;
+        startLeft  = leftPanel.offsetWidth;
+        startRight = rightPanel.offsetWidth;
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = 'col-resize';
     });
+    document.addEventListener('mousemove', e => {
+        if (!dragging) return;
+        const dx = e.clientX - startX;
+        const newLeft  = Math.max(180, startLeft  + dx);
+        const newRight = Math.max(180, startRight - dx);
+        leftPanel.style.width  = newLeft  + 'px';
+        leftPanel.style.flex   = 'none';
+        rightPanel.style.width = newRight + 'px';
+        rightPanel.style.flex  = 'none';
+        window.editor && window.editor.layout();
+    });
+    document.addEventListener('mouseup', () => {
+        dragging = false;
+        document.body.style.userSelect = '';
+        document.body.style.cursor = '';
+    });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MONACO INIT
+// ═══════════════════════════════════════════════════════════
+require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs' } });
+
+require(['vs/editor/editor.main'], function () {
+    // Define custom SourcePoint dark theme
+    monaco.editor.defineTheme('sourcepoint-dark', {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+            { token: 'keyword',   foreground: '818cf8', fontStyle: 'bold' },
+            { token: 'type',      foreground: '67e8f9' },
+            { token: 'string',    foreground: '86efac' },
+            { token: 'number',    foreground: 'f472b6' },
+            { token: 'comment',   foreground: '4b5563', fontStyle: 'italic' },
+            { token: 'delimiter', foreground: 'a78bfa' },
+            { token: 'identifier',foreground: 'e2e8f0' },
+            { token: 'annotation',foreground: 'f59e0b' },
+        ],
+        colors: {
+            'editor.background':            '#0d1117',
+            'editor.foreground':            '#e2e8f0',
+            'editor.lineHighlightBackground':'#161b22',
+            'editorLineNumber.foreground':  '#374151',
+            'editorLineNumber.activeForeground': '#6366f1',
+            'editor.selectionBackground':   '#6366f120',
+            'editor.findMatchBackground':   '#6366f130',
+            'editorCursor.foreground':      '#6366f1',
+            'editorGutter.background':      '#0d1117',
+            'editorIndentGuide.background': '#1f2937',
+            'editorBracketMatch.background':'#6366f120',
+            'editorBracketMatch.border':    '#818cf8',
+            'scrollbar.shadow':             '#00000030',
+            'scrollbarSlider.background':   '#6366f120',
+            'scrollbarSlider.hoverBackground':'#6366f140',
+        }
+    });
+
+    // Java completion snippets
+    monaco.languages.registerCompletionItemProvider('java', {
+        provideCompletionItems: function (model, position) {
+            return { suggestions: [
+                { label:'sout', kind:monaco.languages.CompletionItemKind.Snippet,
+                  insertText:'System.out.println(${1:msg});', insertTextRules:monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation:'Print line' },
+                { label:'psvm', kind:monaco.languages.CompletionItemKind.Snippet,
+                  insertText:'public static void main(String[] args) {\n\t${1}\n}', insertTextRules:monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation:'Main method' },
+                { label:'fori', kind:monaco.languages.CompletionItemKind.Snippet,
+                  insertText:'for (int ${1:i} = 0; ${1:i} < ${2:n}; ${1:i}++) {\n\t${3}\n}', insertTextRules:monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation:'For loop' },
+                { label:'foreach', kind:monaco.languages.CompletionItemKind.Snippet,
+                  insertText:'for (${1:Type} ${2:item} : ${3:collection}) {\n\t${4}\n}', insertTextRules:monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation:'For-each loop' },
+                { label:'try', kind:monaco.languages.CompletionItemKind.Snippet,
+                  insertText:'try {\n\t${1}\n} catch (${2:Exception} e) {\n\te.printStackTrace();\n}', insertTextRules:monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation:'Try-catch' },
+                { label:'class', kind:monaco.languages.CompletionItemKind.Snippet,
+                  insertText:'public class ${1:Name} {\n\t${2}\n}', insertTextRules:monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation:'Class' },
+                { label:'arr', kind:monaco.languages.CompletionItemKind.Snippet,
+                  insertText:'int[] ${1:arr} = new int[${2:n}];', insertTextRules:monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation:'Array' },
+                { label:'sc', kind:monaco.languages.CompletionItemKind.Snippet,
+                  insertText:'Scanner sc = new Scanner(System.in);', insertTextRules:monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, documentation:'Scanner' },
+            ]};
+        }
+    });
+
+    const container = document.getElementById('monaco-editor-container');
+    window.editor = monaco.editor.create(container, {
+        value:             DEFAULT_CODE,
+        language:          'java',
+        theme:             'sourcepoint-dark',
+        fontSize:          editorFontSize,
+        fontFamily:        "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace",
+        fontLigatures:     true,
+        automaticLayout:   true,
+        minimap:           { enabled: true, scale: 1 },
+        scrollBeyondLastLine: false,
+        roundedSelection:  true,
+        cursorBlinking:    'expand',
+        cursorSmoothCaretAnimation: 'on',
+        smoothScrolling:   true,
+        contextmenu:       true,
+        suggestOnTriggerCharacters: true,
+        lineNumbers:       'on',
+        renderLineHighlight:'line',
+        padding:           { top: 16, bottom: 16 },
+        bracketPairColorization: { enabled: true },
+        guides:            { indentation: true, bracketPairs: true },
+        wordWrap:          'off',
+        renderWhitespace:  'selection',
+        folding:           true,
+        showUnused:        true,
+        formatOnPaste:     true,
+    });
+
+    // Cursor position in status bar
+    window.editor.onDidChangeCursorPosition(e => {
+        document.getElementById('cursor-info').textContent = `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
+    });
+    // Char count
+    window.editor.onDidChangeModelContent(() => {
+        const len = window.editor.getValue().length;
+        document.getElementById('word-count').textContent = `${len} chars`;
+    });
+
+    // Keyboard shortcut: Ctrl+Enter = Run
+    window.editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+        document.getElementById('runCodeBtn').click();
+    });
+
+    // Init drag bars
+    initDragBar(
+        document.getElementById('drag-1'),
+        document.getElementById('panel-problem'),
+        document.getElementById('panel-editor')
+    );
+    initDragBar(
+        document.getElementById('drag-2'),
+        document.getElementById('panel-editor'),
+        document.getElementById('panel-terminal')
+    );
+});
+
+// ═══════════════════════════════════════════════════════════
+//  RUN CODE
+// ═══════════════════════════════════════════════════════════
+document.getElementById('runCodeBtn').addEventListener('click', async () => {
+    const code   = window.editor.getValue();
+    const stdin  = document.getElementById('stdinInput').value;
+    const btn    = document.getElementById('runCodeBtn');
+    const output = document.getElementById('outputConsole');
+
+    // Auto-expand terminal if collapsed, and switch to output tab
+    expandTerminalPanel();
+    switchTab('output');
+
+    output.innerHTML = `<span style="color:#f59e0b;"><i class="fas fa-cog fa-spin"></i>  Compiling & Running...</span>`;
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+
+    try {
+        const res = await fetch("{{ url_for('events.run_code') }}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code, stdin }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const result = await res.json();
+
+        const ts = new Date().toLocaleTimeString();
+        if (result.statusCode >= 400 || result.error) {
+            output.innerHTML =
+                `<span style="color:#6b7280;">[${ts}] Build failed</span>\n` +
+                `<span style="color:#f87171;font-weight:700;">✖ Error:\n</span>` +
+                `<span style="color:#fca5a5;">${escapeHtml(result.error || result.output)}</span>`;
+        } else {
+            const text = result.output || '(no output)';
+            output.innerHTML =
+                `<span style="color:#6b7280;">[${ts}] Exit code 0 · Execution complete</span>\n` +
+                `<span style="color:#22c55e;font-weight:700;">✔ Output:\n</span>` +
+                `<span style="color:#a7f3d0;">${escapeHtml(text)}</span>\n\n` +
+                `<span style="color:#374151;">────────────────────────────</span>`;
+        }
+    } catch (err) {
+        output.innerHTML = `<span style="color:#f87171;">System Error: ${escapeHtml(err.message)}</span>`;
+    } finally {
+        btn.disabled = false;
+        btn.style.opacity = '';
+    }
+});
+
+// ═══════════════════════════════════════════════════════════
+//  SUBMIT
+// ═══════════════════════════════════════════════════════════
+document.getElementById('submit-test-trigger').addEventListener('click', () => {
+    const recipient = document.getElementById('recipient-select').value;
+    if (!recipient) {
+        showToast('Please select a recipient to submit your solution to.', 'warning');
+        return;
+    }
+    document.getElementById('form-recipient').value = recipient;
+    document.getElementById('form-code').value      = window.editor.getValue();
+    document.getElementById('form-output').value    = document.getElementById('outputConsole').innerText;
+
+    if (confirm('Submit your final solution? This will notify the recipient.')) {
+        const btn = document.getElementById('submit-test-trigger');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        document.getElementById('real-submission-form').submit();
+    }
+});
+
+// ═══════════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════════
+function escapeHtml(t) {
+    return String(t)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg, type='info') {
+    const t = document.createElement('div');
+    const colors = { info:'#6366f1', warning:'#f59e0b', success:'#22c55e', danger:'#ef4444' };
+    t.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;
+        padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;
+        background:${colors[type]}20;border:1px solid ${colors[type]}60;
+        color:#e2e8f0;backdrop-filter:blur(12px);
+        animation:toastIn .3s ease;box-shadow:0 8px 24px rgba(0,0,0,0.5);`;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.animation='toastIn .3s ease reverse'; setTimeout(()=>t.remove(),300); }, 3500);
+}
+
+// Keyboard hint
+document.addEventListener('keydown', e => {
+    if ((e.ctrlKey||e.metaKey) && e.key==='Enter') e.preventDefault();
+});
 </script>
 
 <style>
-    /* Professional Scrollbar for Terminal */
-    .custom-scrollbar::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-    }
+/* ─── Theme tokens ─── */
+:root {
+    --sp-border: rgba(99,102,241,0.18);
+    --sp-bg-panel: #08090f;
+    --sp-accent: #6366f1;
+}
 
-    .custom-scrollbar::-webkit-scrollbar-track {
-        background: #0d1117;
-    }
+/* ─── Panel control buttons ─── */
+.panel-ctrl-btn {
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 6px; border: none; cursor: pointer;
+    background: transparent; color: #4b5563;
+    transition: background .15s, color .15s;
+}
+.panel-ctrl-btn:hover { background: rgba(99,102,241,0.15); color: #818cf8; }
 
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #30363d;
-        border-radius: 4px;
-    }
+/* ─── Drag bars ─── */
+.drag-bar {
+    width: 4px; flex-shrink: 0;
+    background: transparent;
+    transition: background .2s;
+    position: relative; align-items: stretch;
+    cursor: col-resize;
+}
+.drag-bar:hover, .drag-bar:active {
+    background: rgba(99,102,241,0.5);
+}
+.drag-bar::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: rgba(99,102,241,0.12);
+}
 
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #484f58;
-    }
+/* ─── Tabs ─── */
+.tab-btn {
+    border: none; background: transparent; cursor: pointer;
+    color: #6b7280; border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s;
+}
+.tab-btn:hover { color: #9ca3af; }
+.tab-btn.active { color: #22c55e; border-bottom-color: #22c55e; }
+
+/* ─── IDE buttons ─── */
+.ide-btn-run {
+    background: #166534; color: #86efac;
+    border: 1px solid rgba(134,239,172,0.2);
+}
+.ide-btn-run:hover {
+    background: #15803d; color: #bbf7d0;
+    box-shadow: 0 0 16px rgba(34,197,94,0.25);
+}
+.ide-btn-submit {
+    background: #1e3a8a; color: #93c5fd;
+    border: 1px solid rgba(147,197,253,0.2);
+}
+.ide-btn-submit:hover {
+    background: #1d4ed8; color: #bfdbfe;
+    box-shadow: 0 0 16px rgba(59,130,246,0.3);
+}
+
+/* ─── Difficulty badges ─── */
+.difficulty-badge {
+    display: inline-block; padding: 1px 8px;
+    border-radius: 100px; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .08em;
+}
+.difficulty-badge.easy   { background:rgba(34,197,94,0.15); color:#4ade80; border:1px solid rgba(34,197,94,0.25); }
+.difficulty-badge.medium { background:rgba(245,158,11,0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.25); }
+.difficulty-badge.hard   { background:rgba(239,68,68,0.15);  color:#f87171; border:1px solid rgba(239,68,68,0.25); }
+
+/* ─── Scrollbar ─── */
+.ide-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.ide-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.ide-scrollbar::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.25); border-radius: 3px; }
+.ide-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,0.5); }
+
+/* ─── Problem description rich content ─── */
+.problem-description table { border-collapse:collapse; width:100%; margin:10px 0; }
+.problem-description td,
+.problem-description th   { border:1px solid rgba(99,102,241,0.35); padding:6px 10px; font-size:12px; }
+.problem-description th   { background:rgba(99,102,241,0.12); font-weight:700; color:#c4b5fd; }
+.problem-description h1   { color:#f1f5f9; font-size:1.05rem; font-weight:800; margin:12px 0 6px; }
+.problem-description h2   { color:#e2e8f0; font-size:.95rem;  font-weight:700; margin:10px 0 4px; }
+.problem-description h3   { color:#cbd5e1; font-size:.85rem;  font-weight:600; margin:8px 0 3px; }
+.problem-description pre  { background:#010409; border-radius:6px; padding:10px 12px;
+                             color:#7ee787; font-family:'JetBrains Mono',monospace; font-size:11px; margin:8px 0; overflow-x:auto; }
+.problem-description code { background:#010409; color:#7ee787; padding:1px 5px; border-radius:3px; font-size:11px; }
+.problem-description blockquote { border-left:3px solid #6366f1; padding-left:10px; color:#94a3b8; margin:6px 0; }
+.problem-description a    { color:#818cf8; text-decoration:underline; }
+.problem-description ul,
+.problem-description ol   { padding-left:1.2rem; color:#cbd5e1; margin:5px 0; }
+.problem-description li   { margin:3px 0; }
+.problem-description strong { color:#f1f5f9; }
+.problem-description em   { color:#c084fc; }
+.problem-description p    { margin:6px 0; }
+
+/* ─── Animations ─── */
+@keyframes idePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.85)} }
+@keyframes toastIn  { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 </style>
 {% endblock %}
