@@ -63,7 +63,19 @@ def code_test():
 
     target_roles = [UserRole.ADMIN.value, UserRole.DEVELOPER.value]
     messageable_users = User.query.filter(User.role.in_(target_roles)).all()
-    return render_template('code_test.html', messageable_users=messageable_users)
+
+    # Compute seconds remaining for frontend countdown timer
+    seconds_remaining = None
+    if current_user.test_end_time:
+        delta = current_user.test_end_time - now
+        seconds_remaining = max(0, int(delta.total_seconds()))
+
+    first_recipient_id = messageable_users[0].id if messageable_users else None
+
+    return render_template('code_test.html',
+                           messageable_users=messageable_users,
+                           seconds_remaining=seconds_remaining,
+                           first_recipient_id=first_recipient_id)
 
 @candidate_bp.route('/apply_job/<int:job_id>', methods=['POST'])
 @login_required

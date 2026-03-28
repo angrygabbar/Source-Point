@@ -47,10 +47,11 @@
             </div>
             {% endif %}
 
-            <!-- Live timer -->
-            <div id="session-timer" class="hidden sm:flex items-center gap-1.5 text-[11px] font-mono text-gray-500">
-                <i class="fas fa-clock text-indigo-500/60"></i>
-                <span id="timer-display">00:00:00</span>
+            <!-- Countdown timer -->
+            <div id="session-timer" class="sm:flex items-center gap-1.5 text-[11px] font-mono" style="color:#6b7280;">
+                <i id="timer-icon" class="fas fa-clock" style="color:rgba(99,102,241,.6);"></i>
+                <span id="timer-label" class="text-[10px] uppercase tracking-widest mr-1">Time Left</span>
+                <span id="timer-display" style="font-size:13px;font-weight:700;">--:--:--</span>
             </div>
         </div>
 
@@ -274,7 +275,37 @@
     <input type="hidden" name="code" id="form-code">
     <input type="hidden" name="output" id="form-output">
     <input type="hidden" name="language" value="java">
+    <input type="hidden" name="auto_submitted" id="form-auto-submitted" value="0">
 </form>
+
+<!-- Time Warning Overlay -->
+<div id="time-warning-overlay"
+     style="display:none;position:fixed;inset:0;z-index:99999;
+            background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);
+            align-items:center;justify-content:center;">
+    <div id="time-warning-box"
+         style="background:linear-gradient(135deg,#0d1117,#1a0505);
+                border:2px solid #ef4444;
+                border-radius:1.25rem;
+                padding:2.5rem 3rem;
+                text-align:center;
+                max-width:420px;
+                width:90%;
+                box-shadow:0 0 60px rgba(239,68,68,0.35);">
+        <div style="font-size:3.5rem;margin-bottom:1rem;" id="warning-icon">⏰</div>
+        <h2 style="color:#fef2f2;font-size:1.5rem;font-weight:900;margin:0 0 .5rem;" id="warning-title">Time Running Out!</h2>
+        <p style="color:#fca5a5;font-size:.95rem;margin:0 0 1.5rem;" id="warning-body">Your test will auto-submit when the timer reaches 0.</p>
+        <div style="font-size:2.5rem;font-weight:900;color:#f87171;font-family:monospace;letter-spacing:.05em;margin-bottom:1.5rem;" id="warning-timer-big"></div>
+        <button onclick="document.getElementById('time-warning-overlay').style.display='none'"
+                style="background:linear-gradient(135deg,#ef4444,#b91c1c);
+                       color:#fff;border:none;padding:.75rem 2rem;
+                       border-radius:.75rem;font-size:.9rem;font-weight:700;
+                       cursor:pointer;transition:opacity .2s;"
+                onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+            Got it — Keep coding
+        </button>
+    </div>
+</div>
 
 <!-- Floating Terminal Restore Button — appears when terminal is collapsed -->
 <button id="terminal-restore-btn"
@@ -449,18 +480,137 @@ function changeFontSize(delta) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  SESSION TIMER
+//  COUNTDOWN TIMER + AUTO-SUBMIT
 // ═══════════════════════════════════════════════════════════
-(function startTimer() {
-    let secs = 0;
-    document.getElementById('session-timer').classList.remove('hidden');
-    setInterval(() => {
-        secs++;
-        const h = String(Math.floor(secs / 3600)).padStart(2,'0');
-        const m = String(Math.floor((secs % 3600) / 60)).padStart(2,'0');
-        const s = String(secs % 60).padStart(2,'0');
-        document.getElementById('timer-display').textContent = `${h}:${m}:${s}`;
-    }, 1000);
+(function startCountdown() {
+    // Server-provided seconds remaining (null = no deadline / sandbox mode)
+    const SECONDS_REMAINING = {{ seconds_remaining | tojson }};
+    const FIRST_RECIPIENT   = {{ first_recipient_id | tojson }};
+
+    const timerEl   = document.getElementById('timer-display');
+    const timerCont = document.getElementById('session-timer');
+    const timerIcon = document.getElementById('timer-icon');
+
+    // ── Milestones that trigger the warning overlay ──
+    const WARNINGS = [
+        { secs: 600, icon: '⏰', title: '10 Minutes Left!',  color: '#f59e0b', body: 'Your test will auto-submit when time runs out. Save your progress.' },
+        { secs: 300, icon: '⚠️', title: '5 Minutes Left!',   color: '#f97316', body: 'Only 5 minutes remaining. Finalise your code now.' },
+        { secs: 60,  icon: '🚨', title: '1 Minute Left!',    color: '#ef4444', body: 'Less than 1 minute! Submitting automatically when timer hits 0.' },
+        { secs: 30,  icon: '💀', title: '30 Seconds Left!',  color: '#dc2626', body: 'AUTO-SUBMIT in 30 seconds. Code is being captured.' },
+    ];
+    const shownWarnings = new Set();
+
+    function showWarningModal(w) {
+        if (shownWarnings.has(w.secs)) return;
+        shownWarnings.add(w.secs);
+        const overlay = document.getElementById('time-warning-overlay');
+        const box     = document.getElementById('time-warning-box');
+        document.getElementById('warning-icon').textContent  = w.icon;
+        document.getElementById('warning-title').textContent = w.title;
+        document.getElementById('warning-body').textContent  = w.body;
+        box.style.borderColor = w.color;
+        box.style.boxShadow   = `0 0 60px ${w.color}55`;
+        overlay.style.display = 'flex';
+        // Auto-dismiss serious warnings only if user doesn't dismiss in 8s
+        if (w.secs <= 60) { setTimeout(() => overlay.style.display='none', 8000); }
+    }
+
+    function formatTime(s) {
+        const h = String(Math.floor(s / 3600)).padStart(2,'0');
+        const m = String(Math.floor((s % 3600) / 60)).padStart(2,'0');
+        const sec = String(s % 60).padStart(2,'0');
+        return `${h}:${m}:${sec}`;
+    }
+
+    function autoSubmitNow() {
+        // Fill the form with current code + output
+        const code   = window.editor ? window.editor.getValue() : '';
+        const output = (document.getElementById('outputConsole') || {}).innerText || '';
+
+        // Auto-pick first available recipient
+        const recipientEl = document.getElementById('recipient-select');
+        const recipient   = recipientEl.value || (FIRST_RECIPIENT ? String(FIRST_RECIPIENT) : '');
+
+        if (!recipient) {
+            // No recipient available — just lock the UI
+            timerEl.textContent = 'TIME OVER';
+            timerEl.style.color = '#ef4444';
+            return;
+        }
+
+        document.getElementById('form-recipient').value     = recipient;
+        document.getElementById('form-code').value          = code;
+        document.getElementById('form-output').value        = output;
+        document.getElementById('form-auto-submitted').value = '1';
+
+        // Show a full-screen auto-submit overlay
+        const overlay = document.getElementById('time-warning-overlay');
+        const box     = document.getElementById('time-warning-box');
+        document.getElementById('warning-icon').textContent  = '📤';
+        document.getElementById('warning-title').textContent = 'Time\'s Up — Submitting!';
+        document.getElementById('warning-body').textContent  = 'Your session has ended. Submitting your code automatically...';
+        document.getElementById('warning-timer-big').textContent = '';
+        box.style.borderColor = '#6366f1';
+        box.style.boxShadow   = '0 0 60px rgba(99,102,241,.5)';
+        overlay.style.display = 'flex';
+        // Remove the dismiss button
+        const dismissBtn = overlay.querySelector('button');
+        if (dismissBtn) dismissBtn.style.display = 'none';
+
+        setTimeout(() => {
+            document.getElementById('real-submission-form').submit();
+        }, 1500);
+    }
+
+    // ── If no deadline is set: count UP (sandbox mode) ──
+    if (SECONDS_REMAINING === null) {
+        document.getElementById('timer-label').textContent = 'Session';
+        let elapsed = 0;
+        setInterval(() => {
+            elapsed++;
+            timerEl.textContent = formatTime(elapsed);
+        }, 1000);
+        return;
+    }
+
+    // ── Countdown mode ──
+    let secsLeft = SECONDS_REMAINING;
+
+    function tick() {
+        const display = formatTime(secsLeft);
+        timerEl.textContent = display;
+        document.getElementById('warning-timer-big').textContent = display;
+
+        // Colour coding
+        if (secsLeft <= 30) {
+            timerEl.style.color  = '#ef4444';
+            timerIcon.style.color = '#ef4444';
+            timerCont.style.animation = 'dotBlink .6s ease-in-out infinite';
+        } else if (secsLeft <= 300) {
+            timerEl.style.color  = '#f97316';
+            timerIcon.style.color = '#f97316';
+        } else if (secsLeft <= 600) {
+            timerEl.style.color  = '#f59e0b';
+            timerIcon.style.color = '#f59e0b';
+        } else {
+            timerEl.style.color  = '#6b7280';
+            timerIcon.style.color = 'rgba(99,102,241,.6)';
+        }
+
+        // Check warning milestones
+        WARNINGS.forEach(w => { if (secsLeft === w.secs) showWarningModal(w); });
+
+        if (secsLeft <= 0) {
+            autoSubmitNow();
+            return;
+        }
+        secsLeft--;
+        setTimeout(tick, 1000);
+    }
+
+    // If already expired by the time page loads
+    if (secsLeft <= 0) { autoSubmitNow(); return; }
+    tick();
 })();
 
 // ═══════════════════════════════════════════════════════════
