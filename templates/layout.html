@@ -13,10 +13,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/gsap.min.js"></script>
-    <script src="https://cdn.tiny.cloud/1/z53vyzj5hcwj6nlffpeu227p3t1sya9zs5w66nd3qshdjniq/tinymce/6/tinymce.min.js"
-        referrerpolicy="origin"></script>
+    <!-- Heavy 3D libs: desktop-only to prevent mobile freeze -->
+    <script>
+      if (window.innerWidth > 768) {
+        document.write('<scr'+'ipt src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/scr'+'ipt>');
+        document.write('<scr'+'ipt src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/gsap.min.js"><\/scr'+'ipt>');
+      }
+    </script>
+
+    <!-- TinyMCE: only load on pages that need it -->
+    {% block extra_head %}{% endblock %}
 
     <style>
         /* Grid Overlay retained from your original concept but optimized */
@@ -43,7 +49,7 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
-<body class="bg-transparent text-gray-100 h-full overflow-hidden selection:bg-indigo-500 selection:text-white"
+<body class="bg-transparent text-gray-100 h-full overflow-x-hidden selection:bg-indigo-500 selection:text-white"
     hx-boost="false">
 
     <!-- Page Loader -->
@@ -71,7 +77,8 @@
 
         {% if current_user.is_authenticated %}
         <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
-            class="glass-sidebar fixed inset-y-0 left-0 z-50 w-64 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 flex flex-col shadow-2xl lg:shadow-none">
+            class="glass-sidebar fixed inset-y-0 left-0 z-50 w-64 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 flex flex-col shadow-2xl lg:shadow-none"
+            style="will-change:transform;">
             <div class="relative flex items-center justify-center h-20 border-b border-white/5">
                 <a hx-get="{{ url_for('seller.seller_dashboard') if current_user.role == 'seller' else url_for('main.dashboard') }}"
                     hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true"
@@ -314,7 +321,8 @@
             </header>
             <main
                 class="{% block main_class %}flex-1 overflow-y-auto p-4 sm:p-8 relative custom-scrollbar{% endblock %}"
-                id="main-content">
+                id="main-content"
+                style="-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior-y:contain;">
                 <div id="flash-container" class="fixed top-24 right-6 z-50 space-y-3 pointer-events-none">
                     {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
@@ -473,11 +481,11 @@
             } catch (e) { console.error(e); if (window.showToast) window.showToast('Network error', 'error'); btn.innerHTML = originalContent; btn.disabled = false; }
         };
 
-        // --- 3. ENHANCED ANIMATED BACKGROUND ---
+        // --- 3. ENHANCED ANIMATED BACKGROUND (desktop only) ---
         const canvas = document.getElementById('bg-canvas');
-        const isMobile = window.innerWidth <= 768;
+        const isMobile = window.innerWidth <= 900 || ('ontouchstart' in window);
 
-        if (!isMobile && canvas) {
+        if (!isMobile && canvas && typeof THREE !== 'undefined') {
             const scene = new THREE.Scene();
             scene.fog = new THREE.FogExp2(0x000005, 0.00015);
 
@@ -616,14 +624,18 @@
             scene.add(warmStarsMesh);
 
             let isPaused = false;
+            let animId = null;
             let time = 0;
 
             document.addEventListener("visibilitychange", () => {
                 isPaused = document.hidden;
+                // Cancel animation loop when hidden, restart when visible
+                if (isPaused && animId) { cancelAnimationFrame(animId); animId = null; }
+                else if (!isPaused && !animId) animate();
             });
 
             function animate() {
-                requestAnimationFrame(animate);
+                animId = requestAnimationFrame(animate);
                 if (isPaused) return;
 
                 time += 0.001; // Faster time for visible motion

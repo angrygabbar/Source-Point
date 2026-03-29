@@ -328,6 +328,8 @@ def update_order_status(order_id):
         
         flash(f'Order {order.order_number} updated to {new_status}.', 'success')
 
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': True, 'message': f'Order updated to {new_status}.', 'new_status': new_status})
     return redirect(url_for('seller.manage_orders'))
 
 # =========================================================

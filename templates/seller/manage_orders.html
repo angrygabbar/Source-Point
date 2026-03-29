@@ -32,15 +32,15 @@
             </div>
 
             <div class="flex items-center gap-3">
-                <form action="{{ url_for('seller.update_order_status', order_id=order.id) }}" method="POST">
-                    <select name="status" onchange="this.form.submit()" 
-                            class="bg-black/40 border border-white/10 text-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer {{ 'text-green-400' if order.status == 'Order Delivered' else 'text-yellow-400' }}">
-                        <option value="Order Placed" {% if order.status == 'Order Placed' %}selected{% endif %}>Placed</option>
-                        <option value="Order Accepted" {% if order.status == 'Order Accepted' %}selected{% endif %}>Accept</option>
-                        <option value="Order Dispatched" {% if order.status == 'Order Dispatched' %}selected{% endif %}>Dispatch</option>
-                        <option value="Order Delivered" {% if order.status == 'Order Delivered' %}selected{% endif %}>Delivered</option>
-                    </select>
-                </form>
+                <select data-url="{{ url_for('seller.update_order_status', order_id=order.id) }}"
+                        onchange="ajaxOrderStatus(this)"
+                        class="bg-black/40 border border-white/10 text-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer {{ 'text-green-400' if order.status == 'Order Delivered' else 'text-yellow-400' }}">
+                    <option value="Order Placed" {% if order.status == 'Order Placed' %}selected{% endif %}>Placed</option>
+                    <option value="Order Accepted" {% if order.status == 'Order Accepted' %}selected{% endif %}>Accept</option>
+                    <option value="Order Dispatched" {% if order.status == 'Order Dispatched' %}selected{% endif %}>Dispatch</option>
+                    <option value="Order Delivered" {% if order.status == 'Order Delivered' %}selected{% endif %}>Delivered</option>
+                </select>
+                <span class="status-saved text-xs text-emerald-400 hidden"><i class="fas fa-check-circle"></i></span>
             </div>
         </div>
         {% else %}
@@ -132,12 +132,28 @@
         const container = document.getElementById('items-container');
         const firstRow = container.querySelector('.item-row');
         const newRow = firstRow.cloneNode(true);
-        
-        // Reset values
         newRow.querySelector('select').value = "";
         newRow.querySelector('input').value = "1";
-        
         container.appendChild(newRow);
+    }
+
+    function ajaxOrderStatus(sel) {
+        const url = sel.dataset.url;
+        const val = sel.value;
+        const indicator = sel.parentElement.querySelector('.status-saved');
+        const fd = new FormData();
+        fd.append('status', val);
+        fetch(url, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    sel.className = sel.className.replace(/text-\w+-\d+/g, '');
+                    sel.classList.add(val === 'Order Delivered' ? 'text-green-400' : 'text-yellow-400');
+                    if (indicator) { indicator.classList.remove('hidden'); setTimeout(() => indicator.classList.add('hidden'), 2000); }
+                    if (window.showToast) showToast(data.message, 'success');
+                }
+            })
+            .catch(() => {});
     }
 </script>
 {% endblock %}

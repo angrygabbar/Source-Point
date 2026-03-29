@@ -354,15 +354,20 @@ def manage_seller_inventory(seller_id):
 @role_required(UserRole.ADMIN.value)
 def update_seller_stock():
     allocation_id = request.form.get('allocation_id')
+    is_xhr = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     try:
         new_stock = int(request.form.get('stock'))
         allocation = SellerInventory.query.get_or_404(allocation_id)
         allocation.stock = new_stock
         db.session.commit()
         log_user_action("Update Seller Stock", f"Updated stock for seller {allocation.seller.username}")
+        if is_xhr:
+            return jsonify({'success': True, 'message': f'Stock updated for {allocation.product.name}.', 'new_stock': new_stock})
         flash(f"Stock updated for {allocation.product.name}.", "success")
         return redirect(url_for('admin_commerce.manage_seller_inventory', seller_id=allocation.seller_id))
     except ValueError:
+        if is_xhr:
+            return jsonify({'success': False, 'message': 'Invalid stock value.'}), 400
         flash("Invalid stock value.", "danger")
         return redirect(url_for('admin_commerce.manage_seller_inventory'))
 
@@ -372,9 +377,12 @@ def update_seller_stock():
 def delete_seller_allocation(allocation_id):
     allocation = SellerInventory.query.get_or_404(allocation_id)
     seller_id = allocation.seller_id
+    product_name = allocation.product.name
     db.session.delete(allocation)
     db.session.commit()
     log_user_action("Delete Seller Alloc", f"Removed allocation {allocation_id}")
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': True, 'message': f'{product_name} allocation removed.', 'remove_row_id': f'alloc-{allocation_id}'})
     flash("Allocation removed.", "info")
     return redirect(url_for('admin_commerce.manage_seller_inventory', seller_id=seller_id))
 
@@ -523,6 +531,8 @@ def update_order_status(order_id):
         print(f"Failed to send email: {e}")
     
     log_user_action("Update Order", f"Updated order {order.order_number} to {new_status}")
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': True, 'message': f'Order {order.order_number} updated to {new_status}.', 'new_status': new_status})
     flash(f'Order {order.order_number} updated to {new_status}.', 'success')
     return redirect(url_for('admin_commerce.manage_orders'))
 

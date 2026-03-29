@@ -175,12 +175,13 @@
                                         title="Adjust Stock">
                                     <i class="fas fa-sliders-h text-xs"></i>
                                 </button>
-                                <a href="{{ url_for('admin_commerce.delete_seller_allocation', allocation_id=item.id) }}" 
-                                   onclick="return confirm('WARNING: This will remove {{ item.product.name }} from {{ selected_seller.username }}\'s inventory entirely.')"
-                                   class="w-8 h-8 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white border border-red-500/20 transition-all flex items-center justify-center shadow-lg"
-                                   title="Revoke Allocation">
+                                <button data-url="{{ url_for('admin_commerce.delete_seller_allocation', allocation_id=item.id) }}"
+                                        id="alloc-{{ item.id }}"
+                                        onclick="handleAjaxUrl(event, this.dataset.url, 'Remove {{ item.product.name }} from {{ selected_seller.username }}\'s inventory?')"
+                                        class="w-8 h-8 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white border border-red-500/20 transition-all flex items-center justify-center shadow-lg"
+                                        title="Revoke Allocation">
                                     <i class="fas fa-trash-alt text-xs"></i>
-                                </a>
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -228,7 +229,7 @@
                 </button>
             </div>
 
-            <form action="{{ url_for('admin_commerce.update_seller_stock') }}" method="POST" class="p-6">
+            <form id="stock-update-form" class="p-6">
                 <input type="hidden" name="allocation_id" id="modal_allocation_id">
                 
                 <div class="mb-6">
@@ -247,7 +248,8 @@
 
                 <div class="flex justify-end gap-3">
                     <button type="button" onclick="closeEditModal()" class="px-5 py-2.5 rounded-xl border border-white/10 text-gray-300 hover:bg-white/5 font-bold text-sm transition-all">Cancel</button>
-                    <button type="submit" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-500/25 transition-all transform hover:-translate-y-0.5">
+                    <button type="button" onclick="submitStockUpdate()" id="save-stock-btn"
+                            class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-500/25 transition-all transform hover:-translate-y-0.5">
                         Save Changes
                     </button>
                 </div>
@@ -257,20 +259,18 @@
 </div>
 
 <script>
+    let _currentAllocationId = null;
+
     function openEditModal(id, productName, currentStock) {
-        // Set Values
+        _currentAllocationId = id;
         document.getElementById('modal_allocation_id').value = id;
         document.getElementById('modal_product_name').innerText = productName;
         document.getElementById('modal_stock').value = currentStock;
         
-        // Show Modal with Animation
         const modal = document.getElementById('editModal');
         const backdrop = document.getElementById('modalBackdrop');
         const panel = document.getElementById('modalPanel');
-        
         modal.classList.remove('hidden');
-        
-        // Small timeout to allow display:block to apply before adding opacity classes
         setTimeout(() => {
             backdrop.classList.remove('opacity-0');
             panel.classList.remove('scale-95', 'opacity-0');
@@ -282,16 +282,55 @@
         const modal = document.getElementById('editModal');
         const backdrop = document.getElementById('modalBackdrop');
         const panel = document.getElementById('modalPanel');
-
-        // Reverse Animation
         backdrop.classList.add('opacity-0');
         panel.classList.remove('scale-100', 'opacity-100');
         panel.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    }
 
-        // Hide after animation finishes
-        setTimeout(() => {
-            modal.classList.add('hidden');
-        }, 300);
+    function submitStockUpdate() {
+        const btn = document.getElementById('save-stock-btn');
+        const allocationId = document.getElementById('modal_allocation_id').value;
+        const newStock = document.getElementById('modal_stock').value;
+        if (!newStock) return;
+
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        const fd = new FormData();
+        fd.append('allocation_id', allocationId);
+        fd.append('stock', newStock);
+
+        fetch('{{ url_for("admin_commerce.update_seller_stock") }}', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: fd
+        })
+        .then(r => r.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.textContent = 'Save Changes';
+            if (data.success) {
+                closeEditModal();
+                // Update the stock display in the table row
+                const rows = document.querySelectorAll('tbody tr');
+                rows.forEach(row => {
+                    const editBtn = row.querySelector('button[onclick*="openEditModal\(\'' + allocationId + "'"]');
+                    if (editBtn) {
+                        const stockEl = row.querySelector('.font-mono.font-bold');
+                        if (stockEl) stockEl.textContent = newStock;
+                    }
+                });
+                if (window.showToast) showToast(data.message, 'success');
+            } else {
+                if (window.showToast) showToast(data.message || 'Update failed.', 'error');
+            }
+        })
+        .catch(() => {
+            btn.disabled = false;
+            btn.textContent = 'Save Changes';
+            if (window.showToast) showToast('Network error.', 'error');
+        });
     }
 </script>
 {% endblock %}

@@ -396,6 +396,9 @@ def update_project_status(project_id):
     if new_status:
         project.status = new_status
         db.session.commit()
+        log_user_action("Update Project Status", f"Changed project {project.name} to {new_status}")
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': True, 'message': f'Status updated to {new_status}.', 'new_status': new_status})
         flash(f'Project status updated to "{new_status}".', 'success')
     return redirect(url_for('admin_core.project_detail', project_id=project.id))
 

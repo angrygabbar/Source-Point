@@ -533,9 +533,9 @@
             refreshActivities();
         }
 
-        // Refresh activities
+        // Refresh activities (fetch latest without page reload)
         function refreshActivities() {
-            window.location.reload();
+            fetchNewActivities();
         }
 
         // Start auto-refresh on page load
