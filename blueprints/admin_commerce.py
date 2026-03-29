@@ -382,7 +382,7 @@ def delete_seller_allocation(allocation_id):
     db.session.commit()
     log_user_action("Delete Seller Alloc", f"Removed allocation {allocation_id}")
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return jsonify({'success': True, 'message': f'{product_name} allocation removed.', 'remove_row_id': f'alloc-{allocation_id}'})
+        return jsonify({'success': True, 'message': f'{product_name} allocation removed.', 'remove_row_id': f'row-alloc-{allocation_id}'})
     flash("Allocation removed.", "info")
     return redirect(url_for('admin_commerce.manage_seller_inventory', seller_id=seller_id))
 
