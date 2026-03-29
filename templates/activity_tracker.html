@@ -180,7 +180,7 @@
     </style>
 </head>
 
-<body class="text-gray-100">
+<body class="text-gray-100" data-latest-id="{{ activities[0].id if activities else 0 }}">
     <div class="container mx-auto px-4 py-8 max-w-7xl">
         <!-- Header -->
         <div class="flex items-center justify-between mb-8">
@@ -392,7 +392,7 @@
     <script>
         let autoRefresh = true;
         let refreshInterval;
-        let latestActivityId = {{ activities[0].id if activities else 0 }};
+        let latestActivityId = parseInt(document.body.dataset.latestId, 10) || 0;
 
         // Toggle auto-refresh
         function toggleAutoRefresh() {
