@@ -126,11 +126,37 @@
                         <tr class="item-row group">
                             <td class="py-3 px-2">
                                 <input type="hidden" name="item_product_id[]" class="item-product-id">
-                                <div class="space-y-1.5">
-                                    <select
-                                        class="product-select w-full text-xs text-gray-500 bg-black/20 border border-white/5 rounded-lg px-2 py-1.5 focus:ring-1 focus:ring-indigo-500 outline-none cursor-pointer hover:border-indigo-500/50 transition-colors">
-                                        <option value="">&#9889; Quick-fill from product</option>
-                                    </select>
+                                <!-- Searchable product picker -->
+                                <div class="product-picker relative" style="position:relative;">
+                                    <div class="product-search-wrap flex items-center gap-1.5
+                                                bg-black/20 border border-white/5 rounded-lg px-2 py-1.5
+                                                hover:border-indigo-500/50 focus-within:border-indigo-500/60
+                                                focus-within:ring-1 focus-within:ring-indigo-500 transition-colors"
+                                         style="cursor:text">
+                                        <i class="fas fa-search text-gray-600" style="font-size:10px;flex-shrink:0;"></i>
+                                        <input type="text"
+                                               class="product-search-input bg-transparent outline-none text-xs text-gray-300 placeholder-gray-600 w-full"
+                                               placeholder="⚡ Search product by name or code..."
+                                               autocomplete="off">
+                                        <i class="fas fa-chevron-down text-gray-600 product-chevron" style="font-size:9px;flex-shrink:0;transition:transform .2s;"></i>
+                                    </div>
+                                    <div class="product-dropdown"
+                                         style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;
+                                                background:#0d1117;border:1px solid rgba(99,102,241,.35);
+                                                border-radius:.6rem;z-index:9999;max-height:220px;
+                                                overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.6);
+                                                scrollbar-width:thin;scrollbar-color:#374151 transparent;">
+                                        <div class="product-no-results"
+                                             style="display:none;padding:10px 12px;font-size:11px;color:#6b7280;text-align:center;">
+                                            <i class="fas fa-search-minus mr-1"></i> No products match
+                                        </div>
+                                    </div>
+                                    <!-- Hidden fields carry the real values -->
+                                    <input type="hidden" class="product-selected-id">
+                                    <input type="hidden" class="product-selected-price">
+                                    <input type="hidden" class="product-selected-name">
+                                </div>
+
                                     <input type="text" name="item_description[]" placeholder="Item description..."
                                         required
                                         class="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-white text-sm placeholder-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none">
@@ -257,53 +283,135 @@
             document.getElementById('grand-total').textContent = '₹' + grand.toFixed(2);
         }
 
-        function populateProductSelect(sel) {
-            while (sel.options.length > 1) sel.remove(1);
-            availableProducts.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p.id;
-                opt.textContent = p.code + ' — ' + p.name;
-                opt.dataset.price = p.price;
-                opt.dataset.name = p.name;
-                sel.appendChild(opt);
+        /* ─── Searchable Product Picker ─── */
+        const PRODUCT_ITEM_STYLE = `
+            display:flex;align-items:center;gap:8px;
+            padding:8px 12px;cursor:pointer;font-size:11px;
+            border-bottom:1px solid rgba(255,255,255,.04);
+            transition:background .12s;
+        `;
+
+        function buildProductItems(picker, products) {
+            const dd = picker.querySelector('.product-dropdown');
+            // Remove old items (keep no-results div)
+            dd.querySelectorAll('.product-item').forEach(el => el.remove());
+
+            products.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'product-item';
+                div.style.cssText = PRODUCT_ITEM_STYLE;
+                div.dataset.id    = p.id;
+                div.dataset.price = p.price;
+                div.dataset.name  = p.name;
+                div.dataset.code  = p.code || '';
+                div.innerHTML = `
+                    <span style="background:rgba(99,102,241,.15);color:#818cf8;
+                                 font-size:9px;font-weight:700;padding:2px 6px;
+                                 border-radius:4px;white-space:nowrap;">${p.code || '–'}</span>
+                    <span style="color:#e2e8f0;">${p.name}</span>
+                    <span style="margin-left:auto;color:#6366f1;font-weight:700;white-space:nowrap;">₹${p.price}</span>
+                `;
+                div.addEventListener('mouseenter', () => div.style.background = 'rgba(99,102,241,.12)');
+                div.addEventListener('mouseleave', () => div.style.background = '');
+                div.addEventListener('mousedown', e => {
+                    e.preventDefault();
+                    selectProduct(picker, p);
+                });
+                dd.appendChild(div);
+            });
+        }
+
+        function filterProducts(picker, query) {
+            const q = query.toLowerCase();
+            const items = picker.querySelectorAll('.product-item');
+            let visible = 0;
+            items.forEach(item => {
+                const match = item.dataset.name.toLowerCase().includes(q) ||
+                              item.dataset.code.toLowerCase().includes(q);
+                item.style.display = match ? '' : 'none';
+                if (match) visible++;
+            });
+            picker.querySelector('.product-no-results').style.display = visible === 0 ? '' : 'none';
+        }
+
+        function selectProduct(picker, p) {
+            picker.querySelector('.product-search-input').value = `${p.code ? p.code + ' — ' : ''}${p.name}`;
+            picker.querySelector('.product-selected-id').value    = p.id;
+            picker.querySelector('.product-selected-price').value = p.price;
+            picker.querySelector('.product-selected-name').value  = p.name;
+            closePicker(picker);
+            // Trigger the row-level handler
+            picker.dispatchEvent(new CustomEvent('product-selected', { bubbles: true, detail: p }));
+        }
+
+        function openPicker(picker) {
+            filterProducts(picker, picker.querySelector('.product-search-input').value);
+            picker.querySelector('.product-dropdown').style.display = '';
+            picker.querySelector('.product-chevron').style.transform = 'rotate(180deg)';
+        }
+
+        function closePicker(picker) {
+            picker.querySelector('.product-dropdown').style.display = 'none';
+            picker.querySelector('.product-chevron').style.transform = '';
+        }
+
+        function initPicker(picker) {
+            buildProductItems(picker, availableProducts);
+            const input = picker.querySelector('.product-search-input');
+
+            input.addEventListener('focus', () => openPicker(picker));
+            input.addEventListener('input', () => {
+                openPicker(picker);
+                filterProducts(picker, input.value);
+            });
+            // Close when clicking outside
+            document.addEventListener('mousedown', e => {
+                if (!picker.contains(e.target)) closePicker(picker);
             });
         }
 
         function attachRowListeners(row) {
-            row.querySelectorAll('input').forEach(i => i.addEventListener('input', calculateTotals));
+            row.querySelectorAll('input[name]').forEach(i => i.addEventListener('input', calculateTotals));
 
-            const sel = row.querySelector('.product-select');
-            const descInput = row.querySelector('input[name="item_description[]"]');
-            const priceInput = row.querySelector('input[name="item_price[]"]');
-            const productIdInput = row.querySelector('.item-product-id');
+            const picker       = row.querySelector('.product-picker');
+            const descInput    = row.querySelector('input[name="item_description[]"]');
+            const priceInput   = row.querySelector('input[name="item_price[]"]');
+            const productIdIn  = row.querySelector('.item-product-id');
 
-            sel.addEventListener('change', function () {
-                const opt = this.options[this.selectedIndex];
-                if (this.value) {
-                    descInput.value = opt.dataset.name;
-                    priceInput.value = opt.dataset.price;
-                    productIdInput.value = this.value;
-                    [descInput, priceInput].forEach(el => {
-                        el.classList.add('border-indigo-500', 'bg-indigo-500/10');
-                        setTimeout(() => el.classList.remove('border-indigo-500', 'bg-indigo-500/10'), 600);
-                    });
-                } else {
-                    productIdInput.value = '';
-                }
+            initPicker(picker);
+
+            picker.addEventListener('product-selected', e => {
+                const p = e.detail;
+                descInput.value   = p.name;
+                priceInput.value  = p.price;
+                productIdIn.value = p.id;
+                [descInput, priceInput].forEach(el => {
+                    el.classList.add('border-indigo-500', 'bg-indigo-500/10');
+                    setTimeout(() => el.classList.remove('border-indigo-500', 'bg-indigo-500/10'), 600);
+                });
                 calculateTotals();
             });
         }
 
+
         document.getElementById('add-item-btn').addEventListener('click', () => {
             const firstRow = document.querySelector('.item-row');
             const newRow = firstRow.cloneNode(true);
-            newRow.querySelectorAll('input').forEach(inp => {
+            // Reset all inputs
+            newRow.querySelectorAll('input[name]').forEach(inp => {
                 inp.value = (inp.type === 'number' && inp.name.includes('quantity')) ? '1' : '';
             });
-            newRow.querySelector('select').selectedIndex = 0;
+            // Reset picker display
+            const picker = newRow.querySelector('.product-picker');
+            if (picker) {
+                picker.querySelector('.product-search-input').value = '';
+                picker.querySelector('.product-selected-id').value   = '';
+                picker.querySelector('.product-selected-price').value = '';
+                picker.querySelector('.product-selected-name').value  = '';
+                picker.querySelector('.product-dropdown').style.display = 'none';
+            }
             newRow.querySelector('.item-total').textContent = '₹0.00';
             itemsContainer.appendChild(newRow);
-            populateProductSelect(newRow.querySelector('.product-select'));
             attachRowListeners(newRow);
             newRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         });
@@ -345,9 +453,9 @@
         document.getElementById('tax').addEventListener('input', calculateTotals);
 
         document.querySelectorAll('.item-row').forEach(row => {
-            populateProductSelect(row.querySelector('.product-select'));
             attachRowListeners(row);
         });
+
     });
 </script>
 
