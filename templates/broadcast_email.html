@@ -319,7 +319,7 @@
 </div>
 
 <form action="{{ url_for('admin_core.broadcast_email') }}" method="POST" enctype="multipart/form-data"
-    id="broadcastForm">
+    id="broadcastForm" data-total="{{ users|length }}">
 
     <!-- Hidden excluded_ids are injected by JS before submit -->
 
@@ -502,6 +502,9 @@
     </div>
 </div>
 
+<!-- User data as JSON for lint-free JS consumption -->
+<script type="application/json" id="usersJson">[{% for u in users %}[{{ u.id }},{{ u.username|tojson }},{{ u.email|tojson }}]{% if not loop.last %},{% endif %}{% endfor %}]</script>
+
 <script>
     /* ── Broadcast templates ─────────────────────────────────── */
     /* ── Broadcast templates ─────────────────────────────────── */
@@ -514,10 +517,10 @@
 
     /* ── User data map ────────────────────────────────────────── */
     const userMap = {};
-    const TOTAL = {{users|length}};
-    {% for user in users %}
-    userMap[{{user.id}}] = { name: {{user.username|tojson}}, email: {{user.email|tojson}} };
-    {% endfor %}
+    const TOTAL = parseInt(document.getElementById('broadcastForm').dataset.total || '0', 10);
+    JSON.parse(document.getElementById('usersJson').textContent).forEach(([id, name, email]) => {
+        userMap[id] = { name, email };
+    });
 
     /* ── Exclusion management ─────────────────────────────────── */
     function updateExclusions() {

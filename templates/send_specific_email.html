@@ -505,6 +505,9 @@
     </div>
 </div>
 
+<!-- User data as JSON for lint-free JS consumption -->
+<script type="application/json" id="usersJson">[{% for u in users %}[{{ u.id }},{{ u.username|tojson }},{{ u.email|tojson }}]{% if not loop.last %},{% endif %}{% endfor %}]</script>
+
 <script>
     /* ── Email templates ──────────────────────────────────────────── */
     const TEMPLATES = {
@@ -519,9 +522,9 @@
        coerces numeric string keys automatically)
     ──────────────────────────────────────────────────────────────── */
     const userData = {};
-    {% for user in users %}
-    userData[{{user.id}}] = { name: {{user.username|tojson}}, email: {{user.email|tojson}} };
-    {% endfor %}
+    JSON.parse(document.getElementById('usersJson').textContent).forEach(([id, name, email]) => {
+        userData[id] = { name, email };
+    });
 
     /* ── Chip management ────────────────────────────────────────── */
     function updateChips() {

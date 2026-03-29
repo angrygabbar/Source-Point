@@ -55,21 +55,28 @@
         <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 p-6 backdrop-blur-md">
             <h3 class="text-lg font-bold text-white mb-4">Financial Performance</h3>
             <div class="relative h-64 w-full">
-                <canvas id="financialChart"></canvas>
+                <canvas id="financialChart"
+                    data-funding="{{ total_funding|default(0) }}"
+                    data-expense="{{ total_expense|default(0) }}"></canvas>
             </div>
         </div>
 
         <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 p-6 backdrop-blur-md">
             <h3 class="text-lg font-bold text-white mb-4">Recruitment Pipeline</h3>
             <div class="relative h-64 w-full flex justify-center">
-                <canvas id="recruitmentChart"></canvas>
+                <canvas id="recruitmentChart"
+                    data-pending="{{ pending_apps|default(0) }}"
+                    data-accepted="{{ accepted_apps|default(0) }}"
+                    data-rejected="{{ rejected_apps|default(0) }}"></canvas>
             </div>
         </div>
 
         <div class="bg-white/5 dark:bg-gray-800/40 rounded-xl shadow-lg border border-white/10 p-6 backdrop-blur-md lg:col-span-2">
             <h3 class="text-lg font-bold text-white mb-4">Project Status Distribution</h3>
             <div class="relative h-80 w-full">
-                <canvas id="projectStatusChart"></canvas>
+                <canvas id="projectStatusChart"
+                    data-labels='{{ proj_statuses|tojson }}'
+                    data-values='{{ proj_counts|tojson }}'></canvas>
             </div>
         </div>
 
@@ -90,7 +97,10 @@
         Chart.defaults.color = '#9ca3af';
         Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
 
-        const ctxFinance = document.getElementById('financialChart').getContext('2d');
+        const fCanvas = document.getElementById('financialChart');
+        const ctxFinance = fCanvas.getContext('2d');
+        const fundingVal = parseFloat(fCanvas.dataset.funding) || 0;
+        const expenseVal = parseFloat(fCanvas.dataset.expense) || 0;
         const gradientGreen = ctxFinance.createLinearGradient(0, 0, 0, 400);
         gradientGreen.addColorStop(0, 'rgba(34, 197, 94, 0.8)');
         gradientGreen.addColorStop(1, 'rgba(34, 197, 94, 0.1)');
@@ -105,7 +115,7 @@
                 labels: ['Funding', 'Expenses'],
                 datasets: [{
                     label: 'Amount (₹)',
-                    data: [{{ total_funding|default(0) }}, {{ total_expense|default(0) }}],
+                    data: [fundingVal, expenseVal],
                     backgroundColor: [gradientGreen, gradientRed],
                     borderColor: ['#22c55e', '#ef4444'],
                     borderWidth: 1,
@@ -120,13 +130,17 @@
             }
         });
 
-        const ctxRecruit = document.getElementById('recruitmentChart').getContext('2d');
+        const rCanvas = document.getElementById('recruitmentChart');
+        const ctxRecruit = rCanvas.getContext('2d');
+        const pendingVal  = parseFloat(rCanvas.dataset.pending)  || 0;
+        const acceptedVal = parseFloat(rCanvas.dataset.accepted) || 0;
+        const rejectedVal = parseFloat(rCanvas.dataset.rejected) || 0;
         new Chart(ctxRecruit, {
             type: 'doughnut',
             data: {
                 labels: ['Pending', 'Accepted', 'Rejected'],
                 datasets: [{
-                    data: [{{ pending_apps|default(0) }}, {{ accepted_apps|default(0) }}, {{ rejected_apps|default(0) }}],
+                    data: [pendingVal, acceptedVal, rejectedVal],
                     backgroundColor: ['#eab308', '#22c55e', '#ef4444'],
                     borderWidth: 0,
                     hoverOffset: 10
@@ -142,7 +156,10 @@
             }
         });
 
-        const ctxProject = document.getElementById('projectStatusChart').getContext('2d');
+        const pCanvas = document.getElementById('projectStatusChart');
+        const ctxProject = pCanvas.getContext('2d');
+        const projLabels = JSON.parse(pCanvas.dataset.labels || '[]');
+        const projValues = JSON.parse(pCanvas.dataset.values || '[]');
         const gradientPurple = ctxProject.createLinearGradient(0, 0, 0, 400);
         gradientPurple.addColorStop(0, 'rgba(99, 102, 241, 0.5)');
         gradientPurple.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
@@ -150,10 +167,10 @@
         new Chart(ctxProject, {
             type: 'line',
             data: {
-                labels: {{ proj_statuses|tojson|safe }},
+                labels: projLabels,
                 datasets: [{
                     label: 'Projects',
-                    data: {{ proj_counts|tojson|safe }},
+                    data: projValues,
                     backgroundColor: gradientPurple,
                     borderColor: '#6366f1',
                     borderWidth: 3,
