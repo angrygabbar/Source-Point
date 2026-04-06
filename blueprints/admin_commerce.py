@@ -371,7 +371,7 @@ def update_seller_stock():
         flash("Invalid stock value.", "danger")
         return redirect(url_for('admin_commerce.manage_seller_inventory'))
 
-@admin_commerce_bp.route('/inventory/seller/delete/<int:allocation_id>')
+@admin_commerce_bp.route('/inventory/seller/delete/<int:allocation_id>', methods=['GET', 'POST'])
 @login_required
 @role_required(UserRole.ADMIN.value)
 def delete_seller_allocation(allocation_id):
