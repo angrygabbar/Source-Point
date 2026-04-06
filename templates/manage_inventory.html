@@ -58,6 +58,10 @@
                 class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center text-sm">
                 <i class="fas fa-plus-circle mr-2"></i> Add Product
             </a>
+            <button onclick="generateShareLink()"
+                class="px-5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-violet-500/20 flex items-center justify-center gap-2 text-sm">
+                <i class="fas fa-share-alt"></i> Share Catalog
+            </button>
         </div>
     </div>
 
@@ -291,5 +295,78 @@
             });
         });
     });
+</script>
+
+<!-- Share Catalog Modal -->
+<div id="share-modal"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+    onclick="if(event.target===this)closeShareModal()">
+    <div class="bg-[#0f172a] rounded-2xl border border-violet-500/30 p-6 max-w-md w-full mx-4 shadow-2xl shadow-violet-500/20">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                <i class="fas fa-link text-violet-400"></i> Shareable Catalog Link
+            </h3>
+            <button onclick="closeShareModal()" class="text-gray-500 hover:text-white transition-colors">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <p class="text-gray-400 text-sm mb-4">Anyone with this link can browse the master catalog publicly — no login required.</p>
+        <div class="flex items-center gap-2 mb-4">
+            <input id="share-url-input" type="text" readonly
+                class="flex-1 bg-black/30 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm font-mono truncate focus:outline-none">
+            <button onclick="copyShareLink()"
+                class="px-4 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5 flex-shrink-0">
+                <i id="copy-icon" class="fas fa-copy"></i> <span id="copy-text">Copy</span>
+            </button>
+        </div>
+        <div class="flex items-center justify-between bg-white/5 rounded-xl px-4 py-3">
+            <span class="text-sm text-gray-400">Link Status</span>
+            <button id="toggle-link-btn" onclick="toggleShareLink()"
+                class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"></button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function generateShareLink() {
+        fetch('/admin/commerce/share-link', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('share-url-input').value = data.url;
+                    updateToggleBtn(data.is_active);
+                    document.getElementById('share-modal').classList.remove('hidden');
+                } else if (window.showToast) {
+                    showToast(data.message || 'Could not generate link.', 'error');
+                }
+            });
+    }
+    function closeShareModal() { document.getElementById('share-modal').classList.add('hidden'); }
+    function copyShareLink() {
+        const input = document.getElementById('share-url-input');
+        navigator.clipboard.writeText(input.value).then(() => {
+            document.getElementById('copy-icon').className = 'fas fa-check';
+            document.getElementById('copy-text').textContent = 'Copied!';
+            setTimeout(() => {
+                document.getElementById('copy-icon').className = 'fas fa-copy';
+                document.getElementById('copy-text').textContent = 'Copy';
+            }, 2000);
+        });
+    }
+    function toggleShareLink() {
+        fetch('/admin/commerce/share-link/toggle', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.json())
+            .then(data => { if (data.success) updateToggleBtn(data.is_active); });
+    }
+    function updateToggleBtn(isActive) {
+        const btn = document.getElementById('toggle-link-btn');
+        if (isActive) {
+            btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-emerald-500/20 text-emerald-400';
+            btn.innerHTML = '<i class="fas fa-toggle-on mr-1"></i> Active';
+        } else {
+            btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-red-500/20 text-red-400';
+            btn.innerHTML = '<i class="fas fa-toggle-off mr-1"></i> Inactive';
+        }
+    }
 </script>
 {% endblock %}
