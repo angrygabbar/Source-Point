@@ -140,30 +140,12 @@
                 </span>
             </label>
 
-            <!-- Skeleton sits on top while TinyMCE initializes; textarea must be in DOM -->
-            <div id="editor-shell" style="position:relative;">
-                <!-- Skeleton overlay -->
-                <div id="editor-loading" class="editor-skeleton rounded-xl overflow-hidden"
-                     style="position:absolute;top:0;left:0;right:0;z-index:10;">
-                    <div class="skeleton-toolbar"></div>
-                    <div class="skeleton-body">
-                        <div class="skeleton-line w-3/4"></div>
-                        <div class="skeleton-line w-full mt-3"></div>
-                        <div class="skeleton-line w-5/6 mt-3"></div>
-                        <div class="skeleton-line w-2/3 mt-3"></div>
-                        <div class="flex items-center gap-2 mt-4">
-                            <i class="fas fa-spinner fa-spin text-indigo-400 text-sm"></i>
-                            <span class="text-xs text-gray-500">Loading rich text editor…</span>
-                        </div>
-                    </div>
-                </div>
-                <!-- Textarea MUST remain visible; TinyMCE replaces it with an iframe -->
-                <textarea id="problemDescriptionEditor"
-                          name="problem_description"
-                          rows="20"
-                          style="background:#0d0d1a;color:#e2e8f0;"
-                          required></textarea>
-            </div>
+            <!-- Textarea is always visible so TinyMCE can measure & initialize properly -->
+            <textarea id="problemDescriptionEditor"
+                      name="problem_description"
+                      rows="20"
+                      style="width:100%;background:#0d0d1a;color:#e2e8f0;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;"
+                      required></textarea>
 
             <p class="mt-3 text-xs text-gray-600 flex items-center gap-1.5">
                 <i class="fas fa-lightbulb text-yellow-500/60"></i>
@@ -241,35 +223,11 @@
         setup: function(editor) {
             editor.on('change', function() { editor.save(); });
             editor.on('init', function() {
-                hideSkeleton(editor);
                 markStepDone(3);
             });
         }
     });
 })();
-
-/* ── Helper: hide skeleton & style editor container ── */
-function hideSkeleton(editor) {
-    var skeleton = document.getElementById('editor-loading');
-    if (skeleton) skeleton.style.display = 'none';
-    if (editor) {
-        var container = editor.getContainer();
-        if (container) {
-            container.style.border = '1px solid rgba(99,102,241,0.25)';
-            container.style.borderRadius = '12px';
-            container.style.overflow = 'hidden';
-            container.style.background = '#0d0d1a';
-        }
-        var iframe = editor.iframeElement;
-        if (iframe) { iframe.style.background = '#0d0d1a'; }
-    }
-}
-
-/* Safety fallback: if TinyMCE init event never fires, hide skeleton after 10s */
-setTimeout(function() {
-    var skeleton = document.getElementById('editor-loading');
-    if (skeleton) skeleton.style.display = 'none';
-}, 10000);
 
 /* ── Title character counter ── */
 var titleInput = document.getElementById('problem_title');
@@ -348,33 +306,7 @@ document.querySelectorAll('.form-card input, .form-card textarea').forEach(funct
     box-shadow: 0 0 0 3px rgba(99,102,241,0.08);
 }
 
-/* ── Editor wrapper reveal ── */
-.editor-reveal { animation: editorReveal .35s ease both; }
 
-/* ── Editor skeleton / loading ── */
-.editor-skeleton {
-    border: 1px solid rgba(99,102,241,0.15);
-    background: #0d0d1a;
-}
-.skeleton-toolbar {
-    height: 46px;
-    background: linear-gradient(90deg, #1a1a2e 0%, #1e1e35 50%, #1a1a2e 100%);
-    background-size: 200% 100%;
-    animation: shimmer 1.8s linear infinite;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-.skeleton-body {
-    padding: 24px 28px;
-    min-height: 260px;
-    background: #0d0d1a;
-}
-.skeleton-line {
-    height: 12px;
-    border-radius: 6px;
-    background: linear-gradient(90deg, #1a1a2e 0%, #252540 50%, #1a1a2e 100%);
-    background-size: 200% 100%;
-    animation: shimmer 1.8s linear infinite;
-}
 
 /* ── Step progress ── */
 .step-badge {
