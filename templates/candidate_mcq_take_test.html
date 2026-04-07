@@ -62,7 +62,27 @@
         // Prevent double submission
         if (this._submitting) return;
         this._submitting = true;
-        document.getElementById('submitForm').submit();
+
+        const form = document.getElementById('submitForm');
+
+        // Remove any previously injected hidden inputs (safety)
+        form.querySelectorAll('input[data-answer-inject]').forEach(el => el.remove());
+
+        // Inject one hidden input per answer so the server always gets them,
+        // regardless of Alpine's :checked binding state
+        for (const [questionId, option] of Object.entries(this.answers)) {
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'question_' + questionId;
+            hidden.value = option;
+            hidden.setAttribute('data-answer-inject', '1');
+            form.appendChild(hidden);
+        }
+
+        // Clear saved answers from localStorage
+        localStorage.removeItem('test_{{ assignment.id }}_answers');
+
+        form.submit();
     },
     
     formatTime(seconds) {
@@ -193,11 +213,6 @@
     window.addEventListener('beforeunload', function (e) {
         e.preventDefault();
         e.returnValue = '';
-    });
-
-    // Clear saved answers after submission
-    document.getElementById('submitForm').addEventListener('submit', function () {
-        localStorage.removeItem('test_{{ assignment.id }}_answers');
     });
 </script>
 
