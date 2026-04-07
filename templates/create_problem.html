@@ -27,10 +27,10 @@
                 </h1>
             </div>
         </div>
-        <!-- Live char info badge -->
+        <!-- Live editor badge -->
         <div class="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl border border-indigo-500/20
                     bg-indigo-500/5 text-xs text-indigo-300">
-            <span class="w-2 h-2 rounded-full bg-indigo-400" style="animation: dotBlink 1.5s ease-in-out infinite;"></span>
+            <span class="w-2 h-2 rounded-full bg-indigo-400 editor-dot"></span>
             Rich Text Editor Active
         </div>
     </div>
@@ -52,13 +52,31 @@
     {% endif %}
     {% endwith %}
 
+    <!-- ── Step Progress ── -->
+    <div class="flex items-center gap-2 mb-8 px-1">
+        <div class="step-badge active" id="step1-badge">
+            <span class="step-num">1</span>
+            <span class="step-label">Title</span>
+        </div>
+        <div class="step-line" id="line1"></div>
+        <div class="step-badge" id="step2-badge">
+            <span class="step-num">2</span>
+            <span class="step-label">Difficulty</span>
+        </div>
+        <div class="step-line" id="line2"></div>
+        <div class="step-badge" id="step3-badge">
+            <span class="step-num">3</span>
+            <span class="step-label">Description</span>
+        </div>
+    </div>
+
     <!-- ── Main Form Card ── -->
     <form action="{{ url_for('events.create_problem') }}" method="POST"
           onsubmit="tinymce.triggerSave();"
-          class="space-y-6">
+          class="space-y-6" id="createProblemForm">
 
         <!-- Problem Title -->
-        <div class="bg-white/3 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+        <div class="form-card" id="card-title">
             <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
                 <i class="fas fa-heading mr-2 text-indigo-400"></i>Problem Title
             </label>
@@ -68,23 +86,27 @@
                    placeholder="e.g., Reverse a Linked List, Two Sum, Binary Tree Traversal..."
                    required
                    autocomplete="off"
+                   maxlength="120"
                    class="w-full px-5 py-3.5 rounded-xl text-white text-base font-medium
                           bg-black/30 border border-white/10
                           placeholder-gray-600
                           focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20
                           transition-all duration-200">
-            <p class="mt-2 text-xs text-gray-600">Keep the title concise and descriptive — candidates will see this.</p>
+            <div class="flex items-center justify-between mt-2">
+                <p class="text-xs text-gray-600">Keep the title concise and descriptive — candidates will see this.</p>
+                <span class="text-xs text-gray-600" id="title-counter">0 / 120</span>
+            </div>
         </div>
 
         <!-- Difficulty -->
-        <div class="bg-white/3 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+        <div class="form-card" id="card-difficulty">
             <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
                 <i class="fas fa-signal mr-2 text-cyan-400"></i>Difficulty Level
             </label>
             <div class="flex gap-3">
                 <label class="flex-1 cursor-pointer">
                     <input type="radio" name="difficulty" value="Easy" class="sr-only peer">
-                    <div class="text-center py-2.5 px-4 rounded-xl border border-white/10 bg-black/20 text-gray-500 font-bold text-sm
+                    <div class="diff-btn text-center py-3 px-4 rounded-xl border border-white/10 bg-black/20 text-gray-500 font-bold text-sm
                                 peer-checked:border-green-500 peer-checked:bg-green-500/10 peer-checked:text-green-400
                                 hover:border-green-500/50 hover:text-green-400/70 transition-all cursor-pointer">
                         <i class="fas fa-circle-notch mr-2"></i>Easy
@@ -92,7 +114,7 @@
                 </label>
                 <label class="flex-1 cursor-pointer">
                     <input type="radio" name="difficulty" value="Medium" class="sr-only peer" checked>
-                    <div class="text-center py-2.5 px-4 rounded-xl border border-white/10 bg-black/20 text-gray-500 font-bold text-sm
+                    <div class="diff-btn text-center py-3 px-4 rounded-xl border border-white/10 bg-black/20 text-gray-500 font-bold text-sm
                                 peer-checked:border-yellow-500 peer-checked:bg-yellow-500/10 peer-checked:text-yellow-400
                                 hover:border-yellow-500/50 hover:text-yellow-400/70 transition-all cursor-pointer">
                         <i class="fas fa-bolt mr-2"></i>Medium
@@ -100,7 +122,7 @@
                 </label>
                 <label class="flex-1 cursor-pointer">
                     <input type="radio" name="difficulty" value="Hard" class="sr-only peer">
-                    <div class="text-center py-2.5 px-4 rounded-xl border border-white/10 bg-black/20 text-gray-500 font-bold text-sm
+                    <div class="diff-btn text-center py-3 px-4 rounded-xl border border-white/10 bg-black/20 text-gray-500 font-bold text-sm
                                 peer-checked:border-red-500 peer-checked:bg-red-500/10 peer-checked:text-red-400
                                 hover:border-red-500/50 hover:text-red-400/70 transition-all cursor-pointer">
                         <i class="fas fa-fire mr-2"></i>Hard
@@ -110,25 +132,43 @@
         </div>
 
         <!-- Description – TinyMCE -->
-        <div class="bg-white/3 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+        <div class="form-card" id="card-description">
             <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
                 <i class="fas fa-align-left mr-2 text-purple-400"></i>Problem Description
                 <span class="ml-2 text-gray-600 font-normal normal-case tracking-normal">
                     — use the toolbar to add tables, code samples, images, and formatting
                 </span>
             </label>
-            <textarea id="problemDescriptionEditor"
-                      name="problem_description"
-                      rows="20"
-                      placeholder="Write the full problem statement here...
 
-Include:
-• Problem description and context
-• Input/Output format
-• Constraints
-• Sample test cases (use tables for structure)
-• Hints (optional)"
-                      required></textarea>
+            <!-- Skeleton sits on top while TinyMCE initializes; textarea must be in DOM -->
+            <div id="editor-shell" style="position:relative;">
+                <!-- Skeleton overlay -->
+                <div id="editor-loading" class="editor-skeleton rounded-xl overflow-hidden"
+                     style="position:absolute;top:0;left:0;right:0;z-index:10;">
+                    <div class="skeleton-toolbar"></div>
+                    <div class="skeleton-body">
+                        <div class="skeleton-line w-3/4"></div>
+                        <div class="skeleton-line w-full mt-3"></div>
+                        <div class="skeleton-line w-5/6 mt-3"></div>
+                        <div class="skeleton-line w-2/3 mt-3"></div>
+                        <div class="flex items-center gap-2 mt-4">
+                            <i class="fas fa-spinner fa-spin text-indigo-400 text-sm"></i>
+                            <span class="text-xs text-gray-500">Loading rich text editor…</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Textarea MUST remain visible; TinyMCE replaces it with an iframe -->
+                <textarea id="problemDescriptionEditor"
+                          name="problem_description"
+                          rows="20"
+                          style="background:#0d0d1a;color:#e2e8f0;"
+                          required></textarea>
+            </div>
+
+            <p class="mt-3 text-xs text-gray-600 flex items-center gap-1.5">
+                <i class="fas fa-lightbulb text-yellow-500/60"></i>
+                Include problem context, input/output format, constraints, and sample test cases.
+            </p>
         </div>
 
         <!-- Action Buttons -->
@@ -141,14 +181,15 @@ Include:
                       font-medium transition-all text-sm">
                 <i class="fas fa-times"></i> Cancel
             </a>
-            <button type="submit"
+            <button type="submit" id="submitBtn"
                     class="flex items-center gap-2 px-8 py-3 rounded-xl text-white font-bold text-sm
                            bg-gradient-to-r from-indigo-600 to-violet-700
                            hover:from-indigo-500 hover:to-violet-600
                            shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50
-                           hover:-translate-y-0.5 transition-all duration-200">
-                <i class="fas fa-plus"></i>
-                Create Problem Statement
+                           hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200
+                           disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                <i class="fas fa-plus" id="submitIcon"></i>
+                <span id="submitText">Create Problem Statement</span>
             </button>
         </div>
     </form>
@@ -163,6 +204,7 @@ Include:
     tinymce.init({
         selector: '#problemDescriptionEditor',
         skin: 'oxide-dark',
+        content_css: 'dark',
         height: 560,
         width: '100%',
         menubar: true,
@@ -184,7 +226,7 @@ Include:
         table_default_attributes: { border: '1' },
         table_default_styles: { 'border-collapse': 'collapse', width: '100%' },
         content_style:
-            'html, body { background: #0f0f1a !important; color: #e2e8f0 !important; }' +
+            'html, body { background: #0d0d1a !important; color: #e2e8f0 !important; margin: 0; }' +
             'body { font-family: Inter, system-ui, sans-serif; font-size: 15px; padding: 20px 28px; line-height: 1.75; }' +
             'table, td, th { border: 1px solid rgba(99,102,241,0.5) !important; padding: 8px 12px; }' +
             'th { background: rgba(99,102,241,0.2); font-weight: 700; }' +
@@ -194,17 +236,185 @@ Include:
             'blockquote { border-left: 4px solid #6366f1; margin: 0; padding-left: 14px; color: #94a3b8; }' +
             'h1, h2, h3 { color: #f1f5f9; }' +
             'a { color: #818cf8; }' +
-            'p { margin: 6px 0; }',
+            'p { margin: 6px 0; }' +
+            '::selection { background: rgba(99,102,241,0.35); }',
         setup: function(editor) {
             editor.on('change', function() { editor.save(); });
+            editor.on('init', function() {
+                hideSkeleton(editor);
+                markStepDone(3);
+            });
         }
     });
 })();
+
+/* ── Helper: hide skeleton & style editor container ── */
+function hideSkeleton(editor) {
+    var skeleton = document.getElementById('editor-loading');
+    if (skeleton) skeleton.style.display = 'none';
+    if (editor) {
+        var container = editor.getContainer();
+        if (container) {
+            container.style.border = '1px solid rgba(99,102,241,0.25)';
+            container.style.borderRadius = '12px';
+            container.style.overflow = 'hidden';
+            container.style.background = '#0d0d1a';
+        }
+        var iframe = editor.iframeElement;
+        if (iframe) { iframe.style.background = '#0d0d1a'; }
+    }
+}
+
+/* Safety fallback: if TinyMCE init event never fires, hide skeleton after 10s */
+setTimeout(function() {
+    var skeleton = document.getElementById('editor-loading');
+    if (skeleton) skeleton.style.display = 'none';
+}, 10000);
+
+/* ── Title character counter ── */
+var titleInput = document.getElementById('problem_title');
+var counter    = document.getElementById('title-counter');
+titleInput.addEventListener('input', function() {
+    var len = this.value.length;
+    counter.textContent = len + ' / 120';
+    counter.style.color = len > 100 ? '#f87171' : len > 80 ? '#fbbf24' : '';
+    markStepDone(1);
+});
+
+/* ── Step progress ── */
+function markStepDone(step) {
+    var badge = document.getElementById('step' + step + '-badge');
+    if (badge && !badge.classList.contains('done')) {
+        badge.classList.add('done');
+        badge.classList.remove('active');
+        var line = document.getElementById('line' + step);
+        if (line) line.classList.add('done');
+        // activate next
+        var next = document.getElementById('step' + (step + 1) + '-badge');
+        if (next) next.classList.add('active');
+    }
+}
+
+/* ── Difficulty radio -> step ── */
+document.querySelectorAll('input[name="difficulty"]').forEach(function(r) {
+    r.addEventListener('change', function() { markStepDone(2); });
+});
+
+/* ── Submit button state ── */
+document.getElementById('createProblemForm').addEventListener('submit', function() {
+    var btn  = document.getElementById('submitBtn');
+    var icon = document.getElementById('submitIcon');
+    var text = document.getElementById('submitText');
+    btn.disabled = true;
+    icon.className = 'fas fa-spinner fa-spin';
+    text.textContent = 'Creating…';
+});
+
+/* ── Card focus-glow on interaction ── */
+document.querySelectorAll('.form-card input, .form-card textarea').forEach(function(el) {
+    el.addEventListener('focus', function() {
+        this.closest('.form-card').classList.add('card-focused');
+    });
+    el.addEventListener('blur', function() {
+        this.closest('.form-card').classList.remove('card-focused');
+    });
+});
 </script>
 
 <style>
-    @keyframes dotBlink {
-        0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
-    }
+/* ── Animations ── */
+@keyframes dotBlink   { 0%,100%{opacity:1} 50%{opacity:.3} }
+@keyframes shimmer    { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+@keyframes fadeSlideUp{ from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+@keyframes editorReveal{ from{opacity:0;transform:scaleY(.97);transform-origin:top} to{opacity:1;transform:scaleY(1)} }
+
+.editor-dot { animation: dotBlink 1.5s ease-in-out infinite; }
+
+/* ── Form cards ── */
+.form-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    backdrop-filter: blur(8px);
+    transition: border-color .25s, box-shadow .25s;
+    animation: fadeSlideUp .4s ease both;
+}
+.form-card:nth-child(1){ animation-delay:.05s }
+.form-card:nth-child(2){ animation-delay:.1s  }
+.form-card:nth-child(3){ animation-delay:.15s }
+.form-card.card-focused {
+    border-color: rgba(99,102,241,0.35);
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.08);
+}
+
+/* ── Editor wrapper reveal ── */
+.editor-reveal { animation: editorReveal .35s ease both; }
+
+/* ── Editor skeleton / loading ── */
+.editor-skeleton {
+    border: 1px solid rgba(99,102,241,0.15);
+    background: #0d0d1a;
+}
+.skeleton-toolbar {
+    height: 46px;
+    background: linear-gradient(90deg, #1a1a2e 0%, #1e1e35 50%, #1a1a2e 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.8s linear infinite;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.skeleton-body {
+    padding: 24px 28px;
+    min-height: 260px;
+    background: #0d0d1a;
+}
+.skeleton-line {
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #1a1a2e 0%, #252540 50%, #1a1a2e 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.8s linear infinite;
+}
+
+/* ── Step progress ── */
+.step-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px 5px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
+    transition: all .3s;
+}
+.step-num {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    color: #6b7280;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .3s;
+}
+.step-label { font-size: 11px; font-weight: 600; color: #4b5563; letter-spacing: .05em; transition: color .3s; }
+
+.step-badge.active { border-color: rgba(99,102,241,0.4); background: rgba(99,102,241,0.08); }
+.step-badge.active .step-num { background: #6366f1; color: #fff; }
+.step-badge.active .step-label { color: #a5b4fc; }
+
+.step-badge.done { border-color: rgba(34,197,94,0.35); background: rgba(34,197,94,0.07); }
+.step-badge.done .step-num { background: #22c55e; color: #fff; }
+.step-badge.done .step-num::after { content: '✓'; }
+.step-badge.done .step-label { color: #86efac; }
+
+.step-line {
+    flex: 1;
+    height: 2px;
+    border-radius: 1px;
+    background: rgba(255,255,255,0.08);
+    transition: background .4s;
+}
+.step-line.done { background: rgba(34,197,94,0.4); }
 </style>
 {% endblock %}
