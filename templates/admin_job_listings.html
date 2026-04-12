@@ -135,35 +135,65 @@
 <!-- ============ POST NEW JOB MODAL ============ -->
 <div id="post-job-modal"
     class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-    <div class="bg-[#12121f] border border-white/10 rounded-2xl shadow-2xl w-full max-w-lg">
-        <div class="flex items-center justify-between p-6 border-b border-white/5">
-            <h3 class="text-base font-bold text-white flex items-center gap-2">
-                <i class="fas fa-plus-circle text-indigo-400"></i> Post New Job Opening
-            </h3>
+    <div class="bg-[#12121f] border border-white/10 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between p-6 border-b border-white/5 sticky top-0 bg-[#12121f] z-10 rounded-t-2xl">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg">
+                    <i class="fas fa-plus text-white text-sm"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">Post New Job Opening</h3>
+                    <p class="text-xs text-gray-500 mt-0.5">Use the rich editor to create a professional job description</p>
+                </div>
+            </div>
             <button onclick="document.getElementById('post-job-modal').classList.add('hidden')"
-                class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-white hover:bg-white/10 transition-all">
+                class="w-9 h-9 flex items-center justify-center rounded-xl text-gray-500 hover:text-white hover:bg-white/10 transition-all border border-white/10">
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        <form action="{{ url_for('admin_hiring.post_job') }}" method="POST" class="p-6 space-y-4">
+
+        <form action="{{ url_for('admin_hiring.post_job') }}" method="POST"
+              onsubmit="if(typeof tinymce!=='undefined') tinymce.triggerSave();"
+              class="p-6 space-y-5" id="postJobForm">
+
+            <!-- Job Title -->
             <div>
-                <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Job Title *</label>
+                <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
+                    <i class="fas fa-heading mr-1.5 text-indigo-400"></i>Job Title *
+                </label>
                 <input type="text" name="job_title" required placeholder="e.g. Senior Backend Developer"
-                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors">
+                    autocomplete="off" maxlength="120"
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all">
             </div>
+
+            <!-- Job Description — TinyMCE Rich Editor -->
             <div>
-                <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Job Description
-                    *</label>
-                <textarea name="job_description" required rows="6"
-                    placeholder="Describe the role, requirements, and responsibilities..."
-                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors resize-none"></textarea>
+                <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
+                    <i class="fas fa-file-alt mr-1.5 text-purple-400"></i>Job Description *
+                    <span class="ml-2 text-gray-600 font-normal normal-case tracking-normal">
+                        — rich text, tables, lists, and formatting supported
+                    </span>
+                </label>
+                <div class="rounded-xl overflow-hidden border border-white/10" id="editor-wrapper">
+                    <textarea name="job_description" id="jobDescriptionEditor" required rows="12"
+                        style="width:100%;background:#0d0d1a;color:#e2e8f0;border:none;padding:16px;font-size:14px;"></textarea>
+                </div>
+                <p class="mt-2 text-[11px] text-gray-600 flex items-center gap-1.5">
+                    <i class="fas fa-lightbulb text-yellow-500/50"></i>
+                    Include role overview, key responsibilities, requirements, qualifications, and benefits.
+                </p>
             </div>
-            <div class="flex gap-3 pt-2">
+
+            <!-- Action Buttons -->
+            <div class="flex gap-3 pt-3 border-t border-white/5">
                 <button type="button" onclick="document.getElementById('post-job-modal').classList.add('hidden')"
-                    class="flex-1 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-white/10 transition-all font-medium">Cancel</button>
+                    class="flex-1 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-white/10 transition-all font-medium">
+                    <i class="fas fa-times mr-1.5"></i>Cancel
+                </button>
                 <button type="submit"
-                    class="flex-1 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg">
-                    <i class="fas fa-plus mr-1.5"></i> Post Job
+                    class="flex-1 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40">
+                    <i class="fas fa-paper-plane mr-1.5"></i> Publish Job Opening
                 </button>
             </div>
         </form>
@@ -171,8 +201,136 @@
 </div>
 
 <script>
+    // Close modal on backdrop click
     document.getElementById('post-job-modal').addEventListener('click', function (e) {
         if (e.target === this) this.classList.add('hidden');
     });
+
+    // TinyMCE - Office-style rich editor
+    (function initJobEditor() {
+        if (typeof tinymce === 'undefined') {
+            // TinyMCE not loaded yet — inject the script
+            var s = document.createElement('script');
+            s.src = 'https://cdn.tiny.cloud/1/z53vyzj5hcwj6nlffpeu227p3t1sya9zs5w66nd3qshdjniq/tinymce/6/tinymce.min.js';
+            s.referrerPolicy = 'origin';
+            s.onload = function() { waitAndInit(); };
+            document.head.appendChild(s);
+        } else {
+            waitAndInit();
+        }
+
+        function waitAndInit() {
+            if (typeof tinymce === 'undefined') { setTimeout(waitAndInit, 200); return; }
+            tinymce.remove('#jobDescriptionEditor');
+            tinymce.init({
+                selector: '#jobDescriptionEditor',
+                skin: 'oxide-dark',
+                content_css: 'dark',
+                height: 420,
+                width: '100%',
+                menubar: 'file edit view insert format table tools',
+                statusbar: true,
+                resize: true,
+                branding: false,
+                promotion: false,
+                plugins: [
+                    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
+                    'preview', 'anchor', 'searchreplace', 'visualblocks', 'code',
+                    'fullscreen', 'insertdatetime', 'media', 'table',
+                    'wordcount', 'emoticons', 'help', 'codesample'
+                ],
+                toolbar: [
+                    'undo redo | styles fontfamily fontsize | bold italic underline strikethrough | forecolor backcolor',
+                    'bullist numlist | outdent indent | alignleft aligncenter alignright alignjustify | table link image emoticons | fullscreen code wordcount'
+                ],
+                toolbar_mode: 'wrap',
+                font_family_formats: 'Inter=Inter,system-ui,sans-serif; Arial=arial,helvetica,sans-serif; Courier New=courier new,courier,monospace; Georgia=georgia,palatino; Times New Roman=times new roman,times; Verdana=verdana,geneva',
+                font_size_formats: '10px 11px 12px 13px 14px 16px 18px 20px 24px 28px 36px',
+                style_formats: [
+                    { title: 'Heading 1', block: 'h1' },
+                    { title: 'Heading 2', block: 'h2' },
+                    { title: 'Heading 3', block: 'h3' },
+                    { title: 'Paragraph', block: 'p' },
+                    { title: 'Blockquote', block: 'blockquote' },
+                    { title: 'Code Block', block: 'pre' }
+                ],
+                table_default_attributes: { border: '1' },
+                table_default_styles: { 'border-collapse': 'collapse', width: '100%' },
+                content_style:
+                    'html, body { background: #0d0d1a !important; color: #e2e8f0 !important; margin: 0; }' +
+                    'body { font-family: Inter, system-ui, sans-serif; font-size: 14px; padding: 20px 24px; line-height: 1.8; }' +
+                    'h1 { font-size: 22px; color: #f1f5f9; font-weight: 800; margin: 16px 0 8px 0; }' +
+                    'h2 { font-size: 18px; color: #e2e8f0; font-weight: 700; margin: 14px 0 6px 0; }' +
+                    'h3 { font-size: 16px; color: #cbd5e1; font-weight: 600; margin: 12px 0 4px 0; }' +
+                    'p { margin: 6px 0; }' +
+                    'ul, ol { padding-left: 24px; margin: 8px 0; }' +
+                    'li { margin: 4px 0; }' +
+                    'table, td, th { border: 1px solid rgba(99,102,241,0.4) !important; padding: 8px 12px; }' +
+                    'th { background: rgba(99,102,241,0.15); font-weight: 700; color: #a5b4fc; }' +
+                    'table { border-collapse: collapse; width: 100%; margin: 14px 0; }' +
+                    'blockquote { border-left: 4px solid #6366f1; margin: 12px 0; padding: 8px 16px; background: rgba(99,102,241,0.06); color: #94a3b8; border-radius: 0 8px 8px 0; }' +
+                    'code { background: rgba(16,16,30,0.8); padding: 2px 6px; border-radius: 4px; color: #7ee787; font-family: monospace; }' +
+                    'pre { background: #010409; padding: 14px; border-radius: 8px; color: #7ee787; }' +
+                    'a { color: #818cf8; }' +
+                    'hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 16px 0; }' +
+                    '::selection { background: rgba(99,102,241,0.35); }',
+                placeholder: 'Start typing your job description...\n\nYou can use headings, bullet points, tables, and rich formatting to create a professional listing.',
+                setup: function(editor) {
+                    editor.on('change', function() { editor.save(); });
+                }
+            });
+        }
+    })();
 </script>
+
+<style>
+    /* Office-style TinyMCE toolbar refinements */
+    #post-job-modal .tox.tox-tinymce {
+        border: none !important;
+        border-radius: 12px !important;
+        overflow: hidden;
+    }
+    #post-job-modal .tox .tox-toolbar__group {
+        border-right: 1px solid rgba(255,255,255,0.06) !important;
+        padding: 0 6px !important;
+    }
+    #post-job-modal .tox .tox-toolbar {
+        background: rgba(18,18,31,0.95) !important;
+        border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+    }
+    #post-job-modal .tox .tox-menubar {
+        background: rgba(18,18,31,0.98) !important;
+        border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+    }
+    #post-job-modal .tox .tox-menubar .tox-mbtn {
+        color: #9ca3af !important;
+        font-size: 12px !important;
+    }
+    #post-job-modal .tox .tox-menubar .tox-mbtn:hover {
+        background: rgba(99,102,241,0.15) !important;
+        color: #e2e8f0 !important;
+    }
+    #post-job-modal .tox .tox-statusbar {
+        background: rgba(18,18,31,0.9) !important;
+        border-top: 1px solid rgba(255,255,255,0.06) !important;
+    }
+    #post-job-modal .tox .tox-tbtn {
+        border-radius: 6px !important;
+        margin: 2px 1px !important;
+    }
+    #post-job-modal .tox .tox-tbtn:hover {
+        background: rgba(99,102,241,0.15) !important;
+    }
+    #post-job-modal .tox .tox-tbtn--enabled,
+    #post-job-modal .tox .tox-tbtn--enabled:hover {
+        background: rgba(99,102,241,0.25) !important;
+    }
+    #editor-wrapper {
+        transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    #editor-wrapper:focus-within {
+        border-color: rgba(99,102,241,0.4) !important;
+        box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+    }
+</style>
 {% endblock %}

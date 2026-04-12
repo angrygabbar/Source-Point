@@ -164,6 +164,332 @@ def send_invoice_reminders_task():
     logger.info(f"[Scheduler] Sent {count} invoice reminders.")
 
 @celery.task
+def notify_admin_pending_invoices_task():
+    """
+    AUTOMATED SCHEDULER TASK (8 AM IST Daily):
+    Sends a digest email to the admin with all pending/unpaid/overdue invoices.
+    """
+    from models.commerce import Invoice
+    from models.auth import User
+    from decimal import Decimal
+
+    logger.info("[Scheduler] Starting Admin Pending Invoices Digest...")
+
+    # Fetch all non-paid invoices
+    pending_invoices = Invoice.query.filter(
+        Invoice.status != InvoiceStatus.PAID.value,
+        Invoice.status != InvoiceStatus.CANCELLED.value
+    ).order_by(Invoice.due_date.asc().nullsfirst()).all()
+
+    if not pending_invoices:
+        logger.info("[Scheduler] No pending invoices. Skipping admin digest.")
+        return
+
+    today = datetime.utcnow().date()
+
+    # Calculate summary stats
+    total_pending_amount = sum(inv.total_amount or Decimal('0') for inv in pending_invoices)
+
+    overdue_invoices = []
+    unpaid_invoices = []
+
+    for inv in pending_invoices:
+        # Mark overdue flag and compute days for template
+        if inv.due_date and inv.due_date < today:
+            inv.is_overdue = True
+            inv.days_past_due = (today - inv.due_date).days
+            inv.days_until_due = None
+            overdue_invoices.append(inv)
+        else:
+            inv.is_overdue = False
+            inv.days_past_due = None
+            if inv.due_date:
+                inv.days_until_due = (inv.due_date - today).days
+            else:
+                inv.days_until_due = None
+            if inv.status == InvoiceStatus.UNPAID.value:
+                unpaid_invoices.append(inv)
+
+    # Sort overdue by amount descending (highest first for priority list)
+    overdue_invoices.sort(key=lambda x: x.total_amount or 0, reverse=True)
+
+    overdue_amount = sum(inv.total_amount or Decimal('0') for inv in overdue_invoices)
+    unpaid_amount = sum(inv.total_amount or Decimal('0') for inv in unpaid_invoices)
+
+    # Format report dates in IST
+    ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
+    report_date = ist_now.strftime('%A, %B %d, %Y — %I:%M %p IST')
+    report_date_short = ist_now.strftime('%d %b %Y')
+
+    try:
+        html_content = render_template('mail/admin_pending_invoices_digest.html',
+            pending_invoices=pending_invoices,
+            total_pending_amount=total_pending_amount,
+            overdue_count=len(overdue_invoices),
+            overdue_amount=overdue_amount,
+            unpaid_count=len(unpaid_invoices),
+            unpaid_amount=unpaid_amount,
+            report_date=report_date,
+            report_date_short=report_date_short
+        )
+
+        # Send to all admin users
+        admins = User.query.filter_by(role=UserRole.ADMIN.value).all()
+        admin_emails = [{"email": a.email, "name": a.username} for a in admins if a.email]
+
+        if admin_emails:
+            _send_via_brevo_api(
+                to_list=admin_emails,
+                subject=f"📊 Daily Pending Invoices Report — {len(pending_invoices)} Unpaid (₹{total_pending_amount})",
+                html_content=html_content
+            )
+            logger.info(f"[Scheduler] Admin digest sent: {len(pending_invoices)} invoices, ₹{total_pending_amount} pending.")
+        else:
+            logger.warning("[Scheduler] No admin users found to send digest.")
+
+    except Exception as e:
+        logger.error(f"[Scheduler] Admin invoice digest failed: {e}")
+
+@celery.task
+def notify_admin_inventory_digest_task():
+    """
+    AUTOMATED SCHEDULER TASK (8:30 AM IST Daily):
+    Sends a comprehensive inventory report to admin — out-of-stock, low-stock,
+    category breakdown, seller allocations, and pending stock requests.
+    """
+    from models.commerce import Product, SellerInventory, StockRequest
+    from models.auth import User
+    from decimal import Decimal
+    from sqlalchemy import func
+
+    LOW_STOCK_THRESHOLD = 5  # Products with stock <= this are "low stock"
+
+    logger.info("[Scheduler] Starting Admin Inventory Digest...")
+
+    # --- 1. Fetch all products ---
+    all_products = Product.query.order_by(Product.stock.asc()).all()
+    if not all_products:
+        logger.info("[Scheduler] No products in catalog. Skipping inventory digest.")
+        return
+
+    # --- 2. Classify products ---
+    out_of_stock_products = [p for p in all_products if p.stock <= 0]
+    low_stock_products = [p for p in all_products if 0 < p.stock <= LOW_STOCK_THRESHOLD]
+    
+    total_products = len(all_products)
+    total_stock_units = sum(max(p.stock, 0) for p in all_products)
+    total_inventory_value = sum((p.price or Decimal('0')) * max(p.stock, 0) for p in all_products)
+
+    # --- 3. Category breakdown ---
+    category_data = db.session.query(
+        Product.category,
+        func.count(Product.id).label('count'),
+        func.sum(Product.stock).label('total_stock'),
+        func.sum(Product.price * Product.stock).label('stock_value')
+    ).group_by(Product.category).all()
+
+    category_breakdown = []
+    for cat in category_data:
+        category_breakdown.append({
+            'category': cat.category or 'Uncategorized',
+            'count': cat.count,
+            'total_stock': max(cat.total_stock or 0, 0),
+            'stock_value': max(float(cat.stock_value or 0), 0)
+        })
+    category_breakdown.sort(key=lambda x: x['stock_value'], reverse=True)
+
+    # --- 4. Seller inventory summary ---
+    sellers_with_inventory = db.session.query(
+        User.id, User.username, User.email,
+        func.count(SellerInventory.id).label('product_count'),
+        func.sum(SellerInventory.stock).label('total_stock')
+    ).join(SellerInventory, SellerInventory.seller_id == User.id
+    ).group_by(User.id, User.username, User.email).all()
+
+    seller_summary = []
+    for s in sellers_with_inventory:
+        # Calculate stock value for this seller
+        seller_items = SellerInventory.query.filter_by(seller_id=s.id).all()
+        stock_value = sum(
+            (item.product.price or Decimal('0')) * max(item.stock, 0) 
+            for item in seller_items if item.product
+        )
+        seller_summary.append({
+            'name': s.username,
+            'email': s.email,
+            'product_count': s.product_count,
+            'total_stock': max(s.total_stock or 0, 0),
+            'stock_value': float(stock_value)
+        })
+    seller_summary.sort(key=lambda x: x['stock_value'], reverse=True)
+
+    # --- 5. Pending stock requests ---
+    pending_requests_count = StockRequest.query.filter_by(status='Pending').count()
+
+    # --- 6. Format dates ---
+    ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
+    report_date = ist_now.strftime('%A, %B %d, %Y — %I:%M %p IST')
+    report_date_short = ist_now.strftime('%d %b %Y')
+
+    try:
+        html_content = render_template('mail/admin_inventory_digest.html',
+            total_products=total_products,
+            total_stock_units=total_stock_units,
+            total_inventory_value=total_inventory_value,
+            out_of_stock_count=len(out_of_stock_products),
+            out_of_stock_products=out_of_stock_products,
+            low_stock_count=len(low_stock_products),
+            low_stock_products=low_stock_products,
+            low_stock_threshold=LOW_STOCK_THRESHOLD,
+            category_breakdown=category_breakdown,
+            seller_summary=seller_summary,
+            pending_requests_count=pending_requests_count,
+            report_date=report_date,
+            report_date_short=report_date_short
+        )
+
+        # Send to all admin users
+        admins = User.query.filter_by(role=UserRole.ADMIN.value).all()
+        admin_emails = [{"email": a.email, "name": a.username} for a in admins if a.email]
+
+        if admin_emails:
+            subject_parts = [f"📦 Daily Inventory Report — {total_products} Products"]
+            if len(out_of_stock_products) > 0:
+                subject_parts.append(f"{len(out_of_stock_products)} Out of Stock")
+            if len(low_stock_products) > 0:
+                subject_parts.append(f"{len(low_stock_products)} Low Stock")
+
+            _send_via_brevo_api(
+                to_list=admin_emails,
+                subject=" · ".join(subject_parts),
+                html_content=html_content
+            )
+            logger.info(f"[Scheduler] Inventory digest sent: {total_products} products, "
+                        f"{len(out_of_stock_products)} OOS, {len(low_stock_products)} low stock.")
+        else:
+            logger.warning("[Scheduler] No admin users found to send inventory digest.")
+
+    except Exception as e:
+        logger.error(f"[Scheduler] Admin inventory digest failed: {e}")
+
+@celery.task
+def notify_sellers_inventory_digest_task():
+    """
+    AUTOMATED SCHEDULER TASK (9 AM IST Daily):
+    Sends each seller a personalized inventory digest showing ONLY their own
+    allocated products, stock levels, and pending stock requests.
+    """
+    from models.commerce import Product, SellerInventory, StockRequest
+    from models.auth import User
+    from decimal import Decimal
+
+    LOW_STOCK_THRESHOLD = 5
+
+    logger.info("[Scheduler] Starting Seller Inventory Digests...")
+
+    # Get all sellers who have inventory allocations
+    sellers = db.session.query(User).filter(
+        User.role == UserRole.SELLER.value,
+        User.id.in_(db.session.query(SellerInventory.seller_id).distinct())
+    ).all()
+
+    if not sellers:
+        logger.info("[Scheduler] No sellers with inventory found. Skipping.")
+        return
+
+    ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
+    report_date = ist_now.strftime('%A, %B %d, %Y — %I:%M %p IST')
+    report_date_short = ist_now.strftime('%d %b %Y')
+
+    sent_count = 0
+
+    for seller in sellers:
+        try:
+            # Get this seller's inventory items with product details
+            seller_inventory = SellerInventory.query.filter_by(
+                seller_id=seller.id
+            ).all()
+
+            if not seller_inventory:
+                continue
+
+            # Build item list for template
+            inventory_items = []
+            for si in seller_inventory:
+                product = si.product
+                if not product:
+                    continue
+                inventory_items.append({
+                    'product_code': product.product_code or f'SP-{product.id:04d}',
+                    'product_name': product.name,
+                    'brand': product.brand,
+                    'category': product.category,
+                    'unit_price': float(product.price or 0),
+                    'stock': si.stock,
+                })
+
+            # Sort: out of stock first, then low stock, then by name
+            inventory_items.sort(key=lambda x: (
+                0 if x['stock'] <= 0 else (1 if x['stock'] <= LOW_STOCK_THRESHOLD else 2),
+                x['product_name']
+            ))
+
+            # Calculate stats
+            total_products = len(inventory_items)
+            total_stock_units = sum(max(i['stock'], 0) for i in inventory_items)
+            total_stock_value = sum(i['unit_price'] * max(i['stock'], 0) for i in inventory_items)
+            out_of_stock_count = sum(1 for i in inventory_items if i['stock'] <= 0)
+            low_stock_count = sum(1 for i in inventory_items if 0 < i['stock'] <= LOW_STOCK_THRESHOLD)
+            healthy_count = total_products - out_of_stock_count - low_stock_count
+
+            # Get this seller's pending stock requests
+            pending_reqs = StockRequest.query.filter_by(
+                seller_id=seller.id, status='Pending'
+            ).order_by(StockRequest.request_date.desc()).all()
+
+            pending_requests = []
+            for req in pending_reqs:
+                pending_requests.append({
+                    'product_name': req.product.name if req.product else 'Unknown',
+                    'quantity': req.quantity,
+                    'request_date': req.request_date.strftime('%d %b %Y') if req.request_date else 'N/A'
+                })
+
+            html_content = render_template('mail/seller_inventory_digest.html',
+                seller_name=seller.username,
+                total_products=total_products,
+                total_stock_units=total_stock_units,
+                total_stock_value=total_stock_value,
+                out_of_stock_count=out_of_stock_count,
+                low_stock_count=low_stock_count,
+                healthy_count=healthy_count,
+                low_stock_threshold=LOW_STOCK_THRESHOLD,
+                inventory_items=inventory_items,
+                pending_requests=pending_requests,
+                report_date=report_date,
+                report_date_short=report_date_short
+            )
+
+            # Build subject line
+            subject = f"📦 Your Daily Inventory Report — {total_products} Products, {total_stock_units} Units"
+            if out_of_stock_count > 0:
+                subject += f" · ⚠️ {out_of_stock_count} Out of Stock"
+
+            _send_via_brevo_api(
+                to_list=[{"email": seller.email, "name": seller.username}],
+                subject=subject,
+                html_content=html_content
+            )
+            sent_count += 1
+            logger.info(f"[Scheduler] Seller digest sent to {seller.username}: "
+                        f"{total_products} products, {out_of_stock_count} OOS.")
+
+        except Exception as e:
+            logger.error(f"[Scheduler] Seller digest failed for {seller.username}: {e}")
+
+    logger.info(f"[Scheduler] Completed seller digests: {sent_count}/{len(sellers)} sent.")
+
+@celery.task
 def check_hiring_events_task():
     """
     AUTOMATED SCHEDULER TASK (Every 15 mins):

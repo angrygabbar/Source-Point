@@ -57,6 +57,21 @@ class Config:
             'task': 'worker.check_hiring_events_task',
             'schedule': crontab(minute='*/15'),
         },
+        # 4. Admin Pending Invoices Digest (8 AM IST Daily)
+        'admin-pending-invoices-digest': {
+            'task': 'worker.notify_admin_pending_invoices_task',
+            'schedule': crontab(hour=8, minute=0),
+        },
+        # 5. Admin Inventory Digest (8:30 AM IST Daily)
+        'admin-inventory-digest': {
+            'task': 'worker.notify_admin_inventory_digest_task',
+            'schedule': crontab(hour=8, minute=30),
+        },
+        # 6. Seller Inventory Digests (9 AM IST Daily)
+        'seller-inventory-digests': {
+            'task': 'worker.notify_sellers_inventory_digest_task',
+            'schedule': crontab(hour=9, minute=0),
+        },
     }
 
     # --- DATABASE POOLING OPTIMIZATION ---

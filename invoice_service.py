@@ -82,7 +82,7 @@ class PDF(FPDF):
         self.set_font('helvetica', '', 7.5)
         self.set_text_color(*self.c_text_muted)
         self.set_xy(10, 279)
-        self.cell(0, 4, 'support@sourcepoint.in', 0, 1, 'C')
+        self.cell(0, 4, 'admin@sourcepoint.in', 0, 1, 'C')
 
         # Page number + copyright
         self.set_font('helvetica', 'I', 7)

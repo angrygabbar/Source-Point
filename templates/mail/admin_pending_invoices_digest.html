@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pending Invoices Report — SourcePoint</title>
+</head>
+
+<body
+    style="margin:0; padding:0; background-color:#f0f2f5; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif; -webkit-text-size-adjust:100%;">
+
+    <!-- Preheader -->
+    <span style="display:none;max-height:0;overflow:hidden;">
+        📊 Admin Report: {{ pending_invoices|length }} pending invoice{{ 's' if pending_invoices|length != 1 else '' }} totalling ₹{{ '{:,.2f}'.format(total_pending_amount|float) }} require follow-up. {{ overdue_count }} overdue.
+    </span>
+
+    <!-- Outer wrapper -->
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f0f2f5;">
+        <tr>
+            <td align="center" style="padding:40px 16px;">
+
+                <!-- Card -->
+                <table role="presentation" width="680" cellspacing="0" cellpadding="0"
+                    style="max-width:680px; width:100%; background:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.09);">
+
+                    <!-- ═══════════ HEADER ═══════════ -->
+                    <tr>
+                        <td style="background:#ffffff; padding:28px 40px 22px 40px; border-bottom:1px solid #e8e8e8;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <!-- Brand -->
+                                    <td valign="middle">
+                                        <table role="presentation" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td valign="middle"
+                                                    style="background:linear-gradient(135deg,#dc2626 0%,#ef4444 100%); border-radius:10px; padding:10px 14px;">
+                                                    <span
+                                                        style="font-size:20px; font-weight:800; color:#ffffff; letter-spacing:-0.5px;">SP</span>
+                                                </td>
+                                                <td valign="middle" style="padding-left:12px;">
+                                                    <div
+                                                        style="font-size:20px; font-weight:700; color:#111827; letter-spacing:-0.3px;">
+                                                        Source Point</div>
+                                                    <div style="font-size:11px; color:#6b7280; margin-top:1px;">Finance
+                                                        &amp; Collections</div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                    <!-- Report Badge -->
+                                    <td align="right" valign="middle">
+                                        <div
+                                            style="display:inline-block; background:#fef2f2; border:1.5px solid #fca5a5; border-radius:8px; padding:10px 18px; text-align:right;">
+                                            <div
+                                                style="font-size:11px; color:#dc2626; font-weight:600; text-transform:uppercase; letter-spacing:0.8px;">
+                                                DAILY REPORT</div>
+                                            <div
+                                                style="font-size:14px; font-weight:700; color:#b91c1c; margin-top:2px;">
+                                                {{ report_date_short }}</div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Red accent stripe -->
+                    <tr>
+                        <td
+                            style="background:linear-gradient(90deg,#dc2626 0%,#ef4444 50%,#f87171 100%); height:4px; font-size:0; line-height:0;">
+                            &nbsp;</td>
+                    </tr>
+
+                    <!-- ═══════════ ALERT BANNER ═══════════ -->
+                    <tr>
+                        <td style="background:#fef2f2; padding:20px 40px; border-bottom:1px solid #fecaca;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td valign="middle">
+                                        <span style="font-size:22px; vertical-align:middle;">📊</span>
+                                        <span
+                                            style="font-size:17px; font-weight:600; color:#991b1b; margin-left:8px; vertical-align:middle;">
+                                            Pending Invoices Summary
+                                        </span>
+                                        <div style="font-size:13px; color:#b91c1c; margin-top:6px; margin-left:30px;">
+                                            <strong>{{ pending_invoices|length }}</strong> invoice{{ 's' if pending_invoices|length != 1 else '' }}
+                                            remain{{ '' if pending_invoices|length != 1 else 's' }} unpaid as of <strong>{{ report_date }}</strong>.
+                                            Total outstanding amount: <strong>₹{{ '{:,.2f}'.format(total_pending_amount|float) }}</strong>.
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- ═══════════ QUICK STATS STRIP ═══════════ -->
+                    <tr>
+                        <td style="background:#fafafa; padding:18px 40px; border-bottom:1px solid #e8e8e8;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <!-- Total Outstanding -->
+                                    <td width="25%" style="border-right:1px solid #e5e7eb; padding-right:16px;">
+                                        <div
+                                            style="font-size:10px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.6px;">
+                                            Total Outstanding</div>
+                                        <div style="font-size:18px; color:#dc2626; font-weight:800; margin-top:4px;">
+                                            ₹{{ '{:,.2f}'.format(total_pending_amount|float) }}</div>
+                                    </td>
+                                    <!-- Invoice Count -->
+                                    <td width="25%"
+                                        style="border-right:1px solid #e5e7eb; padding-left:16px; padding-right:16px;">
+                                        <div
+                                            style="font-size:10px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.6px;">
+                                            Pending Invoices</div>
+                                        <div style="font-size:18px; color:#111827; font-weight:800; margin-top:4px;">
+                                            {{ pending_invoices|length }}</div>
+                                    </td>
+                                    <!-- Overdue -->
+                                    <td width="25%"
+                                        style="border-right:1px solid #e5e7eb; padding-left:16px; padding-right:16px;">
+                                        <div
+                                            style="font-size:10px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.6px;">
+                                            Overdue</div>
+                                        <div style="margin-top:4px;">
+                                            {% if overdue_count > 0 %}
+                                            <span
+                                                style="display:inline-block; background:#fef2f2; color:#dc2626; font-size:16px; font-weight:800; padding:2px 10px; border-radius:20px; border: 1px solid #fca5a5;">
+                                                {{ overdue_count }}
+                                            </span>
+                                            {% else %}
+                                            <span style="font-size:18px; color:#16a34a; font-weight:800;">0</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <!-- Unpaid -->
+                                    <td width="25%" style="padding-left:16px;">
+                                        <div
+                                            style="font-size:10px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.6px;">
+                                            Unpaid (On Time)</div>
+                                        <div style="font-size:18px; color:#d97706; font-weight:800; margin-top:4px;">
+                                            {{ unpaid_count }}</div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- ═══════════ OVERDUE ALERT (Conditional) ═══════════ -->
+                    {% if overdue_count > 0 %}
+                    <tr>
+                        <td style="padding:20px 40px 0 40px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background:#fef2f2; border-left:4px solid #dc2626; border-radius:0 8px 8px 0;">
+                                <tr>
+                                    <td style="padding:14px 18px;">
+                                        <div
+                                            style="font-size:12px; font-weight:700; color:#991b1b; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">
+                                            🚨 Overdue Alert — Immediate Action Required
+                                        </div>
+                                        <div style="font-size:13px; color:#b91c1c; line-height:1.6;">
+                                            <strong>{{ overdue_count }}</strong> invoice{{ 's' if overdue_count != 1 else '' }}
+                                            totalling <strong>₹{{ '{:,.2f}'.format(overdue_amount|float) }}</strong>
+                                            {{ 'have' if overdue_count != 1 else 'has' }} crossed the payment deadline.
+                                            These customers should be contacted immediately to recover the outstanding balance
+                                            and avoid further revenue delay.
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    <!-- ═══════════ INVOICE TABLE ═══════════ -->
+                    <tr>
+                        <td style="padding:24px 40px 0 40px;">
+
+                            <div style="font-size:14px; font-weight:600; color:#374151; padding:0 0 12px 0;">
+                                Detailed Invoice Breakdown
+                            </div>
+
+                            <!-- Table -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="border-radius:10px; overflow:hidden; border:1px solid #e5e7eb;">
+
+                                <!-- Table Header -->
+                                <tr style="background:linear-gradient(90deg,#7f1d1d 0%,#991b1b 100%);">
+                                    <td width="5%"
+                                        style="padding:12px 8px 12px 16px; font-size:11px; color:#fecaca; font-weight:700; text-transform:uppercase; letter-spacing:0.6px;">
+                                        #</td>
+                                    <td width="18%"
+                                        style="padding:12px 8px; font-size:11px; color:#fecaca; font-weight:700; text-transform:uppercase; letter-spacing:0.6px;">
+                                        Invoice</td>
+                                    <td width="27%"
+                                        style="padding:12px 8px; font-size:11px; color:#fecaca; font-weight:700; text-transform:uppercase; letter-spacing:0.6px;">
+                                        Customer</td>
+                                    <td width="15%"
+                                        style="padding:12px 8px; font-size:11px; color:#fecaca; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; text-align:right;">
+                                        Amount</td>
+                                    <td width="15%"
+                                        style="padding:12px 8px; font-size:11px; color:#fecaca; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; text-align:center;">
+                                        Due Date</td>
+                                    <td width="10%"
+                                        style="padding:12px 8px; font-size:11px; color:#fecaca; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; text-align:center;">
+                                        Days</td>
+                                    <td width="10%"
+                                        style="padding:12px 16px 12px 8px; font-size:11px; color:#fecaca; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; text-align:center;">
+                                        Status</td>
+                                </tr>
+
+                                {% for inv in pending_invoices %}
+                                <tr
+                                    style="background:{% if loop.index is odd %}#ffffff{% else %}#f9fafb{% endif %}; border-top:1px solid #e5e7eb;">
+                                    <!-- # -->
+                                    <td
+                                        style="padding:14px 8px 14px 16px; font-size:12px; color:#9ca3af; font-weight:600; vertical-align:top;">
+                                        {{ loop.index }}
+                                    </td>
+                                    <!-- Invoice Number + Date -->
+                                    <td style="padding:14px 8px; vertical-align:top;">
+                                        <div style="font-size:13px; font-weight:700; color:#111827;">
+                                            {{ inv.invoice_number }}</div>
+                                        <div style="font-size:11px; color:#9ca3af; margin-top:2px;">
+                                            Issued: {{ inv.created_at.strftime('%d %b %Y') if inv.created_at else 'N/A' }}
+                                        </div>
+                                    </td>
+                                    <!-- Customer -->
+                                    <td style="padding:14px 8px; vertical-align:top;">
+                                        <div style="font-size:13px; font-weight:600; color:#111827; line-height:1.4;">
+                                            {{ inv.recipient_name }}</div>
+                                        <div style="font-size:11px; color:#6b7280; margin-top:2px;">
+                                            {{ inv.recipient_email }}</div>
+                                        {% if inv.bill_to_address %}
+                                        <div style="font-size:10px; color:#9ca3af; margin-top:2px; line-height:1.4;">
+                                            📍 {{ inv.bill_to_address[:50] }}{{ '...' if inv.bill_to_address|length > 50 else '' }}
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                    <!-- Amount -->
+                                    <td style="padding:14px 8px; vertical-align:top; text-align:right;">
+                                        <div style="font-size:14px; color:#dc2626; font-weight:700;">
+                                            ₹{{ '{:,.2f}'.format(inv.total_amount|float) }}</div>
+                                        {% if inv.tax and inv.tax > 0 %}
+                                        <div style="font-size:10px; color:#9ca3af; margin-top:2px;">
+                                            incl. ₹{{ '{:,.2f}'.format(inv.tax|float) }} tax</div>
+                                        {% endif %}
+                                    </td>
+                                    <!-- Due Date -->
+                                    <td style="padding:14px 8px; vertical-align:top; text-align:center;">
+                                        {% if inv.due_date %}
+                                        <div style="font-size:12px; color:{% if inv.is_overdue %}#dc2626{% else %}#374151{% endif %}; font-weight:{% if inv.is_overdue %}700{% else %}500{% endif %};">
+                                            {{ inv.due_date.strftime('%d %b %Y') }}</div>
+                                        {% else %}
+                                        <div style="font-size:12px; color:#6b7280; font-style:italic;">On Receipt</div>
+                                        {% endif %}
+                                    </td>
+                                    <!-- Days Overdue / Remaining -->
+                                    <td style="padding:14px 8px; vertical-align:top; text-align:center;">
+                                        {% if inv.is_overdue and inv.days_past_due is defined %}
+                                        <span
+                                            style="display:inline-block; background:#fef2f2; color:#dc2626; font-size:11px; font-weight:700; padding:3px 8px; border-radius:20px; border:1px solid #fca5a5;">
+                                            {{ inv.days_past_due }}d late
+                                        </span>
+                                        {% elif inv.days_until_due is defined and inv.days_until_due is not none %}
+                                        <span
+                                            style="display:inline-block; background:#f0fdf4; color:#16a34a; font-size:11px; font-weight:600; padding:3px 8px; border-radius:20px; border:1px solid #bbf7d0;">
+                                            {{ inv.days_until_due }}d left
+                                        </span>
+                                        {% else %}
+                                        <span style="font-size:11px; color:#9ca3af;">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <!-- Status Badge -->
+                                    <td style="padding:14px 16px 14px 8px; vertical-align:top; text-align:center;">
+                                        {% if inv.is_overdue %}
+                                        <span
+                                            style="display:inline-block; background:#dc2626; color:#ffffff; font-size:10px; font-weight:700; padding:4px 10px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px;">
+                                            Overdue
+                                        </span>
+                                        {% else %}
+                                        <span
+                                            style="display:inline-block; background:#fffbeb; color:#d97706; font-size:10px; font-weight:700; padding:4px 10px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px; border:1px solid #fde68a;">
+                                            {{ inv.status }}
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+
+                                <!-- Table Footer / Grand Total -->
+                                <tr style="background:linear-gradient(90deg,#7f1d1d 0%,#991b1b 100%);">
+                                    <td colspan="3"
+                                        style="padding:14px 16px; font-size:13px; color:#fecaca; font-weight:600;">
+                                        GRAND TOTAL — {{ pending_invoices|length }} Invoice{{ 's' if pending_invoices|length != 1 else '' }}
+                                    </td>
+                                    <td
+                                        style="padding:14px 8px; font-size:18px; color:#ffffff; font-weight:800; text-align:right;">
+                                        ₹{{ '{:,.2f}'.format(total_pending_amount|float) }}
+                                    </td>
+                                    <td colspan="3">&nbsp;</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- ═══════════ BREAKDOWN CARDS ═══════════ -->
+                    <tr>
+                        <td style="padding:24px 40px 0 40px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <!-- Overdue Breakdown -->
+                                    <td width="48%" valign="top"
+                                        style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:16px 18px;">
+                                        <div
+                                            style="font-size:10px; color:#dc2626; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:8px;">
+                                            🔴 Overdue Invoices
+                                        </div>
+                                        <div style="font-size:24px; font-weight:800; color:#dc2626;">
+                                            ₹{{ '{:,.2f}'.format(overdue_amount|float) }}</div>
+                                        <div style="font-size:12px; color:#991b1b; margin-top:4px;">
+                                            {{ overdue_count }} invoice{{ 's' if overdue_count != 1 else '' }} past due date
+                                        </div>
+                                    </td>
+                                    <td width="4%"></td>
+                                    <!-- Unpaid (On Time) Breakdown -->
+                                    <td width="48%" valign="top"
+                                        style="background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:16px 18px;">
+                                        <div
+                                            style="font-size:10px; color:#d97706; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:8px;">
+                                            🟡 Unpaid (Not Yet Due)
+                                        </div>
+                                        <div style="font-size:24px; font-weight:800; color:#d97706;">
+                                            ₹{{ '{:,.2f}'.format(unpaid_amount|float) }}</div>
+                                        <div style="font-size:12px; color:#92400e; margin-top:4px;">
+                                            {{ unpaid_count }} invoice{{ 's' if unpaid_count != 1 else '' }} within payment window
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- ═══════════ TOP OVERDUE CUSTOMERS ═══════════ -->
+                    {% if overdue_count > 0 %}
+                    <tr>
+                        <td style="padding:24px 40px 0 40px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background:#fafafa; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;">
+                                <tr>
+                                    <td style="padding:16px 20px; border-bottom: 1px solid #e5e7eb;">
+                                        <span style="font-size:16px;">⚡</span>
+                                        <span
+                                            style="font-size:13px; font-weight:700; color:#374151; margin-left:6px; vertical-align:middle;">Priority
+                                            Follow-Up List</span>
+                                        <span style="font-size:11px; color:#9ca3af; margin-left:8px;">Sorted by amount owed (highest first)</span>
+                                    </td>
+                                </tr>
+                                {% for inv in pending_invoices if inv.is_overdue %}
+                                <tr style="border-bottom:1px solid #f3f4f6;">
+                                    <td style="padding:12px 20px;">
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td valign="middle" width="40%">
+                                                    <div style="font-size:13px; font-weight:600; color:#111827;">
+                                                        {{ inv.recipient_name }}</div>
+                                                    <div style="font-size:11px; color:#6b7280;">{{ inv.recipient_email }}
+                                                    </div>
+                                                </td>
+                                                <td valign="middle" width="25%">
+                                                    <span
+                                                        style="font-size:11px; font-family:monospace; color:#6b7280; background:#f3f4f6; padding:3px 7px; border-radius:4px;">
+                                                        {{ inv.invoice_number }}
+                                                    </span>
+                                                </td>
+                                                <td valign="middle" width="20%" style="text-align:right;">
+                                                    <span style="font-size:14px; font-weight:700; color:#dc2626;">
+                                                        ₹{{ '{:,.2f}'.format(inv.total_amount|float) }}
+                                                    </span>
+                                                </td>
+                                                <td valign="middle" width="15%" style="text-align:right;">
+                                                    {% if inv.days_past_due is defined %}
+                                                    <span
+                                                        style="font-size:11px; color:#dc2626; font-weight:700;">
+                                                        {{ inv.days_past_due }} days late
+                                                    </span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    <!-- ═══════════ NOTES / RECOMMENDATIONS ═══════════ -->
+                    <tr>
+                        <td style="padding:24px 40px 0 40px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background:#eff6ff; border-left:4px solid #3b82f6; border-radius:0 8px 8px 0;">
+                                <tr>
+                                    <td style="padding:14px 18px;">
+                                        <div
+                                            style="font-size:12px; font-weight:700; color:#1e40af; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">
+                                            💡 Recommended Actions
+                                        </div>
+                                        <div style="font-size:13px; color:#1e3a5f; line-height:1.7;">
+                                            {% if overdue_count > 0 %}
+                                            • Send follow-up reminders to {{ overdue_count }} overdue customer{{ 's' if overdue_count != 1 else '' }} via the Broadcast Email tool.<br>
+                                            {% endif %}
+                                            • Review invoices nearing due date and send pre-due reminders.<br>
+                                            • Consider offering payment plans for high-value outstanding invoices.<br>
+                                            • Log into the <strong>Admin Commerce Dashboard</strong> to manage invoices directly.
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- ═══════════ GENERATION INFO ═══════════ -->
+                    <tr>
+                        <td style="padding:24px 40px 28px 40px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px;">
+                                <tr>
+                                    <td style="padding:12px 16px;">
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td style="font-size:11px; color:#9ca3af;">
+                                                    <strong style="color:#6b7280;">Report Generated:</strong> {{ report_date }}
+                                                </td>
+                                                <td style="font-size:11px; color:#9ca3af; text-align:right;">
+                                                    <strong style="color:#6b7280;">Next Report:</strong> Tomorrow at 8:00 AM IST
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Bottom accent stripe -->
+                    <tr>
+                        <td
+                            style="background:linear-gradient(90deg,#dc2626 0%,#ef4444 50%,#f87171 100%); height:4px; font-size:0; line-height:0;">
+                            &nbsp;</td>
+                    </tr>
+
+                    <!-- ═══════════ FOOTER ═══════════ -->
+                    <tr>
+                        <td style="background:#f9fafb; padding:24px 40px; border-top:1px solid #e5e7eb;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td align="center">
+                                        <p style="margin:0 0 6px 0; font-size:13px; color:#374151; font-weight:600;">
+                                            Source Point — Finance &amp; Collections
+                                        </p>
+                                        <p style="margin:0 0 10px 0; font-size:11px; color:#9ca3af;">
+                                            This is an automated daily report. For questions, contact
+                                            <a href="mailto:admin@sourcepoint.in"
+                                                style="color:#dc2626; text-decoration:none;">admin@sourcepoint.in</a>
+                                        </p>
+                                        <p style="margin:0; font-size:10px; color:#d1d5db; line-height:1.7;">
+                                            © 2026 Source Point. All rights reserved. &nbsp;·&nbsp;
+                                            <a href="#" style="color:#d1d5db; text-decoration:none;">Privacy Policy</a>
+                                            &nbsp;·&nbsp;
+                                            <a href="#" style="color:#d1d5db; text-decoration:none;">Unsubscribe</a>
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                </table>
+                <!-- /Card -->
+
+            </td>
+        </tr>
+    </table>
+    <!-- /Outer wrapper -->
+
+</body>
+
+</html>

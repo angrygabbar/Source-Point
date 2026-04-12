@@ -2,39 +2,43 @@
 {% block title %}System Records{% endblock %}
 {% block content %}
 
-<div class="space-y-8 animate-fade-in pb-20" x-data="{ currentTab: 'jobs' }">
+<div class="space-y-8 animate-fade-in pb-20" x-data="{ currentTab: 'jobs', expandedRow: null }">
     
     <div class="flex flex-col md:flex-row justify-between items-end gap-6 border-b border-white/5 pb-8">
         <div>
             <h1 class="text-4xl font-extrabold text-white tracking-tight">System Records</h1>
-            <p class="text-gray-400 text-sm mt-2">Archives for jobs, feedback, code submissions, and assignment history.</p>
+            <p class="text-gray-400 text-sm mt-2">Archives for jobs, feedback, code submissions, and assignment history. Click any row to expand full details.</p>
         </div>
         
         <div class="flex bg-black/20 p-1 rounded-xl border border-white/5 backdrop-blur-md">
-            <button @click="currentTab = 'jobs'" :class="currentTab === 'jobs' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'" class="px-4 py-2 rounded-lg text-sm font-bold transition-all">
-                Jobs
+            <button @click="currentTab = 'jobs'; expandedRow = null" :class="currentTab === 'jobs' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'" class="px-4 py-2 rounded-lg text-sm font-bold transition-all">
+                <i class="fas fa-briefcase mr-1.5"></i>Jobs
             </button>
-            <button @click="currentTab = 'feedback'" :class="currentTab === 'feedback' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'" class="px-4 py-2 rounded-lg text-sm font-bold transition-all">
-                Feedback
+            <button @click="currentTab = 'feedback'; expandedRow = null" :class="currentTab === 'feedback' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'" class="px-4 py-2 rounded-lg text-sm font-bold transition-all">
+                <i class="fas fa-comments mr-1.5"></i>Feedback
             </button>
-            <button @click="currentTab = 'submissions'" :class="currentTab === 'submissions' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'" class="px-4 py-2 rounded-lg text-sm font-bold transition-all">
-                Code Tests
+            <button @click="currentTab = 'submissions'; expandedRow = null" :class="currentTab === 'submissions' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'" class="px-4 py-2 rounded-lg text-sm font-bold transition-all">
+                <i class="fas fa-code mr-1.5"></i>Code Tests
             </button>
-            <button @click="currentTab = 'history'" :class="currentTab === 'history' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'" class="px-4 py-2 rounded-lg text-sm font-bold transition-all">
-                History
+            <button @click="currentTab = 'history'; expandedRow = null" :class="currentTab === 'history' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'" class="px-4 py-2 rounded-lg text-sm font-bold transition-all">
+                <i class="fas fa-history mr-1.5"></i>History
             </button>
         </div>
     </div>
 
+    <!-- ═══════════ JOBS TAB ═══════════ -->
     <div x-show="currentTab === 'jobs'" class="glass-panel rounded-2xl overflow-hidden border border-white/10" x-transition.opacity>
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 class="font-bold text-white">Active Job Openings</h3>
-            <span class="text-xs text-gray-500 bg-white/5 px-2 py-1 rounded">{{ jobs|length }} Records</span>
+            <h3 class="font-bold text-white flex items-center gap-2">
+                <i class="fas fa-briefcase text-indigo-400"></i> Active Job Openings
+            </h3>
+            <span class="text-xs text-gray-500 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">{{ jobs|length }} Records</span>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left text-sm text-gray-400">
                 <thead class="bg-black/20 text-xs uppercase font-bold text-gray-500">
                     <tr>
+                        <th class="px-6 py-4 w-8"></th>
                         <th class="px-6 py-4">Title</th>
                         <th class="px-6 py-4">Description</th>
                         <th class="px-6 py-4">Posted Date</th>
@@ -43,11 +47,18 @@
                 </thead>
                 <tbody class="divide-y divide-white/5">
                     {% for job in jobs %}
-                    <tr id="job-{{ job.id }}" class="hover:bg-white/5 transition-colors">
+                    <tr id="job-{{ job.id }}" 
+                        @click="expandedRow = expandedRow === 'job-{{ job.id }}' ? null : 'job-{{ job.id }}'"
+                        class="hover:bg-white/5 transition-colors cursor-pointer"
+                        :class="expandedRow === 'job-{{ job.id }}' && 'bg-indigo-500/5'">
+                        <td class="px-6 py-4 text-center">
+                            <i class="fas fa-chevron-right text-[10px] text-gray-600 transition-transform duration-200"
+                               :class="expandedRow === 'job-{{ job.id }}' && 'rotate-90 text-indigo-400'"></i>
+                        </td>
                         <td class="px-6 py-4 font-medium text-white">{{ job.title }}</td>
-                        <td class="px-6 py-4 truncate max-w-xs">{{ job.description }}</td>
+                        <td class="px-6 py-4 truncate max-w-xs">{{ job.description[:80] }}{% if job.description|length > 80 %}…{% endif %}</td>
                         <td class="px-6 py-4">{{ job.created_at.strftime('%Y-%m-%d') }}</td>
-                        <td class="px-6 py-4 text-right">
+                        <td class="px-6 py-4 text-right" @click.stop>
                             <button data-url="{{ url_for('admin_hiring.delete_job_opening', job_id=job.id) }}" 
                                     onclick="handleAjaxUrl(event, this.dataset.url, 'Delete this job opening?')"
                                     class="text-red-400 hover:text-red-300 transition-colors p-2 rounded hover:bg-red-500/10">
@@ -55,23 +66,50 @@
                             </button>
                         </td>
                     </tr>
+                    <!-- Expanded Detail -->
+                    <tr x-show="expandedRow === 'job-{{ job.id }}'" x-collapse>
+                        <td colspan="5" class="px-0 py-0">
+                            <div class="mx-6 my-4 p-5 rounded-xl bg-black/30 border border-white/8 space-y-4">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <i class="fas fa-briefcase text-indigo-400"></i>
+                                    <span class="text-sm font-bold text-white">{{ job.title }}</span>
+                                    <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ml-2
+                                        {% if job.is_open %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20{% else %}bg-red-500/10 text-red-400 border border-red-500/20{% endif %}">
+                                        {{ 'Open' if job.is_open else 'Closed' }}
+                                    </span>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] uppercase tracking-widest font-bold text-gray-500 mb-2">Full Description</p>
+                                    <div class="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap bg-black/20 rounded-lg p-4 border border-white/5 max-h-80 overflow-y-auto">{{ job.description }}</div>
+                                </div>
+                                <div class="flex gap-6 text-xs text-gray-500 pt-2 border-t border-white/5">
+                                    <span><i class="fas fa-calendar mr-1"></i> Posted: {{ job.created_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                                    <span><i class="fas fa-users mr-1"></i> {{ job.applications|length }} Application{{ 's' if job.applications|length != 1 else '' }}</span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
                     {% else %}
-                    <tr><td colspan="4" class="px-6 py-8 text-center text-gray-500 italic">No job openings found.</td></tr>
+                    <tr><td colspan="5" class="px-6 py-8 text-center text-gray-500 italic">No job openings found.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
 
+    <!-- ═══════════ FEEDBACK TAB ═══════════ -->
     <div x-show="currentTab === 'feedback'" class="glass-panel rounded-2xl overflow-hidden border border-white/10" x-cloak x-transition.opacity>
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 class="font-bold text-white">Interview Feedback</h3>
-            <span class="text-xs text-gray-500 bg-white/5 px-2 py-1 rounded">{{ feedback|length }} Records</span>
+            <h3 class="font-bold text-white flex items-center gap-2">
+                <i class="fas fa-comments text-amber-400"></i> Interview Feedback
+            </h3>
+            <span class="text-xs text-gray-500 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">{{ feedback|length }} Records</span>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left text-sm text-gray-400">
                 <thead class="bg-black/20 text-xs uppercase font-bold text-gray-500">
                     <tr>
+                        <th class="px-6 py-4 w-8"></th>
                         <th class="px-6 py-4">Candidate</th>
                         <th class="px-6 py-4">Moderator</th>
                         <th class="px-6 py-4">Rating</th>
@@ -81,7 +119,14 @@
                 </thead>
                 <tbody class="divide-y divide-white/5">
                     {% for feed in feedback %}
-                    <tr id="feed-{{ feed.id }}" class="hover:bg-white/5 transition-colors">
+                    <tr id="feed-{{ feed.id }}"
+                        @click="expandedRow = expandedRow === 'feed-{{ feed.id }}' ? null : 'feed-{{ feed.id }}'"
+                        class="hover:bg-white/5 transition-colors cursor-pointer"
+                        :class="expandedRow === 'feed-{{ feed.id }}' && 'bg-amber-500/5'">
+                        <td class="px-6 py-4 text-center">
+                            <i class="fas fa-chevron-right text-[10px] text-gray-600 transition-transform duration-200"
+                               :class="expandedRow === 'feed-{{ feed.id }}' && 'rotate-90 text-amber-400'"></i>
+                        </td>
                         <td class="px-6 py-4 font-medium text-white">{{ feed.candidate.username }}</td>
                         <td class="px-6 py-4">{{ feed.moderator.username }}</td>
                         <td class="px-6 py-4">
@@ -92,8 +137,8 @@
                                 {{ feed.rating }}/5
                             </span>
                         </td>
-                        <td class="px-6 py-4 truncate max-w-xs">{{ feed.remarks }}</td>
-                        <td class="px-6 py-4 text-right">
+                        <td class="px-6 py-4 truncate max-w-xs">{{ feed.remarks[:60] }}{% if feed.remarks and feed.remarks|length > 60 %}…{% endif %}</td>
+                        <td class="px-6 py-4 text-right" @click.stop>
                             <button data-url="{{ url_for('admin_hiring.delete_feedback', feedback_id=feed.id) }}" 
                                     onclick="handleAjaxUrl(event, this.dataset.url, 'Delete this feedback?')"
                                     class="text-red-400 hover:text-red-300 transition-colors p-2 rounded hover:bg-red-500/10">
@@ -101,23 +146,73 @@
                             </button>
                         </td>
                     </tr>
+                    <!-- Expanded Detail -->
+                    <tr x-show="expandedRow === 'feed-{{ feed.id }}'" x-collapse>
+                        <td colspan="6" class="px-0 py-0">
+                            <div class="mx-6 my-4 p-5 rounded-xl bg-black/30 border border-white/8 space-y-4">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <i class="fas fa-star text-amber-400"></i>
+                                    <span class="text-sm font-bold text-white">Feedback for {{ feed.candidate.username }}</span>
+                                    <span class="text-xs text-gray-500">by {{ feed.moderator.username }}</span>
+                                </div>
+                                <!-- Score Breakdown -->
+                                <div class="grid grid-cols-5 gap-3">
+                                    <div class="bg-black/20 rounded-lg p-3 border border-white/5 text-center">
+                                        <p class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-1">Correctness</p>
+                                        <p class="text-lg font-black text-white">{{ feed.code_correctness }}<span class="text-xs text-gray-500">/5</span></p>
+                                    </div>
+                                    <div class="bg-black/20 rounded-lg p-3 border border-white/5 text-center">
+                                        <p class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-1">Efficiency</p>
+                                        <p class="text-lg font-black text-white">{{ feed.code_efficiency }}<span class="text-xs text-gray-500">/5</span></p>
+                                    </div>
+                                    <div class="bg-black/20 rounded-lg p-3 border border-white/5 text-center">
+                                        <p class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-1">Readability</p>
+                                        <p class="text-lg font-black text-white">{{ feed.code_readability }}<span class="text-xs text-gray-500">/5</span></p>
+                                    </div>
+                                    <div class="bg-black/20 rounded-lg p-3 border border-white/5 text-center">
+                                        <p class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-1">Problem Solving</p>
+                                        <p class="text-lg font-black text-white">{{ feed.problem_solving }}<span class="text-xs text-gray-500">/5</span></p>
+                                    </div>
+                                    <div class="bg-black/20 rounded-lg p-3 border border-white/5 text-center">
+                                        <p class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-1">Time Mgmt</p>
+                                        <p class="text-lg font-black text-white">{{ feed.time_management }}<span class="text-xs text-gray-500">/5</span></p>
+                                    </div>
+                                </div>
+                                <!-- Remarks -->
+                                {% if feed.remarks %}
+                                <div>
+                                    <p class="text-[10px] uppercase tracking-widest font-bold text-gray-500 mb-2">Full Remarks</p>
+                                    <div class="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap bg-black/20 rounded-lg p-4 border border-white/5 max-h-60 overflow-y-auto">{{ feed.remarks }}</div>
+                                </div>
+                                {% endif %}
+                                <div class="flex gap-6 text-xs text-gray-500 pt-2 border-t border-white/5">
+                                    <span><i class="fas fa-calendar mr-1"></i> {{ feed.created_at.strftime('%B %d, %Y at %I:%M %p') if feed.created_at else 'N/A' }}</span>
+                                    <span><i class="fas fa-star mr-1"></i> Overall: {{ feed.rating }}/5</span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
                     {% else %}
-                    <tr><td colspan="5" class="px-6 py-8 text-center text-gray-500 italic">No feedback records found.</td></tr>
+                    <tr><td colspan="6" class="px-6 py-8 text-center text-gray-500 italic">No feedback records found.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
 
+    <!-- ═══════════ CODE TESTS TAB ═══════════ -->
     <div x-show="currentTab === 'submissions'" class="glass-panel rounded-2xl overflow-hidden border border-white/10" x-cloak x-transition.opacity>
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 class="font-bold text-white">Code Test Submissions</h3>
-            <span class="text-xs text-gray-500 bg-white/5 px-2 py-1 rounded">{{ submissions|length }} Records</span>
+            <h3 class="font-bold text-white flex items-center gap-2">
+                <i class="fas fa-code text-cyan-400"></i> Code Test Submissions
+            </h3>
+            <span class="text-xs text-gray-500 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">{{ submissions|length }} Records</span>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left text-sm text-gray-400">
                 <thead class="bg-black/20 text-xs uppercase font-bold text-gray-500">
                     <tr>
+                        <th class="px-6 py-4 w-8"></th>
                         <th class="px-6 py-4">Candidate</th>
                         <th class="px-6 py-4">Language</th>
                         <th class="px-6 py-4">Submitted At</th>
@@ -127,14 +222,24 @@
                 </thead>
                 <tbody class="divide-y divide-white/5">
                     {% for sub in submissions %}
-                    <tr id="sub-{{ sub.id }}" class="hover:bg-white/5 transition-colors">
+                    <tr id="sub-{{ sub.id }}"
+                        @click="expandedRow = expandedRow === 'sub-{{ sub.id }}' ? null : 'sub-{{ sub.id }}'"
+                        class="hover:bg-white/5 transition-colors cursor-pointer"
+                        :class="expandedRow === 'sub-{{ sub.id }}' && 'bg-cyan-500/5'">
+                        <td class="px-6 py-4 text-center">
+                            <i class="fas fa-chevron-right text-[10px] text-gray-600 transition-transform duration-200"
+                               :class="expandedRow === 'sub-{{ sub.id }}' && 'rotate-90 text-cyan-400'"></i>
+                        </td>
                         <td class="px-6 py-4 font-medium text-white">{{ sub.candidate.username }}</td>
                         <td class="px-6 py-4">
                             <span class="px-2 py-1 bg-blue-500/10 text-blue-400 rounded text-xs font-mono border border-blue-500/20">{{ sub.language }}</span>
                         </td>
                         <td class="px-6 py-4">{{ sub.submitted_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                        <td class="px-6 py-4 font-mono text-xs text-gray-500 truncate max-w-xs">{{ sub.output[:50] }}...</td>
-                        <td class="px-6 py-4 text-right">
+                        <td class="px-6 py-4 font-mono text-xs text-gray-500 truncate max-w-xs">
+                            {{ sub.output[:50] if sub.output else 'No output' }}{% if sub.output and sub.output|length > 50 %}…{% endif %}
+                            <span class="ml-1 text-[10px] text-cyan-500 font-sans">(click to expand)</span>
+                        </td>
+                        <td class="px-6 py-4 text-right" @click.stop>
                             <button data-url="{{ url_for('admin_hiring.delete_submission_record', submission_id=sub.id) }}" 
                                     onclick="handleAjaxUrl(event, this.dataset.url, 'Delete this submission?')"
                                     class="text-red-400 hover:text-red-300 transition-colors p-2 rounded hover:bg-red-500/10">
@@ -142,23 +247,71 @@
                             </button>
                         </td>
                     </tr>
+                    <!-- Expanded Detail -->
+                    <tr x-show="expandedRow === 'sub-{{ sub.id }}'" x-collapse>
+                        <td colspan="6" class="px-0 py-0">
+                            <div class="mx-6 my-4 p-5 rounded-xl bg-black/30 border border-white/8 space-y-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center gap-3">
+                                        <i class="fas fa-code text-cyan-400"></i>
+                                        <span class="text-sm font-bold text-white">{{ sub.candidate.username }}'s Submission</span>
+                                        <span class="px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded text-xs font-mono border border-blue-500/20">{{ sub.language }}</span>
+                                    </div>
+                                    <span class="text-xs text-gray-500">{{ sub.submitted_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                                </div>
+                                <!-- Source Code -->
+                                <div>
+                                    <p class="text-[10px] uppercase tracking-widest font-bold text-gray-500 mb-2">
+                                        <i class="fas fa-file-code mr-1 text-indigo-400"></i> Source Code
+                                    </p>
+                                    <pre class="text-xs text-green-300 leading-relaxed bg-[#010409] rounded-lg p-4 border border-white/5 max-h-72 overflow-auto font-mono"><code>{{ sub.code }}</code></pre>
+                                </div>
+                                <!-- Output -->
+                                <div>
+                                    <p class="text-[10px] uppercase tracking-widest font-bold text-gray-500 mb-2">
+                                        <i class="fas fa-terminal mr-1 text-cyan-400"></i> Full Output
+                                    </p>
+                                    <pre class="text-xs text-gray-300 leading-relaxed bg-[#0d1117] rounded-lg p-4 border border-cyan-500/10 max-h-72 overflow-auto font-mono">{{ sub.output if sub.output else 'No output captured.' }}</pre>
+                                </div>
+                                <!-- AI Feedback -->
+                                {% if sub.ai_feedback %}
+                                <div>
+                                    <p class="text-[10px] uppercase tracking-widest font-bold text-gray-500 mb-2">
+                                        <i class="fas fa-robot mr-1 text-purple-400"></i> AI Analysis
+                                    </p>
+                                    <div class="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap bg-purple-500/5 rounded-lg p-4 border border-purple-500/10 max-h-60 overflow-y-auto">{{ sub.ai_feedback }}</div>
+                                </div>
+                                {% endif %}
+                                <!-- Recipient Info -->
+                                <div class="flex gap-6 text-xs text-gray-500 pt-2 border-t border-white/5">
+                                    <span><i class="fas fa-user mr-1"></i> Candidate: {{ sub.candidate.username }}</span>
+                                    <span><i class="fas fa-user-check mr-1"></i> Recipient: {{ sub.recipient.username }}</span>
+                                    <span><i class="fas fa-code mr-1"></i> Language: {{ sub.language }}</span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
                     {% else %}
-                    <tr><td colspan="5" class="px-6 py-8 text-center text-gray-500 italic">No code submissions found.</td></tr>
+                    <tr><td colspan="6" class="px-6 py-8 text-center text-gray-500 italic">No code submissions found.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
 
+    <!-- ═══════════ HISTORY TAB ═══════════ -->
     <div x-show="currentTab === 'history'" class="glass-panel rounded-2xl overflow-hidden border border-white/10" x-cloak x-transition.opacity>
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 class="font-bold text-white">Moderator Assignment History</h3>
-            <span class="text-xs text-gray-500 bg-white/5 px-2 py-1 rounded">{{ history|length }} Records</span>
+            <h3 class="font-bold text-white flex items-center gap-2">
+                <i class="fas fa-history text-violet-400"></i> Moderator Assignment History
+            </h3>
+            <span class="text-xs text-gray-500 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">{{ history|length }} Records</span>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left text-sm text-gray-400">
                 <thead class="bg-black/20 text-xs uppercase font-bold text-gray-500">
                     <tr>
+                        <th class="px-6 py-4 w-8"></th>
                         <th class="px-6 py-4">Candidate</th>
                         <th class="px-6 py-4">Assigned Moderator</th>
                         <th class="px-6 py-4">Problem Statement</th>
@@ -168,12 +321,19 @@
                 </thead>
                 <tbody class="divide-y divide-white/5">
                     {% for record in history %}
-                    <tr id="hist-{{ record.id }}" class="hover:bg-white/5 transition-colors">
+                    <tr id="hist-{{ record.id }}"
+                        @click="expandedRow = expandedRow === 'hist-{{ record.id }}' ? null : 'hist-{{ record.id }}'"
+                        class="hover:bg-white/5 transition-colors cursor-pointer"
+                        :class="expandedRow === 'hist-{{ record.id }}' && 'bg-violet-500/5'">
+                        <td class="px-6 py-4 text-center">
+                            <i class="fas fa-chevron-right text-[10px] text-gray-600 transition-transform duration-200"
+                               :class="expandedRow === 'hist-{{ record.id }}' && 'rotate-90 text-violet-400'"></i>
+                        </td>
                         <td class="px-6 py-4 font-medium text-white">{{ record.candidate.username }}</td>
                         <td class="px-6 py-4">{{ record.moderator.username }}</td>
                         <td class="px-6 py-4 text-indigo-400">{{ record.problem.title if record.problem else 'N/A' }}</td>
                         <td class="px-6 py-4">{{ record.assigned_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                        <td class="px-6 py-4 text-right">
+                        <td class="px-6 py-4 text-right" @click.stop>
                             <button data-url="{{ url_for('admin_hiring.delete_assignment_history', history_id=record.id) }}" 
                                     onclick="handleAjaxUrl(event, this.dataset.url, 'Delete this history record?')"
                                     class="text-red-400 hover:text-red-300 transition-colors p-2 rounded hover:bg-red-500/10">
@@ -181,8 +341,46 @@
                             </button>
                         </td>
                     </tr>
+                    <!-- Expanded Detail -->
+                    <tr x-show="expandedRow === 'hist-{{ record.id }}'" x-collapse>
+                        <td colspan="6" class="px-0 py-0">
+                            <div class="mx-6 my-4 p-5 rounded-xl bg-black/30 border border-white/8 space-y-4">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <i class="fas fa-history text-violet-400"></i>
+                                    <span class="text-sm font-bold text-white">Assignment Record #{{ record.id }}</span>
+                                </div>
+                                <div class="grid grid-cols-3 gap-4">
+                                    <div class="bg-black/20 rounded-lg p-4 border border-white/5">
+                                        <p class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-2">Candidate</p>
+                                        <p class="text-sm font-bold text-white">{{ record.candidate.username }}</p>
+                                        <p class="text-xs text-gray-500 mt-1">{{ record.candidate.email }}</p>
+                                    </div>
+                                    <div class="bg-black/20 rounded-lg p-4 border border-white/5">
+                                        <p class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-2">Moderator</p>
+                                        <p class="text-sm font-bold text-white">{{ record.moderator.username }}</p>
+                                        <p class="text-xs text-gray-500 mt-1">{{ record.moderator.email }}</p>
+                                    </div>
+                                    <div class="bg-black/20 rounded-lg p-4 border border-white/5">
+                                        <p class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-2">Problem Statement</p>
+                                        <p class="text-sm font-bold text-indigo-400">{{ record.problem.title if record.problem else 'N/A' }}</p>
+                                        {% if record.problem and record.problem.difficulty %}
+                                        <span class="text-xs mt-1 inline-block px-2 py-0.5 rounded-full
+                                            {% if record.problem.difficulty == 'Easy' %}bg-green-500/10 text-green-400
+                                            {% elif record.problem.difficulty == 'Medium' %}bg-yellow-500/10 text-yellow-400
+                                            {% else %}bg-red-500/10 text-red-400{% endif %}">
+                                            {{ record.problem.difficulty }}
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="flex gap-6 text-xs text-gray-500 pt-2 border-t border-white/5">
+                                    <span><i class="fas fa-calendar mr-1"></i> Assigned: {{ record.assigned_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
                     {% else %}
-                    <tr><td colspan="5" class="px-6 py-8 text-center text-gray-500 italic">No assignment history found.</td></tr>
+                    <tr><td colspan="6" class="px-6 py-8 text-center text-gray-500 italic">No assignment history found.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -190,4 +388,16 @@
     </div>
 
 </div>
+
+<style>
+    /* Smooth expand/collapse for detail rows */
+    [x-collapse] {
+        overflow: hidden;
+    }
+    /* Code block scrollbar styling */
+    pre::-webkit-scrollbar { width: 6px; height: 6px; }
+    pre::-webkit-scrollbar-track { background: transparent; }
+    pre::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.3); border-radius: 3px; }
+    pre::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,0.5); }
+</style>
 {% endblock %}
