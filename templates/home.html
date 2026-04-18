@@ -20,6 +20,9 @@
         }
     }
 
+    @keyframes pulseGlow { 0%,100%{opacity:.5;transform:scale(1)} 50%{opacity:1;transform:scale(1.08)} }
+    @keyframes dotBlink  { 0%,100%{opacity:1} 50%{opacity:.2} }
+
     /* --- 2. 3D Isometric Stack (The Hero Visual) --- */
     .iso-container {
         position: relative;
@@ -314,7 +317,78 @@
     </div>
 </div>
 
+
+<!-- ── ANDROID APP DOWNLOAD BANNER ── -->
+<div class="py-12 relative z-10 max-w-7xl mx-auto px-4">
+    <div class="relative overflow-hidden rounded-2xl border border-emerald-500/25 p-6 sm:p-8"
+         style="background:linear-gradient(135deg,rgba(5,14,9,.97) 0%,rgba(3,8,5,.99) 100%);">
+
+        <!-- Animated grid overlay -->
+        <svg class="absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <pattern id="app-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(16,185,129,1)" stroke-width="1"/>
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#app-grid)"/>
+        </svg>
+
+        <!-- Glow orbs -->
+        <div class="absolute top-0 right-0 w-64 h-64 rounded-full pointer-events-none"
+             style="background:radial-gradient(circle,rgba(16,185,129,.12),transparent 70%);margin:-2rem -2rem 0 0;"></div>
+        <div class="absolute bottom-0 left-0 w-48 h-48 rounded-full pointer-events-none"
+             style="background:radial-gradient(circle,rgba(5,150,105,.08),transparent 70%);margin:0 0 -1.5rem -1.5rem;"></div>
+
+        <div class="relative z-10 flex flex-col sm:flex-row items-center gap-6 sm:gap-8">
+
+            <!-- Android icon with pulse ring -->
+            <div class="relative flex-shrink-0">
+                <div class="absolute inset-0 rounded-2xl"
+                     style="background:rgba(16,185,129,.15);filter:blur(12px);animation:pulseGlow 2.5s ease-in-out infinite;"></div>
+                <div class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center
+                            bg-gradient-to-br from-emerald-700 to-emerald-900 border border-emerald-500/40 shadow-2xl">
+                    <i class="fab fa-android text-4xl sm:text-5xl text-white"></i>
+                </div>
+            </div>
+
+            <!-- Text -->
+            <div class="flex-1 min-w-0 text-center sm:text-left">
+                <div class="flex items-center justify-center sm:justify-start gap-2 mb-1.5">
+                    <span class="text-[9px] font-black tracking-[.25em] uppercase text-emerald-500">Now Available</span>
+                    <span class="w-1 h-1 rounded-full bg-emerald-500" style="animation:dotBlink 1.5s ease-in-out infinite;"></span>
+                </div>
+                <h2 class="text-xl sm:text-2xl font-black text-white mb-1 tracking-tight">
+                    SourcePoint Android App
+                </h2>
+                <p class="text-gray-400 text-sm max-w-md">
+                    Full access to your workspace from your phone. Manage projects, track candidates, &amp; stay in sync — on the go.
+                </p>
+            </div>
+
+            <!-- CTA -->
+            <div class="flex flex-col items-center gap-2 flex-shrink-0">
+                <a href="{{ url_for('app_release.download_app') }}"
+                   id="home-download-app-btn"
+                   class="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl font-bold text-sm text-white
+                          bg-gradient-to-br from-emerald-600 to-emerald-800
+                          shadow-[0_0_25px_rgba(16,185,129,.3)]
+                          hover:shadow-[0_0_40px_rgba(16,185,129,.5)]
+                          hover:-translate-y-0.5 hover:scale-105
+                          transition-all duration-200">
+                    <i class="fas fa-download"></i>
+                    Download APK
+                </a>
+                <span class="text-[10px] text-gray-600 flex items-center gap-1">
+                    <i class="fas fa-unlock-alt text-[8px]"></i> No account needed
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- ── /ANDROID APP DOWNLOAD BANNER ── -->
+
 <div id="features" class="py-32 relative z-10 max-w-7xl mx-auto px-4">
+
     <div class="text-center mb-24">
         <h2 class="text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight">The Ecosystem</h2>
         <p class="text-gray-400 max-w-2xl mx-auto text-lg">Engineered to remove friction. Everything you need in one OS.

@@ -25,3 +25,7 @@ celerybeat-schedule
 credentials.json
 token.pickleservice_account.json
 service_account.json
+
+# Uploaded binary files — never commit these to git
+static/apks/
+static/resumes/

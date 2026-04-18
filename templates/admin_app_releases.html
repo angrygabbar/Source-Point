@@ -1,0 +1,574 @@
+{% extends "layout.html" %}
+{% block title %}Manage Android App — SourcePoint Admin{% endblock %}
+{% block content %}
+<style>
+    @keyframes scanLine  { 0%{top:-6%} 100%{top:106%} }
+    @keyframes shimmer   { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+    @keyframes dotBlink  { 0%,100%{opacity:1} 50%{opacity:.25} }
+    @keyframes borderFlow{ 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+
+    .scan-sweep {
+        position:absolute;left:0;right:0;height:5px;pointer-events:none;
+        background:linear-gradient(180deg,transparent,rgba(16,185,129,.15),transparent);
+        animation: scanLine 4s linear infinite;
+    }
+
+    /* ── Tabs ── */
+    .mgmt-tab { display:none; }
+    .mgmt-tab.active { display:block; }
+    .tab-btn {
+        display:inline-flex;align-items:center;gap:.5rem;
+        padding:.6rem 1.5rem;border-radius:.75rem;font-size:.8rem;font-weight:700;
+        border:1px solid transparent;cursor:pointer;transition:all .2s;
+        background:rgba(255,255,255,.04);color:#6b7280;
+    }
+    .tab-btn.active {
+        background:rgba(16,185,129,.12);border-color:rgba(16,185,129,.3);color:#34d399;
+    }
+    .tab-btn:hover:not(.active) { background:rgba(255,255,255,.07);color:#9ca3af; }
+
+    /* ── Upload zone ── */
+    .upload-zone {
+        background:linear-gradient(135deg,rgba(8,18,12,.97),rgba(4,10,6,.99));
+        border:1.5px dashed rgba(16,185,129,.3);border-radius:1rem;
+        transition:border-color .2s,background .2s;
+    }
+    .upload-zone:hover,.upload-zone:focus-within {
+        border-color:rgba(16,185,129,.6);background:rgba(16,185,129,.035);
+    }
+
+    /* ── Cards ── */
+    .release-card {
+        background:linear-gradient(135deg,rgba(10,10,22,.97),rgba(5,5,14,.99));
+        border:1px solid rgba(255,255,255,.07);border-radius:1rem;
+        position:relative;overflow:hidden;transition:border-color .2s,transform .2s;
+    }
+    .release-card:hover { transform:translateY(-2px); }
+    .release-card.active-release { border-color:rgba(16,185,129,.45); }
+
+    .feature-card {
+        background:rgba(10,10,22,.9);border:1px solid rgba(255,255,255,.06);
+        border-radius:1rem;position:relative;overflow:hidden;
+        transition:border-color .2s,transform .2s;
+    }
+    .feature-card:hover { transform:translateY(-2px);border-color:rgba(255,255,255,.12); }
+    .feature-card.inactive { opacity:.5; }
+
+    /* ── Input ── */
+    .field-input {
+        width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);
+        border-radius:.625rem;padding:.65rem 1rem;color:#fff;font-size:.85rem;
+        transition:border-color .2s,background .2s;
+        outline:none;
+    }
+    .field-input:focus { border-color:rgba(16,185,129,.5);background:rgba(255,255,255,.07); }
+    .field-input::placeholder { color:#4b5563; }
+    select.field-input option { background:#0a0a16;color:#e5e7eb; }
+
+    /* ── Buttons ── */
+    .action-btn {
+        display:inline-flex;align-items:center;gap:.4rem;
+        padding:.4rem .85rem;border-radius:.6rem;font-size:.73rem;font-weight:700;
+        border:none;cursor:pointer;transition:all .2s;text-decoration:none;
+    }
+    .btn-green   { background:rgba(16,185,129,.12);color:#34d399;border:1px solid rgba(16,185,129,.25); }
+    .btn-green:hover { background:rgba(16,185,129,.22);border-color:rgba(16,185,129,.5); }
+    .btn-indigo  { background:rgba(99,102,241,.12);color:#a5b4fc;border:1px solid rgba(99,102,241,.25); }
+    .btn-indigo:hover { background:rgba(99,102,241,.22); }
+    .btn-red     { background:rgba(239,68,68,.08);color:#f87171;border:1px solid rgba(239,68,68,.2); }
+    .btn-red:hover { background:rgba(239,68,68,.18); }
+    .btn-yellow  { background:rgba(234,179,8,.08);color:#fbbf24;border:1px solid rgba(234,179,8,.2); }
+    .btn-yellow:hover { background:rgba(234,179,8,.18); }
+    .btn-primary {
+        background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-weight:800;
+        border:none;border-radius:.75rem;padding:.7rem 1.75rem;cursor:pointer;
+        transition:all .2s;font-size:.85rem;display:inline-flex;align-items:center;gap:.5rem;
+    }
+    .btn-primary:hover { transform:translateY(-2px);box-shadow:0 0 20px rgba(16,185,129,.4); }
+
+    /* ── Color swatches ── */
+    .color-swatch {
+        width:1.5rem;height:1.5rem;border-radius:50%;cursor:pointer;
+        border:2px solid transparent;transition:all .2s;flex-shrink:0;
+    }
+    .color-swatch.selected { border-color:#fff;transform:scale(1.3); }
+
+    /* ── Label field ── */
+    .field-label {
+        display:block;font-size:.72rem;font-weight:700;color:#6b7280;
+        text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem;
+    }
+
+    /* ── Badge ── */
+    .version-badge {
+        display:inline-flex;align-items:center;gap:.3rem;
+        padding:.2rem .65rem;border-radius:999px;font-size:.68rem;font-weight:700;
+        background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#34d399;
+    }
+    .active-dot {
+        width:.5rem;height:.5rem;border-radius:50%;background:#34d399;
+        box-shadow:0 0 5px #34d399;animation:dotBlink 2s ease-in-out infinite;
+    }
+
+    /* Feature color themes */
+    .fc-emerald { background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.25);color:#34d399; }
+    .fc-indigo  { background:rgba(99,102,241,.1);border-color:rgba(99,102,241,.25);color:#818cf8; }
+    .fc-cyan    { background:rgba(6,182,212,.1); border-color:rgba(6,182,212,.25); color:#22d3ee; }
+    .fc-purple  { background:rgba(168,85,247,.1);border-color:rgba(168,85,247,.25);color:#c084fc; }
+    .fc-pink    { background:rgba(236,72,153,.1);border-color:rgba(236,72,153,.25);color:#f472b6; }
+    .fc-yellow  { background:rgba(234,179,8,.1); border-color:rgba(234,179,8,.25); color:#fbbf24; }
+</style>
+
+<div class="max-w-6xl mx-auto py-8 px-4 space-y-6">
+
+    {# ── HEADER ── #}
+    <div class="relative overflow-hidden rounded-2xl border border-emerald-500/20 p-6 sm:p-8"
+         style="background:linear-gradient(135deg,rgba(5,14,9,.98),rgba(3,8,5,.99));">
+        <div class="scan-sweep"></div>
+        <div class="relative z-10 flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <p class="text-[9px] font-black tracking-[.3em] uppercase text-emerald-500 mb-1">Admin · App Management</p>
+                <h1 class="text-2xl sm:text-3xl font-black text-white">Android App Center</h1>
+                <p class="text-gray-500 text-sm mt-1">Upload APK releases and manage the features shown on the public download page.</p>
+            </div>
+            <a href="{{ url_for('app_release.download_app') }}" target="_blank"
+               class="action-btn btn-indigo text-sm px-4 py-2">
+                <i class="fas fa-external-link-alt text-xs"></i> View Public Page
+            </a>
+        </div>
+    </div>
+
+    {# ── FLASH MESSAGES ── #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="space-y-2">
+        {% for cat, msg in messages %}
+        <div class="px-4 py-3 rounded-xl text-sm font-semibold
+            {% if cat=='success' %}bg-emerald-500/10 border border-emerald-500/30 text-emerald-300
+            {% elif cat=='danger' %}bg-red-500/10 border border-red-500/30 text-red-300
+            {% else %}bg-yellow-500/10 border border-yellow-500/30 text-yellow-300{% endif %}">
+            <i class="fas {% if cat=='success' %}fa-check-circle{% elif cat=='danger' %}fa-exclamation-circle{% else %}fa-exclamation-triangle{% endif %} mr-2"></i>{{ msg }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    {# ── TABS ── #}
+    <div class="flex flex-wrap gap-2">
+        <button class="tab-btn active" onclick="switchTab('tab-upload',this)" id="btn-upload">
+            <i class="fas fa-cloud-upload-alt text-xs"></i>
+            Upload APK
+        </button>
+        <button class="tab-btn" onclick="switchTab('tab-releases',this)" id="btn-releases">
+            <i class="fas fa-history text-xs"></i>
+            Release History
+            <span class="px-1.5 py-0.5 rounded-full text-[10px] bg-white/10">{{ releases|length }}</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('tab-features',this)" id="btn-features">
+            <i class="fas fa-list-ul text-xs"></i>
+            App Features
+            <span class="px-1.5 py-0.5 rounded-full text-[10px] bg-white/10">{{ features|length }}</span>
+        </button>
+    </div>
+
+    {# ════════════════════════════════
+       TAB 1 — UPLOAD APK
+    ════════════════════════════════ #}
+    <div id="tab-upload" class="mgmt-tab active">
+        <div class="upload-zone p-6 sm:p-8">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-11 h-11 rounded-xl bg-emerald-500/12 border border-emerald-500/25
+                            flex items-center justify-center text-emerald-400 flex-shrink-0 text-lg">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-black text-white">Upload New APK Release</h2>
+                    <p class="text-xs text-gray-600 mt-0.5">Only <code class="text-emerald-500">.apk</code> files accepted · Uploading automatically sets this as the active download</p>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('app_release.upload_release') }}"
+                  enctype="multipart/form-data" class="space-y-5" id="upload-form">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="field-label">Version Name <span class="text-red-400">*</span></label>
+                        <input type="text" name="version_name" class="field-input"
+                               placeholder="e.g.  1.2.0" required>
+                    </div>
+                    <div>
+                        <label class="field-label">Version Code / Build Number</label>
+                        <input type="number" name="version_code" class="field-input"
+                               placeholder="e.g.  12" min="1" value="1">
+                    </div>
+                </div>
+
+                {# File picker #}
+                <div>
+                    <label class="field-label">APK File <span class="text-red-400">*</span></label>
+                    <label for="apk-file-input"
+                           class="flex flex-col items-center justify-center gap-3 p-8 rounded-xl
+                                  border-2 border-dashed border-white/10 cursor-pointer
+                                  hover:border-emerald-500/40 hover:bg-white/3 transition-all"
+                           id="file-drop-zone">
+                        <i class="fas fa-file-upload text-3xl text-gray-600 transition-colors" id="file-icon"></i>
+                        <div class="text-center">
+                            <p class="text-sm text-gray-500" id="file-label">Click to select <span class="text-emerald-400 font-bold">.apk</span> file</p>
+                            <p class="text-xs text-gray-700 mt-1" id="file-size-label"></p>
+                        </div>
+                        <input type="file" name="apk_file" accept=".apk" id="apk-file-input" class="hidden" required>
+                    </label>
+                </div>
+
+                <div>
+                    <label class="field-label">Release Notes</label>
+                    <textarea name="release_notes" rows="4" class="field-input"
+                              placeholder="Describe what's new in this release — bug fixes, new features, improvements…"></textarea>
+                </div>
+
+                <div class="flex justify-end pt-2">
+                    <button type="submit" id="upload-submit-btn" class="btn-primary">
+                        <i class="fas fa-upload"></i> Upload &amp; Publish Release
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {# ════════════════════════════════
+       TAB 2 — RELEASE HISTORY
+    ════════════════════════════════ #}
+    <div id="tab-releases" class="mgmt-tab">
+        {% if releases %}
+        <div class="space-y-3">
+            {% for r in releases %}
+            <div class="release-card {% if r.is_active %}active-release{% endif %} p-5">
+                <div class="flex flex-wrap items-start sm:items-center justify-between gap-4">
+                    <div class="flex items-start gap-4 min-w-0">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0
+                                    {% if r.is_active %}bg-emerald-500/12 border border-emerald-500/30{% else %}bg-white/4 border border-white/8{% endif %}">
+                            <i class="fab fa-android text-2xl {% if r.is_active %}text-emerald-400{% else %}text-gray-600{% endif %}"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-2 mb-1">
+                                <span class="text-white font-black">v{{ r.version_name }}</span>
+                                {% if r.is_active %}
+                                <span class="version-badge"><span class="active-dot"></span> Active</span>
+                                {% endif %}
+                                <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/6 text-gray-500">Build {{ r.version_code }}</span>
+                            </div>
+                            <div class="flex flex-wrap gap-3 text-xs text-gray-600">
+                                <span><i class="fas fa-hdd mr-1"></i>{{ r.file_size_human() }}</span>
+                                <span><i class="fas fa-calendar mr-1"></i>{{ r.uploaded_at|to_ist }}</span>
+                                {% if r.uploaded_by %}<span><i class="fas fa-user mr-1"></i>{{ r.uploaded_by.username }}</span>{% endif %}
+                            </div>
+                            {% if r.release_notes %}
+                            <p class="text-xs text-gray-500 mt-1.5 line-clamp-2">{{ r.release_notes }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 flex-shrink-0">
+                        <a href="{{ url_for('app_release.download_apk') }}" class="action-btn btn-indigo">
+                            <i class="fas fa-download text-xs"></i> Test Download
+                        </a>
+                        {% if not r.is_active %}
+                        <form method="POST" action="{{ url_for('app_release.toggle_release', release_id=r.id) }}" style="display:inline;">
+                            <button type="submit" class="action-btn btn-green">
+                                <i class="fas fa-check-circle text-xs"></i> Set Active
+                            </button>
+                        </form>
+                        {% endif %}
+                        <form method="POST" action="{{ url_for('app_release.delete_release', release_id=r.id) }}" style="display:inline;"
+                              onsubmit="return confirm('Delete v{{ r.version_name }}? The APK file will be removed.')">
+                            <button type="submit" class="action-btn btn-red">
+                                <i class="fas fa-trash text-xs"></i> Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-16 border border-white/6 rounded-2xl">
+            <i class="fab fa-android text-4xl text-gray-700 mb-4"></i>
+            <p class="text-gray-500 font-medium">No releases yet.</p>
+            <p class="text-xs text-gray-700 mt-1">Switch to the <strong class="text-gray-500">Upload APK</strong> tab to publish your first release.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    {# ════════════════════════════════
+       TAB 3 — APP FEATURES
+    ════════════════════════════════ #}
+    <div id="tab-features" class="mgmt-tab">
+
+        {# ── Add New Feature Form ── #}
+        <div class="upload-zone p-6 mb-6">
+            <div class="flex items-center gap-3 mb-5">
+                <div class="w-10 h-10 rounded-xl bg-indigo-500/12 border border-indigo-500/25
+                            flex items-center justify-center text-indigo-400 flex-shrink-0">
+                    <i class="fas fa-plus"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-black text-white">Add New Feature</h2>
+                    <p class="text-xs text-gray-600 mt-0.5">Features appear in the grid on the public download page</p>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('app_release.add_feature') }}" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="field-label">Feature Title <span class="text-red-400">*</span></label>
+                        <input type="text" name="title" class="field-input" placeholder="e.g.  Live Location Tracking" required>
+                    </div>
+                    <div>
+                        <label class="field-label">Sort Order</label>
+                        <input type="number" name="sort_order" class="field-input" placeholder="0" min="0" value="0">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="field-label">Description <span class="text-red-400">*</span></label>
+                    <textarea name="description" rows="2" class="field-input"
+                              placeholder="Describe what this feature does for the user…" required></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="field-label">Font Awesome Icon Class</label>
+                        <div class="flex items-center gap-3">
+                            <input type="text" name="icon" id="icon-input-add" class="field-input"
+                                   placeholder="fa-map-marker-alt" value="fa-star"
+                                   oninput="document.getElementById('icon-preview-add').className='fas '+this.value+' text-xl text-emerald-400'">
+                            <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-star text-xl text-emerald-400" id="icon-preview-add"></i>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-gray-700 mt-1">Find icons at <a href="https://fontawesome.com/icons" target="_blank" class="text-indigo-400 hover:underline">fontawesome.com</a></p>
+                    </div>
+                    <div>
+                        <label class="field-label">Colour Theme</label>
+                        <div class="flex items-center gap-2 flex-wrap mt-1">
+                            {% set colors = [
+                                ('emerald','#10b981'),('indigo','#6366f1'),('cyan','#06b6d4'),
+                                ('purple','#a855f7'),('pink','#ec4899'),('yellow','#eab308')
+                            ] %}
+                            {% for c, hex in colors %}
+                            <label class="cursor-pointer">
+                                <input type="radio" name="color" value="{{ c }}"
+                                       {% if c == 'emerald' %}checked{% endif %}
+                                       class="sr-only color-radio">
+                                <span class="color-swatch {% if c == 'emerald' %}selected{% endif %}"
+                                      style="background:{{ hex }};"
+                                      title="{{ c|capitalize }}"
+                                      onclick="selectColor(this)"></span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end pt-1">
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-plus"></i> Add Feature
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        {# ── Existing Features Grid ── #}
+        {% if features %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for f in features %}
+            <div class="feature-card {% if not f.is_active %}inactive{% endif %} p-4">
+                <div class="flex items-start justify-between gap-2 mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl border flex items-center justify-center flex-shrink-0 fc-{{ f.color }}">
+                            <i class="fas {{ f.icon }} text-base"></i>
+                        </div>
+                        <div>
+                            <p class="text-white font-bold text-sm leading-tight">{{ f.title }}</p>
+                            <span class="text-[9px] font-bold uppercase tracking-widest fc-{{ f.color }} px-2 py-0.5 rounded-full border inline-block mt-0.5">{{ f.color }}</span>
+                        </div>
+                    </div>
+                    <span class="text-[10px] text-gray-600 flex-shrink-0 mt-1">
+                        {% if f.is_active %}
+                        <span class="text-emerald-500"><i class="fas fa-eye text-[9px]"></i> Visible</span>
+                        {% else %}
+                        <span class="text-gray-600"><i class="fas fa-eye-slash text-[9px]"></i> Hidden</span>
+                        {% endif %}
+                    </span>
+                </div>
+                <p class="text-xs text-gray-500 leading-relaxed mb-4">{{ f.description }}</p>
+
+                <div class="flex flex-wrap items-center gap-1.5 pt-3 border-t border-white/5">
+                    {# Edit button (triggers modal) #}
+                    <button class="action-btn btn-indigo" onclick="openEditModal({{ f.id }}, '{{ f.title|replace("'", "\\'") }}', '{{ f.description|replace("'","\\'") }}', '{{ f.icon }}', '{{ f.color }}', {{ f.sort_order }})">
+                        <i class="fas fa-pen text-[10px]"></i> Edit
+                    </button>
+                    <form method="POST" action="{{ url_for('app_release.toggle_feature', feature_id=f.id) }}" style="display:inline;">
+                        <button type="submit" class="action-btn {% if f.is_active %}btn-yellow{% else %}btn-green{% endif %}">
+                            <i class="fas {% if f.is_active %}fa-eye-slash{% else %}fa-eye{% endif %} text-[10px]"></i>
+                            {% if f.is_active %}Hide{% else %}Show{% endif %}
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('app_release.delete_feature', feature_id=f.id) }}" style="display:inline;"
+                          onsubmit="return confirm('Delete feature \'{{ f.title }}\'?')">
+                        <button type="submit" class="action-btn btn-red">
+                            <i class="fas fa-trash text-[10px]"></i> Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-14 border border-white/6 rounded-2xl">
+            <i class="fas fa-list-ul text-4xl text-gray-700 mb-4"></i>
+            <p class="text-gray-500 font-medium">No features added yet.</p>
+            <p class="text-xs text-gray-700 mt-1">Use the form above to add features that appear on the download page.</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div><!-- /max-w -->
+
+{# ── EDIT FEATURE MODAL ── #}
+<div id="edit-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4"
+     style="background:rgba(0,0,0,.7);backdrop-filter:blur(4px);">
+    <div class="w-full max-w-lg rounded-2xl border border-white/10 p-6 sm:p-8"
+         style="background:linear-gradient(135deg,#0a0a16,#050510);">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-black text-white">Edit Feature</h3>
+            <button onclick="closeEditModal()" class="w-8 h-8 rounded-lg bg-white/6 text-gray-400 hover:text-white hover:bg-white/12 transition-all">✕</button>
+        </div>
+        <form method="POST" id="edit-form" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="field-label">Title <span class="text-red-400">*</span></label>
+                    <input type="text" name="title" id="edit-title" class="field-input" required>
+                </div>
+                <div>
+                    <label class="field-label">Sort Order</label>
+                    <input type="number" name="sort_order" id="edit-sort" class="field-input" min="0">
+                </div>
+            </div>
+            <div>
+                <label class="field-label">Description <span class="text-red-400">*</span></label>
+                <textarea name="description" id="edit-desc" rows="3" class="field-input" required></textarea>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="field-label">Icon Class</label>
+                    <div class="flex items-center gap-3">
+                        <input type="text" name="icon" id="edit-icon" class="field-input"
+                               oninput="document.getElementById('edit-icon-preview').className='fas '+this.value+' text-xl text-emerald-400'">
+                        <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-star text-xl text-emerald-400" id="edit-icon-preview"></i>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="field-label">Colour</label>
+                    <div class="flex items-center gap-2 flex-wrap mt-1">
+                        {% set colors = [
+                            ('emerald','#10b981'),('indigo','#6366f1'),('cyan','#06b6d4'),
+                            ('purple','#a855f7'),('pink','#ec4899'),('yellow','#eab308')
+                        ] %}
+                        {% for c, hex in colors %}
+                        <label class="cursor-pointer">
+                            <input type="radio" name="color" value="{{ c }}" class="sr-only edit-color-radio">
+                            <span class="color-swatch edit-color-swatch" data-color="{{ c }}"
+                                  style="background:{{ hex }};" title="{{ c|capitalize }}"
+                                  onclick="selectEditColor(this)"></span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="closeEditModal()"
+                        class="action-btn btn-red px-4 py-2 text-sm">Cancel</button>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// ── Tab switching ──
+function switchTab(tabId, btn) {
+    document.querySelectorAll('.mgmt-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    btn.classList.add('active');
+}
+
+// ── File input feedback ──
+const fileInput = document.getElementById('apk-file-input');
+fileInput?.addEventListener('change', function() {
+    if (this.files && this.files[0]) {
+        const f = this.files[0];
+        const mb = (f.size / 1024 / 1024).toFixed(1);
+        document.getElementById('file-label').innerHTML = `<span class="text-emerald-300 font-bold">${f.name}</span>`;
+        document.getElementById('file-size-label').textContent = `${mb} MB`;
+        document.getElementById('file-icon').className = 'fas fa-check-circle text-3xl text-emerald-400 transition-colors';
+    }
+});
+
+// ── Upload feedback ──
+document.getElementById('upload-form')?.addEventListener('submit', function() {
+    const btn = document.getElementById('upload-submit-btn');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading…';
+    btn.disabled = true;
+});
+
+// ── Color swatch helper (add form) ──
+function selectColor(el) {
+    document.querySelectorAll('.color-swatch:not(.edit-color-swatch)').forEach(s => s.classList.remove('selected'));
+    el.classList.add('selected');
+    const color = el.getAttribute('data-color') || el.closest('label')?.querySelector('input')?.value;
+    el.closest('form')?.querySelector('input[name="color"]')?.setAttribute('value', color || '');
+}
+
+// ── Edit modal ──
+function openEditModal(id, title, desc, icon, color, sort) {
+    document.getElementById('edit-title').value = title;
+    document.getElementById('edit-desc').value  = desc;
+    document.getElementById('edit-icon').value  = icon;
+    document.getElementById('edit-sort').value  = sort;
+    document.getElementById('edit-form').action = `/app/admin/features/${id}/edit`;
+    // icon preview
+    document.getElementById('edit-icon-preview').className = `fas ${icon} text-xl text-emerald-400`;
+    // color swatches
+    document.querySelectorAll('.edit-color-swatch').forEach(s => {
+        s.classList.toggle('selected', s.dataset.color === color);
+    });
+    // radio
+    document.querySelectorAll('.edit-color-radio').forEach(r => {
+        r.checked = (r.value === color);
+    });
+    document.getElementById('edit-modal').classList.remove('hidden');
+}
+
+function closeEditModal() {
+    document.getElementById('edit-modal').classList.add('hidden');
+}
+
+function selectEditColor(el) {
+    document.querySelectorAll('.edit-color-swatch').forEach(s => s.classList.remove('selected'));
+    el.classList.add('selected');
+    const color = el.dataset.color;
+    document.querySelectorAll('.edit-color-radio').forEach(r => { r.checked = r.value === color; });
+}
+
+// Close modal on backdrop click
+document.getElementById('edit-modal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeEditModal();
+});
+</script>
+{% endblock %}

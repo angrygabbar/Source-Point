@@ -475,6 +475,56 @@
 
     </div><!-- /grid -->
 
+    <!-- ══ DOMAIN 6: APP DISTRIBUTION (full width) ══ -->
+    <div style="padding:1px;background:linear-gradient(90deg,rgba(16,185,129,.5),rgba(5,150,105,.2),rgba(16,185,129,.5));background-size:200% 100%;animation:borderFlow 5s linear infinite;border-radius:1rem;">
+        <div class="section-inner">
+            <div class="cmd-section-header px-5 py-4" style="background:linear-gradient(135deg,rgba(5,14,9,.98),rgba(3,8,5,.99));">
+                <div class="scan-sweep" style="background:linear-gradient(180deg,transparent,rgba(16,185,129,.08),transparent);"></div>
+                <div class="relative z-10 flex items-center gap-3">
+                    <div class="relative w-10 h-10 flex-shrink-0">
+                        <div class="radar-ring" style="inset:0;border-color:rgba(16,185,129,.5);animation:radarSpin 9s linear infinite;"></div>
+                        <div class="absolute inset-0 rounded-full bg-emerald-500/15 flex items-center justify-center">
+                            <i class="fab fa-android text-emerald-400"></i>
+                        </div>
+                        <div class="absolute inset-0 rounded-full" style="background:conic-gradient(from 0deg,transparent 75%,rgba(16,185,129,.7) 100%);animation:radarSpin 2.8s linear infinite;"></div>
+                    </div>
+                    <div>
+                        <p class="text-[9px] font-black tracking-[0.25em] uppercase text-emerald-500 mb-0.5">Domain · 06</p>
+                        <h2 class="text-base font-black text-white leading-tight">App Distribution</h2>
+                        <p class="text-[11px] text-gray-500 mt-0.5">Manage & publish the Android application for public download</p>
+                    </div>
+                </div>
+            </div>
+            <div class="neon-divider" style="color:#10b981;"></div>
+            <div class="section-body" style="background:rgba(3,10,6,.98);">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+                    <a href="{{ url_for('app_release.manage_releases') }}" class="quick-btn commerce-btn">
+                        <div class="btn-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                        <span class="text-xs font-bold leading-tight">Upload APK</span>
+                        <span class="text-[9px] text-gray-600">New release</span>
+                    </a>
+                    <a href="{{ url_for('app_release.manage_releases') }}" class="quick-btn commerce-btn">
+                        <div class="btn-icon"><i class="fas fa-history"></i></div>
+                        <span class="text-xs font-bold leading-tight">Release History</span>
+                        <span class="text-[9px] text-gray-600">All versions</span>
+                    </a>
+                    <a href="{{ url_for('app_release.download_app') }}" target="_blank" class="quick-btn commerce-btn">
+                        <div class="btn-icon"><i class="fas fa-external-link-alt"></i></div>
+                        <span class="text-xs font-bold leading-tight">Public Page</span>
+                        <span class="text-[9px] text-gray-600">Download link</span>
+                    </a>
+                    <a href="{{ url_for('app_release.download_apk') }}" class="quick-btn commerce-btn">
+                        <div class="btn-icon"><i class="fas fa-download"></i></div>
+                        <span class="text-xs font-bold leading-tight">Direct APK</span>
+                        <span class="text-[9px] text-gray-600">Test download</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
     <!-- ══ DOMAIN 5: USER MANAGEMENT (full width) ══ -->
     <div style="padding:1px;background:linear-gradient(90deg,rgba(59,130,246,.5),rgba(99,102,241,.2),rgba(59,130,246,.5));background-size:200% 100%;animation:borderFlow 5s linear infinite;border-radius:1rem;">
         <div class="section-inner">

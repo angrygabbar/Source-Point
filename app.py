@@ -11,6 +11,7 @@ from extensions import db, bcrypt, login_manager, migrate, cache, limiter, celer
 from models.auth import User, Message
 from models.learning import LearningContent
 from models.interview import Interview, InterviewParticipant
+from models.app_release import AndroidAppRelease
 from bs4 import BeautifulSoup
 from flask_login import current_user
 from config import DevelopmentConfig, ProductionConfig
@@ -47,6 +48,9 @@ def create_app():
 
     if app.config.get('UPLOAD_FOLDER'):
         os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+    # Ensure APK upload directory exists
+    os.makedirs(os.path.join('static', 'apks'), exist_ok=True)
 
     # --- 2. PERFORMANCE: WhiteNoise ---
     app.wsgi_app = WhiteNoise(app.wsgi_app, root='static/')
@@ -127,6 +131,7 @@ def create_app():
     from blueprints.seller import seller_bp
     from blueprints.admin_giftcards import admin_giftcards_bp
     from blueprints.public import public_bp
+    from blueprints.app_release import app_release_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -146,6 +151,7 @@ def create_app():
     app.register_blueprint(seller_bp)
     app.register_blueprint(admin_giftcards_bp)
     app.register_blueprint(public_bp)
+    app.register_blueprint(app_release_bp)
 
     # --- 8. CONTEXT PROCESSORS (FIXED) ---
     @app.context_processor
@@ -218,6 +224,18 @@ def create_app():
     def ratelimit_handler(e): return render_template('404.html'), 429 
 
     register_commands(app)
+
+    # Register custom Jinja2 filter inside create_app so it's available
+    # before any template is compiled (fixes TemplateAssertionError)
+    from datetime import timedelta as _timedelta
+    @app.template_filter('to_ist')
+    def to_ist_filter(utc_dt, fmt='%b %d, %I:%M %p'):
+        """Convert UTC datetime to IST (UTC+5:30) for display"""
+        if utc_dt is None:
+            return ''
+        ist_dt = utc_dt + _timedelta(hours=5, minutes=30)
+        return ist_dt.strftime(fmt) + ' IST'
+
     return app
 
 def register_commands(app):
@@ -250,16 +268,6 @@ def register_commands(app):
         print("Database populated.")
 
 app = create_app()
-
-# Custom Jinja filter to convert UTC to IST for display
-@app.template_filter('to_ist')
-def to_ist_filter(utc_dt, fmt='%b %d, %I:%M %p'):
-    """Convert UTC datetime to IST (UTC+5:30) for display"""
-    if utc_dt is None:
-        return ''
-    from datetime import timedelta
-    ist_dt = utc_dt + timedelta(hours=5, minutes=30)
-    return ist_dt.strftime(fmt) + ' IST'
 
 @login_manager.user_loader
 def load_user(user_id):
