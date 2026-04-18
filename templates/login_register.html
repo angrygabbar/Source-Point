@@ -196,11 +196,11 @@
 <!-- Page scanline overlay -->
 <div class="page-scanlines pointer-events-none"></div>
 
-<div class="relative z-10 min-h-screen flex items-center justify-center py-10 px-4"
+<div class="relative z-10 min-h-screen flex items-center justify-center py-8 sm:py-10 px-4"
      x-data="loginPage()"
      x-init="initParticles()">
 
-  <div class="login-card relative w-full max-w-md rounded-2xl p-8 my-6">
+  <div class="login-card relative w-full max-w-md rounded-2xl p-5 sm:p-8 my-4 sm:my-6">
     <!-- Corner accents -->
     <div class="corner corner-tl"></div>
     <div class="corner corner-tr"></div>
@@ -211,8 +211,8 @@
     <div id="card-particles" class="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none"></div>
 
     <!-- Logo & heading -->
-    <div class="relative text-center mb-7">
-      <div class="logo-orb mx-auto mb-4">
+    <div class="relative text-center mb-5 sm:mb-7">
+      <div class="logo-orb mx-auto mb-3 sm:mb-4" style="width:44px;height:44px;border-radius:12px;font-size:1.1rem;">
         <span>⚡</span>
       </div>
       <h1 class="text-2xl font-black text-white tracking-tight" :class="mode === 'login' ? 'cursor-blink' : ''">
@@ -358,7 +358,7 @@
 
       <!-- Skill fields for candidate/developer -->
       <div x-show="['candidate','developer'].includes(role)" x-transition
-           class="grid grid-cols-2 gap-3 p-3 border border-indigo-500/20 rounded-xl bg-indigo-900/10">
+           class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 border border-indigo-500/20 rounded-xl bg-indigo-900/10">
         <div>
           <label class="sp-label">Primary Skill</label>
           <select name="primary_skill" class="sp-input">
@@ -434,7 +434,12 @@
    CANVAS BACKGROUND — Animated grid + moving nodes + beams
    ═══════════════════════════════════════════════════════════════ */
 (function () {
+  // Skip canvas animation on mobile — saves CPU/battery
+  const isMobile = window.innerWidth <= 768 || ('ontouchstart' in window);
+  if (isMobile) return;
+
   const canvas = document.getElementById('loginCanvas');
+  if (!canvas) return;
   const ctx = canvas.getContext('2d');
   let W, H, nodes = [], animId;
 

@@ -92,8 +92,10 @@
     .section-wrap {
         border-radius:1rem;overflow:hidden;
     }
-    .section-body { padding:1.5rem; }
-    .cta-row { padding:0 1.5rem 1.5rem; }
+    .section-body { padding: 1rem; }
+    @media (min-width: 640px) { .section-body { padding: 1.5rem; } }
+    .cta-row { padding: 0 1rem 1rem; }
+    @media (min-width: 640px) { .cta-row { padding: 0 1.5rem 1.5rem; } }
 
     /* Animated border wrapper */
     .animated-border-wrap {
@@ -150,10 +152,10 @@
         <div style="position:absolute;bottom:-60px;left:8%;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(16,185,129,0.1),transparent 70%);pointer-events:none;"></div>
 
         <div class="relative z-10">
-            <div class="flex flex-wrap items-center justify-between gap-4 mb-5">
-                <div class="flex items-center gap-4">
+            <div class="flex flex-wrap items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-5">
+                <div class="flex items-center gap-3 sm:gap-4">
                     <!-- Radar icon -->
-                    <div class="relative w-14 h-14 flex-shrink-0">
+                    <div class="relative w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0">
                         <div class="radar-ring" style="inset:0;border-color:rgba(99,102,241,.45);animation:radarSpin 8s linear infinite;"></div>
                         <div class="radar-ring" style="inset:4px;border-color:rgba(99,102,241,.25);animation:radarSpin2 5s linear infinite;"></div>
                         <div class="radar-ring" style="inset:8px;border-color:rgba(99,102,241,.12);animation:radarSpin 14s linear infinite;"></div>
@@ -179,7 +181,7 @@
                 </div>
 
                 <!-- Status + Quick-reach buttons -->
-                <div class="flex flex-wrap items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                     <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold"
                          style="background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.3);color:#34d399;">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400" style="animation:dotBlink 2s ease-in-out infinite;"></span>
@@ -260,7 +262,7 @@
             </div>
             <div class="neon-divider" style="color:#10b981;"></div>
             <div class="section-body" style="background:rgba(5,14,9,.98);">
-                <div class="grid grid-cols-3 gap-2.5">
+                <div class="grid grid-cols-2 sm:grid-cols-3 quick-grid-3 gap-2.5">
                     <a hx-get="{{ url_for('admin_commerce.manage_orders') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true" class="quick-btn commerce-btn cursor-pointer">
                         <div class="btn-icon"><i class="fas fa-shopping-cart"></i></div>
                         <span class="text-xs font-bold leading-tight">Orders</span>
@@ -325,7 +327,7 @@
             </div>
             <div class="neon-divider" style="color:#6366f1;"></div>
             <div class="section-body" style="background:rgba(4,3,16,.98);">
-                <div class="grid grid-cols-3 gap-2.5">
+                <div class="grid grid-cols-2 sm:grid-cols-3 quick-grid-3 gap-2.5">
                     <a hx-get="{{ url_for('admin_hiring.admin_hiring_dashboard') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true" class="quick-btn recruit-btn cursor-pointer">
                         <div class="btn-icon"><i class="fas fa-tachometer-alt"></i></div>
                         <span class="text-xs font-bold leading-tight">HR Dashboard</span>
@@ -383,7 +385,7 @@
             </div>
             <div class="neon-divider" style="color:#a855f7;"></div>
             <div class="section-body" style="background:rgba(7,3,18,.98);">
-                <div class="grid grid-cols-3 gap-2.5">
+                <div class="grid grid-cols-2 sm:grid-cols-3 quick-grid-3 gap-2.5">
                     <a hx-get="{{ url_for('events.events') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
                        class="quick-btn cursor-pointer" style="background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.2);color:#d8b4fe;">
                         <div class="btn-icon" style="background:rgba(168,85,247,.12);color:#c084fc;"><i class="fas fa-calendar-alt"></i></div>
@@ -429,7 +431,7 @@
             </div>
             <div class="neon-divider" style="color:#eab308;"></div>
             <div class="section-body" style="background:rgba(10,8,2,.98);">
-                <div class="grid grid-cols-3 gap-2.5">
+                <div class="grid grid-cols-2 sm:grid-cols-3 quick-grid-3 gap-2.5">
                     <a hx-get="{{ url_for('admin_core.emi_manager') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
                        class="quick-btn cursor-pointer" style="background:rgba(234,179,8,.06);border:1px solid rgba(234,179,8,.2);color:#fde68a;">
                         <div class="btn-icon" style="background:rgba(234,179,8,.12);color:#fbbf24;"><i class="fas fa-hand-holding-usd"></i></div>
@@ -502,7 +504,7 @@
             </div>
             <div class="neon-divider" style="color:#3b82f6;"></div>
             <div class="section-body" style="background:rgba(3,5,16,.98);">
-                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2.5">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
                     <a hx-get="{{ url_for('admin_users.manage_users') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true" class="quick-btn system-btn cursor-pointer">
                         <div class="btn-icon"><i class="fas fa-users"></i></div>
                         <span class="text-xs font-bold leading-tight">All Users</span>
@@ -561,7 +563,7 @@
 
             {% if pending_users %}
             <div class="overflow-x-auto">
-                <table class="w-full text-sm neon-table">
+                <table class="w-full text-sm neon-table" style="min-width:480px;">
                     <thead>
                         <tr class="text-[10px] text-gray-600 uppercase tracking-widest border-b border-white/4">
                             <th class="px-6 py-3 text-left bg-white/2">Identity</th>

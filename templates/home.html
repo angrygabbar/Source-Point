@@ -153,27 +153,27 @@
     }
 </style>
 
-<div class="relative min-h-[90vh] flex flex-col justify-center px-4 overflow-hidden pt-20">
-    <div class="max-w-7xl w-full mx-auto grid lg:grid-cols-2 gap-16 items-center">
+<div class="relative min-h-[90vh] flex flex-col justify-center px-4 overflow-hidden pt-16 sm:pt-20">
+    <div class="max-w-7xl w-full mx-auto grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
 
         <div class="z-10 order-2 lg:order-1">
 
             <h1
-                class="text-5xl md:text-7xl lg:text-8xl font-black text-white tracking-tighter leading-[1] mb-8 drop-shadow-2xl">
+                class="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black text-white tracking-tighter leading-[1] mb-6 sm:mb-8 drop-shadow-2xl">
                 Build <span
                     class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Without</span><br>
                 <span id="scramble-text">Boundaries</span><span class="cursor-blink"></span>
             </h1>
 
-            <p class="text-lg md:text-xl text-gray-400 max-w-xl leading-relaxed mb-10 font-light tracking-wide">
+            <p class="text-base sm:text-lg md:text-xl text-gray-400 max-w-xl leading-relaxed mb-8 sm:mb-10 font-light tracking-wide">
                 The all-in-one ecosystem for elite engineering. Source talent, manage projects, and monetize assets in a
                 unified glass-morphic workspace.
             </p>
 
-            <div class="flex flex-wrap gap-4">
+            <div class="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
                 <a href="{{ url_for('auth.login_register') }}"
-                    class="relative overflow-hidden group px-8 py-4 rounded-xl bg-indigo-600 text-white font-bold text-lg shadow-[0_0_20px_rgba(79,70,229,0.3)] transition-all hover:scale-105 hover:shadow-[0_0_40px_rgba(79,70,229,0.5)]">
-                    <span class="relative z-10 flex items-center">Start Building Free <i
+                    class="relative overflow-hidden group px-6 sm:px-8 py-3 sm:py-4 rounded-xl bg-indigo-600 text-white font-bold text-base sm:text-lg shadow-[0_0_20px_rgba(79,70,229,0.3)] transition-all hover:scale-105 hover:shadow-[0_0_40px_rgba(79,70,229,0.5)] text-center">
+                    <span class="relative z-10 flex items-center justify-center">Start Building Free <i
                             class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i></span>
                     <div
                         class="absolute inset-0 -translate-x-full group-hover:translate-x-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700">
@@ -181,29 +181,30 @@
                 </a>
 
                 <a href="#features"
-                    class="px-8 py-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium text-lg backdrop-blur-md transition-all flex items-center justify-center group">
+                    class="px-6 sm:px-8 py-3 sm:py-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium text-base sm:text-lg backdrop-blur-md transition-all flex items-center justify-center group">
                     <i class="fas fa-play text-xs mr-3 text-gray-400 group-hover:text-white transition-colors"></i>
                     See How It Works
                 </a>
             </div>
 
-            <div class="mt-16 pt-8 border-t border-white/5 flex gap-12">
+            <div class="mt-10 sm:mt-16 pt-6 sm:pt-8 border-t border-white/5 flex flex-wrap gap-6 sm:gap-12">
                 <div>
-                    <h3 class="text-3xl font-bold text-white tracking-tight">20+</h3>
+                    <h3 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">20+</h3>
                     <p class="text-xs text-gray-500 uppercase font-bold tracking-widest mt-1">Engineers</p>
                 </div>
                 <div>
-                    <h3 class="text-3xl font-bold text-white tracking-tight">$200K+</h3>
+                    <h3 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">$200K+</h3>
                     <p class="text-xs text-gray-500 uppercase font-bold tracking-widest mt-1">Transacted</p>
                 </div>
                 <div>
-                    <h3 class="text-3xl font-bold text-white tracking-tight">99.9%</h3>
+                    <h3 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">99.9%</h3>
                     <p class="text-xs text-gray-500 uppercase font-bold tracking-widest mt-1">UpTime</p>
                 </div>
             </div>
         </div>
 
-        <div class="relative z-10 order-1 lg:order-2 flex justify-center items-center h-[500px] perspective-[2000px]">
+        <!-- 3D ISO Stack: Visible on large screens only -->
+        <div class="relative z-10 order-1 lg:order-2 hidden lg:flex justify-center items-center h-[500px] perspective-[2000px]">
             <div class="absolute w-[400px] h-[400px] bg-indigo-500/20 rounded-full blur-[100px] -z-10"></div>
 
             <div class="iso-container" id="hero-iso">
@@ -238,6 +239,44 @@
                             <i class="fas fa-user-plus text-2xl text-purple-400"></i>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Hero Visual: Simple animated badge grid (shown instead of 3D on small screens) -->
+        <div class="relative z-10 order-1 lg:hidden flex justify-center items-center py-6">
+            <div class="relative w-full max-w-xs">
+                <!-- Glow orb -->
+                <div class="absolute inset-0 bg-indigo-500/15 rounded-full blur-[60px] pointer-events-none"></div>
+                <div class="grid grid-cols-3 gap-3 relative">
+                    {% set badges = [
+                        {'icon': 'fa-code', 'label': 'Dev Tools', 'color': 'indigo'},
+                        {'icon': 'fa-briefcase', 'label': 'Hiring', 'color': 'purple'},
+                        {'icon': 'fa-store', 'label': 'Market', 'color': 'emerald'},
+                        {'icon': 'fa-shield-alt', 'label': 'Secure', 'color': 'cyan'},
+                        {'icon': 'fa-chart-line', 'label': 'Analytics', 'color': 'pink'},
+                        {'icon': 'fa-layer-group', 'label': 'Platform', 'color': 'yellow'}
+                    ] %}
+                    {% for b in badges %}
+                    <div class="flex flex-col items-center gap-1.5 p-3 rounded-xl border
+                        {% if b.color == 'indigo' %}bg-indigo-500/10 border-indigo-500/25{% endif %}
+                        {% if b.color == 'purple' %}bg-purple-500/10 border-purple-500/25{% endif %}
+                        {% if b.color == 'emerald' %}bg-emerald-500/10 border-emerald-500/25{% endif %}
+                        {% if b.color == 'cyan' %}bg-cyan-500/10 border-cyan-500/25{% endif %}
+                        {% if b.color == 'pink' %}bg-pink-500/10 border-pink-500/25{% endif %}
+                        {% if b.color == 'yellow' %}bg-yellow-500/10 border-yellow-500/25{% endif %}
+                        animate-pulse" style="animation-delay: {{ loop.index0 * 0.2 }}s; animation-duration: 3s;">
+                        <i class="fas {{ b.icon }} text-base
+                            {% if b.color == 'indigo' %}text-indigo-400{% endif %}
+                            {% if b.color == 'purple' %}text-purple-400{% endif %}
+                            {% if b.color == 'emerald' %}text-emerald-400{% endif %}
+                            {% if b.color == 'cyan' %}text-cyan-400{% endif %}
+                            {% if b.color == 'pink' %}text-pink-400{% endif %}
+                            {% if b.color == 'yellow' %}text-yellow-400{% endif %}
+                        "></i>
+                        <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">{{ b.label }}</span>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -282,7 +321,7 @@
         </p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 grid-rows-2 gap-6 h-auto md:h-[600px]">
+    <div class="grid grid-cols-1 md:grid-cols-3 grid-rows-2 gap-6 h-auto">
 
         <div class="md:col-span-2 md:row-span-2 glass-panel rounded-3xl p-10 border-beam-card group relative">
             <div

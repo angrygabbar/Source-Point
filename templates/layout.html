@@ -3,7 +3,11 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#00000a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>{% block title %}Vision For The Future{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.6"></script>
@@ -77,8 +81,8 @@
 
         {% if current_user.is_authenticated %}
         <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
-            class="glass-sidebar fixed inset-y-0 left-0 z-50 w-64 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 flex flex-col shadow-2xl lg:shadow-none"
-            style="will-change:transform;">
+            class="glass-sidebar fixed inset-y-0 left-0 z-50 w-64 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 flex flex-col shadow-2xl lg:shadow-none safe-left"
+            style="will-change:transform;padding-bottom:env(safe-area-inset-bottom,0px);">
             <div class="relative flex items-center justify-center h-20 border-b border-white/5">
                 <a hx-get="{{ url_for('seller.seller_dashboard') if current_user.role == 'seller' else url_for('main.dashboard') }}"
                     hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true"
@@ -91,8 +95,10 @@
                         class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">SourcePoint</span>
                 </a>
                 <button @click="sidebarOpen = false"
-                    class="absolute right-4 lg:hidden p-2 text-gray-400 hover:text-white transition-colors focus:outline-none"><i
-                        class="fas fa-times text-xl"></i></button>
+                    class="absolute right-4 lg:hidden w-11 h-11 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-colors focus:outline-none"
+                    aria-label="Close menu">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
             </div>
 
             <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto custom-scrollbar">
@@ -322,7 +328,7 @@
             <main
                 class="{% block main_class %}flex-1 overflow-y-auto p-4 sm:p-8 relative custom-scrollbar{% endblock %}"
                 id="main-content"
-                style="-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior-y:contain;">
+                style="-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior-y:contain;padding-bottom:max(2rem, env(safe-area-inset-bottom));">
                 <div id="flash-container" class="fixed top-24 right-6 z-50 space-y-3 pointer-events-none">
                     {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
