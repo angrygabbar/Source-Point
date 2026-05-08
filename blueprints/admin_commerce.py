@@ -536,6 +536,197 @@ def update_order_status(order_id):
     flash(f'Order {order.order_number} updated to {new_status}.', 'success')
     return redirect(url_for('admin_commerce.manage_orders'))
 
+# --- CREATE ORDER (Admin) ---
+@admin_commerce_bp.route('/orders/create', methods=['GET', 'POST'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def admin_create_order():
+    if request.method == 'POST':
+        try:
+            buyer_type = request.form.get('buyer_type', 'existing')
+            shipping_address = request.form.get('shipping_address', '').strip()
+            billing_address = request.form.get('billing_address', '').strip() or shipping_address
+            product_ids = request.form.getlist('product_id[]')
+            quantities = request.form.getlist('quantity[]')
+
+            if not shipping_address:
+                flash('Shipping address is required.', 'danger')
+                return redirect(url_for('admin_commerce.admin_create_order'))
+
+            if not product_ids:
+                flash('Please add at least one product to the order.', 'danger')
+                return redirect(url_for('admin_commerce.admin_create_order'))
+
+            # --- 1. Resolve Buyer ---
+            buyer = None
+            new_account_created = False
+
+            if buyer_type == 'existing':
+                user_id = request.form.get('buyer_user_id')
+                if not user_id:
+                    flash('Please select a buyer.', 'danger')
+                    return redirect(url_for('admin_commerce.admin_create_order'))
+                buyer = User.query.get(user_id)
+                if not buyer:
+                    flash('Selected buyer not found.', 'danger')
+                    return redirect(url_for('admin_commerce.admin_create_order'))
+            else:
+                # Custom email flow
+                custom_email = request.form.get('custom_email', '').strip().lower()
+                if not custom_email:
+                    flash('Please enter a buyer email address.', 'danger')
+                    return redirect(url_for('admin_commerce.admin_create_order'))
+
+                buyer = User.query.filter_by(email=custom_email).first()
+                if not buyer:
+                    # Auto-create buyer account
+                    from extensions import bcrypt as _bcrypt
+                    default_password = 'SourcePoint@123'
+
+                    # Generate a unique username from email prefix
+                    base_username = custom_email.split('@')[0].replace('.', '_').replace('+', '_')[:50]
+                    username_candidate = base_username
+                    counter = 1
+                    while User.query.filter_by(username=username_candidate).first():
+                        username_candidate = f"{base_username}{counter}"
+                        counter += 1
+
+                    hashed_pw = _bcrypt.generate_password_hash(default_password).decode('utf-8')
+                    avatar_url = f'https://api.dicebear.com/8.x/initials/svg?seed={username_candidate}'
+
+                    buyer = User(
+                        username=username_candidate,
+                        email=custom_email,
+                        password_hash=hashed_pw,
+                        role=UserRole.BUYER.value,
+                        is_approved=True,
+                        avatar_url=avatar_url,
+                    )
+                    db.session.add(buyer)
+                    db.session.flush()  # get buyer.id before commit
+                    new_account_created = True
+                    log_user_action("Auto-Create Buyer", f"Created buyer account for {custom_email} via admin order")
+
+            # --- 2. Process Products & Stock ---
+            import time as _time
+            total_amount = 0
+            order_items_data = []
+
+            for pid, qty_str in zip(product_ids, quantities):
+                if not pid or not qty_str:
+                    continue
+                try:
+                    qty = int(qty_str)
+                    if qty < 1:
+                        continue
+                except ValueError:
+                    continue
+
+                product = Product.query.get(pid)
+                if not product:
+                    flash(f'Product ID {pid} not found.', 'danger')
+                    db.session.rollback()
+                    return redirect(url_for('admin_commerce.admin_create_order'))
+
+                if product.stock < qty:
+                    flash(f'Insufficient stock for "{product.name}" (Available: {product.stock}, Requested: {qty}).', 'danger')
+                    db.session.rollback()
+                    return redirect(url_for('admin_commerce.admin_create_order'))
+
+                product.stock -= qty
+                total_amount += float(product.price) * qty
+                order_items_data.append({
+                    'product_name': product.name,
+                    'quantity': qty,
+                    'price_at_purchase': product.price,
+                })
+
+            if not order_items_data:
+                flash('No valid products were added to the order.', 'danger')
+                db.session.rollback()
+                return redirect(url_for('admin_commerce.admin_create_order'))
+
+            # --- 3. Create Order ---
+            from models.commerce import OrderItem as _OrderItem
+            order_number = f"ORD-ADMIN-{int(_time.time())}-{buyer.id}"
+            new_order = Order(
+                order_number=order_number,
+                user_id=buyer.id,
+                total_amount=total_amount,
+                shipping_address=shipping_address,
+                billing_address=billing_address,
+                status='Order Placed',
+            )
+            db.session.add(new_order)
+            db.session.flush()
+
+            for item_data in order_items_data:
+                db.session.add(_OrderItem(
+                    order_id=new_order.id,
+                    product_name=item_data['product_name'],
+                    quantity=item_data['quantity'],
+                    price_at_purchase=item_data['price_at_purchase'],
+                ))
+
+            db.session.commit()
+
+            # --- 4. Send Emails ---
+            # Welcome email for newly created accounts
+            if new_account_created:
+                try:
+                    send_email(
+                        to=buyer.email,
+                        subject="Welcome to SourcePoint — Your Account & Order Details",
+                        template="mail/admin_created_order_welcome.html",
+                        buyer=buyer,
+                        order=new_order,
+                        default_password='SourcePoint@123',
+                        login_url=url_for('auth.login_register', _external=True),
+                        now=datetime.utcnow(),
+                    )
+                except Exception as e:
+                    print(f"[WARN] Welcome email failed for {buyer.email}: {e}")
+
+            # Order confirmation email
+            try:
+                send_email(
+                    to=buyer.email,
+                    subject=f"Order Confirmation: {new_order.order_number}",
+                    template="mail/order_status_update.html",
+                    buyer_name=buyer.username,
+                    order_number=new_order.order_number,
+                    status="Order Placed",
+                    order_date=datetime.utcnow().strftime('%B %d, %Y'),
+                    total_amount=new_order.total_amount,
+                    shipping_address=shipping_address,
+                    now=datetime.utcnow(),
+                )
+            except Exception as e:
+                print(f"[WARN] Order confirmation email failed: {e}")
+
+            log_user_action("Admin Create Order", f"Created order {order_number} for buyer {buyer.email}")
+            flash(f'Order {order_number} created successfully for {buyer.email}!', 'success')
+            if new_account_created:
+                flash(f'A new buyer account was created for {buyer.email} with the default password.', 'info')
+            return redirect(url_for('admin_commerce.manage_orders'))
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"[ERROR] Admin create order failed: {e}")
+            traceback.print_exc()
+            flash(f'Error creating order: {str(e)}', 'danger')
+            return redirect(url_for('admin_commerce.admin_create_order'))
+
+    # GET: Render form
+    buyers = User.query.filter_by(role=UserRole.BUYER.value, is_approved=True).order_by(User.username).all()
+    products = Product.query.filter(Product.stock > 0).order_by(Product.name).all()
+    products_js = [
+        {'id': p.id, 'name': p.name, 'price': float(p.price), 'stock': p.stock, 'code': p.product_code}
+        for p in products
+    ]
+    return render_template('admin_create_order.html', buyers=buyers, products=products, products_js=products_js)
+
+
 # --- INVOICES ---
 @admin_commerce_bp.route('/invoices')
 @login_required

@@ -1,0 +1,294 @@
+{% extends "layout.html" %}
+{% block title %}Create Order — Admin{% endblock %}
+{% block content %}
+
+<div class="space-y-8 animate-fade-in pb-10">
+    <div class="flex flex-col md:flex-row justify-between items-end gap-6">
+        <div>
+            <a href="{{ url_for('admin_commerce.manage_orders') }}" class="text-indigo-400 hover:text-indigo-300 text-sm font-semibold mb-2 inline-flex items-center transition-colors">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Orders
+            </a>
+            <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-200 to-gray-400 tracking-tight">
+                Create Order
+            </h1>
+            <p class="text-gray-400 text-sm mt-2 font-light tracking-wide">
+                Place an order on behalf of a registered buyer or a new guest.
+            </p>
+        </div>
+    </div>
+
+    <form action="{{ url_for('admin_commerce.admin_create_order') }}" method="POST" class="space-y-6" id="createOrderForm">
+        
+        <!-- Buyer Details -->
+        <div class="glass-panel p-6 rounded-2xl border border-white/5">
+            <h2 class="text-xl font-bold text-white mb-6 border-b border-white/5 pb-4">
+                <i class="fas fa-user-tag text-indigo-400 mr-2"></i> Buyer Details
+            </h2>
+
+            <div class="mb-6 flex gap-4 p-1 bg-black/40 rounded-xl w-full md:w-max">
+                <label class="flex-1 text-center cursor-pointer relative">
+                    <input type="radio" name="buyer_type" value="existing" class="peer sr-only" checked onchange="toggleBuyerType()">
+                    <div class="px-6 py-2 rounded-lg text-sm font-bold text-gray-500 peer-checked:text-white peer-checked:bg-indigo-500/20 peer-checked:border-indigo-500/50 border border-transparent transition-all">
+                        Registered Buyer
+                    </div>
+                </label>
+                <label class="flex-1 text-center cursor-pointer relative">
+                    <input type="radio" name="buyer_type" value="custom" class="peer sr-only" onchange="toggleBuyerType()">
+                    <div class="px-6 py-2 rounded-lg text-sm font-bold text-gray-500 peer-checked:text-white peer-checked:bg-purple-500/20 peer-checked:border-purple-500/50 border border-transparent transition-all">
+                        Custom Email (Guest)
+                    </div>
+                </label>
+            </div>
+
+            <!-- Existing Buyer Select -->
+            <div id="existingBuyerDiv" class="animate-fade-in">
+                <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Select Buyer</label>
+                <select name="buyer_user_id" class="w-full bg-black/20 border border-white/10 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all">
+                    <option value="" disabled selected>-- Choose a registered buyer --</option>
+                    {% for buyer in buyers %}
+                    <option value="{{ buyer.id }}">{{ buyer.username }} ({{ buyer.email }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Custom Email Input -->
+            <div id="customEmailDiv" class="hidden animate-fade-in">
+                <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Email Address</label>
+                <input type="email" name="custom_email" placeholder="e.g. user@example.com" class="w-full bg-black/20 border border-white/10 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all">
+                <div class="mt-3 flex items-start gap-2 text-xs text-purple-300 bg-purple-500/10 p-3 rounded-lg border border-purple-500/20">
+                    <i class="fas fa-info-circle mt-0.5"></i>
+                    <p>A new account will be created automatically with the default password <strong class="text-white font-mono bg-black/30 px-1 rounded">SourcePoint@123</strong>. An email will be sent to them.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Address Details -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="glass-panel p-6 rounded-2xl border border-white/5">
+                <h2 class="text-lg font-bold text-white mb-4">
+                    <i class="fas fa-shipping-fast text-emerald-400 mr-2"></i> Shipping Address
+                </h2>
+                <textarea name="shipping_address" rows="3" required placeholder="Enter complete shipping address..." class="w-full bg-black/20 border border-white/10 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all resize-none"></textarea>
+            </div>
+
+            <div class="glass-panel p-6 rounded-2xl border border-white/5">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-white">
+                        <i class="fas fa-file-invoice text-blue-400 mr-2"></i> Billing Address
+                    </h2>
+                    <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-400 hover:text-white transition-colors">
+                        <input type="checkbox" id="sameAsShipping" class="rounded bg-black/20 border-white/10 text-blue-500 focus:ring-blue-500/50" checked onchange="toggleBilling()">
+                        Same as shipping
+                    </label>
+                </div>
+                <textarea name="billing_address" id="billingAddressInput" rows="3" placeholder="Enter billing address (leave blank if same as shipping)..." class="w-full bg-black/20 border border-white/10 text-gray-500 text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all resize-none" disabled></textarea>
+            </div>
+        </div>
+
+        <!-- Order Items -->
+        <div class="glass-panel p-6 rounded-2xl border border-white/5">
+            <h2 class="text-xl font-bold text-white mb-6 border-b border-white/5 pb-4">
+                <i class="fas fa-box-open text-orange-400 mr-2"></i> Order Items
+            </h2>
+
+            <div id="itemsContainer" class="space-y-4">
+                <!-- Single Item Row Template -->
+                <div class="item-row flex flex-col md:flex-row gap-4 items-end bg-black/20 p-4 rounded-xl border border-white/5">
+                    <div class="flex-1 w-full">
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Product</label>
+                        <select name="product_id[]" required onchange="updateRowPrice(this)" class="product-select w-full bg-black/40 border border-white/10 text-white text-sm rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all">
+                            <option value="" disabled selected>Select a product...</option>
+                            {% for p in products %}
+                            <option value="{{ p.id }}" data-price="{{ p.price }}" data-stock="{{ p.stock }}">{{ p.name }} (Stock: {{ p.stock }}) - ₹{{ "{:,.2f}".format(p.price) }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="w-full md:w-32">
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Quantity</label>
+                        <input type="number" name="quantity[]" min="1" value="1" required oninput="calculateTotal()" class="qty-input w-full bg-black/40 border border-white/10 text-white text-sm rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all text-center">
+                    </div>
+
+                    <div class="w-full md:w-40 text-right md:mb-2">
+                        <p class="text-xs text-gray-500 uppercase tracking-widest mb-1">Row Total</p>
+                        <p class="text-lg font-mono font-bold text-indigo-300 row-total">₹0.00</p>
+                    </div>
+
+                    <div class="w-full md:w-auto md:mb-2 text-right">
+                        <button type="button" onclick="removeRow(this)" class="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors" title="Remove Item">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 flex justify-between items-center border-t border-white/5 pt-6">
+                <button type="button" onclick="addRow()" class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 text-sm font-bold transition-all flex items-center shadow-sm">
+                    <i class="fas fa-plus mr-2 text-emerald-400"></i> Add Another Product
+                </button>
+
+                <div class="text-right bg-indigo-500/10 border border-indigo-500/20 px-6 py-3 rounded-xl shadow-inner">
+                    <p class="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1">Grand Total</p>
+                    <p class="text-3xl font-mono font-extrabold text-white" id="grandTotal">₹0.00</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit -->
+        <div class="flex justify-end gap-4 mt-8 border-t border-white/5 pt-6">
+            <a href="{{ url_for('admin_commerce.manage_orders') }}" class="px-6 py-3 rounded-xl bg-black/40 hover:bg-black/60 border border-white/10 text-gray-300 text-sm font-bold uppercase tracking-wider transition-all">
+                Cancel
+            </a>
+            <button type="submit" class="px-8 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-sm font-bold uppercase tracking-wider shadow-lg shadow-indigo-500/25 transition-all transform hover:-translate-y-0.5 flex items-center">
+                <i class="fas fa-check-circle mr-2"></i> Create Order
+            </button>
+        </div>
+
+    </form>
+</div>
+
+<!-- Hidden template for new rows -->
+<div id="rowTemplate" class="hidden">
+    <div class="item-row flex flex-col md:flex-row gap-4 items-end bg-black/20 p-4 rounded-xl border border-white/5 mt-4 animate-fade-in">
+        <div class="flex-1 w-full">
+            <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Product</label>
+            <select name="product_id[]" required onchange="updateRowPrice(this)" class="product-select w-full bg-black/40 border border-white/10 text-white text-sm rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all">
+                <option value="" disabled selected>Select a product...</option>
+                {% for p in products %}
+                <option value="{{ p.id }}" data-price="{{ p.price }}" data-stock="{{ p.stock }}">{{ p.name }} (Stock: {{ p.stock }}) - ₹{{ "{:,.2f}".format(p.price) }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="w-full md:w-32">
+            <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Quantity</label>
+            <input type="number" name="quantity[]" min="1" value="1" required oninput="calculateTotal()" class="qty-input w-full bg-black/40 border border-white/10 text-white text-sm rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all text-center">
+        </div>
+
+        <div class="w-full md:w-40 text-right md:mb-2">
+            <p class="text-xs text-gray-500 uppercase tracking-widest mb-1">Row Total</p>
+            <p class="text-lg font-mono font-bold text-indigo-300 row-total">₹0.00</p>
+        </div>
+
+        <div class="w-full md:w-auto md:mb-2 text-right">
+            <button type="button" onclick="removeRow(this)" class="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors" title="Remove Item">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Toggle Buyer Type (Existing vs Custom Email)
+    function toggleBuyerType() {
+        const type = document.querySelector('input[name="buyer_type"]:checked').value;
+        const existingDiv = document.getElementById('existingBuyerDiv');
+        const customDiv = document.getElementById('customEmailDiv');
+        
+        if (type === 'existing') {
+            existingDiv.classList.remove('hidden');
+            customDiv.classList.add('hidden');
+            existingDiv.querySelector('select').required = true;
+            customDiv.querySelector('input').required = false;
+        } else {
+            existingDiv.classList.add('hidden');
+            customDiv.classList.remove('hidden');
+            existingDiv.querySelector('select').required = false;
+            customDiv.querySelector('input').required = true;
+        }
+    }
+
+    // Toggle Billing Address
+    function toggleBilling() {
+        const checkbox = document.getElementById('sameAsShipping');
+        const input = document.getElementById('billingAddressInput');
+        
+        if (checkbox.checked) {
+            input.disabled = true;
+            input.value = '';
+            input.classList.add('text-gray-500');
+            input.classList.remove('text-white');
+        } else {
+            input.disabled = false;
+            input.classList.remove('text-gray-500');
+            input.classList.add('text-white');
+            input.focus();
+        }
+    }
+
+    // Add new product row
+    function addRow() {
+        const container = document.getElementById('itemsContainer');
+        const template = document.getElementById('rowTemplate').innerHTML;
+        container.insertAdjacentHTML('beforeend', template);
+    }
+
+    // Remove product row
+    function removeRow(btn) {
+        const container = document.getElementById('itemsContainer');
+        // Keep at least one row
+        if (container.querySelectorAll('.item-row').length > 1) {
+            btn.closest('.item-row').remove();
+            calculateTotal();
+        }
+    }
+
+    // Update row price when product changes
+    function updateRowPrice(selectEl) {
+        const row = selectEl.closest('.item-row');
+        const option = selectEl.options[selectEl.selectedIndex];
+        const stock = parseInt(option.dataset.stock || "0");
+        const price = parseFloat(option.dataset.price || "0");
+        
+        // Update max attribute on quantity input based on stock
+        const qtyInput = row.querySelector('.qty-input');
+        qtyInput.max = stock;
+        
+        // If current qty > stock, reset to 1
+        if (parseInt(qtyInput.value) > stock) {
+            qtyInput.value = 1;
+        }
+
+        calculateTotal();
+    }
+
+    // Calculate Grand Total and Row Totals
+    function calculateTotal() {
+        const rows = document.querySelectorAll('#itemsContainer .item-row');
+        let grandTotal = 0;
+
+        rows.forEach(row => {
+            const select = row.querySelector('.product-select');
+            const qtyInput = row.querySelector('.qty-input');
+            const rowTotalDisplay = row.querySelector('.row-total');
+
+            if (select.value && select.selectedIndex > 0) {
+                const option = select.options[select.selectedIndex];
+                const price = parseFloat(option.dataset.price || "0");
+                const qty = parseInt(qtyInput.value || "0");
+                const stock = parseInt(option.dataset.stock || "0");
+
+                // Prevent qty from exceeding stock
+                if (qty > stock) {
+                    qtyInput.value = stock;
+                }
+
+                const rowTotal = price * parseInt(qtyInput.value || "0");
+                rowTotalDisplay.textContent = '₹' + rowTotal.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                grandTotal += rowTotal;
+            } else {
+                rowTotalDisplay.textContent = '₹0.00';
+            }
+        });
+
+        document.getElementById('grandTotal').textContent = '₹' + grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+        toggleBuyerType();
+        toggleBilling();
+    });
+</script>
+
+{% endblock %}

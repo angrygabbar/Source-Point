@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to SourcePoint — Your Account is Ready</title>
+</head>
+<body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+
+    <!-- Preheader -->
+    <span style="display:none;max-height:0;overflow:hidden;">
+        🛍️ Your SourcePoint account has been created and your order is confirmed!
+    </span>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#07070f;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="background:linear-gradient(135deg,#312e81,#4f46e5,#7c3aed);border-radius:20px 20px 0 0;padding:40px 40px 50px;text-align:center;">
+                            <div style="display:inline-block;background:rgba(255,255,255,0.15);border-radius:16px;padding:14px;margin-bottom:20px;">
+                                <img src="https://img.icons8.com/fluency/48/shopping-bag.png" alt="Order" width="48" height="48" style="display:block;">
+                            </div>
+                            <h1 style="margin:0;font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">
+                                Welcome to SourcePoint! 🎉
+                            </h1>
+                            <p style="margin:10px 0 0;font-size:15px;color:rgba(255,255,255,0.85);">Your account is ready &amp; your order has been placed</p>
+                        </td>
+                    </tr>
+
+                    <!-- Wave Divider -->
+                    <tr>
+                        <td style="background:linear-gradient(135deg,#312e81,#4f46e5);height:30px;">
+                            <div style="background:#0f0f1e;height:30px;border-radius:30px 30px 0 0;"></div>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="background:#0f0f1e;padding:0 40px 36px;">
+
+                            <p style="font-size:17px;color:#f1f5f9;margin:24px 0 6px;">Hello <strong style="color:#a78bfa;">{{ buyer.username }}</strong>,</p>
+                            <p style="font-size:15px;color:#94a3b8;line-height:1.7;margin:0 0 28px;">
+                                An order has been placed for you by our admin team. We've also created a <strong style="color:#f1f5f9;">SourcePoint account</strong> for you so you can track your orders anytime.
+                            </p>
+
+                            <!-- Login Credentials -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.25);border-radius:14px;margin-bottom:20px;">
+                                <tr>
+                                    <td style="padding:22px 26px;">
+                                        <p style="margin:0 0 14px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#a78bfa;font-weight:700;">
+                                            🔑 Your Login Credentials
+                                        </p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;width:130px;">Email</td>
+                                                <td style="padding:7px 0;color:#f1f5f9;font-size:14px;font-weight:600;">{{ buyer.email }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Username</td>
+                                                <td style="padding:7px 0;color:#e2e8f0;font-size:13px;">{{ buyer.username }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Password</td>
+                                                <td style="padding:7px 0;">
+                                                    <span style="background:#1e1b4b;border:1px solid rgba(124,58,237,0.4);color:#a78bfa;font-family:monospace;font-size:14px;font-weight:700;padding:4px 12px;border-radius:8px;letter-spacing:1px;">{{ default_password }}</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        <p style="margin:14px 0 0;font-size:12px;color:#64748b;line-height:1.6;">
+                                            ⚠️ This is a temporary password. Please log in and use <strong style="color:#94a3b8;">"Forgot Password"</strong> to set a new secure password.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Order Summary -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.15);border-radius:14px;margin-bottom:20px;">
+                                <tr>
+                                    <td style="padding:22px 26px;">
+                                        <p style="margin:0 0 14px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#818cf8;font-weight:700;">
+                                            📦 Order Summary
+                                        </p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;width:130px;">Order Number</td>
+                                                <td style="padding:7px 0;color:#f1f5f9;font-size:14px;font-weight:700;font-family:monospace;">{{ order.order_number }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Status</td>
+                                                <td style="padding:7px 0;">
+                                                    <span style="background:rgba(99,102,241,0.15);color:#818cf8;font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;">● Order Placed</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Total Amount</td>
+                                                <td style="padding:7px 0;color:#f1f5f9;font-size:16px;font-weight:800;">₹{{ "%.2f"|format(order.total_amount) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Ships To</td>
+                                                <td style="padding:7px 0;color:#e2e8f0;font-size:13px;line-height:1.5;">{{ order.shipping_address }}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Items -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:#0a0a18;border:1px solid rgba(255,255,255,0.07);border-radius:14px;margin-bottom:24px;overflow:hidden;">
+                                <tr>
+                                    <td style="padding:14px 22px;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.07);">
+                                        <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#64748b;font-weight:700;">🛒 Items Ordered</p>
+                                    </td>
+                                </tr>
+                                {% for item in order.items %}
+                                <tr>
+                                    <td style="padding:12px 22px;border-bottom:1px solid rgba(255,255,255,0.04);">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="color:#e2e8f0;font-size:14px;font-weight:600;">{{ item.product_name }}</td>
+                                                <td align="right" style="color:#a78bfa;font-size:14px;font-weight:700;font-family:monospace;">₹{{ "%.2f"|format(item.price_at_purchase) }} × {{ item.quantity }}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                <tr>
+                                    <td style="padding:14px 22px;background:rgba(99,102,241,0.08);">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="color:#818cf8;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Total</td>
+                                                <td align="right" style="color:#ffffff;font-size:18px;font-weight:800;">₹{{ "%.2f"|format(order.total_amount) }}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- CTA -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{ login_url }}"
+                                            style="display:inline-block;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#ffffff;text-decoration:none;padding:16px 44px;border-radius:12px;font-size:16px;font-weight:700;letter-spacing:0.3px;box-shadow:0 8px 24px rgba(124,58,237,0.35);">
+                                            🔐 Login to Track Your Order →
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="font-size:15px;color:#e2e8f0;margin:0;">
+                                Thank you for your order! 🙏<br>
+                                <strong style="color:#a78bfa;">The Source Point Team</strong>
+                            </p>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background:#07070f;border-top:1px solid #1e1e30;padding:24px 40px;text-align:center;border-radius:0 0 20px 20px;">
+                            <p style="margin:0 0 4px;font-size:13px;color:#64748b;font-weight:600;">⚡ SourcePoint Platform</p>
+                            <p style="margin:0 0 8px;font-size:12px;color:#334155;">
+                                Need help? <a href="mailto:admin@sourcepoint.in" style="color:#7c3aed;text-decoration:none;">admin@sourcepoint.in</a>
+                            </p>
+                            <p style="margin:0;font-size:11px;color:#1e293b;">
+                                © {{ now.year if now is defined else '2025' }} Source Point. All rights reserved. · This is an automated notification.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
