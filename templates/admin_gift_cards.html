@@ -16,10 +16,16 @@
             </h1>
             <p class="text-gray-400 mt-1">Securely manage and distribute gift cards</p>
         </div>
-        <button onclick="document.getElementById('addCardModal').classList.remove('hidden')"
-            class="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-2xl hover:shadow-lg hover:shadow-pink-500/25 transition-all flex items-center gap-2">
-            <i class="fas fa-plus"></i> Add Gift Card
-        </button>
+        <div class="flex gap-3">
+            <button onclick="document.getElementById('bulkAddModal').classList.remove('hidden')"
+                class="px-5 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-semibold rounded-2xl hover:shadow-lg hover:shadow-amber-500/25 transition-all flex items-center gap-2 text-sm">
+                <i class="fas fa-layer-group"></i> Bulk Add
+            </button>
+            <button onclick="document.getElementById('addCardModal').classList.remove('hidden')"
+                class="px-5 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-2xl hover:shadow-lg hover:shadow-pink-500/25 transition-all flex items-center gap-2 text-sm">
+                <i class="fas fa-plus"></i> Add Gift Card
+            </button>
+        </div>
     </div>
 
     <!-- Stats Cards -->
@@ -70,7 +76,7 @@
         </div>
     </div>
 
-    <!-- Filters -->
+    <!-- Filters with Brand Search -->
     <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4">
         <form method="GET" action="{{ url_for('admin_giftcards.gift_cards_dashboard') }}"
             class="flex flex-wrap gap-4 items-center">
@@ -84,20 +90,34 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 relative" id="brandFilterWrapper">
                 <label class="text-gray-400 text-sm font-medium">Brand:</label>
-                <select name="brand"
-                    class="bg-white/10 border border-white/20 text-white rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-pink-500 focus:border-transparent">
-                    <option value="all" {% if current_brand=='all' %}selected{% endif %}>All Brands</option>
-                    {% for b in brands %}
-                    <option value="{{ b }}" {% if current_brand==b %}selected{% endif %}>{{ b }}</option>
-                    {% endfor %}
-                </select>
+                <div class="relative">
+                    <input type="text" id="brandSearchFilter" placeholder="Search brand..." autocomplete="off"
+                        class="bg-white/10 border border-white/20 text-white rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-pink-500 focus:border-transparent w-48"
+                        oninput="filterBrandDropdown(this, 'brandFilterDropdown', 'brand_filter_hidden')"
+                        onfocus="document.getElementById('brandFilterDropdown').classList.remove('hidden')"
+                        value="{{ current_brand if current_brand != 'all' else '' }}">
+                    <input type="hidden" name="brand" id="brand_filter_hidden" value="{{ current_brand }}">
+                    <div id="brandFilterDropdown" class="hidden absolute z-50 mt-1 w-64 max-h-60 overflow-y-auto bg-[#1e293b] border border-white/20 rounded-xl shadow-2xl">
+                        <div class="p-1">
+                            <button type="button" onclick="selectBrandFilter('all', 'All Brands')" class="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/10 rounded-lg transition-colors">All Brands</button>
+                            {% for b in brands %}
+                            <button type="button" onclick="selectBrandFilter('{{ b }}', '{{ b }}')" class="brand-filter-option w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/10 rounded-lg transition-colors">{{ b }}</button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
             </div>
             <button type="submit"
                 class="px-5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-medium transition-all">
                 <i class="fas fa-filter mr-1"></i> Apply
             </button>
+            {% if current_status != 'all' or current_brand != 'all' %}
+            <a href="{{ url_for('admin_giftcards.gift_cards_dashboard') }}" class="px-4 py-2 text-gray-400 hover:text-white text-sm transition-colors">
+                <i class="fas fa-times mr-1"></i> Clear
+            </a>
+            {% endif %}
         </form>
     </div>
 
@@ -440,6 +460,84 @@
     </div>
 </div>
 
+<!-- ==================== BULK ADD MODAL ==================== -->
+<div id="bulkAddModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+    onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="bg-[#1e293b] border border-white/10 rounded-3xl shadow-2xl w-full max-w-lg mx-4 p-8 relative max-h-[90vh] overflow-y-auto">
+        <button onclick="this.closest('.fixed').classList.add('hidden')"
+            class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl"><i class="fas fa-times"></i></button>
+        <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                <i class="fas fa-layer-group text-white"></i>
+            </div>
+            Bulk Add Gift Cards
+        </h2>
+        <form method="POST" action="{{ url_for('admin_giftcards.bulk_add_gift_cards') }}" class="space-y-5">
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Brand *</label>
+                <div class="relative">
+                    <input type="text" id="bulkBrandSearch" placeholder="Search brand..." autocomplete="off"
+                        class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                        oninput="filterBrandDropdown(this,'bulkBrandDropdown','bulkBrandHidden')"
+                        onfocus="document.getElementById('bulkBrandDropdown').classList.remove('hidden')">
+                    <input type="hidden" name="brand" id="bulkBrandHidden" value="" required>
+                    <div id="bulkBrandDropdown" class="hidden absolute z-50 mt-1 w-full max-h-48 overflow-y-auto bg-[#1e293b] border border-white/20 rounded-xl shadow-2xl">
+                        <div class="p-1">
+                            {% for b in brands %}
+                            <button type="button" onclick="selectSearchableBrand('{{ b }}','bulkBrandSearch','bulkBrandHidden','bulkBrandDropdown','bulkCustomDiv')" class="brand-opt w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/10 rounded-lg transition-colors">{{ b }}</button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="bulkCustomDiv" class="hidden">
+                <label class="block text-sm font-medium text-gray-300 mb-2">Custom Brand Name</label>
+                <input type="text" name="custom_brand" placeholder="Enter brand name"
+                    class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Denomination (₹) *</label>
+                    <input type="number" name="denomination" required min="1" placeholder="500"
+                        class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Expiry Date</label>
+                    <input type="date" name="expiry_date"
+                        class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Card Numbers * <span class="text-gray-500">(one per line)</span></label>
+                <textarea name="card_numbers" rows="4" required placeholder="XXXX-XXXX-XXXX-1111&#10;XXXX-XXXX-XXXX-2222&#10;XXXX-XXXX-XXXX-3333" id="bulkCardNumbers"
+                    oninput="updateBulkCount()"
+                    class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 focus:border-transparent font-mono text-sm resize-none"></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">PINs * <span class="text-gray-500">(one per line, must match card count)</span></label>
+                <textarea name="pins" rows="4" required placeholder="1234&#10;5678&#10;9012" id="bulkPins"
+                    oninput="updateBulkCount()"
+                    class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 focus:border-transparent font-mono text-sm resize-none"></textarea>
+            </div>
+            <div id="bulkPreview" class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
+                <p class="text-amber-400 text-sm flex items-center gap-2">
+                    <i class="fas fa-info-circle"></i>
+                    <span id="bulkPreviewText">Enter card numbers and PINs above</span>
+                </p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Notes</label>
+                <textarea name="notes" rows="2" placeholder="Optional notes for all cards..."
+                    class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"></textarea>
+            </div>
+            <button type="submit"
+                class="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-amber-500/25 transition-all text-lg">
+                <i class="fas fa-layer-group mr-2"></i> Add All Cards
+            </button>
+        </form>
+    </div>
+</div>
+
 <!-- ==================== SEND CARD MODAL ==================== -->
 <div id="sendCardModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
     onclick="if(event.target===this)this.classList.add('hidden')">
@@ -561,8 +659,63 @@
         }
     }
 
-    // Use event delegation for send buttons
-    document.addEventListener('click', function (e) {
+    // ── Searchable brand dropdown (filter bar) ────────────────────────
+    function filterBrandDropdown(input, dropdownId, hiddenId) {
+        const q = input.value.toLowerCase();
+        const dropdown = document.getElementById(dropdownId);
+        dropdown.classList.remove('hidden');
+        dropdown.querySelectorAll('button').forEach(btn => {
+            btn.style.display = btn.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+    }
+
+    function selectBrandFilter(value, label) {
+        document.getElementById('brand_filter_hidden').value = value;
+        document.getElementById('brandSearchFilter').value = value === 'all' ? '' : label;
+        document.getElementById('brandFilterDropdown').classList.add('hidden');
+    }
+
+    // ── Searchable brand dropdown (modals) ─────────────────────────────
+    function selectSearchableBrand(value, inputId, hiddenId, dropdownId, customDivId) {
+        document.getElementById(inputId).value = value;
+        document.getElementById(hiddenId).value = value;
+        document.getElementById(dropdownId).classList.add('hidden');
+        const customDiv = document.getElementById(customDivId);
+        if (value === 'Other') {
+            customDiv.classList.remove('hidden');
+        } else {
+            customDiv.classList.add('hidden');
+        }
+    }
+
+    // ── Bulk add preview counter ──────────────────────────────────────
+    function updateBulkCount() {
+        const cards = document.getElementById('bulkCardNumbers').value.trim().split('\n').filter(l => l.trim());
+        const pins = document.getElementById('bulkPins').value.trim().split('\n').filter(l => l.trim());
+        const preview = document.getElementById('bulkPreviewText');
+        const previewBox = document.getElementById('bulkPreview');
+        if (cards.length === 0 && pins.length === 0) {
+            preview.textContent = 'Enter card numbers and PINs above';
+            previewBox.className = 'bg-amber-500/10 border border-amber-500/30 rounded-xl p-4';
+        } else if (cards.length === pins.length) {
+            preview.textContent = '✅ ' + cards.length + ' card(s) will be created';
+            previewBox.className = 'bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4';
+        } else {
+            preview.textContent = '⚠️ Mismatch: ' + cards.length + ' card number(s) vs ' + pins.length + ' PIN(s)';
+            previewBox.className = 'bg-red-500/10 border border-red-500/30 rounded-xl p-4';
+        }
+    }
+
+    // ── Close dropdowns on outside click ──────────────────────────────
+    document.addEventListener('click', function(e) {
+        ['brandFilterDropdown', 'bulkBrandDropdown'].forEach(id => {
+            const dd = document.getElementById(id);
+            if (dd && !dd.contains(e.target) && !e.target.matches('#brandSearchFilter, #bulkBrandSearch')) {
+                dd.classList.add('hidden');
+            }
+        });
+
+        // Send button delegation
         const sendBtn = e.target.closest('.send-card-btn');
         if (sendBtn) {
             const cardId = sendBtn.dataset.id;
@@ -574,6 +727,7 @@
             return;
         }
 
+        // Edit button delegation
         const editBtn = e.target.closest('.edit-card-btn');
         if (editBtn) {
             const cardId = editBtn.dataset.id;

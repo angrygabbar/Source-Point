@@ -123,6 +123,73 @@ def add_gift_card():
     return redirect(url_for('admin_giftcards.gift_cards_dashboard'))
 
 
+@admin_giftcards_bp.route('/admin/gift-cards/bulk-add', methods=['POST'])
+@login_required
+@role_required('admin')
+def bulk_add_gift_cards():
+    """Add multiple gift cards at once for the same brand."""
+    brand = request.form.get('brand', '').strip()
+    custom_brand = request.form.get('custom_brand', '').strip()
+    denomination = request.form.get('denomination', '0')
+    expiry_date_str = request.form.get('expiry_date', '')
+    notes = request.form.get('notes', '').strip()
+    card_numbers_raw = request.form.get('card_numbers', '').strip()
+    pins_raw = request.form.get('pins', '').strip()
+
+    if not card_numbers_raw or not pins_raw:
+        flash('Card numbers and PINs are required.', 'danger')
+        return redirect(url_for('admin_giftcards.gift_cards_dashboard'))
+
+    # Use custom brand if "Other" is selected
+    if brand == 'Other' and custom_brand:
+        brand = custom_brand
+
+    # Parse expiry date
+    expiry_date = None
+    if expiry_date_str:
+        try:
+            expiry_date = datetime.strptime(expiry_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            flash('Invalid expiry date format.', 'danger')
+            return redirect(url_for('admin_giftcards.gift_cards_dashboard'))
+
+    # Parse card numbers and PINs (one per line)
+    card_numbers = [cn.strip() for cn in card_numbers_raw.replace(',', '\n').split('\n') if cn.strip()]
+    pins = [p.strip() for p in pins_raw.replace(',', '\n').split('\n') if p.strip()]
+
+    if len(card_numbers) != len(pins):
+        flash(f'Mismatch: {len(card_numbers)} card number(s) but {len(pins)} PIN(s). They must be equal.', 'danger')
+        return redirect(url_for('admin_giftcards.gift_cards_dashboard'))
+
+    if len(card_numbers) == 0:
+        flash('No valid card numbers found.', 'danger')
+        return redirect(url_for('admin_giftcards.gift_cards_dashboard'))
+
+    try:
+        count = 0
+        for card_number, pin in zip(card_numbers, pins):
+            card = GiftCard(
+                brand=brand,
+                denomination=float(denomination),
+                expiry_date=expiry_date,
+                notes=notes,
+                created_by_id=current_user.id
+            )
+            card.set_card_number(card_number)
+            card.set_pin(pin)
+            db.session.add(card)
+            count += 1
+
+        db.session.commit()
+        log_user_action('Bulk Gift Cards Added', f'Brand: {brand}, Count: {count}, Denomination: ₹{denomination}')
+        flash(f'🎉 Successfully added {count} {brand} gift card(s)!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error during bulk add: {str(e)}', 'danger')
+
+    return redirect(url_for('admin_giftcards.gift_cards_dashboard'))
+
+
 @admin_giftcards_bp.route('/admin/gift-cards/<int:card_id>/edit', methods=['POST'])
 @login_required
 @role_required('admin')
