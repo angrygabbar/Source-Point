@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Health Report — SourcePoint</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+
+    <!-- Preheader -->
+    <span style="display:none;max-height:0;overflow:hidden;">
+        {% if overall_status == 'HEALTHY' %}🟢{% elif overall_status == 'WARNING' %}🟡{% else %}🔴{% endif %}
+        Server {{ overall_status }} — {{ report_time }} | {{ alerts|length }} alerts
+    </span>
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f3f4f6;">
+        <tr>
+            <td align="center" style="padding:24px 16px;">
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0"
+                    style="max-width:600px; width:100%; background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg,
+                            {% if overall_status == 'HEALTHY' %}#059669, #10b981
+                            {% elif overall_status == 'WARNING' %}#d97706, #f59e0b
+                            {% else %}#dc2626, #ef4444{% endif %}
+                        ); padding:32px 40px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td>
+                                        <div style="font-size:14px; color:rgba(255,255,255,0.8); font-weight:600; margin-bottom:8px;">
+                                            SERVER HEALTH REPORT
+                                        </div>
+                                        <div style="font-size:32px; font-weight:800; color:#ffffff; letter-spacing:-0.5px;">
+                                            {% if overall_status == 'HEALTHY' %}🟢{% elif overall_status == 'WARNING' %}🟡{% else %}🔴{% endif %}
+                                            {{ overall_status }}
+                                        </div>
+                                        <div style="font-size:13px; color:rgba(255,255,255,0.7); margin-top:8px;">
+                                            {{ report_time }}
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Alerts Section -->
+                    {% if alerts %}
+                    <tr>
+                        <td style="padding:24px 40px 0 40px;">
+                            <div style="font-size:13px; font-weight:700; color:#374151; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">
+                                ⚠️ Alerts ({{ alerts|length }})
+                            </div>
+                            {% for alert in alerts %}
+                            <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:10px 14px; margin-bottom:8px; font-size:13px; color:#991b1b;">
+                                {{ alert }}
+                            </div>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    <!-- System Info -->
+                    {% if checks.system %}
+                    <tr>
+                        <td style="padding:24px 40px 0 40px;">
+                            <div style="font-size:13px; font-weight:700; color:#374151; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">
+                                🖥️ System Info
+                            </div>
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden;">
+                                {% if checks.system.status == 'OK' %}
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">Hostname</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.system.hostname }}</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">Platform</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.system.platform }}</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">Architecture</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.system.architecture }}</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">Python</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.system.python_version }}</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280;">Uptime</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; text-align:right;">{{ checks.system.uptime }}</td></tr>
+                                {% else %}
+                                <tr><td style="padding:12px 14px; font-size:12px; color:#dc2626;">Error: {{ checks.system.error }}</td></tr>
+                                {% endif %}
+                            </table>
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    <!-- CPU -->
+                    {% if checks.cpu %}
+                    <tr>
+                        <td style="padding:20px 40px 0 40px;">
+                            <div style="font-size:13px; font-weight:700; color:#374151; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">
+                                ⚡ CPU
+                                <span style="float:right; font-size:11px; padding:2px 8px; border-radius:20px;
+                                    {% if checks.cpu.status == 'OK' %}background:#dcfce7; color:#166534;
+                                    {% elif checks.cpu.status == 'WARNING' %}background:#fef3c7; color:#92400e;
+                                    {% else %}background:#fef2f2; color:#991b1b;{% endif %}">
+                                    {{ checks.cpu.status }}
+                                </span>
+                            </div>
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden;">
+                                {% if checks.cpu.status != 'ERROR' %}
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">Usage</td>
+                                    <td style="padding:8px 14px; font-size:14px; color:#111827; font-weight:700; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.cpu.usage_percent }}%</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">Cores (Physical / Logical)</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.cpu.cores_physical }} / {{ checks.cpu.cores_logical }}</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280;">Load Average (1m / 5m / 15m)</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; text-align:right;">{{ checks.cpu.load_avg_1m }} / {{ checks.cpu.load_avg_5m }} / {{ checks.cpu.load_avg_15m }}</td></tr>
+                                {% else %}
+                                <tr><td style="padding:12px 14px; font-size:12px; color:#dc2626;">{{ checks.cpu.error }}</td></tr>
+                                {% endif %}
+                            </table>
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    <!-- Memory -->
+                    {% if checks.memory %}
+                    <tr>
+                        <td style="padding:20px 40px 0 40px;">
+                            <div style="font-size:13px; font-weight:700; color:#374151; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">
+                                💾 Memory
+                                <span style="float:right; font-size:11px; padding:2px 8px; border-radius:20px;
+                                    {% if checks.memory.status == 'OK' %}background:#dcfce7; color:#166534;
+                                    {% elif checks.memory.status == 'WARNING' %}background:#fef3c7; color:#92400e;
+                                    {% else %}background:#fef2f2; color:#991b1b;{% endif %}">
+                                    {{ checks.memory.status }}
+                                </span>
+                            </div>
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden;">
+                                {% if checks.memory.status != 'ERROR' %}
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">RAM Usage</td>
+                                    <td style="padding:8px 14px; font-size:14px; color:#111827; font-weight:700; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.memory.usage_percent }}%</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">Used / Total</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.memory.used_gb }} GB / {{ checks.memory.total_gb }} GB</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">Available</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.memory.available_gb }} GB</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280;">Swap</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; text-align:right;">{{ checks.memory.swap_used_gb }} / {{ checks.memory.swap_total_gb }} GB ({{ checks.memory.swap_percent }}%)</td></tr>
+                                {% else %}
+                                <tr><td style="padding:12px 14px; font-size:12px; color:#dc2626;">{{ checks.memory.error }}</td></tr>
+                                {% endif %}
+                            </table>
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    <!-- Disk -->
+                    {% if checks.disk %}
+                    <tr>
+                        <td style="padding:20px 40px 0 40px;">
+                            <div style="font-size:13px; font-weight:700; color:#374151; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">
+                                💿 Disk
+                                <span style="float:right; font-size:11px; padding:2px 8px; border-radius:20px;
+                                    {% if checks.disk.status == 'OK' %}background:#dcfce7; color:#166534;
+                                    {% elif checks.disk.status == 'WARNING' %}background:#fef3c7; color:#92400e;
+                                    {% else %}background:#fef2f2; color:#991b1b;{% endif %}">
+                                    {{ checks.disk.status }}
+                                </span>
+                            </div>
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden;">
+                                {% if checks.disk.status != 'ERROR' %}
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">Disk Usage</td>
+                                    <td style="padding:8px 14px; font-size:14px; color:#111827; font-weight:700; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.disk.usage_percent }}%</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">Used / Total</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.disk.used_gb }} GB / {{ checks.disk.total_gb }} GB</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">Free Space</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#059669; font-weight:600; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.disk.free_gb }} GB</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280;">I/O (Read / Write)</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; text-align:right;">{{ checks.disk.read_mb }} MB / {{ checks.disk.write_mb }} MB</td></tr>
+                                {% else %}
+                                <tr><td style="padding:12px 14px; font-size:12px; color:#dc2626;">{{ checks.disk.error }}</td></tr>
+                                {% endif %}
+                            </table>
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    <!-- Database -->
+                    {% if checks.database %}
+                    <tr>
+                        <td style="padding:20px 40px 0 40px;">
+                            <div style="font-size:13px; font-weight:700; color:#374151; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">
+                                🗄️ PostgreSQL Database
+                                <span style="float:right; font-size:11px; padding:2px 8px; border-radius:20px;
+                                    {% if checks.database.status == 'OK' %}background:#dcfce7; color:#166534;
+                                    {% elif checks.database.status == 'WARNING' %}background:#fef3c7; color:#92400e;
+                                    {% else %}background:#fef2f2; color:#991b1b;{% endif %}">
+                                    {{ checks.database.status }}
+                                </span>
+                            </div>
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden;">
+                                {% if checks.database.error is not defined %}
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">Query Latency</td>
+                                    <td style="padding:8px 14px; font-size:14px; color:#111827; font-weight:700; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.database.latency_ms }} ms</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">Database Size</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.database.database_size }}</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">Active Connections</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.database.active_connections }}</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">Total Users</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.database.total_users }}</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280;">Total Articles</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; text-align:right;">{{ checks.database.total_articles }}</td></tr>
+                                {% else %}
+                                <tr><td style="padding:12px 14px; font-size:12px; color:#dc2626;">{{ checks.database.error }}</td></tr>
+                                {% endif %}
+                            </table>
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    <!-- Redis -->
+                    {% if checks.redis %}
+                    <tr>
+                        <td style="padding:20px 40px 0 40px;">
+                            <div style="font-size:13px; font-weight:700; color:#374151; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">
+                                🔴 Redis
+                                <span style="float:right; font-size:11px; padding:2px 8px; border-radius:20px;
+                                    {% if checks.redis.status == 'OK' %}background:#dcfce7; color:#166534;
+                                    {% elif checks.redis.status == 'WARNING' %}background:#fef3c7; color:#92400e;
+                                    {% else %}background:#fef2f2; color:#991b1b;{% endif %}">
+                                    {{ checks.redis.status }}
+                                </span>
+                            </div>
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden;">
+                                {% if checks.redis.error is not defined %}
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">Ping Latency</td>
+                                    <td style="padding:8px 14px; font-size:14px; color:#111827; font-weight:700; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.redis.latency_ms }} ms</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">Memory Used</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.redis.memory_used }}</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">Connected Clients</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.redis.connected_clients }}</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">Total Keys</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.redis.total_keys }}</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280;">Uptime</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; text-align:right;">{{ checks.redis.uptime_days }} days</td></tr>
+                                {% else %}
+                                <tr><td style="padding:12px 14px; font-size:12px; color:#dc2626;">{{ checks.redis.error }}</td></tr>
+                                {% endif %}
+                            </table>
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    <!-- Application -->
+                    {% if checks.application %}
+                    <tr>
+                        <td style="padding:20px 40px 0 40px;">
+                            <div style="font-size:13px; font-weight:700; color:#374151; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">
+                                🌐 Application
+                                <span style="float:right; font-size:11px; padding:2px 8px; border-radius:20px;
+                                    {% if checks.application.status == 'OK' %}background:#dcfce7; color:#166534;
+                                    {% elif checks.application.status == 'WARNING' %}background:#fef3c7; color:#92400e;
+                                    {% else %}background:#fef2f2; color:#991b1b;{% endif %}">
+                                    {{ checks.application.status }}
+                                </span>
+                            </div>
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden;">
+                                {% if checks.application.error is not defined %}
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">HTTP Status</td>
+                                    <td style="padding:8px 14px; font-size:14px; color:#059669; font-weight:700; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.application.http_status }}</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">Response Time</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.application.response_time_ms }} ms</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280;">Endpoint</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; text-align:right;">{{ checks.application.health_endpoint }}</td></tr>
+                                {% else %}
+                                <tr><td style="padding:12px 14px; font-size:12px; color:#dc2626;">{{ checks.application.error }}</td></tr>
+                                {% endif %}
+                            </table>
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    <!-- Network -->
+                    {% if checks.network %}
+                    <tr>
+                        <td style="padding:20px 40px 0 40px;">
+                            <div style="font-size:13px; font-weight:700; color:#374151; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">
+                                🌍 Network
+                                <span style="float:right; font-size:11px; padding:2px 8px; border-radius:20px;
+                                    {% if checks.network.status == 'OK' %}background:#dcfce7; color:#166534;
+                                    {% elif checks.network.status == 'WARNING' %}background:#fef3c7; color:#92400e;
+                                    {% else %}background:#fef2f2; color:#991b1b;{% endif %}">
+                                    {{ checks.network.status }}
+                                </span>
+                            </div>
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden;">
+                                {% if checks.network.error is not defined %}
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">Data Sent / Received</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.network.bytes_sent_gb }} GB ↑ / {{ checks.network.bytes_recv_gb }} GB ↓</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">Packets (Sent / Recv)</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.network.packets_sent }} / {{ checks.network.packets_recv }}</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280; border-bottom:1px solid #f3f4f6;">Errors (In / Out)</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; border-bottom:1px solid #f3f4f6; text-align:right;">{{ checks.network.errors_in }} / {{ checks.network.errors_out }}</td></tr>
+                                <tr><td style="padding:8px 14px; font-size:12px; color:#6b7280;">Active Connections</td>
+                                    <td style="padding:8px 14px; font-size:12px; color:#111827; font-weight:600; text-align:right;">{{ checks.network.active_connections }}</td></tr>
+                                {% else %}
+                                <tr><td style="padding:12px 14px; font-size:12px; color:#dc2626;">{{ checks.network.error }}</td></tr>
+                                {% endif %}
+                            </table>
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    <!-- Top Processes -->
+                    {% if checks.top_processes %}
+                    <tr>
+                        <td style="padding:20px 40px 0 40px;">
+                            <div style="font-size:13px; font-weight:700; color:#374151; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">
+                                📊 Top Processes (by CPU)
+                            </div>
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden;">
+                                <tr style="background:#f3f4f6;">
+                                    <td style="padding:8px 14px; font-size:11px; color:#6b7280; font-weight:700;">PID</td>
+                                    <td style="padding:8px 14px; font-size:11px; color:#6b7280; font-weight:700;">PROCESS</td>
+                                    <td style="padding:8px 14px; font-size:11px; color:#6b7280; font-weight:700; text-align:right;">CPU</td>
+                                    <td style="padding:8px 14px; font-size:11px; color:#6b7280; font-weight:700; text-align:right;">MEM</td>
+                                </tr>
+                                {% for proc in checks.top_processes %}
+                                <tr>
+                                    <td style="padding:6px 14px; font-size:11px; color:#374151; border-top:1px solid #f3f4f6;">{{ proc.pid }}</td>
+                                    <td style="padding:6px 14px; font-size:11px; color:#111827; font-weight:600; border-top:1px solid #f3f4f6;">{{ proc.name }}</td>
+                                    <td style="padding:6px 14px; font-size:11px; color:#111827; font-weight:600; border-top:1px solid #f3f4f6; text-align:right;">{{ proc.cpu }}</td>
+                                    <td style="padding:6px 14px; font-size:11px; color:#111827; font-weight:600; border-top:1px solid #f3f4f6; text-align:right;">{{ proc.memory }}</td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding:24px 40px 32px 40px; text-align:center;">
+                            <div style="border-top:1px solid #e5e7eb; padding-top:20px;">
+                                <p style="margin:0; font-size:12px; color:#374151; font-weight:600;">
+                                    Source Point — Server Health Monitor
+                                </p>
+                                <p style="margin:6px 0 0 0; font-size:11px; color:#9ca3af;">
+                                    Automated report generated every 30 minutes.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

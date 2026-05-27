@@ -44,3 +44,6 @@ fpdf2==2.7.9
 # --- NEWS FEED PARSING ---
 feedparser==6.0.11
 trafilatura==2.0.0
+
+# --- SYSTEM MONITORING ---
+psutil==7.0.0

@@ -886,3 +886,310 @@ def cleanup_old_news_task():
     except Exception as e:
         db.session.rollback()
         logger.error(f"[News Cleanup] Failed to delete old articles: {e}")
+
+
+# --- SERVER HEALTH CHECK TASK ---
+
+@celery.task
+def server_health_check_task():
+    """
+    AUTOMATED SCHEDULER TASK (Every 30 minutes):
+    Performs comprehensive server health checks and emails a detailed report to admin.
+    Checks: CPU, Memory, Disk, Database, Redis, Celery Workers, Network, App Response.
+    """
+    import psutil
+    import platform
+    import socket
+    import requests as http_requests
+    from models.auth import User
+
+    logger.info("[Health Check] Starting Server Health Check...")
+
+    ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
+    report_time = ist_now.strftime('%d %b %Y, %I:%M %p IST')
+    checks = {}
+    overall_status = 'HEALTHY'
+    alerts = []
+
+    # ═══════════ 1. SYSTEM INFO ═══════════
+    try:
+        boot_time = datetime.fromtimestamp(psutil.boot_time())
+        uptime = datetime.utcnow() - boot_time
+        uptime_str = f"{uptime.days}d {uptime.seconds // 3600}h {(uptime.seconds % 3600) // 60}m"
+
+        checks['system'] = {
+            'status': 'OK',
+            'hostname': socket.gethostname(),
+            'platform': f"{platform.system()} {platform.release()}",
+            'architecture': platform.machine(),
+            'python_version': platform.python_version(),
+            'uptime': uptime_str,
+            'boot_time': boot_time.strftime('%b %d, %Y %I:%M %p'),
+        }
+    except Exception as e:
+        checks['system'] = {'status': 'ERROR', 'error': str(e)}
+        alerts.append(f"System info collection failed: {e}")
+
+    # ═══════════ 2. CPU ═══════════
+    try:
+        cpu_percent = psutil.cpu_percent(interval=2)
+        cpu_count = psutil.cpu_count()
+        cpu_count_logical = psutil.cpu_count(logical=True)
+        load_avg = psutil.getloadavg()
+
+        cpu_status = 'OK'
+        if cpu_percent > 90:
+            cpu_status = 'CRITICAL'
+            overall_status = 'CRITICAL'
+            alerts.append(f"🔴 CPU usage critically high: {cpu_percent}%")
+        elif cpu_percent > 75:
+            cpu_status = 'WARNING'
+            if overall_status == 'HEALTHY':
+                overall_status = 'WARNING'
+            alerts.append(f"🟡 CPU usage high: {cpu_percent}%")
+
+        checks['cpu'] = {
+            'status': cpu_status,
+            'usage_percent': cpu_percent,
+            'cores_physical': cpu_count,
+            'cores_logical': cpu_count_logical,
+            'load_avg_1m': f"{load_avg[0]:.2f}",
+            'load_avg_5m': f"{load_avg[1]:.2f}",
+            'load_avg_15m': f"{load_avg[2]:.2f}",
+        }
+    except Exception as e:
+        checks['cpu'] = {'status': 'ERROR', 'error': str(e)}
+        alerts.append(f"CPU check failed: {e}")
+
+    # ═══════════ 3. MEMORY ═══════════
+    try:
+        mem = psutil.virtual_memory()
+        swap = psutil.swap_memory()
+
+        mem_status = 'OK'
+        if mem.percent > 90:
+            mem_status = 'CRITICAL'
+            overall_status = 'CRITICAL'
+            alerts.append(f"🔴 Memory usage critically high: {mem.percent}%")
+        elif mem.percent > 80:
+            mem_status = 'WARNING'
+            if overall_status == 'HEALTHY':
+                overall_status = 'WARNING'
+            alerts.append(f"🟡 Memory usage high: {mem.percent}%")
+
+        checks['memory'] = {
+            'status': mem_status,
+            'total_gb': f"{mem.total / (1024**3):.1f}",
+            'used_gb': f"{mem.used / (1024**3):.1f}",
+            'available_gb': f"{mem.available / (1024**3):.1f}",
+            'usage_percent': mem.percent,
+            'swap_total_gb': f"{swap.total / (1024**3):.1f}",
+            'swap_used_gb': f"{swap.used / (1024**3):.1f}",
+            'swap_percent': swap.percent,
+        }
+    except Exception as e:
+        checks['memory'] = {'status': 'ERROR', 'error': str(e)}
+        alerts.append(f"Memory check failed: {e}")
+
+    # ═══════════ 4. DISK ═══════════
+    try:
+        disk = psutil.disk_usage('/')
+        disk_io = psutil.disk_io_counters()
+
+        disk_status = 'OK'
+        if disk.percent > 90:
+            disk_status = 'CRITICAL'
+            overall_status = 'CRITICAL'
+            alerts.append(f"🔴 Disk usage critically high: {disk.percent}%")
+        elif disk.percent > 80:
+            disk_status = 'WARNING'
+            if overall_status == 'HEALTHY':
+                overall_status = 'WARNING'
+            alerts.append(f"🟡 Disk usage high: {disk.percent}%")
+
+        checks['disk'] = {
+            'status': disk_status,
+            'total_gb': f"{disk.total / (1024**3):.1f}",
+            'used_gb': f"{disk.used / (1024**3):.1f}",
+            'free_gb': f"{disk.free / (1024**3):.1f}",
+            'usage_percent': disk.percent,
+            'read_mb': f"{disk_io.read_bytes / (1024**2):.0f}" if disk_io else 'N/A',
+            'write_mb': f"{disk_io.write_bytes / (1024**2):.0f}" if disk_io else 'N/A',
+        }
+    except Exception as e:
+        checks['disk'] = {'status': 'ERROR', 'error': str(e)}
+        alerts.append(f"Disk check failed: {e}")
+
+    # ═══════════ 5. DATABASE ═══════════
+    try:
+        start = datetime.utcnow()
+        result = db.session.execute(db.text('SELECT 1'))
+        db_latency = (datetime.utcnow() - start).total_seconds() * 1000
+
+        # Table row counts
+        user_count = db.session.execute(db.text("SELECT COUNT(*) FROM \"user\"")).scalar()
+        from models.newsletter import NewsArticle
+        article_count = db.session.execute(db.text("SELECT COUNT(*) FROM news_article")).scalar()
+
+        # Database size
+        try:
+            db_size = db.session.execute(
+                db.text("SELECT pg_size_pretty(pg_database_size(current_database()))")
+            ).scalar()
+        except Exception:
+            db_size = 'N/A'
+
+        # Active connections
+        try:
+            active_conn = db.session.execute(
+                db.text("SELECT count(*) FROM pg_stat_activity WHERE state = 'active'")
+            ).scalar()
+        except Exception:
+            active_conn = 'N/A'
+
+        db_status = 'OK'
+        if db_latency > 500:
+            db_status = 'WARNING'
+            if overall_status == 'HEALTHY':
+                overall_status = 'WARNING'
+            alerts.append(f"🟡 Database latency high: {db_latency:.0f}ms")
+
+        checks['database'] = {
+            'status': db_status,
+            'latency_ms': f"{db_latency:.1f}",
+            'database_size': db_size,
+            'active_connections': active_conn,
+            'total_users': user_count,
+            'total_articles': article_count,
+        }
+    except Exception as e:
+        checks['database'] = {'status': 'CRITICAL', 'error': str(e)}
+        overall_status = 'CRITICAL'
+        alerts.append(f"🔴 Database connection failed: {e}")
+
+    # ═══════════ 6. REDIS ═══════════
+    try:
+        import redis
+        redis_url = os.environ.get('REDIS_URL', 'redis://redis:6379/0')
+        r = redis.from_url(redis_url, socket_timeout=5)
+
+        start = datetime.utcnow()
+        r.ping()
+        redis_latency = (datetime.utcnow() - start).total_seconds() * 1000
+
+        info = r.info()
+        redis_memory = info.get('used_memory_human', 'N/A')
+        connected_clients = info.get('connected_clients', 'N/A')
+        redis_uptime_days = info.get('uptime_in_days', 'N/A')
+        total_keys = r.dbsize()
+
+        checks['redis'] = {
+            'status': 'OK',
+            'latency_ms': f"{redis_latency:.1f}",
+            'memory_used': redis_memory,
+            'connected_clients': connected_clients,
+            'total_keys': total_keys,
+            'uptime_days': redis_uptime_days,
+        }
+    except Exception as e:
+        checks['redis'] = {'status': 'CRITICAL', 'error': str(e)}
+        overall_status = 'CRITICAL'
+        alerts.append(f"🔴 Redis connection failed: {e}")
+
+    # ═══════════ 7. APPLICATION RESPONSE ═══════════
+    try:
+        site_url = os.environ.get('SITE_URL', 'http://web:5000')
+        start = datetime.utcnow()
+        resp = http_requests.get(f"{site_url}/health", timeout=10)
+        app_latency = (datetime.utcnow() - start).total_seconds() * 1000
+
+        app_status = 'OK'
+        if resp.status_code != 200:
+            app_status = 'CRITICAL'
+            overall_status = 'CRITICAL'
+            alerts.append(f"🔴 App /health returned HTTP {resp.status_code}")
+        elif app_latency > 2000:
+            app_status = 'WARNING'
+            if overall_status == 'HEALTHY':
+                overall_status = 'WARNING'
+            alerts.append(f"🟡 App response slow: {app_latency:.0f}ms")
+
+        checks['application'] = {
+            'status': app_status,
+            'http_status': resp.status_code,
+            'response_time_ms': f"{app_latency:.0f}",
+            'health_endpoint': f"{site_url}/health",
+        }
+    except Exception as e:
+        checks['application'] = {'status': 'CRITICAL', 'error': str(e)}
+        overall_status = 'CRITICAL'
+        alerts.append(f"🔴 App health check failed: {e}")
+
+    # ═══════════ 8. NETWORK ═══════════
+    try:
+        net = psutil.net_io_counters()
+        net_connections = len(psutil.net_connections(kind='inet'))
+
+        checks['network'] = {
+            'status': 'OK',
+            'bytes_sent_gb': f"{net.bytes_sent / (1024**3):.2f}",
+            'bytes_recv_gb': f"{net.bytes_recv / (1024**3):.2f}",
+            'packets_sent': f"{net.packets_sent:,}",
+            'packets_recv': f"{net.packets_recv:,}",
+            'errors_in': net.errin,
+            'errors_out': net.errout,
+            'active_connections': net_connections,
+        }
+
+        if net.errin > 100 or net.errout > 100:
+            checks['network']['status'] = 'WARNING'
+            if overall_status == 'HEALTHY':
+                overall_status = 'WARNING'
+            alerts.append(f"🟡 Network errors detected: {net.errin} in, {net.errout} out")
+    except Exception as e:
+        checks['network'] = {'status': 'ERROR', 'error': str(e)}
+
+    # ═══════════ 9. TOP PROCESSES ═══════════
+    try:
+        processes = []
+        for proc in sorted(psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent']),
+                          key=lambda p: p.info.get('cpu_percent', 0) or 0, reverse=True)[:5]:
+            processes.append({
+                'pid': proc.info['pid'],
+                'name': proc.info['name'],
+                'cpu': f"{proc.info.get('cpu_percent', 0):.1f}%",
+                'memory': f"{proc.info.get('memory_percent', 0):.1f}%",
+            })
+        checks['top_processes'] = processes
+    except Exception:
+        checks['top_processes'] = []
+
+    # ═══════════ RENDER & SEND EMAIL ═══════════
+    logger.info(f"[Health Check] Overall status: {overall_status} | Alerts: {len(alerts)}")
+
+    try:
+        html_content = render_template('mail/health_check_report.html',
+            checks=checks,
+            overall_status=overall_status,
+            alerts=alerts,
+            report_time=report_time,
+        )
+
+        admins = User.query.filter_by(role=UserRole.ADMIN.value).all()
+        admin_emails = [{"email": a.email, "name": a.username} for a in admins if a.email]
+
+        if admin_emails:
+            status_emoji = '🟢' if overall_status == 'HEALTHY' else ('🟡' if overall_status == 'WARNING' else '🔴')
+            subject = f"{status_emoji} Server Health: {overall_status} — {report_time}"
+
+            _send_via_brevo_api(
+                to_list=admin_emails,
+                subject=subject,
+                html_content=html_content
+            )
+            logger.info(f"[Health Check] Report sent to {len(admin_emails)} admin(s). Status: {overall_status}")
+        else:
+            logger.warning("[Health Check] No admin users found to send report.")
+
+    except Exception as e:
+        logger.error(f"[Health Check] Failed to send health report: {e}")

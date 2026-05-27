@@ -87,6 +87,11 @@ class Config:
             'task': 'worker.cleanup_old_news_task',
             'schedule': crontab(hour=0, minute=0),
         },
+        # 10. Server Health Check — Every 30 minutes
+        'server-health-check': {
+            'task': 'worker.server_health_check_task',
+            'schedule': crontab(minute='*/30'),
+        },
     }
 
     # --- DATABASE POOLING OPTIMIZATION ---
