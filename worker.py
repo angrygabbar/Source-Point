@@ -604,22 +604,20 @@ def check_hiring_events_task():
     db.session.commit()
     logger.info(f"[Scheduler] Hiring Check Done. Reminders: {remind_count}, Auto-Completed: {complete_count}")
 
-# --- TECHNOLOGY NEWSLETTER TASK ---
+# --- TECHNOLOGY NEWSLETTER TASKS ---
 
 @celery.task
-def fetch_and_send_newsletter_task():
+def fetch_news_task():
     """
-    AUTOMATED SCHEDULER TASK (8 AM IST Daily):
-    1. Fetches top 10 Technology news from Google News RSS via feedparser.
-    2. Deduplicates and stores new articles in the NewsArticle table.
-    3. Sends a daily newsletter email to all users with article summaries.
+    AUTOMATED SCHEDULER TASK (Every 30 minutes):
+    Fetches latest Technology news from Google News RSS and stores new articles.
+    Does NOT send any emails — that's handled by send_newsletter_digest_task.
     """
     import feedparser
     from urllib.parse import quote_plus
     from models.newsletter import NewsArticle
-    from models.auth import User
 
-    logger.info("[Scheduler] Starting Technology Newsletter Task...")
+    logger.info("[Scheduler] Starting News Fetch Task...")
 
     # --- STEP 1: Fetch news from Google News RSS ---
     queries = ['technology news', 'top tech startups gadgets', 'cybersecurity cloud computing']
@@ -631,18 +629,18 @@ def fetch_and_send_newsletter_task():
             feed = feedparser.parse(feed_url)
             if feed.entries:
                 all_entries.extend(feed.entries)
-                logger.info(f"[Newsletter] Fetched {len(feed.entries)} entries for query '{query}'")
+                logger.info(f"[News Fetch] Fetched {len(feed.entries)} entries for query '{query}'")
             else:
-                logger.warning(f"[Newsletter] No entries found for query '{query}'")
+                logger.warning(f"[News Fetch] No entries found for query '{query}'")
         except Exception as e:
-            logger.error(f"[Newsletter] Failed to fetch RSS for '{query}': {e}")
+            logger.error(f"[News Fetch] Failed to fetch RSS for '{query}': {e}")
 
     if not all_entries:
-        logger.warning("[Newsletter] No news articles fetched. Skipping newsletter.")
+        logger.warning("[News Fetch] No news articles fetched from any source.")
         return
 
     # --- STEP 2: Deduplicate and store new articles ---
-    new_articles = []
+    new_count = 0
     seen_urls = set()
 
     for entry in all_entries:
@@ -680,7 +678,6 @@ def fetch_and_send_newsletter_task():
                 summary = BS4(summary, 'html.parser').get_text(separator=' ', strip=True)
             except Exception:
                 pass
-            # Limit summary length
             if len(summary) > 500:
                 summary = summary[:497] + '...'
 
@@ -693,43 +690,61 @@ def fetch_and_send_newsletter_task():
             category='technology'
         )
         db.session.add(article)
-        new_articles.append(article)
+        new_count += 1
 
-        # Stop at 10 new articles
-        if len(new_articles) >= 10:
+        # Cap at 15 new articles per fetch cycle
+        if new_count >= 15:
             break
 
     try:
         db.session.commit()
-        logger.info(f"[Newsletter] Stored {len(new_articles)} new articles in database.")
+        logger.info(f"[News Fetch] Stored {new_count} new articles in database.")
     except Exception as e:
         db.session.rollback()
-        logger.error(f"[Newsletter] Failed to store articles: {e}")
+        logger.error(f"[News Fetch] Failed to store articles: {e}")
+
+
+@celery.task
+def send_newsletter_digest_task():
+    """
+    AUTOMATED SCHEDULER TASK (8 AM & 6 PM IST Daily):
+    Sends a newsletter email digest to all subscribed users.
+    ONLY sends if there are new (unsent) articles since the last digest.
+    """
+    from models.newsletter import NewsArticle
+    from models.auth import User
+
+    logger.info("[Scheduler] Starting Newsletter Digest Task...")
+
+    # --- STEP 1: Check for unsent articles ---
+    unsent_articles = NewsArticle.query.filter_by(is_sent=False).order_by(
+        NewsArticle.published_at.desc().nullslast(),
+        NewsArticle.fetched_at.desc()
+    ).all()
+
+    if not unsent_articles:
+        logger.info("[Newsletter] No new unsent articles found. Skipping email digest.")
         return
 
-    if not new_articles:
-        logger.info("[Newsletter] No new articles to send. Skipping email.")
-        return
+    logger.info(f"[Newsletter] Found {len(unsent_articles)} unsent articles. Preparing digest...")
 
-    # --- STEP 3: Send newsletter email to all users ---
+    # --- STEP 2: Render email template ---
     ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
     report_date_short = ist_now.strftime('%d %b %Y')
-
-    # Determine the base URL for news page links
     news_base_url = os.environ.get('SITE_URL', 'https://sourcepoint.in')
 
     try:
         html_content = render_template('mail/newsletter_digest.html',
-            articles=new_articles,
+            articles=unsent_articles,
             report_date_short=report_date_short,
             news_base_url=news_base_url,
-            unsubscribe_url='__UNSUBSCRIBE_URL__'  # Placeholder replaced per-user
+            unsubscribe_url='__UNSUBSCRIBE_URL__'
         )
     except Exception as e:
         logger.error(f"[Newsletter] Failed to render email template: {e}")
         return
 
-    # Fetch only subscribed users with email
+    # --- STEP 3: Fetch subscribed users ---
     users = User.query.filter(
         User.email.isnot(None),
         User.email != '',
@@ -739,7 +754,7 @@ def fetch_and_send_newsletter_task():
         logger.warning("[Newsletter] No subscribed users found to send newsletter.")
         return
 
-    # Generate unsubscribe tokens for each user
+    # --- STEP 4: Send personalized emails ---
     import hashlib, hmac
     newsletter_secret = os.environ.get('SECRET_KEY', 'newsletter-fallback-secret')
 
@@ -747,9 +762,8 @@ def fetch_and_send_newsletter_task():
         msg = f"{uid}:{email}".encode()
         return hmac.new(newsletter_secret.encode(), msg, hashlib.sha256).hexdigest()[:32]
 
-    # Send individually so each user gets their own unsubscribe link
     sent_count = 0
-    subject = f"🚀 Top Tech News — {report_date_short} | Today's {len(new_articles)} Must-Read Stories"
+    subject = f"🚀 Top Tech News — {report_date_short} | {len(unsent_articles)} New Stories"
 
     for user in users:
         try:
@@ -766,9 +780,9 @@ def fetch_and_send_newsletter_task():
         except Exception as e:
             logger.error(f"[Newsletter] Failed to send to {user.email}: {e}")
 
-    # Mark articles as sent
-    for article in new_articles:
+    # --- STEP 5: Mark articles as sent ---
+    for article in unsent_articles:
         article.is_sent = True
     db.session.commit()
 
-    logger.info(f"[Newsletter] Technology newsletter sent to {sent_count}/{len(users)} subscribed users with {len(new_articles)} articles.")
+    logger.info(f"[Newsletter] Digest sent to {sent_count}/{len(users)} users with {len(unsent_articles)} articles.")

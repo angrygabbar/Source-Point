@@ -1,10 +1,12 @@
 import hashlib
 import hmac
 import os
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from datetime import datetime, timedelta
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from extensions import db
 from models.newsletter import NewsArticle
 from models.auth import User
+from sqlalchemy import func
 
 newsletter_bp = Blueprint('newsletter', __name__)
 
@@ -24,24 +26,89 @@ def verify_unsubscribe_token(user_id, email, token):
     return hmac.compare_digest(expected, token)
 
 
+def _time_ago(dt):
+    """Convert a datetime to a human-readable relative string."""
+    if not dt:
+        return ''
+    now = datetime.utcnow()
+    diff = now - dt
+
+    seconds = int(diff.total_seconds())
+    if seconds < 0:
+        return 'Just now'
+    if seconds < 60:
+        return 'Just now'
+    minutes = seconds // 60
+    if minutes < 60:
+        return f'{minutes}m ago'
+    hours = minutes // 60
+    if hours < 24:
+        return f'{hours}h ago'
+    days = hours // 24
+    if days == 1:
+        return 'Yesterday'
+    if days < 7:
+        return f'{days}d ago'
+    weeks = days // 7
+    if weeks < 5:
+        return f'{weeks}w ago'
+    return dt.strftime('%b %d, %Y')
+
+
 @newsletter_bp.route('/news')
 def news_page():
     """
     Public news page — no login required.
-    Displays the latest Technology news, paginated.
+    Displays the latest Technology news with search, stats, and smart features.
     """
     page = request.args.get('page', 1, type=int)
-    per_page = 10
+    search = request.args.get('q', '', type=str).strip()
+    per_page = 12
 
-    articles = NewsArticle.query.order_by(
+    # Base query
+    query = NewsArticle.query
+
+    # Apply search filter if provided
+    if search:
+        search_filter = f'%{search}%'
+        query = query.filter(
+            db.or_(
+                NewsArticle.title.ilike(search_filter),
+                NewsArticle.summary.ilike(search_filter),
+                NewsArticle.source_name.ilike(search_filter)
+            )
+        )
+
+    # Order and paginate
+    articles = query.order_by(
         NewsArticle.published_at.desc().nullslast(),
         NewsArticle.fetched_at.desc()
     ).paginate(page=page, per_page=per_page, error_out=False)
 
+    # --- Compute stats for the page ---
+    total_articles = NewsArticle.query.count()
+    sources_count = db.session.query(func.count(func.distinct(NewsArticle.source_name))).scalar() or 0
+
+    # Last updated time (most recent fetched_at)
+    latest_fetch = db.session.query(func.max(NewsArticle.fetched_at)).scalar()
+    last_updated_ago = _time_ago(latest_fetch) if latest_fetch else None
+
+    # Add relative time to each article for the template
+    now = datetime.utcnow()
+    for article in articles.items:
+        ref_time = article.published_at or article.fetched_at
+        article.time_ago = _time_ago(ref_time)
+        # Mark as "new" if fetched within the last 3 hours
+        article.is_new = (now - (article.fetched_at or now)).total_seconds() < 10800
+
     return render_template('news.html',
                            articles=articles.items,
                            pagination=articles,
-                           page=page)
+                           page=page,
+                           search=search,
+                           total_articles=total_articles,
+                           sources_count=sources_count,
+                           last_updated_ago=last_updated_ago)
 
 
 @newsletter_bp.route('/newsletter/unsubscribe')

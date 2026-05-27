@@ -8,7 +8,7 @@
 <div id="news-page" class="min-h-screen">
 
     <!-- ═══════════ HERO SECTION ═══════════ -->
-    <div class="relative overflow-hidden py-16 sm:py-24 px-4 sm:px-8">
+    <div class="relative overflow-hidden py-12 sm:py-20 px-4 sm:px-8">
         <!-- Animated gradient background -->
         <div class="absolute inset-0 opacity-20"
             style="background: radial-gradient(ellipse at 30% 50%, rgba(99,102,241,0.4) 0%, transparent 60%),
@@ -16,39 +16,158 @@
                    radial-gradient(ellipse at 50% 80%, rgba(59,130,246,0.2) 0%, transparent 50%);">
         </div>
 
-        <div class="relative max-w-4xl mx-auto text-center">
-            <!-- Badge -->
-            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 mb-6">
-                <span class="relative flex h-2 w-2">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-                </span>
-                <span class="text-xs font-bold text-indigo-300 uppercase tracking-widest">Top 10 Daily</span>
+        <div class="relative max-w-5xl mx-auto">
+            <div class="text-center mb-8">
+                <!-- Badge -->
+                <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 mb-6">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span class="text-xs font-bold text-emerald-300 uppercase tracking-widest">Live — Updated Every 30 Min</span>
+                </div>
+
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight mb-4">
+                    <span class="bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-200 to-violet-300">
+                        Top Tech News
+                    </span>
+                </h1>
+                <p class="text-gray-400 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+                    The latest technology stories from around the world, curated and refreshed every 30 minutes.
+                </p>
             </div>
 
-            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight mb-4">
-                <span class="bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-200 to-violet-300">
-                    Top Tech News
-                </span>
-            </h1>
-            <p class="text-gray-400 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-                The top 10 technology stories you need to know, curated and delivered fresh every morning.
-            </p>
+            <!-- ═══════════ STATS BAR ═══════════ -->
+            <div class="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mb-8">
+                {% if total_articles %}
+                <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
+                    <i class="fas fa-newspaper text-indigo-400 text-xs"></i>
+                    <span class="text-sm font-bold text-gray-300">{{ total_articles }}</span>
+                    <span class="text-xs text-gray-500">Articles</span>
+                </div>
+                {% endif %}
+                {% if sources_count %}
+                <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
+                    <i class="fas fa-globe text-violet-400 text-xs"></i>
+                    <span class="text-sm font-bold text-gray-300">{{ sources_count }}</span>
+                    <span class="text-xs text-gray-500">Sources</span>
+                </div>
+                {% endif %}
+                {% if last_updated_ago %}
+                <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
+                    <i class="fas fa-sync-alt text-emerald-400 text-xs"></i>
+                    <span class="text-xs text-gray-500">Updated</span>
+                    <span class="text-sm font-bold text-emerald-300">{{ last_updated_ago }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- ═══════════ SEARCH BAR ═══════════ -->
+            <div class="max-w-xl mx-auto">
+                <form method="GET" action="{{ url_for('newsletter.news_page') }}" id="news-search-form"
+                      class="relative group">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-4">
+                        <i class="fas fa-search text-gray-500 group-focus-within:text-indigo-400 transition-colors"></i>
+                    </div>
+                    <input type="text" name="q" value="{{ search }}"
+                           placeholder="Search articles, sources..."
+                           autocomplete="off"
+                           class="w-full pl-11 pr-24 py-3.5 rounded-2xl bg-white/5 border border-white/10 text-white placeholder-gray-500 text-sm font-medium focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.07] focus:ring-2 focus:ring-indigo-500/20 transition-all">
+                    <button type="submit"
+                            class="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all hover:shadow-lg hover:shadow-indigo-500/25">
+                        Search
+                    </button>
+                </form>
+                {% if search %}
+                <div class="flex items-center justify-center gap-2 mt-3">
+                    <span class="text-xs text-gray-500">Results for</span>
+                    <span class="text-xs font-bold text-indigo-300">"{{ search }}"</span>
+                    <a href="{{ url_for('newsletter.news_page') }}"
+                       class="text-xs text-gray-500 hover:text-red-400 transition-colors ml-1">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                </div>
+                {% endif %}
+            </div>
         </div>
     </div>
 
-    <!-- ═══════════ NEWS GRID ═══════════ -->
+    <!-- ═══════════ NEWS CONTENT ═══════════ -->
     <div class="max-w-5xl mx-auto px-4 sm:px-8 pb-20">
         {% if articles %}
 
-        <!-- Date Group Header -->
+        <!-- ═══════════ FEATURED ARTICLE (first one) ═══════════ -->
+        {% set featured = articles[0] %}
+        <a href="{{ featured.source_url }}" target="_blank" rel="noopener noreferrer"
+           id="article-{{ featured.id }}"
+           class="group block mb-8 rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/[0.08] to-violet-500/[0.04] hover:from-indigo-500/[0.12] hover:to-violet-500/[0.08] transition-all duration-300 overflow-hidden hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/10">
+            <div class="p-6 sm:p-8">
+                <div class="flex items-start gap-5">
+                    <!-- Featured Badge -->
+                    <div class="hidden sm:flex flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 items-center justify-center shadow-lg shadow-indigo-500/20">
+                        <i class="fas fa-bolt text-xl text-white"></i>
+                    </div>
+
+                    <div class="flex-1 min-w-0">
+                        <!-- Tags Row -->
+                        <div class="flex flex-wrap items-center gap-2 mb-3">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-indigo-500/20 text-[11px] font-bold text-indigo-300 uppercase tracking-wider border border-indigo-500/30">
+                                <i class="fas fa-fire text-amber-400" style="font-size:9px;"></i>
+                                Featured
+                            </span>
+                            {% if featured.is_new %}
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/15 text-[10px] font-bold text-emerald-400 uppercase tracking-wider border border-emerald-500/25">
+                                <span class="relative flex h-1.5 w-1.5">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400"></span>
+                                </span>
+                                New
+                            </span>
+                            {% endif %}
+                            {% if featured.source_name %}
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-white/5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                                <i class="fas fa-newspaper text-gray-500" style="font-size:9px;"></i>
+                                {{ featured.source_name }}
+                            </span>
+                            {% endif %}
+                            {% if featured.time_ago %}
+                            <span class="text-[11px] text-gray-500 font-medium">
+                                <i class="far fa-clock" style="font-size:9px;"></i> {{ featured.time_ago }}
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Title -->
+                        <h2 class="text-xl sm:text-2xl lg:text-3xl font-black text-white group-hover:text-indigo-200 transition-colors leading-tight mb-3">
+                            {{ featured.title }}
+                        </h2>
+
+                        <!-- Summary -->
+                        {% if featured.summary %}
+                        <p class="text-sm sm:text-base text-gray-400 leading-relaxed line-clamp-3 mb-4">
+                            {{ featured.summary }}
+                        </p>
+                        {% endif %}
+
+                        <!-- CTA -->
+                        <div class="flex items-center gap-2 text-sm font-bold text-indigo-400 group-hover:text-indigo-300 transition-colors">
+                            <span>Read full article</span>
+                            <i class="fas fa-arrow-right text-xs transform group-hover:translate-x-1.5 transition-transform"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+
+        <!-- ═══════════ REMAINING ARTICLES ═══════════ -->
+        {% if articles|length > 1 %}
         {% set ns = namespace(current_date='') %}
-        {% for article in articles %}
+        {% for article in articles[1:] %}
             {% set article_date = (article.published_at or article.fetched_at).strftime('%B %d, %Y') if (article.published_at or article.fetched_at) else 'Unknown Date' %}
 
             {% if article_date != ns.current_date %}
                 {% set ns.current_date = article_date %}
-                <div class="flex items-center gap-4 mb-6 {% if not loop.first %}mt-12{% endif %}">
+                <div class="flex items-center gap-4 mb-6 {% if not loop.first %}mt-10{% endif %}">
                     <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
                         <i class="fas fa-calendar-day text-indigo-400 text-xs"></i>
                         <span class="text-sm font-bold text-gray-300">{{ article_date }}</span>
@@ -65,21 +184,30 @@
                     <div class="flex items-start gap-4">
                         <!-- Number Badge -->
                         <div class="hidden sm:flex flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600/20 to-violet-600/20 border border-indigo-500/20 items-center justify-center mt-0.5">
-                            <span class="text-sm font-black text-indigo-400">{{ loop.index + (page - 1) * 10 }}</span>
+                            <span class="text-sm font-black text-indigo-400">{{ loop.index + 1 + (page - 1) * 12 }}</span>
                         </div>
 
                         <div class="flex-1 min-w-0">
-                            <!-- Source & Time -->
-                            <div class="flex items-center gap-2 mb-2">
+                            <!-- Source, Time & Badges -->
+                            <div class="flex flex-wrap items-center gap-2 mb-2">
+                                {% if article.is_new %}
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/15 text-[10px] font-bold text-emerald-400 uppercase tracking-wider border border-emerald-500/25">
+                                    <span class="relative flex h-1.5 w-1.5">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                        <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400"></span>
+                                    </span>
+                                    New
+                                </span>
+                                {% endif %}
                                 {% if article.source_name %}
                                 <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-white/5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                                     <i class="fas fa-newspaper text-indigo-400" style="font-size:9px;"></i>
                                     {{ article.source_name }}
                                 </span>
                                 {% endif %}
-                                {% if article.published_at %}
-                                <span class="text-[11px] text-gray-600">
-                                    {{ article.published_at.strftime('%I:%M %p') }}
+                                {% if article.time_ago %}
+                                <span class="text-[11px] text-gray-500 font-medium">
+                                    <i class="far fa-clock" style="font-size:9px;"></i> {{ article.time_ago }}
                                 </span>
                                 {% endif %}
                             </div>
@@ -111,12 +239,13 @@
                 </div>
             </a>
         {% endfor %}
+        {% endif %}
 
         <!-- ═══════════ PAGINATION ═══════════ -->
         {% if pagination.pages > 1 %}
         <div class="mt-12 flex items-center justify-center gap-2">
             {% if pagination.has_prev %}
-            <a href="{{ url_for('newsletter.news_page', page=pagination.prev_num) }}"
+            <a href="{{ url_for('newsletter.news_page', page=pagination.prev_num, q=search or None) }}"
                class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm font-bold text-gray-300 hover:bg-white/10 hover:border-indigo-500/30 transition-all">
                 <i class="fas fa-chevron-left text-xs"></i> Previous
             </a>
@@ -125,7 +254,7 @@
             <div class="flex items-center gap-1">
                 {% for p in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
                     {% if p %}
-                        <a href="{{ url_for('newsletter.news_page', page=p) }}"
+                        <a href="{{ url_for('newsletter.news_page', page=p, q=search or None) }}"
                            class="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold transition-all
                                   {{ 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25 border border-indigo-500/50' if p == page else 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-white/5' }}">
                             {{ p }}
@@ -137,7 +266,7 @@
             </div>
 
             {% if pagination.has_next %}
-            <a href="{{ url_for('newsletter.news_page', page=pagination.next_num) }}"
+            <a href="{{ url_for('newsletter.news_page', page=pagination.next_num, q=search or None) }}"
                class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm font-bold text-gray-300 hover:bg-white/10 hover:border-indigo-500/30 transition-all">
                 Next <i class="fas fa-chevron-right text-xs"></i>
             </a>
@@ -151,10 +280,21 @@
             <div class="w-20 h-20 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto mb-6">
                 <i class="fas fa-newspaper text-3xl text-indigo-400"></i>
             </div>
+            {% if search %}
+            <h2 class="text-xl font-bold text-white mb-2">No Results Found</h2>
+            <p class="text-gray-400 text-sm max-w-md mx-auto mb-6">
+                No articles match "<span class="text-indigo-300 font-medium">{{ search }}</span>". Try a different search term.
+            </p>
+            <a href="{{ url_for('newsletter.news_page') }}"
+               class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition-all hover:-translate-y-0.5 shadow-lg shadow-indigo-500/25">
+                <i class="fas fa-times text-xs"></i> Clear Search
+            </a>
+            {% else %}
             <h2 class="text-xl font-bold text-white mb-2">No News Yet</h2>
             <p class="text-gray-400 text-sm max-w-md mx-auto">
-                Fresh technology news will appear here automatically. Check back soon!
+                Fresh technology news will appear here automatically. News is fetched every 30 minutes — check back soon!
             </p>
+            {% endif %}
         </div>
         {% endif %}
     </div>
@@ -167,10 +307,11 @@
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
-
-    @keyframes shimmer {
-        0% { background-position: -200% 0; }
-        100% { background-position: 200% 0; }
+    .line-clamp-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 </style>
 {% endblock %}
