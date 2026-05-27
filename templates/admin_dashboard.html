@@ -199,13 +199,10 @@
                        class="glow-btn inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-700 hover:-translate-y-0.5 transition-all cursor-pointer">
                         <i class="fas fa-chart-pie text-[11px]"></i> Analytics
                     </a>
-                    <form method="POST" action="{{ url_for('admin_core.run_health_check') }}" style="display:inline;" id="health-check-form">
-                        <button type="submit" id="health-check-btn"
-                            class="glow-btn inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-700 hover:-translate-y-0.5 transition-all cursor-pointer border-0"
-                            onclick="this.innerHTML='<i class=\'fas fa-spinner fa-spin text-[11px]\'></i> Running...'; this.disabled=true; this.form.submit();">
+                    <a href="{{ url_for('admin_core.health_check_page') }}"
+                        class="glow-btn inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-700 hover:-translate-y-0.5 transition-all cursor-pointer border-0">
                             <i class="fas fa-heartbeat text-[11px]"></i> Health Check
-                        </button>
-                    </form>
+                    </a>
                 </div>
             </div>
         </div>
@@ -475,14 +472,12 @@
                         <span class="text-xs font-bold leading-tight">Activity Logs</span>
                         <span class="text-[9px] text-gray-600">Audit trail</span>
                     </a>
-                    <form method="POST" action="{{ url_for('admin_core.run_health_check') }}" style="display:contents;">
-                        <button type="submit" class="quick-btn cursor-pointer" style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);color:#a7f3d0;"
-                            onclick="this.querySelector('.btn-icon i').className='fas fa-spinner fa-spin';">
-                            <div class="btn-icon" style="background:rgba(16,185,129,.12);color:#34d399;"><i class="fas fa-heartbeat"></i></div>
-                            <span class="text-xs font-bold leading-tight">Health Check</span>
-                            <span class="text-[9px] text-gray-600">Server status</span>
-                        </button>
-                    </form>
+                    <a href="{{ url_for('admin_core.health_check_page') }}"
+                       class="quick-btn cursor-pointer" style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);color:#a7f3d0;">
+                        <div class="btn-icon" style="background:rgba(16,185,129,.12);color:#34d399;"><i class="fas fa-heartbeat"></i></div>
+                        <span class="text-xs font-bold leading-tight">Health Check</span>
+                        <span class="text-[9px] text-gray-600">Server status</span>
+                    </a>
                 </div>
             </div>
         </div>

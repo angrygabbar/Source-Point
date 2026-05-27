@@ -1,0 +1,412 @@
+{% extends "layout.html" %}
+{% block title %}Server Health — Command Center{% endblock %}
+
+{% block content %}
+<style>
+    /* ── Health Check Futuristic Styles ── */
+    @keyframes radarSpin   { to { transform: rotate(360deg); } }
+    @keyframes pulseGlow   { 0%,100%{opacity:.6;transform:scale(1)} 50%{opacity:1;transform:scale(1.05)} }
+    @keyframes scanLine    { 0%{top:-6%} 100%{top:106%} }
+    @keyframes dotBlink    { 0%,100%{opacity:1} 50%{opacity:.25} }
+    @keyframes shimmer     { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+    @keyframes borderFlow  { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+    @keyframes glitchIn    { 0%{opacity:0;clip-path:inset(40% 0 60% 0)} 40%{opacity:1;clip-path:inset(0% 0 0% 0)} 100%{clip-path:inset(0 0 0 0)} }
+    @keyframes fadeSlideUp { 0%{opacity:0;transform:translateY(16px)} 100%{opacity:1;transform:translateY(0)} }
+    @keyframes ringPulse   { 0%{stroke-dashoffset:var(--offset)} 100%{stroke-dashoffset:var(--target)} }
+    @keyframes countUp     { from{opacity:0} to{opacity:1} }
+    @keyframes heartBeat   { 0%,100%{transform:scale(1)} 14%{transform:scale(1.15)} 28%{transform:scale(1)} 42%{transform:scale(1.1)} 70%{transform:scale(1)} }
+
+    .health-page { animation: fadeSlideUp .5s ease forwards; }
+
+    .health-card {
+        position:relative; overflow:hidden;
+        background: linear-gradient(135deg, rgba(10,10,28,.97), rgba(5,5,15,.99));
+        border: 1px solid rgba(255,255,255,.06);
+        border-radius: 1rem;
+        transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .health-card::after {
+        content:''; position:absolute; inset:0;
+        background: linear-gradient(120deg,transparent 30%,rgba(255,255,255,.03) 50%,transparent 70%);
+        background-size:200% 100%; animation: shimmer 5s linear infinite;
+        pointer-events:none; border-radius:inherit;
+    }
+    .health-card:hover { transform:translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,.3); }
+
+    .gauge-ring { transition: stroke-dashoffset 1.5s cubic-bezier(.4,0,.2,1); }
+
+    .status-ok      { color: #34d399; }
+    .status-warning  { color: #fbbf24; }
+    .status-critical { color: #f87171; }
+    .status-error    { color: #fb923c; }
+
+    .status-bg-ok      { background: rgba(16,185,129,.1); border-color: rgba(16,185,129,.3); }
+    .status-bg-warning  { background: rgba(251,191,36,.1); border-color: rgba(251,191,36,.3); }
+    .status-bg-critical { background: rgba(248,113,113,.1); border-color: rgba(248,113,113,.3); }
+    .status-bg-error    { background: rgba(251,146,60,.1); border-color: rgba(251,146,60,.3); }
+
+    .metric-label { font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #6b7280; }
+    .metric-value { font-size: 1.1rem; font-weight: 800; color: #f3f4f6; }
+    .metric-sm    { font-size: .75rem; font-weight: 600; color: #9ca3af; }
+
+    .bar-track { background: rgba(255,255,255,.06); border-radius: 9999px; height: 6px; overflow: hidden; }
+    .bar-fill  { height: 100%; border-radius: 9999px; transition: width 1.2s cubic-bezier(.4,0,.2,1); }
+    .bar-ok    { background: linear-gradient(90deg, #059669, #34d399); }
+    .bar-warn  { background: linear-gradient(90deg, #d97706, #fbbf24); }
+    .bar-crit  { background: linear-gradient(90deg, #dc2626, #f87171); }
+
+    .process-row:hover { background: rgba(255,255,255,.03); }
+
+    .scan-sweep-hc {
+        position:absolute;left:0;right:0;height:4px;
+        background: linear-gradient(180deg,transparent,rgba(255,255,255,.08),transparent);
+        animation: scanLine 5s linear infinite;
+        pointer-events:none;
+    }
+
+    .alert-card {
+        background: rgba(239,68,68,.06); border: 1px solid rgba(239,68,68,.2);
+        border-radius: .625rem; padding: .5rem .75rem;
+        font-size: .75rem; color: #fca5a5;
+    }
+
+    .neon-line {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, currentColor, transparent);
+        opacity: .15;
+    }
+</style>
+
+<div class="health-page space-y-5 pb-12 max-w-7xl mx-auto">
+
+    <!-- ══════════════ HEADER ══════════════ -->
+    <div class="relative overflow-hidden rounded-2xl border p-6 sm:p-8"
+         style="border-color:{% if overall_status == 'HEALTHY' %}rgba(16,185,129,.3){% elif overall_status == 'WARNING' %}rgba(251,191,36,.3){% else %}rgba(248,113,113,.3){% endif %};
+                background: linear-gradient(135deg,rgba(8,8,24,.97),rgba(3,3,12,.99));">
+        <div class="scan-sweep-hc"></div>
+
+        <!-- Glow orbs -->
+        <div style="position:absolute;top:-100px;right:-80px;width:320px;height:320px;border-radius:50%;
+            background:radial-gradient(circle,{% if overall_status == 'HEALTHY' %}rgba(16,185,129,.12){% elif overall_status == 'WARNING' %}rgba(251,191,36,.12){% else %}rgba(248,113,113,.12){% endif %},transparent 70%);pointer-events:none;"></div>
+
+        <div class="relative z-10">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <!-- Heartbeat icon -->
+                    <div class="relative w-14 h-14 flex-shrink-0">
+                        <div style="position:absolute;inset:0;border-radius:50%;border:2px solid {% if overall_status == 'HEALTHY' %}rgba(16,185,129,.5){% elif overall_status == 'WARNING' %}rgba(251,191,36,.5){% else %}rgba(248,113,113,.5){% endif %};animation:radarSpin 8s linear infinite;"></div>
+                        <div class="absolute inset-0 rounded-full flex items-center justify-center"
+                             style="background:{% if overall_status == 'HEALTHY' %}rgba(16,185,129,.12){% elif overall_status == 'WARNING' %}rgba(251,191,36,.12){% else %}rgba(248,113,113,.12){% endif %};">
+                            <i class="fas fa-heartbeat text-xl" style="color:{% if overall_status == 'HEALTHY' %}#34d399{% elif overall_status == 'WARNING' %}#fbbf24{% else %}#f87171{% endif %};animation:heartBeat 1.5s ease-in-out infinite;"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-[9px] font-black tracking-[0.3em] uppercase" style="color:{% if overall_status == 'HEALTHY' %}#34d399{% elif overall_status == 'WARNING' %}#fbbf24{% else %}#f87171{% endif %};">Server Diagnostics</span>
+                            <span class="w-1.5 h-1.5 rounded-full" style="background:{% if overall_status == 'HEALTHY' %}#34d399{% elif overall_status == 'WARNING' %}#fbbf24{% else %}#f87171{% endif %};animation:dotBlink 1.5s ease-in-out infinite;"></span>
+                        </div>
+                        <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight" style="animation:glitchIn .5s ease forwards;">
+                            {% if overall_status == 'HEALTHY' %}🟢{% elif overall_status == 'WARNING' %}🟡{% else %}🔴{% endif %}
+                            System {{ overall_status }}
+                        </h1>
+                        <p class="text-gray-500 text-xs mt-1">{{ report_time }}</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 flex-wrap">
+                    <a href="{{ url_for('admin_core.admin_dashboard') }}"
+                       class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-gray-700 to-gray-800 hover:-translate-y-0.5 transition-all border border-white/10">
+                        <i class="fas fa-arrow-left text-[10px]"></i> Dashboard
+                    </a>
+                    <a href="{{ url_for('admin_core.health_check_page') }}"
+                       class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-700 hover:-translate-y-0.5 transition-all">
+                        <i class="fas fa-sync-alt text-[10px]"></i> Refresh
+                    </a>
+                    <form method="POST" action="{{ url_for('admin_core.run_health_check') }}" style="display:inline;">
+                        <button type="submit"
+                            class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-700 hover:-translate-y-0.5 transition-all border-0 cursor-pointer"
+                            onclick="this.innerHTML='<i class=\'fas fa-spinner fa-spin text-[10px]\'></i> Sending...'; this.disabled=true; this.form.submit();">
+                            <i class="fas fa-envelope text-[10px]"></i> Email Report
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════ ALERTS ══════════════ -->
+    {% if alerts %}
+    <div class="health-card p-4 space-y-2" style="border-color:rgba(239,68,68,.2);">
+        <div class="flex items-center gap-2 mb-2">
+            <i class="fas fa-exclamation-triangle text-red-400 text-sm"></i>
+            <span class="text-xs font-black tracking-widest uppercase text-red-400">Active Alerts ({{ alerts|length }})</span>
+        </div>
+        {% for alert in alerts %}
+        <div class="alert-card">⚠️ {{ alert }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ══════════════ GAUGE ROW — CPU / Memory / Disk ══════════════ -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {% set gauges = [
+            {'key': 'cpu', 'icon': 'fa-microchip', 'label': 'CPU Usage', 'field': 'usage_percent'},
+            {'key': 'memory', 'icon': 'fa-memory', 'label': 'RAM Usage', 'field': 'usage_percent'},
+            {'key': 'disk', 'icon': 'fa-hdd', 'label': 'Disk Usage', 'field': 'usage_percent'}
+        ] %}
+        {% for g in gauges %}
+        {% set data = checks.get(g.key, {}) %}
+        {% set pct = data.get(g.field, 0) %}
+        {% set sts = data.get('status', 'ERROR') %}
+        <div class="health-card p-5 text-center">
+            <div class="flex items-center justify-center mb-4">
+                <svg width="120" height="120" viewBox="0 0 120 120" class="transform -rotate-90">
+                    <circle cx="60" cy="60" r="50" stroke="rgba(255,255,255,.06)" stroke-width="8" fill="none"/>
+                    <circle cx="60" cy="60" r="50" fill="none" stroke-width="8" stroke-linecap="round"
+                        stroke="{% if sts == 'OK' %}#34d399{% elif sts == 'WARNING' %}#fbbf24{% else %}#f87171{% endif %}"
+                        stroke-dasharray="314.16"
+                        stroke-dashoffset="{{ 314.16 - (314.16 * pct / 100) }}"
+                        class="gauge-ring"
+                        style="filter:drop-shadow(0 0 6px {% if sts == 'OK' %}rgba(52,211,153,.4){% elif sts == 'WARNING' %}rgba(251,191,36,.4){% else %}rgba(248,113,113,.4){% endif %});" />
+                </svg>
+                <div class="absolute flex flex-col items-center justify-center">
+                    <span class="text-2xl font-black text-white">{{ pct }}%</span>
+                    <span class="text-[9px] font-bold uppercase tracking-widest mt-1 status-{{ sts|lower }}">{{ sts }}</span>
+                </div>
+            </div>
+            <div class="flex items-center justify-center gap-2 mb-1">
+                <i class="fas {{ g.icon }} text-xs text-gray-500"></i>
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">{{ g.label }}</span>
+            </div>
+            {% if g.key == 'cpu' and data.get('cores_logical') %}
+            <p class="metric-sm">{{ data.cores_physical }} cores ({{ data.cores_logical }} logical)</p>
+            <p class="text-[10px] text-gray-600 mt-1">Load: {{ data.load_avg_1m }} / {{ data.load_avg_5m }} / {{ data.load_avg_15m }}</p>
+            {% elif g.key == 'memory' %}
+            <p class="metric-sm">{{ data.used_gb }} / {{ data.total_gb }} GB used</p>
+            <p class="text-[10px] text-gray-600 mt-1">{{ data.available_gb }} GB available · Swap {{ data.swap_percent }}%</p>
+            {% elif g.key == 'disk' %}
+            <p class="metric-sm">{{ data.used_gb }} / {{ data.total_gb }} GB used</p>
+            <p class="text-[10px] text-gray-600 mt-1">{{ data.free_gb }} GB free · R: {{ data.read_gb }} GB / W: {{ data.write_gb }} GB</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- ══════════════ PER-CPU CORE BAR (if available) ══════════════ -->
+    {% if checks.cpu and checks.cpu.per_cpu %}
+    <div class="health-card p-5">
+        <div class="flex items-center gap-2 mb-3">
+            <i class="fas fa-microchip text-xs text-indigo-400"></i>
+            <span class="text-xs font-black tracking-widest uppercase text-gray-400">Per-Core Usage</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {% for core_pct in checks.cpu.per_cpu %}
+            <div>
+                <div class="flex items-center justify-between mb-1">
+                    <span class="text-[10px] font-bold text-gray-500">Core {{ loop.index0 }}</span>
+                    <span class="text-[10px] font-bold {% if core_pct > 90 %}text-red-400{% elif core_pct > 75 %}text-yellow-400{% else %}text-emerald-400{% endif %}">{{ core_pct }}%</span>
+                </div>
+                <div class="bar-track">
+                    <div class="bar-fill {% if core_pct > 90 %}bar-crit{% elif core_pct > 75 %}bar-warn{% else %}bar-ok{% endif %}"
+                         style="width:{{ core_pct }}%"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ══════════════ SERVICES ROW ══════════════ -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+        <!-- Database -->
+        {% set db = checks.get('database', {}) %}
+        <div class="health-card p-5">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(99,102,241,.12);">
+                        <i class="fas fa-database text-indigo-400 text-sm"></i>
+                    </div>
+                    <span class="text-xs font-black tracking-wider uppercase text-gray-400">PostgreSQL</span>
+                </div>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold border status-bg-{{ db.get('status','ERROR')|lower }}
+                    status-{{ db.get('status','ERROR')|lower }}">{{ db.get('status','ERROR') }}</span>
+            </div>
+            {% if db.get('error') %}
+            <p class="text-xs text-red-400">{{ db.error }}</p>
+            {% else %}
+            <div class="space-y-2">
+                <div class="flex justify-between"><span class="metric-label">Latency</span><span class="metric-value text-sm">{{ db.latency_ms }} ms</span></div>
+                <div class="neon-line" style="color:#6366f1;"></div>
+                <div class="flex justify-between"><span class="metric-label">DB Size</span><span class="metric-sm">{{ db.database_size }}</span></div>
+                <div class="flex justify-between"><span class="metric-label">Connections</span><span class="metric-sm">{{ db.active_connections }}</span></div>
+                <div class="flex justify-between"><span class="metric-label">Users</span><span class="metric-sm">{{ db.total_users }}</span></div>
+                <div class="flex justify-between"><span class="metric-label">Articles</span><span class="metric-sm">{{ db.total_articles }}</span></div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Redis -->
+        {% set rd = checks.get('redis', {}) %}
+        <div class="health-card p-5">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(239,68,68,.12);">
+                        <i class="fas fa-bolt text-red-400 text-sm"></i>
+                    </div>
+                    <span class="text-xs font-black tracking-wider uppercase text-gray-400">Redis</span>
+                </div>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold border status-bg-{{ rd.get('status','ERROR')|lower }}
+                    status-{{ rd.get('status','ERROR')|lower }}">{{ rd.get('status','ERROR') }}</span>
+            </div>
+            {% if rd.get('error') %}
+            <p class="text-xs text-red-400">{{ rd.error }}</p>
+            {% else %}
+            <div class="space-y-2">
+                <div class="flex justify-between"><span class="metric-label">Latency</span><span class="metric-value text-sm">{{ rd.latency_ms }} ms</span></div>
+                <div class="neon-line" style="color:#ef4444;"></div>
+                <div class="flex justify-between"><span class="metric-label">Memory</span><span class="metric-sm">{{ rd.memory_used }}</span></div>
+                <div class="flex justify-between"><span class="metric-label">Clients</span><span class="metric-sm">{{ rd.connected_clients }}</span></div>
+                <div class="flex justify-between"><span class="metric-label">Keys</span><span class="metric-sm">{{ rd.total_keys }}</span></div>
+                <div class="flex justify-between"><span class="metric-label">Uptime</span><span class="metric-sm">{{ rd.uptime_days }} days</span></div>
+                {% if rd.redis_version %}<div class="flex justify-between"><span class="metric-label">Version</span><span class="metric-sm">{{ rd.redis_version }}</span></div>{% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Application -->
+        {% set app = checks.get('application', {}) %}
+        <div class="health-card p-5">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(16,185,129,.12);">
+                        <i class="fas fa-globe text-emerald-400 text-sm"></i>
+                    </div>
+                    <span class="text-xs font-black tracking-wider uppercase text-gray-400">Application</span>
+                </div>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold border status-bg-{{ app.get('status','ERROR')|lower }}
+                    status-{{ app.get('status','ERROR')|lower }}">{{ app.get('status','ERROR') }}</span>
+            </div>
+            {% if app.get('error') %}
+            <p class="text-xs text-red-400">{{ app.error }}</p>
+            {% else %}
+            <div class="space-y-2">
+                <div class="flex justify-between"><span class="metric-label">HTTP Status</span>
+                    <span class="metric-value text-sm {% if app.http_status == 200 %}text-emerald-400{% else %}text-red-400{% endif %}">{{ app.http_status }}</span>
+                </div>
+                <div class="neon-line" style="color:#10b981;"></div>
+                <div class="flex justify-between"><span class="metric-label">Response</span><span class="metric-sm">{{ app.response_time_ms }} ms</span></div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Network -->
+        {% set net = checks.get('network', {}) %}
+        <div class="health-card p-5">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(6,182,212,.12);">
+                        <i class="fas fa-network-wired text-cyan-400 text-sm"></i>
+                    </div>
+                    <span class="text-xs font-black tracking-wider uppercase text-gray-400">Network</span>
+                </div>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold border status-bg-{{ net.get('status','ERROR')|lower }}
+                    status-{{ net.get('status','ERROR')|lower }}">{{ net.get('status','ERROR') }}</span>
+            </div>
+            {% if net.get('error') %}
+            <p class="text-xs text-red-400">{{ net.error }}</p>
+            {% else %}
+            <div class="space-y-2">
+                <div class="flex justify-between"><span class="metric-label">Sent</span><span class="metric-sm">{{ net.bytes_sent_gb }} GB</span></div>
+                <div class="flex justify-between"><span class="metric-label">Received</span><span class="metric-sm">{{ net.bytes_recv_gb }} GB</span></div>
+                <div class="neon-line" style="color:#06b6d4;"></div>
+                <div class="flex justify-between"><span class="metric-label">Packets ↑</span><span class="metric-sm">{{ net.packets_sent }}</span></div>
+                <div class="flex justify-between"><span class="metric-label">Packets ↓</span><span class="metric-sm">{{ net.packets_recv }}</span></div>
+                <div class="flex justify-between"><span class="metric-label">Errors</span><span class="metric-sm {% if net.errors_in > 0 or net.errors_out > 0 %}text-yellow-400{% endif %}">{{ net.errors_in }} / {{ net.errors_out }}</span></div>
+                <div class="flex justify-between"><span class="metric-label">Connections</span><span class="metric-sm">{{ net.active_connections }}</span></div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ══════════════ SYSTEM INFO ══════════════ -->
+    {% if checks.system and checks.system.status == 'OK' %}
+    <div class="health-card p-5">
+        <div class="flex items-center gap-2 mb-4">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(168,85,247,.12);">
+                <i class="fas fa-server text-purple-400 text-sm"></i>
+            </div>
+            <span class="text-xs font-black tracking-widest uppercase text-gray-400">System Information</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            {% set sys_items = [
+                {'label': 'Hostname', 'value': checks.system.hostname, 'icon': 'fa-desktop'},
+                {'label': 'Platform', 'value': checks.system.platform, 'icon': 'fa-linux'},
+                {'label': 'Architecture', 'value': checks.system.architecture, 'icon': 'fa-cog'},
+                {'label': 'Python', 'value': checks.system.python_version, 'icon': 'fa-python fab'},
+                {'label': 'Uptime', 'value': checks.system.uptime, 'icon': 'fa-clock'},
+                {'label': 'Boot Time', 'value': checks.system.boot_time, 'icon': 'fa-power-off'}
+            ] %}
+            {% for item in sys_items %}
+            <div class="text-center p-3 rounded-lg" style="background:rgba(255,255,255,.02); border:1px solid rgba(255,255,255,.04);">
+                <i class="{% if 'fab' in item.icon %}{{ item.icon }}{% else %}fas {{ item.icon }}{% endif %} text-purple-400/60 text-sm mb-2 block"></i>
+                <p class="metric-label mb-1">{{ item.label }}</p>
+                <p class="text-xs font-bold text-gray-300 break-all">{{ item.value }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ══════════════ TOP PROCESSES ══════════════ -->
+    {% if checks.top_processes %}
+    <div class="health-card overflow-hidden">
+        <div class="flex items-center gap-2 p-5 pb-3">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(251,191,36,.12);">
+                <i class="fas fa-tasks text-yellow-400 text-sm"></i>
+            </div>
+            <span class="text-xs font-black tracking-widest uppercase text-gray-400">Top Processes (by CPU)</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+                <thead>
+                    <tr style="background:rgba(255,255,255,.03);">
+                        <th class="px-5 py-2.5 text-left font-bold text-gray-500 uppercase tracking-wider text-[10px]">PID</th>
+                        <th class="px-5 py-2.5 text-left font-bold text-gray-500 uppercase tracking-wider text-[10px]">Process</th>
+                        <th class="px-5 py-2.5 text-right font-bold text-gray-500 uppercase tracking-wider text-[10px]">CPU</th>
+                        <th class="px-5 py-2.5 text-right font-bold text-gray-500 uppercase tracking-wider text-[10px]">Memory</th>
+                        <th class="px-5 py-2.5 text-left font-bold text-gray-500 uppercase tracking-wider text-[10px]" style="min-width:120px;">Usage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for proc in checks.top_processes %}
+                    <tr class="process-row border-t border-white/[.03] transition-colors">
+                        <td class="px-5 py-2.5 font-mono text-gray-500">{{ proc.pid }}</td>
+                        <td class="px-5 py-2.5 font-bold text-gray-300">{{ proc.name }}</td>
+                        <td class="px-5 py-2.5 text-right font-bold {% if proc.cpu > 50 %}text-red-400{% elif proc.cpu > 25 %}text-yellow-400{% else %}text-emerald-400{% endif %}">
+                            {{ "%.1f"|format(proc.cpu) }}%
+                        </td>
+                        <td class="px-5 py-2.5 text-right font-bold text-gray-400">{{ "%.1f"|format(proc.memory) }}%</td>
+                        <td class="px-5 py-2.5">
+                            <div class="bar-track">
+                                <div class="bar-fill {% if proc.cpu > 50 %}bar-crit{% elif proc.cpu > 25 %}bar-warn{% else %}bar-ok{% endif %}"
+                                     style="width:{{ [proc.cpu, 100]|min }}%"></div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ══════════════ FOOTER ══════════════ -->
+    <div class="text-center pt-4">
+        <p class="text-[10px] text-gray-600">
+            <i class="fas fa-shield-alt text-gray-700 mr-1"></i>
+            Source Point Server Diagnostics · Auto-scan every 30 min · Report generated at {{ report_time }}
+        </p>
+    </div>
+</div>
+{% endblock %}

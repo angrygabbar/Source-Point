@@ -91,15 +91,226 @@ def admin_dashboard():
                            pending_requests_count=pending_requests_count)
 
 
+@admin_core_bp.route('/health-check')
+@login_required
+@role_required(UserRole.ADMIN.value)
+def health_check_page():
+    """Live server health check dashboard — collects all metrics and renders UI."""
+    import psutil
+    import platform
+    import socket
+    import requests as http_requests
+
+    ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
+    report_time = ist_now.strftime('%d %b %Y, %I:%M %p IST')
+    checks = {}
+    overall_status = 'HEALTHY'
+    alerts = []
+
+    # 1. SYSTEM INFO
+    try:
+        boot_time = datetime.fromtimestamp(psutil.boot_time())
+        uptime = datetime.utcnow() - boot_time
+        uptime_str = f"{uptime.days}d {uptime.seconds // 3600}h {(uptime.seconds % 3600) // 60}m"
+        checks['system'] = {
+            'status': 'OK', 'hostname': socket.gethostname(),
+            'platform': f"{platform.system()} {platform.release()}",
+            'architecture': platform.machine(),
+            'python_version': platform.python_version(),
+            'uptime': uptime_str,
+            'boot_time': boot_time.strftime('%b %d, %Y %I:%M %p'),
+        }
+    except Exception as e:
+        checks['system'] = {'status': 'ERROR', 'error': str(e)}
+
+    # 2. CPU
+    try:
+        cpu_percent = psutil.cpu_percent(interval=1)
+        cpu_count = psutil.cpu_count()
+        cpu_count_logical = psutil.cpu_count(logical=True)
+        load_avg = psutil.getloadavg()
+        cpu_status = 'CRITICAL' if cpu_percent > 90 else ('WARNING' if cpu_percent > 75 else 'OK')
+        if cpu_status == 'CRITICAL':
+            overall_status = 'CRITICAL'
+            alerts.append(f"CPU usage critically high: {cpu_percent}%")
+        elif cpu_status == 'WARNING':
+            if overall_status == 'HEALTHY': overall_status = 'WARNING'
+            alerts.append(f"CPU usage high: {cpu_percent}%")
+        # Per-core usage
+        per_cpu = psutil.cpu_percent(interval=0, percpu=True)
+        checks['cpu'] = {
+            'status': cpu_status, 'usage_percent': cpu_percent,
+            'cores_physical': cpu_count, 'cores_logical': cpu_count_logical,
+            'load_avg_1m': f"{load_avg[0]:.2f}", 'load_avg_5m': f"{load_avg[1]:.2f}",
+            'load_avg_15m': f"{load_avg[2]:.2f}", 'per_cpu': per_cpu,
+        }
+    except Exception as e:
+        checks['cpu'] = {'status': 'ERROR', 'error': str(e)}
+        alerts.append(f"CPU check failed: {e}")
+
+    # 3. MEMORY
+    try:
+        mem = psutil.virtual_memory()
+        swap = psutil.swap_memory()
+        mem_status = 'CRITICAL' if mem.percent > 90 else ('WARNING' if mem.percent > 80 else 'OK')
+        if mem_status == 'CRITICAL':
+            overall_status = 'CRITICAL'
+            alerts.append(f"Memory critically high: {mem.percent}%")
+        elif mem_status == 'WARNING':
+            if overall_status == 'HEALTHY': overall_status = 'WARNING'
+            alerts.append(f"Memory usage high: {mem.percent}%")
+        checks['memory'] = {
+            'status': mem_status, 'total_gb': f"{mem.total / (1024**3):.1f}",
+            'used_gb': f"{mem.used / (1024**3):.1f}", 'available_gb': f"{mem.available / (1024**3):.1f}",
+            'usage_percent': mem.percent,
+            'swap_total_gb': f"{swap.total / (1024**3):.1f}",
+            'swap_used_gb': f"{swap.used / (1024**3):.1f}", 'swap_percent': swap.percent,
+        }
+    except Exception as e:
+        checks['memory'] = {'status': 'ERROR', 'error': str(e)}
+
+    # 4. DISK
+    try:
+        disk = psutil.disk_usage('/')
+        disk_io = psutil.disk_io_counters()
+        disk_status = 'CRITICAL' if disk.percent > 90 else ('WARNING' if disk.percent > 80 else 'OK')
+        if disk_status == 'CRITICAL':
+            overall_status = 'CRITICAL'
+            alerts.append(f"Disk usage critically high: {disk.percent}%")
+        elif disk_status == 'WARNING':
+            if overall_status == 'HEALTHY': overall_status = 'WARNING'
+            alerts.append(f"Disk usage high: {disk.percent}%")
+        checks['disk'] = {
+            'status': disk_status, 'total_gb': f"{disk.total / (1024**3):.1f}",
+            'used_gb': f"{disk.used / (1024**3):.1f}", 'free_gb': f"{disk.free / (1024**3):.1f}",
+            'usage_percent': disk.percent,
+            'read_gb': f"{disk_io.read_bytes / (1024**3):.2f}" if disk_io else 'N/A',
+            'write_gb': f"{disk_io.write_bytes / (1024**3):.2f}" if disk_io else 'N/A',
+        }
+    except Exception as e:
+        checks['disk'] = {'status': 'ERROR', 'error': str(e)}
+
+    # 5. DATABASE
+    try:
+        start = datetime.utcnow()
+        db.session.execute(db.text('SELECT 1'))
+        db_latency = (datetime.utcnow() - start).total_seconds() * 1000
+        user_count = db.session.execute(db.text('SELECT COUNT(*) FROM "user"')).scalar()
+        article_count = db.session.execute(db.text("SELECT COUNT(*) FROM news_article")).scalar()
+        try:
+            db_size = db.session.execute(db.text("SELECT pg_size_pretty(pg_database_size(current_database()))")).scalar()
+        except Exception:
+            db_size = 'N/A'
+        try:
+            active_conn = db.session.execute(db.text("SELECT count(*) FROM pg_stat_activity WHERE state = 'active'")).scalar()
+        except Exception:
+            active_conn = 'N/A'
+        db_status = 'WARNING' if db_latency > 500 else 'OK'
+        if db_status == 'WARNING':
+            if overall_status == 'HEALTHY': overall_status = 'WARNING'
+            alerts.append(f"Database latency high: {db_latency:.0f}ms")
+        checks['database'] = {
+            'status': db_status, 'latency_ms': f"{db_latency:.1f}",
+            'database_size': db_size, 'active_connections': active_conn,
+            'total_users': user_count, 'total_articles': article_count,
+        }
+    except Exception as e:
+        checks['database'] = {'status': 'CRITICAL', 'error': str(e)}
+        overall_status = 'CRITICAL'
+        alerts.append(f"Database connection failed: {e}")
+
+    # 6. REDIS
+    try:
+        import redis
+        redis_url = os.environ.get('REDIS_URL', 'redis://redis:6379/0')
+        r = redis.from_url(redis_url, socket_timeout=5)
+        start = datetime.utcnow()
+        r.ping()
+        redis_latency = (datetime.utcnow() - start).total_seconds() * 1000
+        info = r.info()
+        checks['redis'] = {
+            'status': 'OK', 'latency_ms': f"{redis_latency:.1f}",
+            'memory_used': info.get('used_memory_human', 'N/A'),
+            'connected_clients': info.get('connected_clients', 'N/A'),
+            'total_keys': r.dbsize(), 'uptime_days': info.get('uptime_in_days', 'N/A'),
+            'redis_version': info.get('redis_version', 'N/A'),
+        }
+    except Exception as e:
+        checks['redis'] = {'status': 'CRITICAL', 'error': str(e)}
+        overall_status = 'CRITICAL'
+        alerts.append(f"Redis connection failed: {e}")
+
+    # 7. APPLICATION
+    try:
+        site_url = os.environ.get('SITE_URL', 'http://web:5000')
+        start = datetime.utcnow()
+        resp = http_requests.get(f"{site_url}/health", timeout=10)
+        app_latency = (datetime.utcnow() - start).total_seconds() * 1000
+        app_status = 'OK'
+        if resp.status_code != 200:
+            app_status = 'CRITICAL'
+            overall_status = 'CRITICAL'
+            alerts.append(f"App /health returned HTTP {resp.status_code}")
+        elif app_latency > 2000:
+            app_status = 'WARNING'
+            if overall_status == 'HEALTHY': overall_status = 'WARNING'
+        checks['application'] = {
+            'status': app_status, 'http_status': resp.status_code,
+            'response_time_ms': f"{app_latency:.0f}",
+        }
+    except Exception as e:
+        checks['application'] = {'status': 'CRITICAL', 'error': str(e)}
+        overall_status = 'CRITICAL'
+        alerts.append(f"App health check failed: {e}")
+
+    # 8. NETWORK
+    try:
+        net = psutil.net_io_counters()
+        net_connections = len(psutil.net_connections(kind='inet'))
+        checks['network'] = {
+            'status': 'OK',
+            'bytes_sent_gb': f"{net.bytes_sent / (1024**3):.2f}",
+            'bytes_recv_gb': f"{net.bytes_recv / (1024**3):.2f}",
+            'packets_sent': f"{net.packets_sent:,}",
+            'packets_recv': f"{net.packets_recv:,}",
+            'errors_in': net.errin, 'errors_out': net.errout,
+            'active_connections': net_connections,
+        }
+        if net.errin > 100 or net.errout > 100:
+            checks['network']['status'] = 'WARNING'
+            if overall_status == 'HEALTHY': overall_status = 'WARNING'
+            alerts.append(f"Network errors: {net.errin} in, {net.errout} out")
+    except Exception as e:
+        checks['network'] = {'status': 'ERROR', 'error': str(e)}
+
+    # 9. TOP PROCESSES
+    try:
+        processes = []
+        for proc in sorted(psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent']),
+                          key=lambda p: p.info.get('cpu_percent', 0) or 0, reverse=True)[:8]:
+            processes.append({
+                'pid': proc.info['pid'], 'name': proc.info['name'],
+                'cpu': proc.info.get('cpu_percent', 0) or 0,
+                'memory': proc.info.get('memory_percent', 0) or 0,
+            })
+        checks['top_processes'] = processes
+    except Exception:
+        checks['top_processes'] = []
+
+    return render_template('admin_health_check.html',
+                           checks=checks, overall_status=overall_status,
+                           alerts=alerts, report_time=report_time)
+
+
 @admin_core_bp.route('/run-health-check', methods=['POST'])
 @login_required
 @role_required(UserRole.ADMIN.value)
 def run_health_check():
-    """Manually trigger a server health check. Runs async and emails report to admin."""
+    """Manually trigger a server health check email. Runs async."""
     from worker import server_health_check_task
     server_health_check_task.delay()
-    flash('🩺 Health check initiated! Report will be emailed to you shortly.', 'success')
-    return redirect(url_for('admin_core.admin_dashboard'))
+    flash('🩺 Health check report will be emailed to you shortly.', 'success')
+    return redirect(url_for('admin_core.health_check_page'))
 
 @admin_core_bp.route('/analytics')
 @login_required
