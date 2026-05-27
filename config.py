@@ -82,6 +82,11 @@ class Config:
             'task': 'worker.send_newsletter_digest_task',
             'schedule': crontab(hour='8,18', minute=0),
         },
+        # 9. News Cleanup — Delete articles older than 30 days (Midnight IST)
+        'cleanup-old-news': {
+            'task': 'worker.cleanup_old_news_task',
+            'schedule': crontab(hour=0, minute=0),
+        },
     }
 
     # --- DATABASE POOLING OPTIMIZATION ---

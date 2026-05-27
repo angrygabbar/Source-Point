@@ -854,3 +854,35 @@ def send_newsletter_digest_task():
     db.session.commit()
 
     logger.info(f"[Newsletter] Digest sent to {sent_count}/{len(users)} users with {len(unsent_articles)} articles.")
+
+
+@celery.task
+def cleanup_old_news_task():
+    """
+    AUTOMATED SCHEDULER TASK (Midnight IST Daily):
+    Deletes news articles older than 30 days to prevent database bloat.
+    """
+    from models.newsletter import NewsArticle
+
+    logger.info("[Scheduler] Starting News Cleanup Task...")
+
+    cutoff_date = datetime.utcnow() - timedelta(days=30)
+
+    old_articles = NewsArticle.query.filter(
+        NewsArticle.fetched_at < cutoff_date
+    ).all()
+
+    if not old_articles:
+        logger.info("[News Cleanup] No articles older than 30 days found.")
+        return
+
+    count = len(old_articles)
+    for article in old_articles:
+        db.session.delete(article)
+
+    try:
+        db.session.commit()
+        logger.info(f"[News Cleanup] Deleted {count} articles older than 30 days.")
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"[News Cleanup] Failed to delete old articles: {e}")
