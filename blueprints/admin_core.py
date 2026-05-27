@@ -90,6 +90,17 @@ def admin_dashboard():
                            pending_orders_count=pending_orders_count,
                            pending_requests_count=pending_requests_count)
 
+
+@admin_core_bp.route('/run-health-check', methods=['POST'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def run_health_check():
+    """Manually trigger a server health check. Runs async and emails report to admin."""
+    from worker import server_health_check_task
+    server_health_check_task.delay()
+    flash('🩺 Health check initiated! Report will be emailed to you shortly.', 'success')
+    return redirect(url_for('admin_core.admin_dashboard'))
+
 @admin_core_bp.route('/analytics')
 @login_required
 @role_required(UserRole.ADMIN.value)
