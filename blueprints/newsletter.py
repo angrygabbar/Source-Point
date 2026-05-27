@@ -2,7 +2,7 @@ import hashlib
 import hmac
 import os
 from datetime import datetime, timedelta
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from extensions import db
 from models.newsletter import NewsArticle
 from models.auth import User
@@ -65,10 +65,8 @@ def news_page():
     search = request.args.get('q', '', type=str).strip()
     per_page = 12
 
-    # Base query
     query = NewsArticle.query
 
-    # Apply search filter if provided
     if search:
         search_filter = f'%{search}%'
         query = query.filter(
@@ -79,26 +77,21 @@ def news_page():
             )
         )
 
-    # Order and paginate
     articles = query.order_by(
         NewsArticle.published_at.desc().nullslast(),
         NewsArticle.fetched_at.desc()
     ).paginate(page=page, per_page=per_page, error_out=False)
 
-    # --- Compute stats for the page ---
+    # Stats
     total_articles = NewsArticle.query.count()
     sources_count = db.session.query(func.count(func.distinct(NewsArticle.source_name))).scalar() or 0
-
-    # Last updated time (most recent fetched_at)
     latest_fetch = db.session.query(func.max(NewsArticle.fetched_at)).scalar()
     last_updated_ago = _time_ago(latest_fetch) if latest_fetch else None
 
-    # Add relative time to each article for the template
     now = datetime.utcnow()
     for article in articles.items:
         ref_time = article.published_at or article.fetched_at
         article.time_ago = _time_ago(ref_time)
-        # Mark as "new" if fetched within the last 3 hours
         article.is_new = (now - (article.fetched_at or now)).total_seconds() < 10800
 
     return render_template('news.html',
@@ -109,6 +102,43 @@ def news_page():
                            total_articles=total_articles,
                            sources_count=sources_count,
                            last_updated_ago=last_updated_ago)
+
+
+@newsletter_bp.route('/news/<int:article_id>')
+def article_detail(article_id):
+    """
+    Internal article detail page — displays full scraped content.
+    Falls back to summary + external link if content wasn't scraped.
+    """
+    article = NewsArticle.query.get_or_404(article_id)
+
+    # Relative time
+    ref_time = article.published_at or article.fetched_at
+    article.time_ago = _time_ago(ref_time)
+
+    # Related articles: same source or latest articles, excluding current
+    related = []
+    if article.source_name:
+        related = NewsArticle.query.filter(
+            NewsArticle.id != article.id,
+            NewsArticle.source_name == article.source_name
+        ).order_by(NewsArticle.published_at.desc().nullslast()).limit(4).all()
+
+    # If not enough from same source, fill with latest
+    if len(related) < 4:
+        remaining = 4 - len(related)
+        exclude_ids = [article.id] + [r.id for r in related]
+        more = NewsArticle.query.filter(
+            NewsArticle.id.notin_(exclude_ids)
+        ).order_by(NewsArticle.published_at.desc().nullslast()).limit(remaining).all()
+        related.extend(more)
+
+    for r in related:
+        r.time_ago = _time_ago(r.published_at or r.fetched_at)
+
+    return render_template('news_article.html',
+                           article=article,
+                           related=related)
 
 
 @newsletter_bp.route('/newsletter/unsubscribe')

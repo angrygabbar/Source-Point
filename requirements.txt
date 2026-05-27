@@ -40,3 +40,7 @@ google-api-python-client==2.116.0
 # --- PDF & HTML PARSING ---
 beautifulsoup4==4.12.2
 fpdf2==2.7.9
+
+# --- NEWS FEED PARSING ---
+feedparser==6.0.11
+trafilatura==2.0.0

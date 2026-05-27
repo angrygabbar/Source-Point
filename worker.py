@@ -610,10 +610,13 @@ def check_hiring_events_task():
 def fetch_news_task():
     """
     AUTOMATED SCHEDULER TASK (Every 30 minutes):
-    Fetches latest Technology news from Google News RSS and stores new articles.
-    Does NOT send any emails — that's handled by send_newsletter_digest_task.
+    1. Fetches latest Technology news from Google News RSS.
+    2. Deduplicates and stores new articles in the NewsArticle table.
+    3. Scrapes full article content from each source URL using trafilatura.
     """
     import feedparser
+    import requests as http_requests
+    import trafilatura
     from urllib.parse import quote_plus
     from models.newsletter import NewsArticle
 
@@ -640,7 +643,7 @@ def fetch_news_task():
         return
 
     # --- STEP 2: Deduplicate and store new articles ---
-    new_count = 0
+    new_articles = []
     seen_urls = set()
 
     for entry in all_entries:
@@ -649,12 +652,10 @@ def fetch_news_task():
             continue
         seen_urls.add(url)
 
-        # Check if article already exists in DB
         existing = NewsArticle.query.filter_by(source_url=url).first()
         if existing:
             continue
 
-        # Parse the source name from the title (Google News format: "Title - Source")
         title = entry.get('title', 'Untitled')
         source_name = None
         if ' - ' in title:
@@ -662,7 +663,6 @@ def fetch_news_task():
             title = parts[0].strip()
             source_name = parts[1].strip()
 
-        # Parse published date
         published_at = None
         if hasattr(entry, 'published_parsed') and entry.published_parsed:
             try:
@@ -670,7 +670,6 @@ def fetch_news_task():
             except Exception:
                 pass
 
-        # Extract summary (strip HTML tags)
         summary = entry.get('summary', '')
         if summary:
             from bs4 import BeautifulSoup as BS4
@@ -690,18 +689,87 @@ def fetch_news_task():
             category='technology'
         )
         db.session.add(article)
-        new_count += 1
+        new_articles.append(article)
 
-        # Cap at 15 new articles per fetch cycle
-        if new_count >= 15:
+        if len(new_articles) >= 15:
             break
 
     try:
         db.session.commit()
-        logger.info(f"[News Fetch] Stored {new_count} new articles in database.")
+        logger.info(f"[News Fetch] Stored {len(new_articles)} new articles in database.")
     except Exception as e:
         db.session.rollback()
         logger.error(f"[News Fetch] Failed to store articles: {e}")
+        return
+
+    # --- STEP 3: Scrape full content for each new article ---
+    HEADERS = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+    }
+    scraped_count = 0
+
+    for article in new_articles:
+        try:
+            # Follow Google News redirect to get the real article URL
+            resp = http_requests.get(article.source_url, headers=HEADERS, timeout=15, allow_redirects=True)
+            final_url = resp.url
+
+            if resp.status_code != 200:
+                logger.warning(f"[Scraper] HTTP {resp.status_code} for: {article.title[:60]}")
+                continue
+
+            html = resp.text
+
+            # Extract full article content using trafilatura
+            content = trafilatura.extract(
+                html,
+                include_comments=False,
+                include_tables=True,
+                no_fallback=False,
+                favor_recall=True,
+                url=final_url
+            )
+
+            if content and len(content.strip()) > 100:
+                article.content = content
+                scraped_count += 1
+            else:
+                logger.info(f"[Scraper] No substantial content extracted for: {article.title[:60]}")
+
+            # Extract metadata (image, author)
+            metadata = trafilatura.extract_metadata(html, default_url=final_url)
+            if metadata:
+                if metadata.image:
+                    article.image_url = metadata.image
+                if metadata.author:
+                    article.author = metadata.author[:300]
+
+            # Fallback: extract og:image with BeautifulSoup if trafilatura didn't find one
+            if not article.image_url:
+                from bs4 import BeautifulSoup as BS4
+                try:
+                    soup = BS4(html, 'html.parser')
+                    og_img = soup.find('meta', property='og:image')
+                    if og_img and og_img.get('content'):
+                        article.image_url = og_img['content']
+                except Exception:
+                    pass
+
+        except http_requests.exceptions.Timeout:
+            logger.warning(f"[Scraper] Timeout for: {article.title[:60]}")
+        except http_requests.exceptions.RequestException as e:
+            logger.warning(f"[Scraper] Request failed for {article.title[:60]}: {e}")
+        except Exception as e:
+            logger.error(f"[Scraper] Unexpected error for {article.title[:60]}: {e}")
+
+    try:
+        db.session.commit()
+        logger.info(f"[News Fetch] Content scraped for {scraped_count}/{len(new_articles)} articles.")
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"[Scraper] Failed to save scraped content: {e}")
 
 
 @celery.task

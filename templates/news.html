@@ -98,7 +98,7 @@
 
         <!-- ═══════════ FEATURED ARTICLE (first one) ═══════════ -->
         {% set featured = articles[0] %}
-        <a href="{{ featured.source_url }}" target="_blank" rel="noopener noreferrer"
+        <a href="{{ url_for('newsletter.article_detail', article_id=featured.id) }}"
            id="article-{{ featured.id }}"
            class="group block mb-8 rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/[0.08] to-violet-500/[0.04] hover:from-indigo-500/[0.12] hover:to-violet-500/[0.08] transition-all duration-300 overflow-hidden hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/10">
             <div class="p-6 sm:p-8">
@@ -177,7 +177,7 @@
             {% endif %}
 
             <!-- News Card -->
-            <a href="{{ article.source_url }}" target="_blank" rel="noopener noreferrer"
+            <a href="{{ url_for('newsletter.article_detail', article_id=article.id) }}"
                id="article-{{ article.id }}"
                class="group block mb-4 rounded-2xl border border-white/5 hover:border-indigo-500/30 bg-white/[0.02] hover:bg-white/[0.05] transition-all duration-300 overflow-hidden hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/5">
                 <div class="p-5 sm:p-6">
