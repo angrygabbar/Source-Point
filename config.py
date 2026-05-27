@@ -72,6 +72,11 @@ class Config:
             'task': 'worker.notify_sellers_inventory_digest_task',
             'schedule': crontab(hour=9, minute=0),
         },
+        # 7. Technology Newsletter (8 AM IST Daily)
+        'daily-ai-tech-newsletter': {
+            'task': 'worker.fetch_and_send_newsletter_task',
+            'schedule': crontab(hour=8, minute=0),
+        },
     }
 
     # --- DATABASE POOLING OPTIMIZATION ---

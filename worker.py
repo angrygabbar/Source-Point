@@ -603,3 +603,172 @@ def check_hiring_events_task():
 
     db.session.commit()
     logger.info(f"[Scheduler] Hiring Check Done. Reminders: {remind_count}, Auto-Completed: {complete_count}")
+
+# --- TECHNOLOGY NEWSLETTER TASK ---
+
+@celery.task
+def fetch_and_send_newsletter_task():
+    """
+    AUTOMATED SCHEDULER TASK (8 AM IST Daily):
+    1. Fetches top 10 Technology news from Google News RSS via feedparser.
+    2. Deduplicates and stores new articles in the NewsArticle table.
+    3. Sends a daily newsletter email to all users with article summaries.
+    """
+    import feedparser
+    from urllib.parse import quote_plus
+    from models.newsletter import NewsArticle
+    from models.auth import User
+
+    logger.info("[Scheduler] Starting Technology Newsletter Task...")
+
+    # --- STEP 1: Fetch news from Google News RSS ---
+    queries = ['technology news', 'top tech startups gadgets', 'cybersecurity cloud computing']
+    all_entries = []
+
+    for query in queries:
+        feed_url = f"https://news.google.com/rss/search?q={quote_plus(query)}&hl=en-IN&gl=IN&ceid=IN:en"
+        try:
+            feed = feedparser.parse(feed_url)
+            if feed.entries:
+                all_entries.extend(feed.entries)
+                logger.info(f"[Newsletter] Fetched {len(feed.entries)} entries for query '{query}'")
+            else:
+                logger.warning(f"[Newsletter] No entries found for query '{query}'")
+        except Exception as e:
+            logger.error(f"[Newsletter] Failed to fetch RSS for '{query}': {e}")
+
+    if not all_entries:
+        logger.warning("[Newsletter] No news articles fetched. Skipping newsletter.")
+        return
+
+    # --- STEP 2: Deduplicate and store new articles ---
+    new_articles = []
+    seen_urls = set()
+
+    for entry in all_entries:
+        url = entry.get('link', '').strip()
+        if not url or url in seen_urls:
+            continue
+        seen_urls.add(url)
+
+        # Check if article already exists in DB
+        existing = NewsArticle.query.filter_by(source_url=url).first()
+        if existing:
+            continue
+
+        # Parse the source name from the title (Google News format: "Title - Source")
+        title = entry.get('title', 'Untitled')
+        source_name = None
+        if ' - ' in title:
+            parts = title.rsplit(' - ', 1)
+            title = parts[0].strip()
+            source_name = parts[1].strip()
+
+        # Parse published date
+        published_at = None
+        if hasattr(entry, 'published_parsed') and entry.published_parsed:
+            try:
+                published_at = datetime(*entry.published_parsed[:6])
+            except Exception:
+                pass
+
+        # Extract summary (strip HTML tags)
+        summary = entry.get('summary', '')
+        if summary:
+            from bs4 import BeautifulSoup as BS4
+            try:
+                summary = BS4(summary, 'html.parser').get_text(separator=' ', strip=True)
+            except Exception:
+                pass
+            # Limit summary length
+            if len(summary) > 500:
+                summary = summary[:497] + '...'
+
+        article = NewsArticle(
+            title=title,
+            summary=summary or None,
+            source_name=source_name,
+            source_url=url,
+            published_at=published_at,
+            category='technology'
+        )
+        db.session.add(article)
+        new_articles.append(article)
+
+        # Stop at 10 new articles
+        if len(new_articles) >= 10:
+            break
+
+    try:
+        db.session.commit()
+        logger.info(f"[Newsletter] Stored {len(new_articles)} new articles in database.")
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"[Newsletter] Failed to store articles: {e}")
+        return
+
+    if not new_articles:
+        logger.info("[Newsletter] No new articles to send. Skipping email.")
+        return
+
+    # --- STEP 3: Send newsletter email to all users ---
+    ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
+    report_date_short = ist_now.strftime('%d %b %Y')
+
+    # Determine the base URL for news page links
+    news_base_url = os.environ.get('SITE_URL', 'https://sourcepoint.in')
+
+    try:
+        html_content = render_template('mail/newsletter_digest.html',
+            articles=new_articles,
+            report_date_short=report_date_short,
+            news_base_url=news_base_url,
+            unsubscribe_url='__UNSUBSCRIBE_URL__'  # Placeholder replaced per-user
+        )
+    except Exception as e:
+        logger.error(f"[Newsletter] Failed to render email template: {e}")
+        return
+
+    # Fetch only subscribed users with email
+    users = User.query.filter(
+        User.email.isnot(None),
+        User.email != '',
+        User.newsletter_subscribed == True
+    ).all()
+    if not users:
+        logger.warning("[Newsletter] No subscribed users found to send newsletter.")
+        return
+
+    # Generate unsubscribe tokens for each user
+    import hashlib, hmac
+    newsletter_secret = os.environ.get('SECRET_KEY', 'newsletter-fallback-secret')
+
+    def _make_unsub_token(uid, email):
+        msg = f"{uid}:{email}".encode()
+        return hmac.new(newsletter_secret.encode(), msg, hashlib.sha256).hexdigest()[:32]
+
+    # Send individually so each user gets their own unsubscribe link
+    sent_count = 0
+    subject = f"🚀 Top Tech News — {report_date_short} | Today's {len(new_articles)} Must-Read Stories"
+
+    for user in users:
+        try:
+            token = _make_unsub_token(user.id, user.email)
+            unsub_url = f"{news_base_url}/newsletter/unsubscribe?uid={user.id}&token={token}"
+            personalized_html = html_content.replace('__UNSUBSCRIBE_URL__', unsub_url)
+
+            _send_via_brevo_api(
+                to_list=[{"email": user.email, "name": user.username}],
+                subject=subject,
+                html_content=personalized_html
+            )
+            sent_count += 1
+        except Exception as e:
+            logger.error(f"[Newsletter] Failed to send to {user.email}: {e}")
+
+    # Mark articles as sent
+    for article in new_articles:
+        article.is_sent = True
+    db.session.commit()
+
+    logger.info(f"[Newsletter] Technology newsletter sent to {sent_count}/{len(users)} subscribed users with {len(new_articles)} articles.")

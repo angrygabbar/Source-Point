@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Tech News Digest — SourcePoint</title>
+</head>
+
+<body
+    style="margin:0; padding:0; background-color:#f0f2f5; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif; -webkit-text-size-adjust:100%;">
+
+    <!-- Preheader -->
+    <span style="display:none;max-height:0;overflow:hidden;">
+        🚀 Today's Top {{ articles|length }} Technology Stories — {{ report_date_short }}
+    </span>
+
+    <!-- Outer wrapper -->
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f0f2f5;">
+        <tr>
+            <td align="center" style="padding:40px 16px;">
+
+                <!-- Card -->
+                <table role="presentation" width="680" cellspacing="0" cellpadding="0"
+                    style="max-width:680px; width:100%; background:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.09);">
+
+                    <!-- ═══════════ HEADER ═══════════ -->
+                    <tr>
+                        <td style="background:#ffffff; padding:28px 40px 22px 40px; border-bottom:1px solid #e8e8e8;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <!-- Brand -->
+                                    <td valign="middle">
+                                        <table role="presentation" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td valign="middle"
+                                                    style="background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%); border-radius:10px; padding:10px 14px;">
+                                                    <span
+                                                        style="font-size:20px; font-weight:800; color:#ffffff; letter-spacing:-0.5px;">SP</span>
+                                                </td>
+                                                <td valign="middle" style="padding-left:12px;">
+                                                    <div
+                                                        style="font-size:20px; font-weight:700; color:#111827; letter-spacing:-0.3px;">
+                                                        Source Point</div>
+                                                    <div style="font-size:11px; color:#6b7280; margin-top:1px;">
+                                                        Technology Newsletter</div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                    <!-- Date Badge -->
+                                    <td align="right" valign="middle">
+                                        <div
+                                            style="display:inline-block; background:#eef2ff; border:1.5px solid #c7d2fe; border-radius:8px; padding:10px 18px; text-align:right;">
+                                            <div
+                                                style="font-size:11px; color:#6366f1; font-weight:600; text-transform:uppercase; letter-spacing:0.8px;">
+                                                DAILY DIGEST</div>
+                                            <div
+                                                style="font-size:14px; font-weight:700; color:#4338ca; margin-top:2px;">
+                                                {{ report_date_short }}</div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Accent stripe -->
+                    <tr>
+                        <td
+                            style="background:linear-gradient(90deg,#6366f1 0%,#8b5cf6 50%,#a78bfa 100%); height:4px; font-size:0; line-height:0;">
+                            &nbsp;</td>
+                    </tr>
+
+                    <!-- ═══════════ HERO BANNER ═══════════ -->
+                    <tr>
+                        <td style="background:linear-gradient(135deg,#312e81 0%,#4338ca 50%,#6366f1 100%); padding:30px 40px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td>
+                                        <div style="font-size:28px; font-weight:800; color:#ffffff; letter-spacing:-0.5px; line-height:1.2;">
+                                            🚀 Today's Top Tech News
+                                        </div>
+                                        <div style="font-size:14px; color:#c7d2fe; margin-top:8px; line-height:1.5;">
+                                            {{ articles|length }} curated stories from the world of technology —
+                                            the biggest launches, breakthroughs, and trends delivered to your inbox
+                                            every morning.
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- ═══════════ NEWS ARTICLES ═══════════ -->
+                    {% for article in articles %}
+                    <tr>
+                        <td style="padding:{{ '24px' if loop.first else '0' }} 40px 0 40px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background:#ffffff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; {% if not loop.last %}margin-bottom:16px;{% endif %}">
+                                <tr>
+                                    <td style="padding:20px 24px;">
+                                        <!-- Article Number + Source -->
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td valign="middle">
+                                                    <span
+                                                        style="display:inline-block; background:#eef2ff; color:#6366f1; font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px; border:1px solid #c7d2fe; margin-right:8px;">
+                                                        #{{ loop.index }}
+                                                    </span>
+                                                    {% if article.source_name %}
+                                                    <span
+                                                        style="font-size:11px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">
+                                                        {{ article.source_name }}
+                                                    </span>
+                                                    {% endif %}
+                                                </td>
+                                                {% if article.published_at %}
+                                                <td align="right" valign="middle">
+                                                    <span style="font-size:11px; color:#9ca3af;">
+                                                        {{ article.published_at.strftime('%I:%M %p') }}
+                                                    </span>
+                                                </td>
+                                                {% endif %}
+                                            </tr>
+                                        </table>
+
+                                        <!-- Title -->
+                                        <div
+                                            style="font-size:17px; font-weight:700; color:#111827; margin-top:12px; line-height:1.4;">
+                                            {{ article.title }}
+                                        </div>
+
+                                        <!-- Summary -->
+                                        {% if article.summary %}
+                                        <div
+                                            style="font-size:13px; color:#6b7280; margin-top:8px; line-height:1.6;">
+                                            {{ article.summary[:250] }}{% if article.summary|length > 250 %}...{% endif %}
+                                        </div>
+                                        {% endif %}
+
+                                        <!-- Read More Button -->
+                                        <div style="margin-top:16px;">
+                                            <a href="{{ news_base_url }}/news#article-{{ article.id }}"
+                                                style="display:inline-block; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#ffffff; font-size:12px; font-weight:700; padding:10px 20px; border-radius:8px; text-decoration:none; letter-spacing:0.3px;">
+                                                Read on SourcePoint →
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    <!-- ═══════════ VIEW ALL CTA ═══════════ -->
+                    <tr>
+                        <td style="padding:24px 40px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{ news_base_url }}/news"
+                                            style="display:inline-block; background:#111827; color:#ffffff; font-size:14px; font-weight:700; padding:14px 32px; border-radius:10px; text-decoration:none; letter-spacing:0.3px;">
+                                            View All News on SourcePoint
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Bottom accent stripe -->
+                    <tr>
+                        <td
+                            style="background:linear-gradient(90deg,#6366f1 0%,#8b5cf6 50%,#a78bfa 100%); height:4px; font-size:0; line-height:0;">
+                            &nbsp;</td>
+                    </tr>
+
+                    <!-- ═══════════ FOOTER ═══════════ -->
+                    <tr>
+                        <td style="background:#f9fafb; padding:24px 40px; border-top:1px solid #e5e7eb;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td align="center">
+                                        <p style="margin:0 0 6px 0; font-size:13px; color:#374151; font-weight:600;">
+                                            Source Point — Technology Newsletter
+                                        </p>
+                                        <p style="margin:0 0 10px 0; font-size:11px; color:#9ca3af;">
+                                            This is an automated daily digest. For questions, contact
+                                            <a href="mailto:admin@sourcepoint.in"
+                                                style="color:#6366f1; text-decoration:none;">admin@sourcepoint.in</a>
+                                        </p>
+                                        <p style="margin:0; font-size:10px; color:#d1d5db; line-height:1.7;">
+                                            © 2026 Source Point. All rights reserved. &nbsp;·&nbsp;
+                                            <a href="#" style="color:#d1d5db; text-decoration:none;">Privacy Policy</a>
+                                            &nbsp;·&nbsp;
+                                            <a href="{{ unsubscribe_url }}" style="color:#9ca3af; text-decoration:underline;">Unsubscribe from newsletter</a>
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                </table>
+                <!-- /Card -->
+
+            </td>
+        </tr>
+    </table>
+    <!-- /Outer wrapper -->
+
+</body>
+
+</html>
