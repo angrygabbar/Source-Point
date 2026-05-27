@@ -1157,8 +1157,8 @@ def server_health_check_task():
             processes.append({
                 'pid': proc.info['pid'],
                 'name': proc.info['name'],
-                'cpu': f"{proc.info.get('cpu_percent', 0):.1f}%",
-                'memory': f"{proc.info.get('memory_percent', 0):.1f}%",
+                'cpu': proc.info.get('cpu_percent', 0) or 0,
+                'memory': proc.info.get('memory_percent', 0) or 0,
             })
         checks['top_processes'] = processes
     except Exception:
