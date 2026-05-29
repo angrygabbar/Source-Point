@@ -623,13 +623,23 @@ def fetch_news_task():
     logger.info("[Scheduler] Starting News Fetch Task...")
 
     # --- STEP 1: Fetch news from Google News RSS ---
+    # FIX: Use a real browser User-Agent to prevent Google News from blocking requests
+    RSS_HEADERS = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+    }
     queries = ['technology news', 'top tech startups gadgets', 'cybersecurity cloud computing']
     all_entries = []
 
     for query in queries:
         feed_url = f"https://news.google.com/rss/search?q={quote_plus(query)}&hl=en-IN&gl=IN&ceid=IN:en"
         try:
-            feed = feedparser.parse(feed_url)
+            # FIX: Fetch RSS via requests (with User-Agent) then parse with feedparser
+            rss_response = http_requests.get(feed_url, headers=RSS_HEADERS, timeout=15)
+            if rss_response.status_code != 200:
+                logger.warning(f"[News Fetch] HTTP {rss_response.status_code} for query '{query}'")
+                continue
+            feed = feedparser.parse(rss_response.content)
             if feed.entries:
                 all_entries.extend(feed.entries)
                 logger.info(f"[News Fetch] Fetched {len(feed.entries)} entries for query '{query}'")
@@ -723,11 +733,12 @@ def fetch_news_task():
             html = resp.text
 
             # Extract full article content using trafilatura
+            # FIX: Replaced deprecated 'no_fallback' with 'fast' (trafilatura 2.0.0)
             content = trafilatura.extract(
                 html,
                 include_comments=False,
                 include_tables=True,
-                no_fallback=False,
+                fast=False,
                 favor_recall=True,
                 url=final_url
             )
@@ -849,12 +860,105 @@ def send_newsletter_digest_task():
             logger.error(f"[Newsletter] Failed to send to {user.email}: {e}")
 
     # --- STEP 5: Mark articles as sent ---
-    for article in unsent_articles:
-        article.is_sent = True
-    db.session.commit()
+    try:
+        for article in unsent_articles:
+            article.is_sent = True
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"[Newsletter] Failed to mark articles as sent: {e}")
 
     logger.info(f"[Newsletter] Digest sent to {sent_count}/{len(users)} users with {len(unsent_articles)} articles.")
 
+
+@celery.task
+def send_manual_newsletter_task(article_ids):
+    """
+    MANUAL TASK: Triggered by admin.
+    Sends a newsletter digest containing only the specifically selected articles.
+    """
+    from models.newsletter import NewsArticle
+    from models.auth import User
+
+    logger.info(f"[Manual Newsletter] Starting task for {len(article_ids)} selected articles...")
+
+    if not article_ids:
+        logger.warning("[Manual Newsletter] No article IDs provided. Skipping.")
+        return
+
+    # STEP 1: Get selected articles
+    selected_articles = NewsArticle.query.filter(NewsArticle.id.in_(article_ids)).order_by(
+        NewsArticle.published_at.desc().nullslast(),
+        NewsArticle.fetched_at.desc()
+    ).all()
+
+    if not selected_articles:
+        logger.warning("[Manual Newsletter] None of the selected articles were found in DB. Skipping.")
+        return
+
+    # STEP 2: Render template
+    ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
+    report_date_short = ist_now.strftime('%d %b %Y')
+    news_base_url = os.environ.get('SITE_URL', 'https://sourcepoint.in')
+
+    try:
+        html_content = render_template('mail/newsletter_digest.html',
+            articles=selected_articles,
+            report_date_short=report_date_short,
+            news_base_url=news_base_url,
+            unsubscribe_url='__UNSUBSCRIBE_URL__'
+        )
+    except Exception as e:
+        logger.error(f"[Manual Newsletter] Failed to render email template: {e}")
+        return
+
+    # STEP 3: Get users
+    users = User.query.filter(
+        User.email.isnot(None),
+        User.email != '',
+        User.newsletter_subscribed == True
+    ).all()
+    
+    if not users:
+        logger.warning("[Manual Newsletter] No subscribed users found to send newsletter.")
+        return
+
+    # STEP 4: Send emails
+    import hashlib, hmac
+    newsletter_secret = os.environ.get('SECRET_KEY', 'newsletter-fallback-secret')
+
+    def _make_unsub_token(uid, email):
+        msg = f"{uid}:{email}".encode()
+        return hmac.new(newsletter_secret.encode(), msg, hashlib.sha256).hexdigest()[:32]
+
+    sent_count = 0
+    subject = f"🚀 Special Tech News Update — {len(selected_articles)} Stories"
+
+    for user in users:
+        try:
+            token = _make_unsub_token(user.id, user.email)
+            unsub_url = f"{news_base_url}/newsletter/unsubscribe?uid={user.id}&token={token}"
+            personalized_html = html_content.replace('__UNSUBSCRIBE_URL__', unsub_url)
+
+            _send_via_brevo_api(
+                to_list=[{"email": user.email, "name": user.username}],
+                subject=subject,
+                html_content=personalized_html
+            )
+            sent_count += 1
+        except Exception as e:
+            logger.error(f"[Manual Newsletter] Failed to send to {user.email}: {e}")
+
+    # STEP 5: Mark articles as sent
+    try:
+        for article in selected_articles:
+            article.is_sent = True
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"[Manual Newsletter] Failed to mark articles as sent: {e}")
+
+    logger.info(f"[Manual Newsletter] Digest sent to {sent_count}/{len(users)} users with {len(selected_articles)} articles.")
 
 @celery.task
 def cleanup_old_news_task():

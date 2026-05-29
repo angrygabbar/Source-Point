@@ -873,3 +873,96 @@ def delete_emi_plan(plan_id):
     db.session.commit()
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest': return jsonify({'success': True, 'message': 'Plan deleted.', 'remove_row_id': f'plan-{plan_id}'})
     return redirect(url_for('admin_core.emi_manager'))
+
+# =========================================================
+# NEWSLETTER MANAGEMENT
+# =========================================================
+
+@admin_core_bp.route('/newsletter', methods=['GET'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def admin_newsletter():
+    from models.newsletter import NewsArticle
+    
+    page = request.args.get('page', 1, type=int)
+    search = request.args.get('search', '').strip()
+    status_filter = request.args.get('status', 'all')
+    sort_by = request.args.get('sort', 'newest')
+
+    query = NewsArticle.query
+
+    if search:
+        query = query.filter(
+            db.or_(
+                NewsArticle.title.ilike(f"%{search}%"),
+                NewsArticle.source_name.ilike(f"%{search}%")
+            )
+        )
+
+    if status_filter == 'unsent':
+        query = query.filter_by(is_sent=False)
+    elif status_filter == 'sent':
+        query = query.filter_by(is_sent=True)
+
+    if sort_by == 'oldest':
+        query = query.order_by(NewsArticle.published_at.asc().nullslast())
+    elif sort_by == 'source':
+        query = query.order_by(NewsArticle.source_name.asc().nullslast())
+    elif sort_by == 'title':
+        query = query.order_by(NewsArticle.title.asc())
+    else: # newest
+        query = query.order_by(NewsArticle.published_at.desc().nullslast(), NewsArticle.fetched_at.desc())
+
+    articles_pagination = query.paginate(page=page, per_page=20, error_out=False)
+
+    # Stats
+    total_articles = NewsArticle.query.count()
+    unsent_count = NewsArticle.query.filter_by(is_sent=False).count()
+    
+    total_users = User.query.filter(User.email.isnot(None), User.email != '').count()
+    subscribed_users = User.query.filter(User.email.isnot(None), User.email != '', User.newsletter_subscribed == True).count()
+    
+    # Last sent
+    last_sent_article = NewsArticle.query.filter_by(is_sent=True).order_by(NewsArticle.fetched_at.desc()).first()
+    last_sent_date = last_sent_article.fetched_at if last_sent_article else None
+
+    return render_template(
+        'admin_newsletter.html',
+        articles=articles_pagination,
+        total_articles=total_articles,
+        unsent_count=unsent_count,
+        total_users=total_users,
+        subscribed_users=subscribed_users,
+        last_sent_date=last_sent_date,
+        current_search=search,
+        current_status=status_filter,
+        current_sort=sort_by
+    )
+
+@admin_core_bp.route('/newsletter/send', methods=['POST'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def send_manual_newsletter():
+    try:
+        data = request.get_json()
+        article_ids = data.get('article_ids', [])
+        
+        if not article_ids:
+            return jsonify({'success': False, 'message': 'No articles selected.'}), 400
+            
+        from worker import send_manual_newsletter_task
+        
+        # Dispatch to Celery
+        send_manual_newsletter_task.delay(article_ids)
+        
+        log_user_action("Send Manual Newsletter", f"Triggered send for {len(article_ids)} articles.")
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Newsletter task dispatched successfully for {len(article_ids)} articles. They will be marked as sent once emails are dispatched.'
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': f'Error dispatching task: {str(e)}'}), 500

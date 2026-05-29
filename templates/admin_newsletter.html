@@ -1,0 +1,329 @@
+{% extends "layout.html" %}
+
+{% block title %}Newsletter Manager - SourcePoint{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-8" x-data="newsletterManager()">
+    
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 scroll-reveal">
+        <div>
+            <h1 class="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                    <i class="fas fa-paper-plane text-lg"></i>
+                </div>
+                Newsletter Manager
+            </h1>
+            <p class="text-gray-400 mt-1 ml-14">Curate and dispatch custom news digests.</p>
+        </div>
+        
+        <div class="flex items-center gap-3 ml-14 md:ml-0">
+            <button @click="sendSelectedArticles()" 
+                    :disabled="selectedArticles.length === 0 || isSending"
+                    class="px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg transition-all duration-300 flex items-center gap-2 group"
+                    :class="selectedArticles.length > 0 
+                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5' 
+                        : 'bg-white/5 text-gray-500 cursor-not-allowed border border-white/5'">
+                <i class="fas" :class="isSending ? 'fa-circle-notch fa-spin' : 'fa-paper-plane group-hover:translate-x-1 transition-transform'"></i>
+                <span x-text="isSending ? 'Sending...' : (selectedArticles.length > 0 ? `Send to ${subscriberCount} Users` : 'Select Articles to Send')"></span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 scroll-reveal-stagger">
+        <!-- Total Articles -->
+        <div class="bg-[#1a1a1f]/80 backdrop-blur-xl border border-white/5 p-5 rounded-2xl relative overflow-hidden group hover:border-indigo-500/30 transition-colors">
+            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <i class="fas fa-newspaper text-6xl text-indigo-400"></i>
+            </div>
+            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Total Articles</p>
+            <p class="text-3xl font-light text-white">{{ total_articles }}</p>
+        </div>
+
+        <!-- Unsent Articles -->
+        <div class="bg-[#1a1a1f]/80 backdrop-blur-xl border border-white/5 p-5 rounded-2xl relative overflow-hidden group hover:border-amber-500/30 transition-colors">
+            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <i class="fas fa-inbox text-6xl text-amber-400"></i>
+            </div>
+            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Unsent Articles</p>
+            <p class="text-3xl font-light text-amber-400">{{ unsent_count }}</p>
+        </div>
+
+        <!-- Subscribers -->
+        <div class="bg-[#1a1a1f]/80 backdrop-blur-xl border border-white/5 p-5 rounded-2xl relative overflow-hidden group hover:border-emerald-500/30 transition-colors">
+            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <i class="fas fa-users text-6xl text-emerald-400"></i>
+            </div>
+            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Subscribers</p>
+            <div class="flex items-baseline gap-2">
+                <p class="text-3xl font-light text-emerald-400" id="subscriber-count" data-count="{{ subscribed_users }}">{{ subscribed_users }}</p>
+                <p class="text-sm text-gray-500">/ {{ total_users }}</p>
+            </div>
+        </div>
+
+        <!-- Last Sent -->
+        <div class="bg-[#1a1a1f]/80 backdrop-blur-xl border border-white/5 p-5 rounded-2xl relative overflow-hidden group hover:border-purple-500/30 transition-colors">
+            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <i class="fas fa-clock text-6xl text-purple-400"></i>
+            </div>
+            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Last Sent</p>
+            {% if last_sent_date %}
+                <p class="text-lg font-medium text-white mt-1">{{ last_sent_date.strftime('%d %b, %H:%M') }}</p>
+                <p class="text-xs text-gray-500 mt-1">UTC Time</p>
+            {% else %}
+                <p class="text-lg font-medium text-gray-400 mt-1">Never</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="bg-[#1a1a1f]/80 backdrop-blur-xl border border-white/5 p-4 rounded-2xl flex flex-col lg:flex-row gap-4 items-center justify-between scroll-reveal">
+        <form action="{{ url_for('admin_core.admin_newsletter') }}" method="GET" class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto" id="filterForm">
+            <!-- Search -->
+            <div class="relative group flex-grow sm:w-64">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="fas fa-search text-gray-500 group-focus-within:text-indigo-400 transition-colors"></i>
+                </div>
+                <input type="text" name="search" value="{{ current_search }}" placeholder="Search articles..."
+                    class="block w-full pl-10 pr-3 py-2 border border-white/10 rounded-xl bg-black/20 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 sm:text-sm transition-all"
+                    onkeypress="if(event.key === 'Enter') this.form.submit()">
+            </div>
+
+            <!-- Status Filter -->
+            <select name="status" onchange="this.form.submit()"
+                class="block w-full sm:w-auto pl-3 pr-8 py-2 border border-white/10 rounded-xl bg-black/20 text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 sm:text-sm transition-all appearance-none cursor-pointer">
+                <option value="all" {% if current_status == 'all' %}selected{% endif %}>All Status</option>
+                <option value="unsent" {% if current_status == 'unsent' %}selected{% endif %}>Unsent Only</option>
+                <option value="sent" {% if current_status == 'sent' %}selected{% endif %}>Sent Only</option>
+            </select>
+
+            <!-- Sort -->
+            <select name="sort" onchange="this.form.submit()"
+                class="block w-full sm:w-auto pl-3 pr-8 py-2 border border-white/10 rounded-xl bg-black/20 text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 sm:text-sm transition-all appearance-none cursor-pointer">
+                <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>Newest First</option>
+                <option value="oldest" {% if current_sort == 'oldest' %}selected{% endif %}>Oldest First</option>
+                <option value="source" {% if current_sort == 'source' %}selected{% endif %}>Source A-Z</option>
+                <option value="title" {% if current_sort == 'title' %}selected{% endif %}>Title A-Z</option>
+            </select>
+            
+            <noscript><button type="submit" class="hidden">Filter</button></noscript>
+        </form>
+
+        <div class="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
+            <span class="text-sm text-gray-400">
+                <span x-text="selectedArticles.length" class="text-white font-bold">0</span> selected
+            </span>
+            <button @click="selectAllUnsent()" 
+                class="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-sm font-medium text-gray-300 transition-colors">
+                Select All Unsent
+            </button>
+        </div>
+    </div>
+
+    <!-- Articles Table -->
+    <div class="bg-[#1a1a1f]/80 backdrop-blur-xl border border-white/5 rounded-2xl overflow-hidden scroll-reveal">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-white/5">
+                <thead class="bg-black/40">
+                    <tr>
+                        <th scope="col" class="px-6 py-4 text-left">
+                            <input type="checkbox" @change="toggleAllOnPage($event.target.checked)"
+                                class="w-4 h-4 rounded border-gray-600 text-indigo-500 focus:ring-indigo-500 bg-black/20 cursor-pointer">
+                        </th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Article</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Source</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Date</th>
+                        <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
+                        <th scope="col" class="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5 bg-transparent">
+                    {% for article in articles.items %}
+                    <tr class="hover:bg-white/[0.02] transition-colors group">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <input type="checkbox" value="{{ article.id }}" x-model="selectedArticles"
+                                data-unsent="{{ 'true' if not article.is_sent else 'false' }}"
+                                class="article-checkbox w-4 h-4 rounded border-gray-600 text-indigo-500 focus:ring-indigo-500 bg-black/20 cursor-pointer">
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                {% if article.image_url %}
+                                    <img src="{{ article.image_url }}" alt="" class="w-10 h-10 rounded-lg object-cover bg-black/20 border border-white/5 shrink-0">
+                                {% else %}
+                                    <div class="w-10 h-10 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center shrink-0">
+                                        <i class="fas fa-newspaper text-gray-500"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="max-w-md">
+                                    <div class="text-sm font-medium text-white line-clamp-1 group-hover:text-indigo-300 transition-colors" title="{{ article.title }}">
+                                        {{ article.title }}
+                                    </div>
+                                    <div class="text-xs text-gray-500 line-clamp-1 mt-0.5">
+                                        {{ article.summary or 'No summary available.' }}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/5 text-gray-300 border border-white/5">
+                                {{ article.source_name or 'Unknown Source' }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                            {{ article.published_at.strftime('%d %b %Y, %H:%M') if article.published_at else 'Unknown' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            {% if article.is_sent %}
+                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-400" title="Sent">
+                                    <i class="fas fa-check"></i>
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-amber-500/10 text-amber-400" title="Unsent">
+                                    <i class="fas fa-clock"></i>
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <a href="{{ article.source_url }}" target="_blank" class="text-gray-400 hover:text-indigo-400 transition-colors p-2" title="View Source">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                            <div class="flex flex-col items-center justify-center">
+                                <div class="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-3">
+                                    <i class="fas fa-newspaper text-2xl text-gray-600"></i>
+                                </div>
+                                <p>No articles found matching your criteria.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if articles.pages > 1 %}
+        <div class="px-6 py-4 border-t border-white/5 flex items-center justify-between bg-black/20">
+            <div class="text-sm text-gray-400">
+                Showing <span class="font-medium text-white">{{ articles.first }}</span> to <span class="font-medium text-white">{{ articles.last }}</span> of <span class="font-medium text-white">{{ articles.total }}</span> articles
+            </div>
+            <div class="flex gap-2">
+                {% if articles.has_prev %}
+                <a href="{{ url_for('admin_core.admin_newsletter', page=articles.prev_num, search=current_search, status=current_status, sort=current_sort) }}" 
+                   class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white text-sm transition-colors border border-white/5">
+                   <i class="fas fa-chevron-left"></i>
+                </a>
+                {% endif %}
+                
+                {% for page_num in articles.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                    {% if page_num %}
+                        {% if page_num == articles.page %}
+                            <span class="px-3 py-1.5 rounded-lg bg-indigo-500/20 text-indigo-300 text-sm font-medium border border-indigo-500/30">{{ page_num }}</span>
+                        {% else %}
+                            <a href="{{ url_for('admin_core.admin_newsletter', page=page_num, search=current_search, status=current_status, sort=current_sort) }}" 
+                               class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white text-sm transition-colors border border-white/5">{{ page_num }}</a>
+                        {% endif %}
+                    {% else %}
+                        <span class="px-2 py-1.5 text-gray-500">...</span>
+                    {% endif %}
+                {% endfor %}
+
+                {% if articles.has_next %}
+                <a href="{{ url_for('admin_core.admin_newsletter', page=articles.next_num, search=current_search, status=current_status, sort=current_sort) }}" 
+                   class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white text-sm transition-colors border border-white/5">
+                   <i class="fas fa-chevron-right"></i>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('newsletterManager', () => ({
+        selectedArticles: [],
+        isSending: false,
+        subscriberCount: 0,
+        
+        init() {
+            this.subscriberCount = parseInt(document.getElementById('subscriber-count').dataset.count) || 0;
+        },
+        
+        toggleAllOnPage(checked) {
+            const checkboxes = document.querySelectorAll('.article-checkbox');
+            if (checked) {
+                checkboxes.forEach(cb => {
+                    if (!this.selectedArticles.includes(cb.value)) {
+                        this.selectedArticles.push(cb.value);
+                    }
+                });
+            } else {
+                const valuesOnPage = Array.from(checkboxes).map(cb => cb.value);
+                this.selectedArticles = this.selectedArticles.filter(val => !valuesOnPage.includes(val));
+            }
+        },
+        
+        selectAllUnsent() {
+            const checkboxes = document.querySelectorAll('.article-checkbox[data-unsent="true"]');
+            let addedCount = 0;
+            checkboxes.forEach(cb => {
+                if (!this.selectedArticles.includes(cb.value)) {
+                    this.selectedArticles.push(cb.value);
+                    addedCount++;
+                }
+            });
+            if (addedCount > 0) {
+                window.showToast(`Selected ${addedCount} unsent articles on this page.`, 'success');
+            } else {
+                window.showToast(`No unsent articles available on this page to select.`, 'info');
+            }
+        },
+        
+        async sendSelectedArticles() {
+            if (this.selectedArticles.length === 0) return;
+            
+            const confirmMsg = `Are you sure you want to send a newsletter featuring ${this.selectedArticles.length} selected articles to ${this.subscriberCount} subscribers?`;
+            if (!confirm(confirmMsg)) return;
+            
+            this.isSending = true;
+            
+            try {
+                const response = await fetch("{{ url_for('admin_core.send_manual_newsletter') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ article_ids: this.selectedArticles })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.showToast(data.message, 'success');
+                    this.selectedArticles = [];
+                    // Uncheck all boxes
+                    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+                    setTimeout(() => window.location.reload(), 2000);
+                } else {
+                    window.showToast(data.message || 'Error sending newsletter', 'error');
+                }
+            } catch (error) {
+                console.error(error);
+                window.showToast('Network error occurred', 'error');
+            } finally {
+                this.isSending = false;
+            }
+        }
+    }));
+});
+</script>
+{% endblock %}

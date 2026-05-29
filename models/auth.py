@@ -48,6 +48,9 @@ class User(UserMixin, db.Model):
     secret_answer_hash = db.Column(db.String(128), nullable=True)
     meeting_link = db.Column(db.String(255), nullable=True)
 
+    # Newsletter Preferences
+    newsletter_subscribed = db.Column(db.Boolean, default=True, nullable=False, server_default='true')
+
     # --- Core Relationships ---
     
     allowed_contacts = db.relationship('User', secondary=candidate_contacts,
