@@ -13,7 +13,7 @@
             <p class="text-gray-400 max-w-2xl">{{ project.description or 'No description provided.' }}</p>
         </div>
         
-        <div class="glass-panel px-4 py-2 rounded-lg flex items-center gap-3 border border-white/10">
+        <div class="glass-panel-v2 px-4 py-2 rounded-lg flex items-center gap-3 border border-white/10">
             <div class="text-right">
                 <p class="text-[10px] text-gray-500 uppercase font-bold">Current Status</p>
                 <p class="text-sm font-bold text-white">{{ project.status }}</p>
@@ -36,7 +36,7 @@
         
         <div class="lg:col-span-2 space-y-6">
             
-            <div class="glass-panel p-6 rounded-xl border border-white/5 relative overflow-hidden">
+            <div class="glass-panel-v2 p-6 rounded-xl border border-white/5 relative overflow-hidden">
                 <div class="flex justify-between items-end mb-4 relative z-10">
                     <div>
                         <h3 class="text-gray-400 text-sm font-medium uppercase tracking-wider">Budget Utilization</h3>
@@ -61,7 +61,7 @@
                 </div>
             </div>
 
-            <div class="glass-panel rounded-xl overflow-hidden border border-white/5">
+            <div class="glass-panel-v2 rounded-xl overflow-hidden border border-white/5">
                 <div class="p-5 border-b border-white/5 flex justify-between items-center bg-white/5">
                     <h3 class="font-bold text-white flex items-center"><i class="fas fa-list-alt text-indigo-400 mr-2"></i> Ledger</h3>
                     <span class="text-xs bg-white/10 px-2 py-1 rounded text-gray-300">{{ project.transactions|length }} records</span>
@@ -105,7 +105,7 @@
 
         <div class="space-y-6">
             
-            <div class="glass-panel p-6 rounded-xl border border-white/5">
+            <div class="glass-panel-v2 p-6 rounded-xl border border-white/5">
                 <h3 class="text-sm font-bold text-white uppercase tracking-wide mb-4">Project Controls</h3>
                 
                 <div class="space-y-3">
@@ -126,7 +126,7 @@
                 </div>
             </div>
 
-            <div class="glass-panel rounded-xl overflow-hidden border border-white/5">
+            <div class="glass-panel-v2 rounded-xl overflow-hidden border border-white/5">
                 <div class="p-4 bg-gradient-to-r from-indigo-900/20 to-transparent border-b border-white/5">
                     <h3 class="font-bold text-white text-sm flex items-center"><i class="fas fa-plus-circle text-indigo-400 mr-2"></i> New Transaction</h3>
                 </div>

@@ -110,7 +110,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
             <!-- Image Section -->
-            <div class="glass-panel rounded-3xl overflow-hidden p-6">
+            <div class="glass-panel-v2 rounded-3xl overflow-hidden p-6">
                 <div class="relative rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900 to-black flex items-center justify-center"
                     style="min-height: 380px;">
                     <img src="{{ product.image_url or 'https://placehold.co/600x400/1a1a1f/6366f1?text=Product' }}"
@@ -155,7 +155,7 @@
                 </div>
 
                 <!-- Price -->
-                <div class="glass-panel rounded-2xl p-5 mb-6">
+                <div class="glass-panel-v2 rounded-2xl p-5 mb-6">
                     <div class="flex items-end gap-3">
                         <div>
                             <span class="text-xs text-gray-500 font-bold uppercase tracking-wider">Price</span>
@@ -182,24 +182,24 @@
                 <!-- Specs -->
                 <div class="grid grid-cols-2 gap-3 mb-8">
                     {% if product.brand %}
-                    <div class="glass-panel rounded-xl p-3">
+                    <div class="glass-panel-v2 rounded-xl p-3">
                         <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Brand</p>
                         <p class="text-white font-bold text-sm">{{ product.brand }}</p>
                     </div>
                     {% endif %}
                     {% if product.warranty %}
-                    <div class="glass-panel rounded-xl p-3">
+                    <div class="glass-panel-v2 rounded-xl p-3">
                         <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Warranty</p>
                         <p class="text-white font-bold text-sm">{{ product.warranty }}</p>
                     </div>
                     {% endif %}
                     {% if product.return_policy %}
-                    <div class="glass-panel rounded-xl p-3">
+                    <div class="glass-panel-v2 rounded-xl p-3">
                         <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Return Policy</p>
                         <p class="text-white font-bold text-sm">{{ product.return_policy }}</p>
                     </div>
                     {% endif %}
-                    <div class="glass-panel rounded-xl p-3">
+                    <div class="glass-panel-v2 rounded-xl p-3">
                         <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Availability</p>
                         <p class="text-emerald-400 font-bold text-sm flex items-center gap-1.5">
                             <i class="fas fa-check-circle text-xs"></i> In Stock

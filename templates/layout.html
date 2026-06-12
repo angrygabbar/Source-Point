@@ -56,11 +56,19 @@
 <body class="bg-transparent text-gray-100 h-full overflow-x-hidden selection:bg-indigo-500 selection:text-white"
     hx-boost="false">
 
-    <!-- Page Loader -->
+    <!-- Magnetic Cursor Glow (desktop only) -->
+    <div class="cursor-glow hidden lg:block" id="cursor-glow"></div>
+
+    <!-- Enhanced Page Loader -->
     <div class="page-loader" id="page-loader">
         <div class="loader-content">
-            <div class="loader-spinner"></div>
-            <p class="loader-text">Loading...</p>
+            <div style="position:relative;width:50px;height:50px;display:flex;align-items:center;justify-content:center;">
+                <div class="loader-spinner" style="position:absolute;inset:0;"></div>
+                <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center" style="animation: pulse 1.5s ease-in-out infinite;">
+                    <i class="fas fa-layer-group text-white text-[10px]"></i>
+                </div>
+            </div>
+            <p class="loader-text mt-4">SourcePoint</p>
         </div>
     </div>
 
@@ -304,7 +312,7 @@
         {% endif %}
 
         <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-            <header class="h-20 bg-transparent flex items-center justify-between px-6 z-20 relative">
+            <header class="h-20 {% block header_class %}header-glass{% endblock %} flex items-center justify-between px-6 z-20 relative">
                 <div class="flex items-center">
                     {% if current_user.is_authenticated %}
                     <button @click="sidebarOpen = !sidebarOpen"
@@ -367,11 +375,51 @@
                 </div>
                 {% block content %}{% endblock %}
             </main>
+
+            <!-- Premium Footer -->
+            {% if not current_user.is_authenticated %}
+            <footer class="site-footer">
+                <div class="footer-glow"></div>
+                <div class="max-w-7xl mx-auto px-6">
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center">
+                                <i class="fas fa-layer-group text-white text-[10px]"></i>
+                            </div>
+                            <span class="text-sm font-bold bg-clip-text text-transparent bg-gradient-to-r from-white/80 to-white/40">SourcePoint</span>
+                        </div>
+                        <p class="text-[11px] text-gray-600 tracking-wide">Built with precision. Powered by innovation.</p>
+                        <p class="text-[11px] text-gray-600">&copy; {{ now().year if now is defined else '2025' }} SourcePoint</p>
+                    </div>
+                </div>
+            </footer>
+            {% endif %}
         </div>
     </div>
 
+    <!-- Back to Top Button -->
+    <button id="back-to-top" class="fab" style="display:none; opacity:0; transition: opacity 0.3s, transform 0.3s;" onclick="document.querySelector('#main-content')?.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
     <script>
-        // --- 1. Notification Management (Auto-Dismiss 1s) ---
+        // --- 0. Magnetic Cursor Glow ---
+        (function() {
+            const glow = document.getElementById('cursor-glow');
+            if (!glow || window.innerWidth < 1024) return;
+            let mx = 0, my = 0, gx = 0, gy = 0;
+            document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+            function update() {
+                gx += (mx - gx) * 0.08;
+                gy += (my - gy) * 0.08;
+                glow.style.left = gx + 'px';
+                glow.style.top = gy + 'px';
+                requestAnimationFrame(update);
+            }
+            update();
+        })();
+
+        // --- 1. Notification Management (Auto-Dismiss) ---
         function initFlashMessages() {
             const alerts = document.querySelectorAll('#flash-container [role="alert"]');
             alerts.forEach(alert => {
@@ -424,6 +472,43 @@
 
         document.addEventListener('DOMContentLoaded', initScrollReveal);
         document.addEventListener('htmx:afterSwap', initScrollReveal);
+
+        // --- 1d. Back to Top Button ---
+        (function() {
+            const btn = document.getElementById('back-to-top');
+            const main = document.getElementById('main-content');
+            if (!btn || !main) return;
+            main.addEventListener('scroll', function() {
+                if (main.scrollTop > 400) {
+                    btn.style.display = 'flex';
+                    requestAnimationFrame(() => { btn.style.opacity = '1'; });
+                } else {
+                    btn.style.opacity = '0';
+                    setTimeout(() => { if (parseFloat(btn.style.opacity) === 0) btn.style.display = 'none'; }, 300);
+                }
+            });
+        })();
+
+        // --- 1e. Smooth Counter Animation ---
+        function initCounters() {
+            document.querySelectorAll('[data-count-to]').forEach(el => {
+                if (el.dataset.counted) return;
+                el.dataset.counted = 'true';
+                const target = parseInt(el.dataset.countTo, 10);
+                const duration = 1200;
+                const start = performance.now();
+                function step(now) {
+                    const progress = Math.min((now - start) / duration, 1);
+                    const eased = 1 - Math.pow(1 - progress, 3);
+                    el.textContent = Math.floor(eased * target);
+                    if (progress < 1) requestAnimationFrame(step);
+                    else el.textContent = target;
+                }
+                requestAnimationFrame(step);
+            });
+        }
+        document.addEventListener('DOMContentLoaded', initCounters);
+        document.addEventListener('htmx:afterSwap', initCounters);
 
         window.showToast = function (message, category = 'success') {
             const container = document.getElementById('flash-container');

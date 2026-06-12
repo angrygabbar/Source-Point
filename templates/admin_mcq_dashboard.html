@@ -32,7 +32,7 @@
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="glass-panel p-5 rounded-xl border-l-4 border-green-500 relative overflow-hidden group">
+        <div class="glass-panel-v2 p-5 rounded-xl border-l-4 border-green-500 relative overflow-hidden group">
             <div class="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity"><i
                     class="fas fa-question-circle text-5xl text-green-400"></i></div>
             <p class="text-xs font-bold text-gray-400 uppercase">Total Questions</p>
@@ -41,7 +41,7 @@
                 &rarr;</button>
         </div>
 
-        <div class="glass-panel p-5 rounded-xl border-l-4 border-purple-500 relative overflow-hidden group">
+        <div class="glass-panel-v2 p-5 rounded-xl border-l-4 border-purple-500 relative overflow-hidden group">
             <div class="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity"><i
                     class="fas fa-file-alt text-5xl text-purple-400"></i></div>
             <p class="text-xs font-bold text-gray-400 uppercase">Active Tests</p>
@@ -50,7 +50,7 @@
                 &rarr;</button>
         </div>
 
-        <div class="glass-panel p-5 rounded-xl border-l-4 border-indigo-500 relative overflow-hidden group">
+        <div class="glass-panel-v2 p-5 rounded-xl border-l-4 border-indigo-500 relative overflow-hidden group">
             <div class="absolute right-2 top-2 opacity-10 group-hover:opacity-20 transition-opacity"><i
                     class="fas fa-users text-5xl text-indigo-400"></i></div>
             <p class="text-xs font-bold text-gray-400 uppercase">Assignments</p>
@@ -75,7 +75,7 @@
             Assignments</button>
     </div>
 
-    <div class="glass-panel rounded-2xl border border-white/10 min-h-[500px]">
+    <div class="glass-panel-v2 rounded-2xl border border-white/10 min-h-[500px]">
 
         <!-- QUESTIONS TAB -->
         <div x-show="currentTab === 'questions'" class="p-6" @open-question-modal.window="showQuestionModal = true">

@@ -9,21 +9,21 @@
 <div class="space-y-8 animate-dynamic pb-10">
     
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="glass-panel p-6 rounded-2xl border border-white/5 relative overflow-hidden group">
+        <div class="glass-panel-v2 p-6 rounded-2xl border border-white/5 relative overflow-hidden group">
             <div class="absolute -right-4 -top-4 w-24 h-24 bg-indigo-500/20 rounded-full blur-2xl group-hover:bg-indigo-500/30 transition-all duration-500"></div>
             <p class="text-xs font-bold text-indigo-300 uppercase tracking-widest mb-1">Total Invoiced</p>
             <h3 class="text-3xl font-extrabold text-white">₹{{ "{:,.2f}".format(total_invoiced) }}</h3>
             <p class="text-xs text-gray-500 mt-2">{{ invoices|length }} Documents generated</p>
         </div>
 
-        <div class="glass-panel p-6 rounded-2xl border border-white/5 relative overflow-hidden group">
+        <div class="glass-panel-v2 p-6 rounded-2xl border border-white/5 relative overflow-hidden group">
             <div class="absolute -right-4 -top-4 w-24 h-24 bg-green-500/20 rounded-full blur-2xl group-hover:bg-green-500/30 transition-all duration-500"></div>
             <p class="text-xs font-bold text-green-300 uppercase tracking-widest mb-1">Settled</p>
             <h3 class="text-3xl font-extrabold text-white">{{ paid_count }} <span class="text-sm font-medium text-gray-400">Paid</span></h3>
             <p class="text-xs text-gray-500 mt-2">Successful transactions</p>
         </div>
 
-        <div class="glass-panel p-6 rounded-2xl border border-white/5 relative overflow-hidden group">
+        <div class="glass-panel-v2 p-6 rounded-2xl border border-white/5 relative overflow-hidden group">
             <div class="absolute -right-4 -top-4 w-24 h-24 bg-yellow-500/20 rounded-full blur-2xl group-hover:bg-yellow-500/30 transition-all duration-500"></div>
             <p class="text-xs font-bold text-yellow-300 uppercase tracking-widest mb-1">Pending</p>
             <h3 class="text-3xl font-extrabold text-white">{{ unpaid_count }} <span class="text-sm font-medium text-gray-400">Unpaid</span></h3>
@@ -172,7 +172,7 @@
             </div>
         </div>
         {% else %}
-        <div class="glass-panel p-12 rounded-xl text-center border-dashed border-2 border-white/10">
+        <div class="glass-panel-v2 p-12 rounded-xl text-center border-dashed border-2 border-white/10">
             <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i class="fas fa-file-invoice text-2xl text-gray-500"></i>
             </div>

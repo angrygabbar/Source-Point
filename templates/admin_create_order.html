@@ -20,7 +20,7 @@
     <form action="{{ url_for('admin_commerce.admin_create_order') }}" method="POST" class="space-y-6" id="createOrderForm">
         
         <!-- Buyer Details -->
-        <div class="glass-panel p-6 rounded-2xl border border-white/5">
+        <div class="glass-panel-v2 p-6 rounded-2xl border border-white/5">
             <h2 class="text-xl font-bold text-white mb-6 border-b border-white/5 pb-4">
                 <i class="fas fa-user-tag text-indigo-400 mr-2"></i> Buyer Details
             </h2>
@@ -64,14 +64,14 @@
 
         <!-- Address Details -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="glass-panel p-6 rounded-2xl border border-white/5">
+            <div class="glass-panel-v2 p-6 rounded-2xl border border-white/5">
                 <h2 class="text-lg font-bold text-white mb-4">
                     <i class="fas fa-shipping-fast text-emerald-400 mr-2"></i> Shipping Address
                 </h2>
                 <textarea name="shipping_address" rows="3" required placeholder="Enter complete shipping address..." class="w-full bg-black/20 border border-white/10 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all resize-none"></textarea>
             </div>
 
-            <div class="glass-panel p-6 rounded-2xl border border-white/5">
+            <div class="glass-panel-v2 p-6 rounded-2xl border border-white/5">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-lg font-bold text-white">
                         <i class="fas fa-file-invoice text-blue-400 mr-2"></i> Billing Address
@@ -86,7 +86,7 @@
         </div>
 
         <!-- Order Items -->
-        <div class="glass-panel p-6 rounded-2xl border border-white/5">
+        <div class="glass-panel-v2 p-6 rounded-2xl border border-white/5">
             <h2 class="text-xl font-bold text-white mb-6 border-b border-white/5 pb-4">
                 <i class="fas fa-box-open text-orange-400 mr-2"></i> Order Items
             </h2>

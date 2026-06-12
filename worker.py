@@ -997,7 +997,7 @@ def cleanup_old_news_task():
 @celery.task
 def server_health_check_task():
     """
-    AUTOMATED SCHEDULER TASK (Every 30 minutes):
+    AUTOMATED SCHEDULER TASK (Every 2 hours):
     Performs comprehensive server health checks and emails a detailed report to admin.
     Checks: CPU, Memory, Disk, Database, Redis, Celery Workers, Network, App Response.
     """

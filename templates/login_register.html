@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 {% block title %}Login or Register — SourcePoint{% endblock %}
-
+{% block header_class %}header-transparent{% endblock %}
+{% block main_class %}flex-1 overflow-y-auto relative custom-scrollbar{% endblock %}
 {% block content %}
 <!-- ═══════════════════════════════════════════════════════════════
      FUTURISTIC LOGIN PAGE — SourcePoint
@@ -196,7 +197,7 @@
 <!-- Page scanline overlay -->
 <div class="page-scanlines pointer-events-none"></div>
 
-<div class="relative z-10 min-h-screen flex items-center justify-center py-8 sm:py-10 px-4"
+<div class="relative z-10 min-h-screen flex items-center justify-center py-8 sm:py-10 px-4 aurora-bg"
      x-data="loginPage()"
      x-init="initParticles()">
 
@@ -306,7 +307,7 @@
         </a>
       </div>
 
-      <button type="submit" class="sp-btn" id="loginBtn" @click="startScan($el)">
+      <button type="submit" class="sp-btn btn-shine" id="loginBtn" @click="startScan($el)">
         <i class="fas fa-arrow-right-to-bracket mr-2"></i>
         Authenticate
       </button>
@@ -414,7 +415,7 @@
                @focus="activateField($el)" @blur="deactivateField($el)">
       </div>
 
-      <button type="submit" class="sp-btn mt-2" @click="startScan($el)">
+      <button type="submit" class="sp-btn btn-shine mt-2" @click="startScan($el)">
         <i class="fas fa-rocket mr-2"></i>
         Launch Account
       </button>

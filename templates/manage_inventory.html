@@ -5,16 +5,16 @@
 <div class="space-y-8 animate-fade-in pb-20">
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="glass-panel p-6 rounded-2xl border border-white/5 relative overflow-hidden group">
+        <div class="glass-panel-v2 p-6 rounded-2xl border border-white/5 relative overflow-hidden group">
             <h3 class="text-3xl font-extrabold text-white">{{ total_products_count }} <span
                     class="text-sm font-medium text-gray-400">Items</span></h3>
             <p class="text-xs font-bold text-indigo-300 uppercase tracking-widest mt-2">Master Catalog</p>
         </div>
-        <div class="glass-panel p-6 rounded-2xl border border-white/5 relative overflow-hidden group">
+        <div class="glass-panel-v2 p-6 rounded-2xl border border-white/5 relative overflow-hidden group">
             <h3 class="text-3xl font-extrabold text-white">₹{{ "{:,.2f}".format(total_inventory_value) }}</h3>
             <p class="text-xs font-bold text-emerald-300 uppercase tracking-widest mt-2">Total Value</p>
         </div>
-        <div class="glass-panel p-6 rounded-2xl border border-white/5 relative overflow-hidden group">
+        <div class="glass-panel-v2 p-6 rounded-2xl border border-white/5 relative overflow-hidden group">
             <h3 class="text-3xl font-extrabold text-white">{{ low_stock_count }} <span
                     class="text-sm font-medium text-gray-400">Alerts</span></h3>
             <p class="text-xs font-bold text-red-300 uppercase tracking-widest mt-2">Low Stock</p>
@@ -172,7 +172,7 @@
                 </div>
             </div>
             {% else %}
-            <div class="glass-panel p-16 rounded-xl text-center border-dashed border-2 border-white/10">
+            <div class="glass-panel-v2 p-16 rounded-xl text-center border-dashed border-2 border-white/10">
                 {% if search_query %}
                 <p class="text-gray-400">No products match "<strong class="text-white">{{ search_query }}</strong>".</p>
                 {% else %}

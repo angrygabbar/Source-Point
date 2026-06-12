@@ -31,7 +31,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
         
         <div class="hidden lg:block lg:col-span-1 space-y-6">
-            <div class="glass-panel p-5 rounded-xl sticky top-24 border border-white/5 bg-white/5 backdrop-blur-md">
+            <div class="glass-panel-v2 p-5 rounded-xl sticky top-24 border border-white/5 bg-white/5 backdrop-blur-md">
                 <h3 class="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-4">On This Page</h3>
                 <nav id="toc" class="space-y-1 border-l border-white/10 ml-1">
                     </nav>
@@ -40,13 +40,13 @@
 
         <div class="lg:col-span-3">
             
-            <div id="view-content" class="glass-panel p-8 rounded-2xl min-h-[600px] prose prose-invert prose-indigo max-w-none shadow-2xl border border-white/5">
+            <div id="view-content" class="glass-panel-v2 p-8 rounded-2xl min-h-[600px] prose prose-invert prose-indigo max-w-none shadow-2xl border border-white/5">
                 {{ page_content|safe }}
             </div>
 
             {% if current_user.role in ['admin', 'developer'] %}
             <div id="edit-content" class="hidden animate-fade-in">
-                <form action="{{ url_for('admin_core.update_learning_content') }}" method="POST" class="glass-panel p-6 rounded-2xl border border-white/10">
+                <form action="{{ url_for('admin_core.update_learning_content') }}" method="POST" class="glass-panel-v2 p-6 rounded-2xl border border-white/10">
                     <input type="hidden" name="language_id" value="{{ language }}">
                     <div class="mb-4 flex justify-between items-center">
                         <h3 class="text-lg font-bold text-white">Editor Mode</h3>

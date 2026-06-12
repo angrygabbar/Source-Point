@@ -32,7 +32,7 @@
         {% if requests %}
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {% for req in requests %}
-            <div class="glass-panel p-6 rounded-2xl border border-yellow-500/20 relative overflow-hidden group">
+            <div class="glass-panel-v2 p-6 rounded-2xl border border-yellow-500/20 relative overflow-hidden group">
                 <div class="absolute top-0 right-0 w-20 h-20 bg-yellow-500/10 rounded-bl-full -mr-10 -mt-10 transition-transform group-hover:scale-150"></div>
                 
                 <div class="relative z-10">
@@ -78,7 +78,7 @@
             {% endfor %}
         </div>
         {% else %}
-        <div class="glass-panel p-12 rounded-2xl border border-dashed border-white/10 text-center">
+        <div class="glass-panel-v2 p-12 rounded-2xl border border-dashed border-white/10 text-center">
             <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-600">
                 <i class="fas fa-check-double text-2xl"></i>
             </div>
@@ -93,7 +93,7 @@
             <i class="fas fa-history text-gray-500"></i> Request History
         </h2>
 
-        <div class="glass-panel rounded-2xl overflow-hidden border border-white/10">
+        <div class="glass-panel-v2 rounded-2xl overflow-hidden border border-white/10">
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
                     <thead class="bg-black/40 text-gray-500 text-[10px] uppercase font-bold tracking-wider">
