@@ -1,12 +1,14 @@
 import hashlib
 import hmac
 import os
+from types import SimpleNamespace
 from datetime import datetime, timedelta
-from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, current_app
 from extensions import db
 from models.newsletter import NewsArticle
 from models.auth import User
 from sqlalchemy import func
+from sqlalchemy.exc import OperationalError
 
 newsletter_bp = Blueprint('newsletter', __name__)
 
@@ -55,6 +57,40 @@ def _time_ago(dt):
     return dt.strftime('%b %d, %Y')
 
 
+def _is_missing_news_table_error(exc):
+    """Return True when the local DB has not been migrated with news_article yet."""
+    message = str(getattr(exc, 'orig', exc)).lower()
+    return 'news_article' in message and ('no such table' in message or 'does not exist' in message)
+
+
+def _empty_news_pagination(page, per_page):
+    """Small pagination shim so the template can render when news storage is unavailable."""
+    return SimpleNamespace(
+        items=[],
+        page=page,
+        per_page=per_page,
+        pages=0,
+        total=0,
+        has_prev=False,
+        has_next=False,
+        prev_num=None,
+        next_num=None,
+        iter_pages=lambda *args, **kwargs: []
+    )
+
+
+def _render_empty_news(page, search, per_page, news_unavailable=False):
+    return render_template('news.html',
+                           articles=[],
+                           pagination=_empty_news_pagination(page, per_page),
+                           page=page,
+                           search=search,
+                           total_articles=0,
+                           sources_count=0,
+                           last_updated_ago=None,
+                           news_unavailable=news_unavailable)
+
+
 @newsletter_bp.route('/news')
 def news_page():
     """
@@ -65,34 +101,41 @@ def news_page():
     search = request.args.get('q', '', type=str).strip()
     per_page = 12
 
-    query = NewsArticle.query
+    try:
+        query = NewsArticle.query
 
-    if search:
-        search_filter = f'%{search}%'
-        query = query.filter(
-            db.or_(
-                NewsArticle.title.ilike(search_filter),
-                NewsArticle.summary.ilike(search_filter),
-                NewsArticle.source_name.ilike(search_filter)
+        if search:
+            search_filter = f'%{search}%'
+            query = query.filter(
+                db.or_(
+                    NewsArticle.title.ilike(search_filter),
+                    NewsArticle.summary.ilike(search_filter),
+                    NewsArticle.source_name.ilike(search_filter)
+                )
             )
-        )
 
-    articles = query.order_by(
-        NewsArticle.published_at.desc().nullslast(),
-        NewsArticle.fetched_at.desc()
-    ).paginate(page=page, per_page=per_page, error_out=False)
+        articles = query.order_by(
+            NewsArticle.published_at.desc().nullslast(),
+            NewsArticle.fetched_at.desc()
+        ).paginate(page=page, per_page=per_page, error_out=False)
 
-    # Stats
-    total_articles = NewsArticle.query.count()
-    sources_count = db.session.query(func.count(func.distinct(NewsArticle.source_name))).scalar() or 0
-    latest_fetch = db.session.query(func.max(NewsArticle.fetched_at)).scalar()
-    last_updated_ago = _time_ago(latest_fetch) if latest_fetch else None
+        # Stats
+        total_articles = NewsArticle.query.count()
+        sources_count = db.session.query(func.count(func.distinct(NewsArticle.source_name))).scalar() or 0
+        latest_fetch = db.session.query(func.max(NewsArticle.fetched_at)).scalar()
+        last_updated_ago = _time_ago(latest_fetch) if latest_fetch else None
 
-    now = datetime.utcnow()
-    for article in articles.items:
-        ref_time = article.published_at or article.fetched_at
-        article.time_ago = _time_ago(ref_time)
-        article.is_new = (now - (article.fetched_at or now)).total_seconds() < 10800
+        now = datetime.utcnow()
+        for article in articles.items:
+            ref_time = article.published_at or article.fetched_at
+            article.time_ago = _time_ago(ref_time)
+            article.is_new = (now - (article.fetched_at or now)).total_seconds() < 10800
+    except OperationalError as exc:
+        db.session.rollback()
+        if _is_missing_news_table_error(exc):
+            current_app.logger.warning("News page opened before news_article table exists.")
+            return _render_empty_news(page, search, per_page, news_unavailable=True)
+        raise
 
     return render_template('news.html',
                            articles=articles.items,
@@ -101,7 +144,8 @@ def news_page():
                            search=search,
                            total_articles=total_articles,
                            sources_count=sources_count,
-                           last_updated_ago=last_updated_ago)
+                           last_updated_ago=last_updated_ago,
+                           news_unavailable=False)
 
 
 @newsletter_bp.route('/news/<int:article_id>')
@@ -110,7 +154,14 @@ def article_detail(article_id):
     Internal article detail page — displays full scraped content.
     Falls back to summary + external link if content wasn't scraped.
     """
-    article = NewsArticle.query.get_or_404(article_id)
+    try:
+        article = NewsArticle.query.get_or_404(article_id)
+    except OperationalError as exc:
+        db.session.rollback()
+        if _is_missing_news_table_error(exc):
+            flash('News storage is still being initialized.', 'warning')
+            return redirect(url_for('newsletter.news_page'))
+        raise
 
     # Relative time
     ref_time = article.published_at or article.fetched_at
@@ -119,18 +170,32 @@ def article_detail(article_id):
     # Related articles: same source or latest articles, excluding current
     related = []
     if article.source_name:
-        related = NewsArticle.query.filter(
-            NewsArticle.id != article.id,
-            NewsArticle.source_name == article.source_name
-        ).order_by(NewsArticle.published_at.desc().nullslast()).limit(4).all()
+        try:
+            related = NewsArticle.query.filter(
+                NewsArticle.id != article.id,
+                NewsArticle.source_name == article.source_name
+            ).order_by(NewsArticle.published_at.desc().nullslast()).limit(4).all()
+        except OperationalError as exc:
+            db.session.rollback()
+            if _is_missing_news_table_error(exc):
+                related = []
+            else:
+                raise
 
     # If not enough from same source, fill with latest
     if len(related) < 4:
         remaining = 4 - len(related)
         exclude_ids = [article.id] + [r.id for r in related]
-        more = NewsArticle.query.filter(
-            NewsArticle.id.notin_(exclude_ids)
-        ).order_by(NewsArticle.published_at.desc().nullslast()).limit(remaining).all()
+        try:
+            more = NewsArticle.query.filter(
+                NewsArticle.id.notin_(exclude_ids)
+            ).order_by(NewsArticle.published_at.desc().nullslast()).limit(remaining).all()
+        except OperationalError as exc:
+            db.session.rollback()
+            if _is_missing_news_table_error(exc):
+                more = []
+            else:
+                raise
         related.extend(more)
 
     for r in related:

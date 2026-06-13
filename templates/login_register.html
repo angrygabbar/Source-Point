@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
-{% block title %}Login or Register — SourcePoint{% endblock %}
+{% block title %}Login or Register - SourcePoint{% endblock %}
 {% block header_class %}header-transparent{% endblock %}
+{% block footer_class %}footer-transparent{% endblock %}
 {% block main_class %}flex-1 overflow-y-auto relative custom-scrollbar{% endblock %}
 {% block content %}
 <!-- ═══════════════════════════════════════════════════════════════
@@ -213,8 +214,8 @@
 
     <!-- Logo & heading -->
     <div class="relative text-center mb-5 sm:mb-7">
-      <div class="logo-orb mx-auto mb-3 sm:mb-4" style="width:44px;height:44px;border-radius:12px;font-size:1.1rem;">
-        <span>⚡</span>
+      <div class="source-mark mx-auto mb-3 sm:mb-4" style="width:44px;height:44px;">
+        <span>SP</span>
       </div>
       <h1 class="text-2xl font-black text-white tracking-tight" :class="mode === 'login' ? 'cursor-blink' : ''">
         <span x-text="mode === 'login' ? 'Welcome Back' : 'Join SourcePoint'"></span>

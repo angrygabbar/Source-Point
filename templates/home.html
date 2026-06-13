@@ -1,509 +1,318 @@
 {% extends "layout.html" %}
-{% block title %}SourcePoint - The Future of Development{% endblock %}
+{% block title %}SourcePoint - Futuristic Software and Commerce Workspace{% endblock %}
 {% block header_class %}header-transparent{% endblock %}
+{% block footer_class %}footer-transparent{% endblock %}
 {% block main_class %}flex-1 overflow-y-auto relative custom-scrollbar{% endblock %}
 {% block content %}
 
-<style>
-    /* --- 1. Scramble Text Cursor --- */
-    .cursor-blink {
-        display: inline-block;
-        width: 3px;
-        height: 1em;
-        background-color: #6366f1;
-        margin-left: 4px;
-        animation: blink 1s step-end infinite;
-        vertical-align: middle;
-    }
+<section class="sp-hero" style="--hero-image: url('{{ url_for('static', filename='images/sourcepoint-command-center.png') }}');">
+    <div class="sp-hero-motion" aria-hidden="true">
+        <span class="sp-motion-line sp-motion-line-1"></span>
+        <span class="sp-motion-line sp-motion-line-2"></span>
+        <span class="sp-motion-line sp-motion-line-3"></span>
+        <span class="sp-holo-card sp-holo-card-1">
+            <i class="fas fa-code-branch"></i>
+            <strong>Deploy</strong>
+            <em>98.7%</em>
+        </span>
+        <span class="sp-holo-card sp-holo-card-2">
+            <i class="fas fa-cart-shopping"></i>
+            <strong>Orders</strong>
+            <em>Live</em>
+        </span>
+        <span class="sp-holo-card sp-holo-card-3">
+            <i class="fas fa-shield-halved"></i>
+            <strong>Secure</strong>
+            <em>Armed</em>
+        </span>
+    </div>
+    <div class="sp-hero-inner sp-hero-inner-single">
+        <div class="max-w-4xl">
+            <span class="sp-eyebrow">Software x Commerce Operating System</span>
 
-    @keyframes blink {
-        50% {
-            opacity: 0;
-        }
-    }
-
-    @keyframes pulseGlow { 0%,100%{opacity:.5;transform:scale(1)} 50%{opacity:1;transform:scale(1.08)} }
-    @keyframes dotBlink  { 0%,100%{opacity:1} 50%{opacity:.2} }
-
-    /* --- 2. 3D Isometric Stack (The Hero Visual) --- */
-    .iso-container {
-        position: relative;
-        width: 300px;
-        height: 300px;
-        transform: rotateX(60deg) rotateZ(-45deg) rotateY(0deg);
-        transform-style: preserve-3d;
-        transition: transform 0.5s ease-out;
-    }
-
-    .iso-layer {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        background: rgba(20, 20, 25, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 24px;
-        backdrop-filter: blur(8px);
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.5s ease-out;
-    }
-
-    /* Floating Animation for layers */
-    .layer-1 {
-        transform: translateZ(0px);
-        z-index: 1;
-        animation: float1 4s ease-in-out infinite;
-    }
-
-    .layer-2 {
-        transform: translateZ(60px);
-        z-index: 2;
-        animation: float2 4s ease-in-out infinite 0.2s;
-        background: rgba(99, 102, 241, 0.1);
-        border-color: rgba(99, 102, 241, 0.3);
-    }
-
-    .layer-3 {
-        transform: translateZ(120px);
-        z-index: 3;
-        animation: float3 4s ease-in-out infinite 0.4s;
-        background: rgba(255, 255, 255, 0.05);
-    }
-
-    @keyframes float1 {
-
-        0%,
-        100% {
-            transform: translateZ(0px);
-        }
-
-        50% {
-            transform: translateZ(20px);
-        }
-    }
-
-    @keyframes float2 {
-
-        0%,
-        100% {
-            transform: translateZ(60px);
-        }
-
-        50% {
-            transform: translateZ(90px);
-        }
-    }
-
-    @keyframes float3 {
-
-        0%,
-        100% {
-            transform: translateZ(120px);
-        }
-
-        50% {
-            transform: translateZ(160px);
-        }
-    }
-
-    /* Icons inside layers */
-    .iso-icon {
-        font-size: 3rem;
-        color: white;
-        transform: rotateZ(45deg) rotateX(-60deg);
-        text-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
-    }
-
-    /* --- 3. Border Beam Effect --- */
-    .border-beam-card {
-        position: relative;
-        overflow: hidden;
-    }
-
-    .border-beam-card::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        border-radius: 1.5rem;
-        padding: 2px;
-        background: linear-gradient(90deg, transparent, #6366f1, transparent);
-        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-        -webkit-mask-composite: xor;
-        mask-composite: exclude;
-        background-size: 200% 100%;
-        animation: borderBeam 4s linear infinite;
-        opacity: 0.5;
-        pointer-events: none;
-    }
-
-    @keyframes borderBeam {
-        0% {
-            background-position: 100% 0;
-        }
-
-        100% {
-            background-position: -100% 0;
-        }
-    }
-
-    /* --- 4. Infinite Marquee --- */
-    .marquee-mask {
-        mask-image: linear-gradient(to right, transparent, black 20%, black 80%, transparent);
-        -webkit-mask-image: linear-gradient(to right, transparent, black 20%, black 80%, transparent);
-    }
-</style>
-
-<div class="relative min-h-[90vh] flex flex-col justify-center px-4 overflow-hidden pt-16 sm:pt-20 aurora-bg">
-    <div class="max-w-7xl w-full mx-auto grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-
-        <div class="z-10 order-2 lg:order-1">
-
-            <h1
-                class="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black text-white tracking-tighter leading-[1] mb-6 sm:mb-8 drop-shadow-2xl">
-                Build <span
-                    class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Without</span><br>
-                <span id="scramble-text">Boundaries</span><span class="cursor-blink"></span>
+            <h1 class="sp-hero-title">
+                SourcePoint
+                <span>Build. Hire. Sell.</span>
             </h1>
 
-            <p class="text-base sm:text-lg md:text-xl text-gray-400 max-w-xl leading-relaxed mb-8 sm:mb-10 font-light tracking-wide">
-                The all-in-one ecosystem for elite engineering. Source talent, manage projects, and monetize assets in a
-                unified glass-morphic workspace.
+            <p class="sp-hero-copy">
+                A sci-fi grade workspace for software teams and digital sellers. Manage projects,
+                engineering talent, code assessments, inventory, orders, invoices, learning paths,
+                and shared storefronts from one secure platform.
             </p>
 
-            <div class="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
-                <a href="{{ url_for('auth.login_register') }}"
-                    class="relative overflow-hidden group px-6 sm:px-8 py-3 sm:py-4 rounded-xl bg-indigo-600 text-white font-bold text-base sm:text-lg shadow-[0_0_20px_rgba(79,70,229,0.3)] transition-all hover:scale-105 hover:shadow-[0_0_40px_rgba(79,70,229,0.5)] text-center btn-shine">
-                    <span class="relative z-10 flex items-center justify-center">Start Building Free <i
-                            class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i></span>
-                    <div
-                        class="absolute inset-0 -translate-x-full group-hover:translate-x-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700">
-                    </div>
+            <div class="sp-hero-actions">
+                <a href="{{ url_for('auth.login_register') }}" class="sp-primary-btn btn-shine">
+                    <i class="fas fa-rocket"></i>
+                    Start Free
                 </a>
-
-                <a href="#features"
-                    class="px-6 sm:px-8 py-3 sm:py-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium text-base sm:text-lg backdrop-blur-md transition-all flex items-center justify-center group">
-                    <i class="fas fa-play text-xs mr-3 text-gray-400 group-hover:text-white transition-colors"></i>
-                    See How It Works
+                <a href="#command-deck" class="sp-secondary-btn">
+                    <i class="fas fa-network-wired"></i>
+                    Explore Platform
+                </a>
+                <a href="{{ url_for('main.contact') }}" class="sp-secondary-btn">
+                    <i class="fas fa-headset"></i>
+                    Talk to Us
                 </a>
             </div>
 
-            <div class="mt-10 sm:mt-16 pt-6 sm:pt-8 border-t border-white/5 flex flex-wrap gap-6 sm:gap-12">
-                <div class="flex items-center gap-2">
-                    <h3 class="text-2xl sm:text-3xl font-bold text-white tracking-tight count-animate" data-count-to="20">20</h3><span class="text-2xl sm:text-3xl font-bold text-neon-indigo">+</span>
-                    <p class="text-xs text-gray-500 uppercase font-bold tracking-widest mt-1">Engineers</p>
+            <div class="sp-hero-stats">
+                <div class="sp-stat-tile">
+                    <span class="sp-stat-value"><span data-count-to="20" class="count-animate">20</span>+</span>
+                    <span class="sp-stat-label">Engineer Network</span>
                 </div>
-                <div class="flex items-center gap-2">
-                    <h3 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">$<span data-count-to="200" class="count-animate">200</span>K+</h3>
-                    <p class="text-xs text-gray-500 uppercase font-bold tracking-widest mt-1">Transacted</p>
+                <div class="sp-stat-tile">
+                    <span class="sp-stat-value">$<span data-count-to="200" class="count-animate">200</span>K+</span>
+                    <span class="sp-stat-label">Commerce Flow</span>
                 </div>
-                <div>
-                    <h3 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">99.9%</h3>
-                    <p class="text-xs text-gray-500 uppercase font-bold tracking-widest mt-1">UpTime</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- 3D ISO Stack: Visible on large screens only -->
-        <div class="relative z-10 order-1 lg:order-2 hidden lg:flex justify-center items-center h-[500px] perspective-[2000px]">
-            <div class="absolute w-[400px] h-[400px] bg-indigo-500/20 rounded-full blur-[100px] -z-10"></div>
-
-            <div class="iso-container" id="hero-iso">
-                <div class="iso-layer layer-1">
-                    <div class="text-center">
-                        <i class="fas fa-server iso-icon mb-2 opacity-50"></i>
-                        <div class="text-white/50 font-mono text-sm transform rotateZ(45deg) rotateX(-60deg)">
-                            Infrastructure</div>
-                    </div>
-                </div>
-
-                <div class="iso-layer layer-2">
-                    <div class="absolute inset-0 border border-indigo-400/30 rounded-2xl"></div>
-                    <div class="text-center">
-                        <i class="fas fa-code iso-icon mb-2 text-indigo-400"></i>
-                        <div class="text-indigo-200 font-mono text-sm transform rotateZ(45deg) rotateX(-60deg)">Source
-                            Code</div>
-                    </div>
-                    <div
-                        class="absolute top-0 left-0 w-full h-1 bg-indigo-500/50 shadow-[0_0_15px_#6366f1] animate-[scan_3s_linear_infinite]">
-                    </div>
-                </div>
-
-                <div class="iso-layer layer-3">
-                    <div class="flex gap-4 transform rotateZ(45deg) rotateX(-60deg)">
-                        <div
-                            class="w-16 h-20 bg-emerald-500/20 rounded-lg border border-emerald-500/50 flex items-center justify-center backdrop-blur-sm">
-                            <i class="fas fa-dollar-sign text-2xl text-emerald-400"></i>
-                        </div>
-                        <div
-                            class="w-16 h-20 bg-purple-500/20 rounded-lg border border-purple-500/50 flex items-center justify-center backdrop-blur-sm">
-                            <i class="fas fa-user-plus text-2xl text-purple-400"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Mobile Hero Visual: Simple animated badge grid (shown instead of 3D on small screens) -->
-        <div class="relative z-10 order-1 lg:hidden flex justify-center items-center py-6">
-            <div class="relative w-full max-w-xs">
-                <!-- Glow orb -->
-                <div class="absolute inset-0 bg-indigo-500/15 rounded-full blur-[60px] pointer-events-none"></div>
-                <div class="grid grid-cols-3 gap-3 relative">
-                    {% set badges = [
-                        {'icon': 'fa-code', 'label': 'Dev Tools', 'color': 'indigo'},
-                        {'icon': 'fa-briefcase', 'label': 'Hiring', 'color': 'purple'},
-                        {'icon': 'fa-store', 'label': 'Market', 'color': 'emerald'},
-                        {'icon': 'fa-shield-alt', 'label': 'Secure', 'color': 'cyan'},
-                        {'icon': 'fa-chart-line', 'label': 'Analytics', 'color': 'pink'},
-                        {'icon': 'fa-layer-group', 'label': 'Platform', 'color': 'yellow'}
-                    ] %}
-                    {% for b in badges %}
-                    <div class="flex flex-col items-center gap-1.5 p-3 rounded-xl border
-                        {% if b.color == 'indigo' %}bg-indigo-500/10 border-indigo-500/25{% endif %}
-                        {% if b.color == 'purple' %}bg-purple-500/10 border-purple-500/25{% endif %}
-                        {% if b.color == 'emerald' %}bg-emerald-500/10 border-emerald-500/25{% endif %}
-                        {% if b.color == 'cyan' %}bg-cyan-500/10 border-cyan-500/25{% endif %}
-                        {% if b.color == 'pink' %}bg-pink-500/10 border-pink-500/25{% endif %}
-                        {% if b.color == 'yellow' %}bg-yellow-500/10 border-yellow-500/25{% endif %}
-                        animate-pulse" style="animation-delay: {{ loop.index0 * 0.2 }}s; animation-duration: 3s;">
-                        <i class="fas {{ b.icon }} text-base
-                            {% if b.color == 'indigo' %}text-indigo-400{% endif %}
-                            {% if b.color == 'purple' %}text-purple-400{% endif %}
-                            {% if b.color == 'emerald' %}text-emerald-400{% endif %}
-                            {% if b.color == 'cyan' %}text-cyan-400{% endif %}
-                            {% if b.color == 'pink' %}text-pink-400{% endif %}
-                            {% if b.color == 'yellow' %}text-yellow-400{% endif %}
-                        "></i>
-                        <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">{{ b.label }}</span>
-                    </div>
-                    {% endfor %}
+                <div class="sp-stat-tile">
+                    <span class="sp-stat-value">99.9%</span>
+                    <span class="sp-stat-label">Workspace Uptime</span>
                 </div>
             </div>
         </div>
     </div>
-</div>
+</section>
 
-<div class="py-12 border-y border-white/5 bg-[#000000]/50 backdrop-blur-sm marquee-mask relative z-10">
+<section class="sp-brand-rail py-7 marquee-mask relative z-10">
     <div class="flex overflow-hidden group">
-        <div
-            class="flex space-x-16 animate-[scroll_30s_linear_infinite] group-hover:[animation-play-state:paused] min-w-full px-8">
+        <div class="flex space-x-14 animate-[scroll_30s_linear_infinite] group-hover:[animation-play-state:paused] min-w-full px-8">
             {% for _ in range(2) %}
-            <i class="fab fa-aws text-4xl text-gray-600 hover:text-white transition-colors"></i>
-            <i class="fab fa-google text-4xl text-gray-600 hover:text-white transition-colors"></i>
-            <i class="fab fa-meta text-4xl text-gray-600 hover:text-white transition-colors"></i>
-            <i class="fab fa-stripe text-4xl text-gray-600 hover:text-white transition-colors"></i>
-            <i class="fab fa-docker text-4xl text-gray-600 hover:text-white transition-colors"></i>
-            <i class="fab fa-github text-4xl text-gray-600 hover:text-white transition-colors"></i>
-            <i class="fab fa-python text-4xl text-gray-600 hover:text-white transition-colors"></i>
-            <i class="fab fa-react text-4xl text-gray-600 hover:text-white transition-colors"></i>
+            <i class="fab fa-aws text-4xl"></i>
+            <i class="fab fa-github text-4xl"></i>
+            <i class="fab fa-docker text-4xl"></i>
+            <i class="fab fa-python text-4xl"></i>
+            <i class="fab fa-react text-4xl"></i>
+            <i class="fab fa-stripe text-4xl"></i>
+            <i class="fab fa-google text-4xl"></i>
+            <i class="fas fa-shield-halved text-4xl"></i>
             {% endfor %}
         </div>
-        <div class="flex space-x-16 animate-[scroll_30s_linear_infinite] group-hover:[animation-play-state:paused] min-w-full px-8"
-            aria-hidden="true">
+        <div class="flex space-x-14 animate-[scroll_30s_linear_infinite] group-hover:[animation-play-state:paused] min-w-full px-8" aria-hidden="true">
             {% for _ in range(2) %}
-            <i class="fab fa-aws text-4xl text-gray-600 hover:text-white transition-colors"></i>
-            <i class="fab fa-google text-4xl text-gray-600 hover:text-white transition-colors"></i>
-            <i class="fab fa-meta text-4xl text-gray-600 hover:text-white transition-colors"></i>
-            <i class="fab fa-stripe text-4xl text-gray-600 hover:text-white transition-colors"></i>
-            <i class="fab fa-docker text-4xl text-gray-600 hover:text-white transition-colors"></i>
-            <i class="fab fa-github text-4xl text-gray-600 hover:text-white transition-colors"></i>
-            <i class="fab fa-python text-4xl text-gray-600 hover:text-white transition-colors"></i>
-            <i class="fab fa-react text-4xl text-gray-600 hover:text-white transition-colors"></i>
+            <i class="fab fa-aws text-4xl"></i>
+            <i class="fab fa-github text-4xl"></i>
+            <i class="fab fa-docker text-4xl"></i>
+            <i class="fab fa-python text-4xl"></i>
+            <i class="fab fa-react text-4xl"></i>
+            <i class="fab fa-stripe text-4xl"></i>
+            <i class="fab fa-google text-4xl"></i>
+            <i class="fas fa-shield-halved text-4xl"></i>
             {% endfor %}
         </div>
     </div>
-</div>
+</section>
 
+<section id="command-deck" class="sp-section">
+    <div class="sp-section-inner">
+        <div class="sp-section-head scroll-reveal">
+            <span class="sp-section-kicker">Mission Control</span>
+            <h2 class="sp-section-title">One console for delivery, hiring, and commerce ops.</h2>
+            <p class="sp-section-copy">
+                SourcePoint connects the systems that usually live in separate tabs: project execution,
+                assessment workflows, developer learning, seller inventory, buyer orders, and finance.
+            </p>
+        </div>
 
-<!-- ── ANDROID APP DOWNLOAD BANNER ── -->
-<div class="py-12 relative z-10 max-w-7xl mx-auto px-4">
-    <div class="relative overflow-hidden rounded-2xl border border-emerald-500/25 p-6 sm:p-8"
-         style="background:linear-gradient(135deg,rgba(5,14,9,.97) 0%,rgba(3,8,5,.99) 100%);">
-
-        <!-- Animated grid overlay -->
-        <svg class="absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <pattern id="app-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(16,185,129,1)" stroke-width="1"/>
-                </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#app-grid)"/>
-        </svg>
-
-        <!-- Glow orbs -->
-        <div class="absolute top-0 right-0 w-64 h-64 rounded-full pointer-events-none"
-             style="background:radial-gradient(circle,rgba(16,185,129,.12),transparent 70%);margin:-2rem -2rem 0 0;"></div>
-        <div class="absolute bottom-0 left-0 w-48 h-48 rounded-full pointer-events-none"
-             style="background:radial-gradient(circle,rgba(5,150,105,.08),transparent 70%);margin:0 0 -1.5rem -1.5rem;"></div>
-
-        <div class="relative z-10 flex flex-col sm:flex-row items-center gap-6 sm:gap-8">
-
-            <!-- Android icon with pulse ring -->
-            <div class="relative flex-shrink-0">
-                <div class="absolute inset-0 rounded-2xl"
-                     style="background:rgba(16,185,129,.15);filter:blur(12px);animation:pulseGlow 2.5s ease-in-out infinite;"></div>
-                <div class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center
-                            bg-gradient-to-br from-emerald-700 to-emerald-900 border border-emerald-500/40 shadow-2xl">
-                    <i class="fab fa-android text-4xl sm:text-5xl text-white"></i>
+        <div class="sp-product-rack">
+            <div class="sp-console scroll-reveal-left">
+                <div class="sp-console-head">
+                    <span class="sp-console-title">Live Deployment Matrix</span>
+                    <span class="cyber-chip">Secure</span>
+                </div>
+                <div class="sp-console-body">
+                    <div class="sp-terminal">
+                        <div><span class="muted">sourcepoint@ops:</span> sync workspace</div>
+                        <div><span class="ok">OK</span> projects linked to hiring pipeline</div>
+                        <div><span class="ok">OK</span> invoices mapped to commerce orders</div>
+                        <div><span class="warn">SCAN</span> candidate tests and review queue</div>
+                        <div><span class="mag">LIVE</span> catalog sharing endpoint armed</div>
+                    </div>
+                    <div class="sp-flow-grid">
+                        <div class="sp-mini-panel">
+                            <i class="fas fa-code-branch"></i>
+                            <strong>Build</strong>
+                            <span>Projects, BRDs, records, learning, and code tests.</span>
+                        </div>
+                        <div class="sp-mini-panel">
+                            <i class="fas fa-user-check"></i>
+                            <strong>Hire</strong>
+                            <span>Recruiter, candidate, moderator, and admin paths.</span>
+                        </div>
+                        <div class="sp-mini-panel">
+                            <i class="fas fa-cart-shopping"></i>
+                            <strong>Sell</strong>
+                            <span>Products, stock, orders, invoices, and vouchers.</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Text -->
-            <div class="flex-1 min-w-0 text-center sm:text-left">
-                <div class="flex items-center justify-center sm:justify-start gap-2 mb-1.5">
-                    <span class="text-[9px] font-black tracking-[.25em] uppercase text-emerald-500">Now Available</span>
-                    <span class="w-1 h-1 rounded-full bg-emerald-500" style="animation:dotBlink 1.5s ease-in-out infinite;"></span>
-                </div>
-                <h2 class="text-xl sm:text-2xl font-black text-white mb-1 tracking-tight">
-                    SourcePoint Android App
-                </h2>
-                <p class="text-gray-400 text-sm max-w-md">
-                    Full access to your workspace from your phone. Manage projects, track candidates, &amp; stay in sync — on the go.
+            <div class="sp-product-visual scroll-reveal-right" aria-hidden="true"></div>
+        </div>
+    </div>
+</section>
+
+<section class="sp-section pt-0">
+    <div class="sp-section-inner">
+        <div class="sp-section-head scroll-reveal">
+            <span class="sp-section-kicker">Platform Modules</span>
+            <h2 class="sp-section-title">Designed for software teams with marketplace energy.</h2>
+        </div>
+
+        <div class="sp-card-grid stagger-children">
+            <article class="sp-card">
+                <div class="sp-card-icon"><i class="fas fa-diagram-project"></i></div>
+                <h3>Project Command</h3>
+                <p>Create projects, manage BRDs, monitor transactions, track records, and keep delivery visible.</p>
+            </article>
+            <article class="sp-card">
+                <div class="sp-card-icon"><i class="fas fa-laptop-code"></i></div>
+                <h3>Developer Console</h3>
+                <p>Learning paths, coding problems, submissions, interviews, and role-aware collaboration tools.</p>
+            </article>
+            <article class="sp-card">
+                <div class="sp-card-icon"><i class="fas fa-store"></i></div>
+                <h3>Commerce Engine</h3>
+                <p>Seller inventory, buyer catalog, shared store links, order flow, stock requests, and invoices.</p>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="sp-section pt-0">
+    <div class="sp-section-inner">
+        <div class="sp-product-rack">
+            <div class="sp-section-head scroll-reveal-left">
+                <span class="sp-section-kicker">Commerce Grid</span>
+                <h2 class="sp-section-title">Turn internal inventory into a polished buying experience.</h2>
+                <p class="sp-section-copy">
+                    SourcePoint includes seller tools, shared catalog pages, product detail pages, buyer orders,
+                    gift cards, and invoice flows, all visually aligned with the same futuristic workspace.
                 </p>
+                <div class="sp-action-row">
+                    <a href="{{ url_for('auth.login_register') }}" class="sp-primary-btn btn-shine">
+                        <i class="fas fa-bag-shopping"></i>
+                        Open Storefront
+                    </a>
+                </div>
             </div>
 
-            <!-- CTA -->
-            <div class="flex flex-col items-center gap-2 flex-shrink-0">
-                <a href="{{ url_for('app_release.download_app') }}"
-                   id="home-download-app-btn"
-                   class="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl font-bold text-sm text-white
-                          bg-gradient-to-br from-emerald-600 to-emerald-800
-                          shadow-[0_0_25px_rgba(16,185,129,.3)]
-                          hover:shadow-[0_0_40px_rgba(16,185,129,.5)]
-                          hover:-translate-y-0.5 hover:scale-105
-                          transition-all duration-200">
+            <div class="sp-product-card scroll-reveal-right">
+                <span class="cyber-chip">Marketplace Telemetry</span>
+                <div class="sp-product-list mt-5">
+                    <div class="sp-product-row">
+                        <i class="fas fa-cube"></i>
+                        <div>
+                            <strong>Digital product bundle</strong>
+                            <span>Ready for shared catalog</span>
+                        </div>
+                        <span class="sp-product-price">INR 12,999</span>
+                    </div>
+                    <div class="sp-product-row">
+                        <i class="fas fa-truck-fast"></i>
+                        <div>
+                            <strong>Order pipeline</strong>
+                            <span>Buyer status and admin tracking</span>
+                        </div>
+                        <span class="sp-product-price">LIVE</span>
+                    </div>
+                    <div class="sp-product-row">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <div>
+                            <strong>Invoice relay</strong>
+                            <span>Seller and admin finance surface</span>
+                        </div>
+                        <span class="sp-product-price">SYNC</span>
+                    </div>
+                    <div class="sp-product-row">
+                        <i class="fas fa-gift"></i>
+                        <div>
+                            <strong>Gift card vault</strong>
+                            <span>Voucher browsing and claim flow</span>
+                        </div>
+                        <span class="sp-product-price">ARMED</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="sp-section pt-0">
+    <div class="sp-section-inner">
+        <div class="sp-section-head scroll-reveal">
+            <span class="sp-section-kicker">Role Consoles</span>
+            <h2 class="sp-section-title">Every user sees the tools meant for their mission.</h2>
+        </div>
+        <div class="sp-role-grid stagger-fast">
+            <article class="sp-role-card">
+                <i class="fas fa-user-shield text-2xl"></i>
+                <h3>Admin</h3>
+                <p>Users, hiring, commerce, newsletter, gift cards, analytics, and system health.</p>
+            </article>
+            <article class="sp-role-card">
+                <i class="fas fa-user-gear text-2xl"></i>
+                <h3>Developer</h3>
+                <p>Events, learning, project tasks, code workflows, and technical collaboration.</p>
+            </article>
+            <article class="sp-role-card">
+                <i class="fas fa-briefcase text-2xl"></i>
+                <h3>Recruiter</h3>
+                <p>Candidate pipeline, interviews, assessments, and hiring coordination.</p>
+            </article>
+            <article class="sp-role-card">
+                <i class="fas fa-shop text-2xl"></i>
+                <h3>Seller & Buyer</h3>
+                <p>Inventory, shared stores, carts, orders, invoices, and purchase history.</p>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="sp-section pt-0">
+    <div class="sp-section-inner">
+        <div class="sp-app-banner p-6 sm:p-8 scroll-reveal">
+            <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                <div class="flex items-start gap-4">
+                    <div class="source-mark">
+                        <span>SP</span>
+                    </div>
+                    <div>
+                        <span class="sp-section-kicker">Mobile Access</span>
+                        <h2 class="text-2xl sm:text-3xl font-black text-white mt-2">SourcePoint Android App</h2>
+                        <p class="text-gray-400 mt-2 max-w-2xl">
+                            Keep projects, interviews, products, and orders moving from your phone.
+                        </p>
+                    </div>
+                </div>
+                <a href="{{ url_for('app_release.download_app') }}" id="home-download-app-btn" class="sp-primary-btn btn-shine">
                     <i class="fas fa-download"></i>
                     Download APK
                 </a>
-                <span class="text-[10px] text-gray-600 flex items-center gap-1">
-                    <i class="fas fa-unlock-alt text-[8px]"></i> No account needed
-                </span>
             </div>
         </div>
     </div>
-</div>
-<!-- ── /ANDROID APP DOWNLOAD BANNER ── -->
+</section>
 
-<div id="features" class="py-32 relative z-10 max-w-7xl mx-auto px-4">
-
-    <div class="text-center mb-24">
-        <h2 class="text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight">The <span class="text-neon-indigo">Ecosystem</span></h2>
-        <p class="text-gray-400 max-w-2xl mx-auto text-lg">Engineered to remove friction. Everything you need in one OS.
-        </p>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 grid-rows-2 gap-6 h-auto stagger-children">
-
-        <div class="md:col-span-2 md:row-span-2 glass-panel-v2 rounded-3xl p-10 border-beam-card group relative">
-            <div
-                class="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -mr-16 -mt-16 group-hover:bg-indigo-500/20 transition-colors duration-700">
-            </div>
-
-            <div class="relative z-10 h-full flex flex-col justify-between">
+<section class="sp-section pt-0 pb-24">
+    <div class="sp-section-inner">
+        <div class="sp-cta-band scroll-reveal-scale">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                 <div>
-                    <div
-                        class="w-14 h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 mb-6 border border-indigo-500/20 shadow-lg shadow-indigo-500/5">
-                        <i class="fas fa-network-wired text-2xl"></i>
-                    </div>
-                    <h3 class="text-3xl font-bold text-white mb-4">Unified Workflow</h3>
-                    <p class="text-gray-400 text-lg max-w-md leading-relaxed">
-                        Stop tab-switching. Manage your repository, team chat, and project kanban in a single,
-                        synchronized dashboard.
+                    <span class="sp-section-kicker">Ready State</span>
+                    <h2 class="text-3xl sm:text-4xl font-black text-white mt-2">Launch your SourcePoint workspace.</h2>
+                    <p class="text-gray-400 mt-3 max-w-2xl">
+                        Bring software operations and ecommerce control into one high-velocity interface.
                     </p>
                 </div>
-
-                <div
-                    class="w-full mt-10 p-4 bg-[#0a0a0f] rounded-xl border border-white/10 shadow-2xl translate-y-4 group-hover:translate-y-2 transition-transform duration-500">
-                    <div class="flex items-center gap-3 mb-4 border-b border-white/5 pb-3">
-                        <div class="flex gap-1.5">
-                            <div class="w-2.5 h-2.5 rounded-full bg-red-500/50"></div>
-                            <div class="w-2.5 h-2.5 rounded-full bg-yellow-500/50"></div>
-                            <div class="w-2.5 h-2.5 rounded-full bg-green-500/50"></div>
-                        </div>
-                        <div class="h-2 w-32 bg-white/10 rounded-full"></div>
-                    </div>
-                    <div class="space-y-3">
-                        <div class="flex justify-between">
-                            <div class="h-2 w-1/3 bg-white/10 rounded-full"></div>
-                            <div class="h-2 w-10 bg-indigo-500/50 rounded-full"></div>
-                        </div>
-                        <div class="flex justify-between">
-                            <div class="h-2 w-1/2 bg-white/10 rounded-full"></div>
-                            <div class="h-2 w-8 bg-purple-500/50 rounded-full"></div>
-                        </div>
-                        <div class="flex justify-between">
-                            <div class="h-2 w-1/4 bg-white/10 rounded-full"></div>
-                            <div class="h-2 w-12 bg-emerald-500/50 rounded-full"></div>
-                        </div>
-                    </div>
-                </div>
+                <a href="{{ url_for('auth.login_register') }}" class="sp-primary-btn btn-shine">
+                    <i class="fas fa-arrow-right"></i>
+                    Enter SourcePoint
+                </a>
             </div>
-        </div>
-
-        <div class="glass-panel-v2 rounded-3xl p-8 border-beam-card group hover:bg-white/[0.02] transition-colors">
-            <div class="flex items-start justify-between mb-6">
-                <div
-                    class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 border border-purple-500/20">
-                    <i class="fas fa-brain text-xl"></i>
-                </div>
-                <span
-                    class="px-2 py-1 rounded bg-purple-500/10 text-[10px] text-purple-300 border border-purple-500/20 uppercase font-bold">AI
-                    Beta</span>
-            </div>
-            <h3 class="text-xl font-bold text-white mb-2">Smart Hiring</h3>
-            <p class="text-sm text-gray-400">Automated resume parsing and code test grading powered by neural networks.
-            </p>
-        </div>
-
-        <div class="glass-panel-v2 rounded-3xl p-8 border-beam-card group hover:bg-white/[0.02] transition-colors">
-            <div class="flex items-start justify-between mb-6">
-                <div
-                    class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
-                    <i class="fas fa-shopping-bag text-xl"></i>
-                </div>
-            </div>
-            <h3 class="text-xl font-bold text-white mb-2">Dev Market</h3>
-            <p class="text-sm text-gray-400">Monetize your side projects. Sell components, templates, and scripts
-                securely.</p>
         </div>
     </div>
-</div>
-
-<script>
-    // --- Scramble Text Effect ---
-    const textElement = document.getElementById('scramble-text');
-    const finalText = "Boundaries";
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-    let iterations = 0;
-
-    const interval = setInterval(() => {
-        textElement.innerText = finalText
-            .split("")
-            .map((letter, index) => {
-                if (index < iterations) return finalText[index];
-                return chars[Math.floor(Math.random() * chars.length)];
-            })
-            .join("");
-
-        if (iterations >= finalText.length) clearInterval(interval);
-        iterations += 1 / 3;
-    }, 30);
-
-    // --- Interactive 3D Stack (Subtle movement on mouse) ---
-    const isoContainer = document.getElementById('hero-iso');
-    if (isoContainer) {
-        document.addEventListener('mousemove', (e) => {
-            const x = (window.innerWidth / 2 - e.clientX) / 40;
-            const y = (window.innerHeight / 2 - e.clientY) / 40;
-            // Maintain base rotation and add mouse influence
-            isoContainer.style.transform = `rotateX(${60 + y}deg) rotateZ(${-45 + x}deg) rotateY(0deg)`;
-        });
-    }
-</script>
+</section>
 
 {% endblock %}
