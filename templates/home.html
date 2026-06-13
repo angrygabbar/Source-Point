@@ -74,34 +74,100 @@
     </div>
 </section>
 
-<section class="sp-brand-rail py-7 marquee-mask relative z-10">
-    <div class="flex overflow-hidden group">
-        <div class="flex space-x-14 marquee-track min-w-full px-8">
+<section class="sp-data-stream marquee-mask relative z-10">
+    <div class="sp-stream-inner">
+        <div class="sp-stream-track">
             {% for _ in range(2) %}
-            <i class="fab fa-aws text-4xl"></i>
-            <i class="fab fa-github text-4xl"></i>
-            <i class="fab fa-docker text-4xl"></i>
-            <i class="fab fa-python text-4xl"></i>
-            <i class="fab fa-react text-4xl"></i>
-            <i class="fab fa-stripe text-4xl"></i>
-            <i class="fab fa-google text-4xl"></i>
-            <i class="fas fa-shield-halved text-4xl"></i>
+            <div class="sp-stream-chip">
+                <span class="sp-chip-dot sp-dot-green"></span>
+                <span class="sp-chip-label">DEPLOY</span>
+                <span class="sp-chip-value">LIVE</span>
+            </div>
+            <div class="sp-stream-chip">
+                <i class="fas fa-bolt"></i>
+                <span class="sp-chip-label">UPTIME</span>
+                <span class="sp-chip-value sp-val-cyan">99.9%</span>
+            </div>
+            <div class="sp-stream-chip">
+                <i class="fas fa-shield-halved"></i>
+                <span class="sp-chip-label">SECURITY</span>
+                <span class="sp-chip-value sp-val-green">ARMED</span>
+            </div>
+            <div class="sp-stream-chip">
+                <i class="fas fa-code-branch"></i>
+                <span class="sp-chip-label">BUILDS</span>
+                <span class="sp-chip-value sp-val-cyan">2,847</span>
+            </div>
+            <div class="sp-stream-chip">
+                <span class="sp-chip-dot sp-dot-cyan"></span>
+                <span class="sp-chip-label">ORDERS</span>
+                <span class="sp-chip-value sp-val-green">SYNC</span>
+            </div>
+            <div class="sp-stream-chip">
+                <i class="fas fa-microchip"></i>
+                <span class="sp-chip-label">LATENCY</span>
+                <span class="sp-chip-value sp-val-cyan">12ms</span>
+            </div>
+            <div class="sp-stream-chip">
+                <i class="fas fa-satellite-dish"></i>
+                <span class="sp-chip-label">API</span>
+                <span class="sp-chip-value sp-val-green">ONLINE</span>
+            </div>
+            <div class="sp-stream-chip">
+                <i class="fas fa-database"></i>
+                <span class="sp-chip-label">NODES</span>
+                <span class="sp-chip-value sp-val-cyan">3 / 3</span>
+            </div>
             {% endfor %}
         </div>
-        <div class="flex space-x-14 marquee-track min-w-full px-8" aria-hidden="true">
+        <div class="sp-stream-track" aria-hidden="true">
             {% for _ in range(2) %}
-            <i class="fab fa-aws text-4xl"></i>
-            <i class="fab fa-github text-4xl"></i>
-            <i class="fab fa-docker text-4xl"></i>
-            <i class="fab fa-python text-4xl"></i>
-            <i class="fab fa-react text-4xl"></i>
-            <i class="fab fa-stripe text-4xl"></i>
-            <i class="fab fa-google text-4xl"></i>
-            <i class="fas fa-shield-halved text-4xl"></i>
+            <div class="sp-stream-chip">
+                <span class="sp-chip-dot sp-dot-green"></span>
+                <span class="sp-chip-label">DEPLOY</span>
+                <span class="sp-chip-value">LIVE</span>
+            </div>
+            <div class="sp-stream-chip">
+                <i class="fas fa-bolt"></i>
+                <span class="sp-chip-label">UPTIME</span>
+                <span class="sp-chip-value sp-val-cyan">99.9%</span>
+            </div>
+            <div class="sp-stream-chip">
+                <i class="fas fa-shield-halved"></i>
+                <span class="sp-chip-label">SECURITY</span>
+                <span class="sp-chip-value sp-val-green">ARMED</span>
+            </div>
+            <div class="sp-stream-chip">
+                <i class="fas fa-code-branch"></i>
+                <span class="sp-chip-label">BUILDS</span>
+                <span class="sp-chip-value sp-val-cyan">2,847</span>
+            </div>
+            <div class="sp-stream-chip">
+                <span class="sp-chip-dot sp-dot-cyan"></span>
+                <span class="sp-chip-label">ORDERS</span>
+                <span class="sp-chip-value sp-val-green">SYNC</span>
+            </div>
+            <div class="sp-stream-chip">
+                <i class="fas fa-microchip"></i>
+                <span class="sp-chip-label">LATENCY</span>
+                <span class="sp-chip-value sp-val-cyan">12ms</span>
+            </div>
+            <div class="sp-stream-chip">
+                <i class="fas fa-satellite-dish"></i>
+                <span class="sp-chip-label">API</span>
+                <span class="sp-chip-value sp-val-green">ONLINE</span>
+            </div>
+            <div class="sp-stream-chip">
+                <i class="fas fa-database"></i>
+                <span class="sp-chip-label">NODES</span>
+                <span class="sp-chip-value sp-val-cyan">3 / 3</span>
+            </div>
             {% endfor %}
         </div>
     </div>
+    <div class="sp-stream-scanline"></div>
 </section>
+
 
 <section id="command-deck" class="sp-section">
     <div class="sp-section-inner">

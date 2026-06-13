@@ -3345,19 +3345,120 @@ body {
     z-index: 1;
 }
 
-.sp-brand-rail {
+/* ── Data Stream Ticker ── */
+.sp-data-stream {
+    position: relative;
+    padding: 0;
+    overflow: hidden;
     border-block: 1px solid rgba(125, 249, 255, 0.1);
-    background: rgba(2, 4, 10, 0.78);
+    background:
+        linear-gradient(90deg, rgba(2, 4, 10, 0.95), rgba(4, 10, 22, 0.82) 50%, rgba(2, 4, 10, 0.95)),
+        repeating-linear-gradient(90deg, rgba(34, 211, 238, 0.03) 0 1px, transparent 1px 60px);
 }
 
-.sp-brand-rail i {
-    color: rgba(145, 164, 187, 0.58);
-    transition: color 0.2s ease, text-shadow 0.2s ease;
+.sp-stream-inner {
+    display: flex;
+    overflow: hidden;
+    width: 100%;
 }
 
-.sp-brand-rail i:hover {
-    color: #ffffff;
-    text-shadow: 0 0 20px rgba(34, 211, 238, 0.55);
+.sp-stream-track {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.85rem 0.5rem;
+    min-width: 100%;
+    animation: scroll 38s linear infinite;
+}
+
+.sp-data-stream:hover .sp-stream-track {
+    animation-play-state: paused;
+}
+
+.sp-stream-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    padding: 0.45rem 0.85rem;
+    border-radius: 6px;
+    border: 1px solid rgba(125, 249, 255, 0.14);
+    background:
+        linear-gradient(135deg, rgba(4, 14, 28, 0.72), rgba(2, 6, 14, 0.52));
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    white-space: nowrap;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.sp-stream-chip:hover {
+    border-color: rgba(34, 211, 238, 0.4);
+    box-shadow: 0 0 18px rgba(34, 211, 238, 0.12);
+}
+
+.sp-stream-chip i {
+    color: rgba(34, 211, 238, 0.7);
+    font-size: 0.72rem;
+}
+
+.sp-chip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.sp-dot-green {
+    background: #34d399;
+    box-shadow: 0 0 8px rgba(52, 211, 153, 0.7);
+    animation: dotPulse 2.2s ease-in-out infinite;
+}
+
+.sp-dot-cyan {
+    background: #22d3ee;
+    box-shadow: 0 0 8px rgba(34, 211, 238, 0.7);
+    animation: dotPulse 2.8s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.5; transform: scale(0.75); }
+}
+
+.sp-chip-label {
+    color: #6e8298;
+    font-family: var(--sp-mono);
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.sp-chip-value {
+    color: #e0f0ff;
+    font-family: var(--sp-mono);
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+}
+
+.sp-val-cyan  { color: #67e8f9; }
+.sp-val-green { color: #34d399; }
+
+/* Sweeping scanline across the data stream */
+.sp-stream-scanline {
+    position: absolute;
+    top: 0;
+    left: -30%;
+    width: 30%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.06), rgba(52, 211, 153, 0.04), transparent);
+    pointer-events: none;
+    animation: streamScan 6s ease-in-out infinite;
+}
+
+@keyframes streamScan {
+    0%   { left: -30%; }
+    100% { left: 100%; }
 }
 
 .sp-app-banner {
