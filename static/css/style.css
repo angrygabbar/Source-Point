@@ -2248,6 +2248,159 @@ body {
 }
 
 /* =========================================
+   9b. Tailwind Utility Fallbacks (mobile CDN resilience)
+   These guarantee landing-page layout even if the
+   Tailwind CDN <script> fails to load/execute on mobile.
+   ========================================= */
+
+/* -- Layout -- */
+.flex          { display: flex; }
+.flex-1        { flex: 1 1 0%; }
+.flex-col      { flex-direction: column; }
+.items-center  { align-items: center; }
+.items-start   { align-items: flex-start; }
+.justify-between { justify-content: space-between; }
+.justify-center  { justify-content: center; }
+.relative      { position: relative; }
+.overflow-hidden { overflow: hidden; }
+.overflow-y-auto { overflow-y: auto; }
+.overflow-x-hidden { overflow-x: hidden; }
+.min-w-full    { min-width: 100%; }
+.w-full        { width: 100%; }
+.h-full        { height: 100%; }
+.z-10          { z-index: 10; }
+
+/* -- Spacing -- */
+.px-6   { padding-left: 1.5rem; padding-right: 1.5rem; }
+.px-8   { padding-left: 2rem; padding-right: 2rem; }
+.py-7   { padding-top: 1.75rem; padding-bottom: 1.75rem; }
+.p-6    { padding: 1.5rem; }
+.mt-2   { margin-top: 0.5rem; }
+.mt-3   { margin-top: 0.75rem; }
+.mt-4   { margin-top: 1rem; }
+.mt-5   { margin-top: 1.25rem; }
+.pb-24  { padding-bottom: 6rem; }
+.pt-0   { padding-top: 0; }
+.gap-3  { gap: 0.75rem; }
+.gap-4  { gap: 1rem; }
+.gap-6  { gap: 1.5rem; }
+.space-x-6 > * + * { margin-left: 1.5rem; }
+.space-x-14 > * + * { margin-left: 3.5rem; }
+.space-y-3 > * + * { margin-top: 0.75rem; }
+
+/* -- Typography -- */
+.text-sm   { font-size: 0.875rem; line-height: 1.25rem; }
+.text-lg   { font-size: 1.125rem; line-height: 1.75rem; }
+.text-xl   { font-size: 1.25rem; line-height: 1.75rem; }
+.text-2xl  { font-size: 1.5rem; line-height: 2rem; }
+.text-3xl  { font-size: 1.875rem; line-height: 2.25rem; }
+.text-4xl  { font-size: 2.25rem; line-height: 2.5rem; }
+.font-bold   { font-weight: 700; }
+.font-black  { font-weight: 900; }
+.font-medium { font-weight: 500; }
+.tracking-wide { letter-spacing: 0.025em; }
+.tracking-wider { letter-spacing: 0.05em; }
+.tracking-widest { letter-spacing: 0.1em; }
+.uppercase { text-transform: uppercase; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.max-w-2xl { max-width: 42rem; }
+.max-w-4xl { max-width: 56rem; }
+.max-w-7xl { max-width: 80rem; }
+.max-w-sm  { max-width: 24rem; }
+.mx-auto   { margin-left: auto; margin-right: auto; }
+
+/* -- Colors -- */
+.text-white       { color: #ffffff; }
+.text-gray-100    { color: #f3f4f6; }
+.text-gray-200    { color: #e5e7eb; }
+.text-gray-400    { color: #9ca3af; }
+.text-gray-500    { color: #6b7280; }
+.text-gray-600    { color: #4b5563; }
+.text-indigo-400  { color: #818cf8; }
+.bg-transparent   { background-color: transparent; }
+.text-red-400     { color: #f87171; }
+.pointer-events-none { pointer-events: none; }
+.pointer-events-auto { pointer-events: auto; }
+
+/* -- Borders & Rounding -- */
+.rounded-xl  { border-radius: 0.75rem; }
+.rounded-lg  { border-radius: 0.5rem; }
+.rounded-full { border-radius: 9999px; }
+.border       { border-width: 1px; }
+.border-b     { border-bottom-width: 1px; }
+.border-t     { border-top-width: 1px; }
+
+/* -- Transitions -- */
+.transition-all     { transition-property: all; transition-timing-function: cubic-bezier(0.4,0,0.2,1); transition-duration: 150ms; }
+.transition-colors  { transition-property: color, background-color, border-color; transition-timing-function: cubic-bezier(0.4,0,0.2,1); transition-duration: 150ms; }
+.transition-transform { transition-property: transform; transition-timing-function: cubic-bezier(0.4,0,0.2,1); transition-duration: 150ms; }
+.duration-200 { transition-duration: 200ms; }
+.duration-300 { transition-duration: 300ms; }
+
+/* -- Group (no-op parent, enables group-hover children) -- */
+.group { position: relative; }
+
+/* -- Header/footer transparent variants for landing page -- */
+.header-transparent {
+    background: transparent !important;
+    border-bottom: none !important;
+    backdrop-filter: none !important;
+}
+.footer-transparent {
+    background: linear-gradient(0deg, rgba(2, 4, 10, 0.72), transparent) !important;
+    border-top: none !important;
+}
+
+/* -- Brand-rail marquee scroll animation -- */
+@keyframes scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-100%); }
+}
+
+.marquee-mask {
+    -webkit-mask-image: linear-gradient(90deg, transparent, black 6%, black 94%, transparent);
+    mask-image: linear-gradient(90deg, transparent, black 6%, black 94%, transparent);
+}
+
+.group:hover .group-hover\:\[animation-play-state\:paused\] {
+    animation-play-state: paused;
+}
+
+.marquee-track {
+    animation: scroll 30s linear infinite;
+}
+.group:hover .marquee-track {
+    animation-play-state: paused;
+}
+
+/* -- Responsive prefixes used in home template -- */
+@media (min-width: 640px) {
+    .sm\:p-8   { padding: 2rem; }
+    .sm\:flex  { display: flex; }
+    .sm\:text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+    .sm\:text-4xl { font-size: 2.25rem; line-height: 2.5rem; }
+}
+
+@media (min-width: 768px) {
+    .md\:flex-row   { flex-direction: row; }
+    .md\:items-center { align-items: center; }
+    .md\:justify-between { justify-content: space-between; }
+}
+
+@media (min-width: 1024px) {
+    .lg\:flex-row   { flex-direction: row; }
+    .lg\:items-center { align-items: center; }
+    .lg\:block   { display: block; }
+    .lg\:hidden  { display: none; }
+}
+
+/* Hidden on sm breakpoint (nav links) */
+.hidden     { display: none; }
+@media (min-width: 640px) {
+    .sm\:flex { display: flex; }
+}
+
+/* =========================================
    10. SourcePoint Cyber Redesign
    ========================================= */
 :root {
