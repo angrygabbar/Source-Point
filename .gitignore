@@ -29,3 +29,6 @@ service_account.json
 # Uploaded binary files — never commit these to git
 static/apks/
 static/resumes/
+.venv/
+.venv/
+.venv/

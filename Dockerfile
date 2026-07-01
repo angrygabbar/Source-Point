@@ -18,6 +18,8 @@ WORKDIR /app
 COPY requirements.txt .
 
 # 5. Install Python dependencies
+# Upgrade pip first to avoid JSONDecodeError with old pip
+RUN pip install --upgrade pip
 # Increased timeout to prevent network hangups on slow connections
 RUN pip install --no-cache-dir --default-timeout=300 --retries=5 -r requirements.txt
 
