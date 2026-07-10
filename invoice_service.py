@@ -8,9 +8,9 @@ import re
 
 class PDF(FPDF):
     """
-    Base PDF class with branded emerald header + footer on every page.
-    Colours are passed in from InvoiceGenerator so the PDF class
-    can render them without depending on the generator instance.
+    Base PDF class with a compact branded header and footer on every page.
+    Colours are passed in from InvoiceGenerator so the PDF class can render
+    them without depending on the generator instance.
     """
 
     def __init__(self, title="Document",
@@ -41,7 +41,7 @@ class PDF(FPDF):
         self.set_fill_color(*self.c_bg_page)
         self.rect(0, 0, 210, 297, 'F')
 
-        # Compact indigo header bar (12 mm tall) — matches website nav
+        # Compact brand header bar for continuation pages.
         self.set_fill_color(*self.c_brand_dark)
         self.rect(0, 0, 210, 12, 'F')
 
@@ -68,7 +68,7 @@ class PDF(FPDF):
         self.set_line_width(0.2)
         self.rect(0, 269, 210, 28, 'FD')
 
-        # Indigo/Violet top accent stripe on footer
+        # Brand accent stripe on footer
         self.set_fill_color(*self.c_brand_mid)
         self.rect(0, 269, 210, 2, 'F')
 
@@ -89,7 +89,7 @@ class PDF(FPDF):
         self.set_text_color(*self.c_text_light)
         self.set_xy(10, 284)
         self.cell(0, 4,
-                  f'(c) 2025 Source Point. All rights reserved.   |   Page {self.page_no()}',
+                  f'(c) {datetime.utcnow().year} Source Point. All rights reserved.   |   Page {self.page_no()}',
                   0, 0, 'C')
 
 
@@ -97,25 +97,23 @@ class PDF(FPDF):
 class InvoiceGenerator:
     """
     Premium e-commerce invoice PDF generator.
-    Aesthetic: Emerald Green (#059669) + Light Grey — matching the ecommerce_invoice_email.html template.
+    Aesthetic: professional ink, teal, amber, and light neutral surfaces.
     """
 
     def __init__(self, invoice):
         self.invoice = invoice
 
-        # ── Brand Colour Palette — matches Source Point website ──────────────
-        # Primary:  Indigo-600  #4F46E5  → RGB(79, 70, 229)
-        # Gradient: Violet-600  #7C3AED  → RGB(124, 58, 237)
-        # Dark bg:  Indigo-900  #312E81  → RGB(49, 46, 129)
-        self.c_brand_dark    = (49,  46, 129)    # Indigo-900  header bg
-        self.c_brand_mid     = (79,  70, 229)    # Indigo-600  primary
-        self.c_brand_violet  = (124, 58, 237)    # Violet-600  gradient end
-        self.c_brand_pale    = (224, 231, 255)   # Indigo-100  light tint
-        self.c_brand_xpale   = (238, 242, 255)   # Indigo-50   very pale
-        self.c_brand_border  = (199, 210, 254)   # Indigo-200  border
-        self.c_brand_accent  = (99,  102, 241)   # Indigo-500  table header
+        # ── Brand Colour Palette ────────────────────────────────────────────
+        self.c_brand_dark    = (30,  41,  59)    # Ink header
+        self.c_brand_mid     = (13,  148, 136)   # Teal primary
+        self.c_brand_violet  = (245, 158, 11)    # Amber accent block
+        self.c_brand_pale    = (204, 251, 241)   # Teal-100
+        self.c_brand_xpale   = (240, 253, 250)   # Teal-50
+        self.c_brand_border  = (153, 246, 228)   # Teal-200
+        self.c_brand_accent  = (15,  118, 110)   # Teal-700
+        self.c_brand_gold    = (217, 119, 6)     # Amber-600
 
-        self.c_bg_page       = (240, 241, 247)   # Neutral page bg
+        self.c_bg_page       = (246, 247, 251)   # Neutral page bg
         self.c_bg_card       = (255, 255, 255)
         self.c_bg_row_alt    = (249, 250, 251)
         self.c_text_dark     = (17,  24,  39)
@@ -198,28 +196,27 @@ class InvoiceGenerator:
 
     def _draw_header(self):
         """
-        Branded header bar matching the Source Point website nav:
-          LEFT  — Indigo-to-Violet gradient badge with stacked-layers icon + 'Source Point'
-          RIGHT — 'INVOICE' label + invoice number
+        Branded header bar:
+          LEFT  - Source Point identity
+          RIGHT - invoice title, number, and total due
         """
-        hh = 40  # header height mm
+        hh = 42  # header height mm
 
-        # ── Deep indigo background ────────────────────────────────────────────
+        # Main ink background
         self._set_fill(self.c_brand_dark)
         self.pdf.rect(0, 0, 210, hh, 'F')
 
-        # Violet gradient accent (right 1/3 fades darker)
+        # Warm accent block creates a premium editorial invoice header.
         self._set_fill(self.c_brand_violet)
-        self.pdf.rect(130, 0, 80, hh, 'F')
+        self.pdf.rect(146, 0, 64, hh, 'F')
 
-        # Bright indigo stripe at bottom of header
+        # Teal stripe at bottom of header
         self._set_fill(self.c_brand_mid)
         self.pdf.rect(0, hh, 210, 2, 'F')
 
-        # ── Logo badge — mimics fa-layer-group on indigo-violet badge ─────────
+        # Logo badge
         bx, by, bw, bh = 10, 8, 18, 18
 
-        # Outer badge: indigo-600 fill, rounded by drawing overlapping rect
         self._set_fill(self.c_brand_mid)
         self.pdf.rect(bx, by, bw, bh, 'F')
 
@@ -248,30 +245,34 @@ class InvoiceGenerator:
         self.pdf.set_xy(bx + bw + 4, by + 11)
         self.pdf.cell(85, 5, 'Your Trusted Online Store', 0, 0, 'L')
 
-        # ── INVOICE label (right side) ────────────────────────────────────────
-        self.pdf.set_font('helvetica', 'B', 26)
+        # Invoice label
+        self.pdf.set_font('helvetica', 'B', 24)
         self._set_text((255, 255, 255))
-        self.pdf.set_xy(120, 5)
-        self.pdf.cell(80, 12, 'INVOICE', 0, 0, 'R')
+        self.pdf.set_xy(106, 5)
+        self.pdf.cell(94, 12, 'INVOICE', 0, 0, 'R')
 
         # Invoice number pill
         inv_label = f'# {self._clean_text(self.invoice.invoice_number)}'
         self.pdf.set_font('helvetica', 'B', 9)
         self._set_text(self.c_brand_pale)
-        self.pdf.set_xy(130, 20)
-        self.pdf.cell(70, 8, inv_label, 0, 0, 'R')
+        self.pdf.set_xy(111, 18)
+        self.pdf.cell(89, 7, inv_label, 0, 0, 'R')
 
-        # TAX INVOICE sub-label
-        self.pdf.set_font('helvetica', '', 7)
+        # Total due highlight
+        self.pdf.set_font('helvetica', '', 7.2)
         self._set_text(self.c_brand_pale)
-        self.pdf.set_xy(130, 29)
-        self.pdf.cell(70, 5, 'TAX INVOICE', 0, 0, 'R')
+        self.pdf.set_xy(111, 26)
+        self.pdf.cell(89, 4, 'TOTAL DUE', 0, 0, 'R')
+        self.pdf.set_font('helvetica', 'B', 12)
+        self._set_text((255, 255, 255))
+        self.pdf.set_xy(111, 31)
+        self.pdf.cell(89, 6, f'Rs.{float(self.invoice.total_amount):,.2f}', 0, 0, 'R')
 
         self.pdf.set_y(hh + 6)
 
     def _draw_meta_strip(self):
         """
-        4-column meta info bar: Invoice Date | Due Date | Status | Terms
+        5-column meta info bar: Invoice Date | Due Date | Status | Order Ref | Terms
         """
         sx = 10
         sy = self.pdf.get_y()
@@ -285,8 +286,8 @@ class InvoiceGenerator:
         self.pdf.rect(sx, sy, sw, sh, 'FD')
 
         # Vertical dividers
-        col_w = sw / 4
-        for i in range(1, 4):
+        col_w = sw / 5
+        for i in range(1, 5):
             self._set_draw(self.c_border)
             self.pdf.line(sx + col_w * i, sy, sx + col_w * i, sy + sh)
 
@@ -304,11 +305,13 @@ class InvoiceGenerator:
         inv_date = self.invoice.created_at.strftime('%d %b %Y') if self.invoice.created_at else 'N/A'
         due_date = self.invoice.due_date.strftime('%d %b %Y') if self.invoice.due_date else 'On Receipt'
         status   = str(self.invoice.status).title() if self.invoice.status else 'Processing'
+        order_ref = self.invoice.order_id or 'N/A'
 
         meta_col(0, 'Invoice Date', inv_date)
         meta_col(1, 'Due Date',     due_date)
         meta_col(2, 'Status',       status, self.c_brand_mid)
-        meta_col(3, 'Payment Terms','Due on Receipt')
+        meta_col(3, 'Order Ref',    order_ref)
+        meta_col(4, 'Payment Terms','Due on Receipt')
 
         self.pdf.set_y(sy + sh + 6)
 
@@ -320,15 +323,17 @@ class InvoiceGenerator:
         sy     = self.pdf.get_y()
         col_w  = 91
         gap    = 8
-        sh     = 32
+        sh     = 38
 
-        for col, (heading, name, address) in enumerate([
+        for col, (heading, name, detail) in enumerate([
             ('Bill To',
              self._clean_text(self.invoice.recipient_name),
-             self._clean_text(self.invoice.bill_to_address or '')),
+             self._clean_text(
+                 f"{self.invoice.recipient_email}\n{self.invoice.bill_to_address or ''}".strip()
+             )),
             ('Ship To',
              self._clean_text(self.invoice.recipient_name),
-             self._clean_text(self.invoice.ship_to_address or self.invoice.bill_to_address or '')),
+             self._clean_text(self.invoice.ship_to_address or self.invoice.bill_to_address or 'Same as billing address')),
         ]):
             cx = sx + col * (col_w + gap)
 
@@ -354,12 +359,12 @@ class InvoiceGenerator:
             self.pdf.set_xy(cx + 3, sy + 9)
             self.pdf.cell(col_w - 6, 5, name, 0, 1, 'L')
 
-            # Address (multi-cell)
+            # Contact/address details (multi-cell)
             self.pdf.set_font('helvetica', '', 7.5)
             self._set_text(self.c_text_muted)
             self.pdf.set_xy(cx + 3, sy + 14)
-            if address:
-                self.pdf.multi_cell(col_w - 6, 4, address, 0, 'L')
+            if detail:
+                self.pdf.multi_cell(col_w - 6, 4, detail, 0, 'L')
             else:
                 self.pdf.cell(col_w - 6, 4, '—', 0, 0, 'L')
 
@@ -466,11 +471,11 @@ class InvoiceGenerator:
             self.pdf.set_xy(sx + c_no + 2, sy + 2)
             self.pdf.multi_cell(c_desc - 4, 4.5, desc, 0, 'L')
 
-            # In-stock label below description
+            # Secondary line below description
             self.pdf.set_font('helvetica', '', 6.5)
             self._set_text(self.c_brand_accent)
             self.pdf.set_xy(sx + c_no + 2, sy + (row_h - 5))
-            self.pdf.cell(c_desc - 4, 4, 'In Stock', 0, 0, 'L')
+            self.pdf.cell(c_desc - 4, 4, 'Line item', 0, 0, 'L')
 
             # SKU
             self.pdf.set_font('helvetica', '', 7.5)
@@ -511,7 +516,7 @@ class InvoiceGenerator:
 
         rows = [
             ('Subtotal',   f'Rs.{float(self.invoice.subtotal):,.2f}',      False),
-            ('Tax & Fees', f'Rs.{float(self.invoice.tax):,.2f}',           False),
+            ('Tax',        f'Rs.{float(self.invoice.tax):,.2f}',           False),
         ]
 
         rh = 8
@@ -550,70 +555,72 @@ class InvoiceGenerator:
 
     def _draw_info_panel(self):
         """
-        Pale emerald panel: Tracking | Shipping Address | Return Policy
-        Mirrors the tracking/info box in the email template.
+        Supplemental invoice details: order reference, payment details,
+        shipping address, return policy, and notes.
         """
-        sx       = 10
-        pw       = 190
-        LABEL_X  = sx + 6        # Left edge of label column
-        VALUE_X  = sx + 50       # Left edge of value column
-        VALUE_W  = pw - 54       # Available width for values
-        PAD_TOP  = 4             # Padding above first row
-        DIVIDER  = 1.5           # Height of divider line
-        ROW_GAP  = 3             # Gap between divider and next row label
+        sx      = 10
+        pw      = 190
+        label_x = sx + 6
+        value_x = sx + 54
+        value_w = pw - 60
+        row_pad = 3.5
+        divider = 1.2
 
-        # ── Content strings ────────────────────────────────────────────────────
-        track_text  = self._clean_text(self.invoice.payment_details or 'IN TRANSIT — Processing')
-        ship_text   = self._clean_text(self.invoice.ship_to_address or self.invoice.bill_to_address or 'Same as billing address.')
-        policy_text = ('Items eligible for return within 7 days of delivery if unused and '
-                       'in original packaging. Refunds processed within 5-7 business days '
-                       'of return receipt. Digital goods and gift cards are non-refundable.')
+        policy_text = (
+            'Items are eligible for return within 7 days of delivery if unused and in original '
+            'packaging. Refunds are processed within 5-7 business days of return receipt. '
+            'Digital goods and gift cards are non-refundable.'
+        )
 
-        # ── Helper: measure how many lines a string needs ────────────────────
+        rows = [
+            ('Order / Reference',
+             self._clean_text(self.invoice.order_id or self.invoice.invoice_number or 'N/A'),
+             'B', 8.0, self.c_brand_mid),
+            ('Payment Details',
+             self._clean_text(self.invoice.payment_details or 'Payment due on receipt unless otherwise agreed.'),
+             '', 7.5, self.c_text_mid),
+            ('Shipping Address',
+             self._clean_text(self.invoice.ship_to_address or self.invoice.bill_to_address or 'Same as billing address.'),
+             '', 7.5, self.c_text_mid),
+            ('Return Policy',
+             self._clean_text(policy_text),
+             '', 7.0, self.c_text_muted),
+        ]
+
         def wrap_lines(text, font_style, font_size, avail_w, line_h):
             self.pdf.set_font('helvetica', font_style, font_size)
             n, line_w = 1, 0.0
             for word in text.split(' '):
                 ww = self.pdf.get_string_width(word + ' ')
                 if line_w + ww > avail_w and line_w > 0:
-                    n += 1; line_w = ww
+                    n += 1
+                    line_w = ww
                 else:
                     line_w += ww
             return n * line_h
 
-        # ── Pre-calculate each row's text height ─────────────────────────────
-        TRACK_LH   = 4.5
-        SHIP_LH    = 4.0
-        POLICY_LH  = 3.8
-        LABEL_H    = 5.0          # fixed height for the label cell
+        row_specs = []
+        for label, value, style, size, color in rows:
+            line_h = 4.4 if size >= 7.5 else 3.8
+            text_h = max(5.0, wrap_lines(value, style, size, value_w, line_h))
+            row_specs.append((label, value, style, size, color, line_h, row_pad + text_h + row_pad))
 
-        track_h  = max(LABEL_H, wrap_lines(track_text,  'B',  8,   VALUE_W, TRACK_LH))
-        ship_h   = max(LABEL_H, wrap_lines(ship_text,   '',   7.5, VALUE_W, SHIP_LH))
-        policy_h = max(LABEL_H, wrap_lines(policy_text, '',   7,   VALUE_W, POLICY_LH))
-
-        # Row heights (label top-pad + text + bottom-pad)
-        ROW1_H = PAD_TOP    + track_h  + 2
-        ROW2_H = ROW_GAP    + ship_h   + 2
-        ROW3_H = ROW_GAP    + policy_h + 3
-        ph     = ROW1_H + DIVIDER + ROW2_H + DIVIDER + ROW3_H
+        ph = sum(spec[-1] for spec in row_specs) + divider * (len(row_specs) - 1)
 
         # Optional notes height
         notes_h = 0
         if self.invoice.notes:
-            notes_h = max(6, wrap_lines(self._clean_text(self.invoice.notes), 'I', 7.5, pw - 4, 4)) + 6
+            notes_h = max(8, wrap_lines(self._clean_text(self.invoice.notes), '', 7.5, pw - 12, 4)) + 10
 
-        # ── Make sure there is enough room on the current page ───────────────
         # Footer starts at y=269, reserve 3 mm margin
         FOOTER_Y = 269
         sy = self.pdf.get_y()
-        if sy + ph + notes_h + 4 > FOOTER_Y - 3:
+        if sy + ph + 4 > FOOTER_Y - 3:
             self.pdf.add_page()
             sy = self.pdf.get_y()
 
-        # ── Disable auto page break for the duration of the panel draw ───────
         self.pdf.set_auto_page_break(False)
 
-        # ── Panel background + left bar ───────────────────────────────────────
         self._set_fill(self.c_brand_xpale)
         self._set_draw(self.c_brand_border)
         self._thin_line()
@@ -621,62 +628,186 @@ class InvoiceGenerator:
         self._set_fill(self.c_brand_mid)
         self.pdf.rect(sx, sy, 3, ph, 'F')
 
-        # ── Row 1: Tracking ──────────────────────────────────────────────────
-        ry = sy + PAD_TOP
-        self.pdf.set_font('helvetica', 'B', 8)
-        self._set_text(self.c_brand_dark)
-        self.pdf.set_xy(LABEL_X, ry)
-        self.pdf.cell(40, LABEL_H, 'Tracking Number', 0, 0, 'L')
-        self.pdf.set_font('helvetica', 'B', 8)
-        self._set_text(self.c_brand_mid)
-        self.pdf.set_xy(VALUE_X, ry)
-        self.pdf.multi_cell(VALUE_W, TRACK_LH, track_text, 0, 'L')
-        ry += track_h + 2
+        ry = sy
+        for idx, (label, value, style, size, color, line_h, row_h) in enumerate(row_specs):
+            text_y = ry + row_pad
+            self.pdf.set_font('helvetica', 'B', 7.6)
+            self._set_text(self.c_brand_dark)
+            self.pdf.set_xy(label_x, text_y)
+            self.pdf.cell(44, 5, label, 0, 0, 'L')
 
-        # Divider 1
-        self._set_draw(self.c_brand_border)
-        self.pdf.line(LABEL_X, ry, sx + pw - 4, ry)
-        ry += DIVIDER
+            self.pdf.set_font('helvetica', style, size)
+            self._set_text(color)
+            self.pdf.set_xy(value_x, text_y)
+            self.pdf.multi_cell(value_w, line_h, value, 0, 'L')
 
-        # ── Row 2: Shipping Address ───────────────────────────────────────────
-        ry += ROW_GAP
-        self.pdf.set_font('helvetica', 'B', 8)
-        self._set_text(self.c_brand_dark)
-        self.pdf.set_xy(LABEL_X, ry)
-        self.pdf.cell(40, LABEL_H, 'Shipping Address', 0, 0, 'L')
-        self.pdf.set_font('helvetica', '', 7.5)
-        self._set_text(self.c_text_muted)
-        self.pdf.set_xy(VALUE_X, ry)
-        self.pdf.multi_cell(VALUE_W, SHIP_LH, ship_text, 0, 'L')
-        ry += ship_h + 2
+            ry += row_h
+            if idx < len(row_specs) - 1:
+                self._set_draw(self.c_brand_border)
+                self.pdf.line(label_x, ry, sx + pw - 4, ry)
+                ry += divider
 
-        # Divider 2
-        self._set_draw(self.c_brand_border)
-        self.pdf.line(LABEL_X, ry, sx + pw - 4, ry)
-        ry += DIVIDER
+        final_y = sy + ph + 4
 
-        # ── Row 3: Return & Refund Policy ────────────────────────────────────
-        ry += ROW_GAP
-        self.pdf.set_font('helvetica', 'B', 8)
-        self._set_text(self.c_brand_dark)
-        self.pdf.set_xy(LABEL_X, ry)
-        self.pdf.cell(45, LABEL_H, 'Return & Refund Policy', 0, 0, 'L')
-        self.pdf.set_font('helvetica', '', 7)
-        self._set_text(self.c_text_muted)
-        self.pdf.set_xy(VALUE_X, ry)
-        self.pdf.multi_cell(VALUE_W, POLICY_LH, policy_text, 0, 'L')
-
-        # ── Optional notes (below the panel) ─────────────────────────────────
+        # Optional notes (below the panel, or on the next page if needed)
         if self.invoice.notes:
             note_y = sy + ph + 4
-            self.pdf.set_font('helvetica', 'I', 7.5)
-            self._set_text(self.c_text_muted)
-            self.pdf.set_xy(sx, note_y)
-            self.pdf.multi_cell(pw, 4, f'Note: {self._clean_text(self.invoice.notes)}', 0, 'L')
+            note_box_h = notes_h - 2
+            if note_y + note_box_h > FOOTER_Y - 3:
+                self.pdf.add_page()
+                note_y = self.pdf.get_y() + 2
+            self._set_fill((255, 251, 235))
+            self._set_draw((253, 230, 138))
+            self.pdf.rect(sx, note_y, pw, note_box_h, 'FD')
+            self.pdf.set_font('helvetica', 'B', 7.5)
+            self._set_text(self.c_brand_gold)
+            self.pdf.set_xy(sx + 5, note_y + 3)
+            self.pdf.cell(pw - 10, 4, 'Notes / Terms', 0, 1, 'L')
+            self.pdf.set_font('helvetica', '', 7.5)
+            self._set_text(self.c_text_mid)
+            self.pdf.set_xy(sx + 5, note_y + 8)
+            self.pdf.multi_cell(pw - 10, 4, self._clean_text(self.invoice.notes), 0, 'L')
+            final_y = note_y + note_box_h + 4
 
-        # ── Re-enable auto page break and advance cursor ──────────────────────
         self.pdf.set_auto_page_break(auto=True, margin=28)
-        self.pdf.set_y(sy + ph + notes_h + 4)
+        self.pdf.set_y(final_y)
+
+
+class SupersCoinInvoiceGenerator:
+    """PDF generator for SupersCoins invoices using Super Coins as currency."""
+
+    def __init__(self, invoice):
+        self.invoice = invoice
+        self.pdf = FPDF()
+        self.pdf.set_auto_page_break(auto=True, margin=18)
+
+    def _clean_text(self, text):
+        if text is None:
+            return ""
+        text = str(text)
+        replacements = {
+            '\u200b': '', '\xa0': ' ',
+            '\u2018': "'", '\u2019': "'",
+            '\u201c': '"', '\u201d': '"',
+            '\u2013': '-', '\u2014': '-',
+            '\u2022': '-',
+        }
+        for char, rep in replacements.items():
+            text = text.replace(char, rep)
+        return text.encode('latin-1', 'replace').decode('latin-1')
+
+    def generate_pdf(self):
+        invoice = self.invoice
+        seller = invoice.seller
+        admin = invoice.admin
+
+        self.pdf.add_page()
+        self.pdf.set_fill_color(15, 23, 42)
+        self.pdf.rect(0, 0, 210, 44, 'F')
+        self.pdf.set_fill_color(245, 158, 11)
+        self.pdf.rect(152, 0, 58, 44, 'F')
+        self.pdf.set_fill_color(20, 184, 166)
+        self.pdf.rect(0, 44, 210, 2, 'F')
+
+        self.pdf.set_font('helvetica', 'B', 18)
+        self.pdf.set_text_color(255, 255, 255)
+        self.pdf.set_xy(12, 10)
+        self.pdf.cell(110, 8, 'Source Point', 0, 1, 'L')
+        self.pdf.set_font('helvetica', '', 8)
+        self.pdf.set_text_color(204, 251, 241)
+        self.pdf.set_x(12)
+        self.pdf.cell(110, 5, 'SupersCoins Wallet Ledger', 0, 1, 'L')
+
+        self.pdf.set_font('helvetica', 'B', 20)
+        self.pdf.set_text_color(255, 255, 255)
+        self.pdf.set_xy(100, 9)
+        self.pdf.cell(98, 10, 'COIN INVOICE', 0, 1, 'R')
+        self.pdf.set_font('helvetica', 'B', 9)
+        self.pdf.set_text_color(255, 248, 220)
+        self.pdf.set_x(100)
+        self.pdf.cell(98, 6, self._clean_text(invoice.invoice_number), 0, 1, 'R')
+        self.pdf.set_font('helvetica', 'B', 12)
+        self.pdf.set_text_color(255, 255, 255)
+        self.pdf.set_x(100)
+        self.pdf.cell(98, 7, f"SC {float(invoice.amount):,.2f}", 0, 1, 'R')
+
+        self.pdf.set_y(56)
+        self.pdf.set_text_color(17, 24, 39)
+        self.pdf.set_font('helvetica', 'B', 11)
+        self.pdf.cell(0, 7, 'Invoice Details', 0, 1, 'L')
+
+        self.pdf.set_fill_color(249, 250, 251)
+        self.pdf.set_draw_color(229, 231, 235)
+        self.pdf.rect(10, 66, 190, 32, 'FD')
+
+        meta = [
+            ('Seller', seller.username if seller else 'Seller'),
+            ('Email', seller.email if seller else ''),
+            ('Status', invoice.status),
+            ('Issued By', admin.username if admin else 'Admin'),
+            ('Invoice Date', invoice.created_at.strftime('%d %b %Y') if invoice.created_at else 'N/A'),
+            ('Due Date', invoice.due_date.strftime('%d %b %Y') if invoice.due_date else 'On Receipt'),
+        ]
+        x_positions = [14, 75, 138]
+        y_positions = [71, 84]
+        idx = 0
+        for row_y in y_positions:
+            for col_x in x_positions:
+                label, value = meta[idx]
+                self.pdf.set_xy(col_x, row_y)
+                self.pdf.set_font('helvetica', 'B', 6.5)
+                self.pdf.set_text_color(20, 184, 166)
+                self.pdf.cell(56, 4, label.upper(), 0, 1, 'L')
+                self.pdf.set_x(col_x)
+                self.pdf.set_font('helvetica', 'B', 8.5)
+                self.pdf.set_text_color(31, 41, 55)
+                self.pdf.cell(56, 5, self._clean_text(value), 0, 0, 'L')
+                idx += 1
+
+        self.pdf.set_y(110)
+        self.pdf.set_fill_color(15, 23, 42)
+        self.pdf.set_text_color(204, 251, 241)
+        self.pdf.set_font('helvetica', 'B', 8)
+        self.pdf.cell(120, 10, 'Description', 0, 0, 'L', True)
+        self.pdf.cell(35, 10, 'Currency', 0, 0, 'C', True)
+        self.pdf.cell(35, 10, 'Amount', 0, 1, 'R', True)
+
+        self.pdf.set_fill_color(255, 255, 255)
+        self.pdf.set_draw_color(229, 231, 235)
+        self.pdf.set_text_color(17, 24, 39)
+        self.pdf.set_font('helvetica', '', 9)
+        self.pdf.cell(120, 14, self._clean_text(invoice.description), 1, 0, 'L', True)
+        self.pdf.set_font('helvetica', 'B', 9)
+        self.pdf.cell(35, 14, 'Super Coins', 1, 0, 'C', True)
+        self.pdf.cell(35, 14, f"SC {float(invoice.amount):,.2f}", 1, 1, 'R', True)
+
+        self.pdf.set_x(130)
+        self.pdf.set_fill_color(240, 253, 250)
+        self.pdf.set_text_color(15, 118, 110)
+        self.pdf.set_font('helvetica', 'B', 11)
+        self.pdf.cell(35, 14, 'Total Due', 1, 0, 'R', True)
+        self.pdf.cell(35, 14, f"SC {float(invoice.amount):,.2f}", 1, 1, 'R', True)
+
+        if invoice.notes:
+            self.pdf.set_y(155)
+            self.pdf.set_font('helvetica', 'B', 9)
+            self.pdf.set_text_color(17, 24, 39)
+            self.pdf.cell(0, 6, 'Notes', 0, 1, 'L')
+            self.pdf.set_font('helvetica', '', 8.5)
+            self.pdf.set_text_color(75, 85, 99)
+            self.pdf.multi_cell(0, 5, self._clean_text(invoice.notes), 0, 'L')
+
+        self.pdf.set_y(265)
+        self.pdf.set_fill_color(15, 23, 42)
+        self.pdf.rect(0, 267, 210, 30, 'F')
+        self.pdf.set_text_color(203, 213, 225)
+        self.pdf.set_font('helvetica', '', 8)
+        self.pdf.set_xy(10, 273)
+        self.pdf.cell(190, 5, 'This SupersCoins invoice is separate from order invoices and uses Super Coins as currency.', 0, 1, 'C')
+        self.pdf.set_text_color(148, 163, 184)
+        self.pdf.cell(190, 5, 'Source Point SupersCoins Ledger', 0, 1, 'C')
+
+        return bytes(self.pdf.output())
 
 
 class BrdGenerator:

@@ -5,6 +5,7 @@ from models.auth import User
 from models.commerce import Product, ProductImage, Order, AffiliateAd, Invoice, InvoiceItem, SellerInventory, StockRequest
 from utils import role_required, log_user_action, send_email
 from invoice_service import InvoiceGenerator
+from services.commerce_service import CommerceService
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import csv
@@ -21,7 +22,7 @@ GST_RATES = {'Electronics': 18.0, 'Apparel': 12.0, 'Home & Office': 12.0, 'Books
 @login_required
 @role_required(UserRole.ADMIN.value)
 def admin_commerce_dashboard():
-    pending_orders_count = Order.query.filter_by(status=OrderStatus.PLACED.value).count()
+    pending_orders_count = Order.query.filter(Order.status.in_(CommerceService.placed_status_values)).count()
     pending_requests_count = StockRequest.query.filter_by(status='Pending').count()
     low_stock_count = Product.query.filter(Product.stock < 10).count()
     
@@ -45,7 +46,8 @@ def admin_commerce_dashboard():
                            pending_requests=pending_requests,
                            recent_invoices=recent_invoices,
                            pending_commerce_users=pending_commerce_users,
-                           sellers=sellers, buyers=buyers)
+                           sellers=sellers, buyers=buyers,
+                           normalize_order_status=CommerceService.normalize_order_status)
 
 # --- ADS MANAGEMENT ---
 @admin_commerce_bp.route('/ads/manage', methods=['GET', 'POST'])
@@ -447,10 +449,24 @@ def reject_stock_request(req_id):
 def manage_orders():
     orders = Order.query.order_by(Order.created_at.desc()).all()
     total_revenue = sum(order.total_amount for order in orders)
-    pending_count = sum(1 for order in orders if order.status == OrderStatus.PLACED.value)
-    completed_count = sum(1 for order in orders if order.status in [OrderStatus.DELIVERED.value, OrderStatus.SHIPPED.value])
+    pending_count = sum(1 for order in orders if CommerceService.normalize_order_status(order.status) == OrderStatus.PLACED.value)
+    active_fulfillment_statuses = {
+        OrderStatus.SHIPPED.value,
+        OrderStatus.IN_TRANSIT.value,
+        OrderStatus.OUT_FOR_DELIVERY.value,
+        OrderStatus.DELIVERED.value,
+    }
+    completed_count = sum(1 for order in orders if CommerceService.normalize_order_status(order.status) in active_fulfillment_statuses)
 
-    return render_template('manage_orders.html', orders=orders, total_revenue=total_revenue, pending_count=pending_count, completed_count=completed_count)
+    return render_template(
+        'manage_orders.html',
+        orders=orders,
+        total_revenue=total_revenue,
+        pending_count=pending_count,
+        completed_count=completed_count,
+        order_status_choices=CommerceService.order_status_choices,
+        normalize_order_status=CommerceService.normalize_order_status,
+    )
 
 @admin_commerce_bp.route('/orders/update/<int:order_id>', methods=['POST'])
 @login_required
@@ -458,12 +474,19 @@ def manage_orders():
 def update_order_status(order_id):
     order = Order.query.get_or_404(order_id)
     new_status = request.form.get('status')
-    order.status = new_status
-    db.session.commit()
+    success, message, restored_items, missing_items = CommerceService.transition_order_status(order, new_status)
+    if not success:
+        db.session.rollback()
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': message}), 400
+        flash(message, 'danger')
+        return redirect(url_for('admin_commerce.manage_orders'))
+
+    normalized_status = CommerceService.normalize_order_status(new_status)
     
     # Auto Invoice Generation when Accepted
     attachments = None
-    if new_status == OrderStatus.CONFIRMED.value or new_status == 'Order Accepted':
+    if normalized_status == OrderStatus.ACCEPTED.value:
         try:
             invoice = Invoice.query.filter_by(order_id=order.order_number).first()
             if not invoice:
@@ -510,30 +533,41 @@ def update_order_status(order_id):
                 for order_item in order.items:
                     inv_item = InvoiceItem(invoice_id=invoice.id, description=order_item.product_name, quantity=order_item.quantity, price=order_item.price_at_purchase)
                     db.session.add(inv_item)
-                db.session.commit()
+                db.session.flush()
             
             generator = InvoiceGenerator(invoice)
             pdf_bytes = generator.generate_pdf()
-            attachments = [{'filename': f'Invoice_{invoice.invoice_number}.pdf', 'data': pdf_bytes}]
+            attachments = [{
+                'filename': f'Invoice_{invoice.invoice_number}.pdf',
+                'content_type': 'application/pdf',
+                'data': pdf_bytes
+            }]
         except Exception as e:
             print(f"Error generating invoice: {e}")
             traceback.print_exc()
 
+    db.session.commit()
+
     try:
         send_email(
-            to=order.buyer.email, subject=f'Order Update: {new_status}', 
+            to=order.buyer.email, subject=f'Order Update: {normalized_status}', 
             template='mail/order_status_update.html', buyer_name=order.buyer.username, 
-            order_number=order.order_number, status=new_status, 
+            order_number=order.order_number, status=normalized_status, 
             total_amount=order.total_amount, shipping_address=order.shipping_address, now=datetime.utcnow(),
             attachments=attachments  
         )
     except Exception as e:
         print(f"Failed to send email: {e}")
     
-    log_user_action("Update Order", f"Updated order {order.order_number} to {new_status}")
+    log_details = f"Updated order {order.order_number} to {normalized_status}"
+    if restored_items:
+        log_details += f"; restored inventory: {', '.join(restored_items)}"
+    if missing_items:
+        log_details += f"; inventory not found for: {', '.join(missing_items)}"
+    log_user_action("Update Order", log_details)
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return jsonify({'success': True, 'message': f'Order {order.order_number} updated to {new_status}.', 'new_status': new_status})
-    flash(f'Order {order.order_number} updated to {new_status}.', 'success')
+        return jsonify({'success': True, 'message': f'Order {order.order_number} updated to {normalized_status}.', 'new_status': normalized_status})
+    flash(f'Order {order.order_number} updated to {normalized_status}.', 'success')
     return redirect(url_for('admin_commerce.manage_orders'))
 
 # --- CREATE ORDER (Admin) ---
@@ -655,7 +689,7 @@ def admin_create_order():
                 total_amount=total_amount,
                 shipping_address=shipping_address,
                 billing_address=billing_address,
-                status='Order Placed',
+                status=OrderStatus.PLACED.value,
             )
             db.session.add(new_order)
             db.session.flush()
@@ -695,7 +729,7 @@ def admin_create_order():
                     template="mail/order_status_update.html",
                     buyer_name=buyer.username,
                     order_number=new_order.order_number,
-                    status="Order Placed",
+                    status=OrderStatus.PLACED.value,
                     order_date=datetime.utcnow().strftime('%B %d, %Y'),
                     total_amount=new_order.total_amount,
                     shipping_address=shipping_address,
@@ -814,7 +848,12 @@ def mark_invoice_paid(invoice_id):
     invoice.status = InvoiceStatus.PAID.value
     if invoice.order_id:
         order = Order.query.filter_by(order_number=invoice.order_id).first()
-        if order and order.status != OrderStatus.DELIVERED.value: order.status = 'Payment Received'
+        if (
+            order
+            and CommerceService.normalize_order_status(order.status) != OrderStatus.DELIVERED.value
+            and not CommerceService.is_restock_status(order.status)
+        ):
+            order.status = OrderStatus.PAYMENT_RECEIVED.value
     db.session.commit()
     
     try:
@@ -841,12 +880,13 @@ def delete_invoice(invoice_id):
 @role_required(UserRole.ADMIN.value)
 def resend_invoice():
     invoice_id = request.form.get('invoice_id')
-    recipients = request.form.get('recipient_emails')
+    recipients = request.form.get('recipient_emails', '')
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     
     if not invoice_id:
         if is_ajax:
             return jsonify({'success': False, 'message': 'Invoice ID is required.'})
+        flash('Invoice ID is required.', 'danger')
         return redirect(url_for('admin_commerce.manage_invoices'))
 
     invoice = Invoice.query.get(invoice_id)
@@ -855,19 +895,43 @@ def resend_invoice():
             return jsonify({'success': False, 'message': 'Invoice not found.'})
         flash("Invoice not found.", "danger")
         return redirect(url_for('admin_commerce.manage_invoices'))
+
+    recipient_list = []
+    seen_recipients = set()
+    for recipient in recipients.split(','):
+        email_to = recipient.strip()
+        if email_to and email_to not in seen_recipients:
+            recipient_list.append(email_to)
+            seen_recipients.add(email_to)
+
+    if not recipient_list:
+        message = 'Please enter at least one recipient email.'
+        if is_ajax:
+            return jsonify({'success': False, 'message': message})
+        flash(message, 'danger')
+        return redirect(url_for('admin_commerce.manage_invoices'))
     
     try:
         generator = InvoiceGenerator(invoice)
         pdf_bytes = generator.generate_pdf()
-        attachments = [{'filename': f'Invoice_{invoice.invoice_number}.pdf', 'data': pdf_bytes}]
-        recipient_list = [r.strip() for r in recipients.split(',')]
-        for email_to in recipient_list:
-             send_email(to=email_to, subject=f"Invoice #{invoice.invoice_number}", template="mail/ecommerce_invoice_email.html", invoice=invoice, attachments=attachments, sync=True)
+        attachments = [{
+            'filename': f'Invoice_{invoice.invoice_number}.pdf',
+            'content_type': 'application/pdf',
+            'data': pdf_bytes
+        }]
+        send_email(
+            to=recipient_list,
+            subject=f"Invoice #{invoice.invoice_number}",
+            template="mail/ecommerce_invoice_email.html",
+            invoice=invoice,
+            attachments=attachments
+        )
         
         if is_ajax:
-            return jsonify({'success': True, 'message': 'Invoice resent successfully.'})
+            return jsonify({'success': True, 'message': 'Invoice resend queued successfully.'})
         flash("Invoice resent.", "success")
     except Exception as e:
+        traceback.print_exc()
         if is_ajax:
             return jsonify({'success': False, 'message': str(e)})
         flash(f"Error: {e}", "danger")

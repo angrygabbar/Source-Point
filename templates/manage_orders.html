@@ -96,6 +96,7 @@
 
         <div id="ordersContainer" class="space-y-3">
             {% for order in orders %}
+            {% set current_status = normalize_order_status(order.status) %}
             <div class="group relative glass-panel rounded-xl p-0 transition-all duration-300 hover:bg-white/[0.07] hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/5 order-card">
                 
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4 p-5 items-center">
@@ -106,7 +107,7 @@
                         </div>
                         <div>
                             <span class="block text-sm font-bold text-white font-mono tracking-tight">{{ order.order_number }}</span>
-                            <span class="md:hidden inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold bg-white/10 text-gray-300">{{ order.status }}</span>
+                            <span class="md:hidden inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold bg-white/10 text-gray-300">{{ current_status }}</span>
                         </div>
                     </div>
 
@@ -143,20 +144,18 @@
                               class="relative group/select">
                             <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none z-10">
                                 <span class="w-2 h-2 rounded-full 
-                                    {% if order.status == 'Order Placed' %}bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]
-                                    {% elif order.status == 'Order Accepted' %}bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.6)]
-                                    {% elif order.status == 'Order Dispatched' %}bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]
-                                    {% elif order.status == 'Order Delivered' %}bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]
-                                    {% else %}bg-red-500{% endif %}">
+                                    {% if current_status == OrderStatus.PLACED.value %}bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]
+                                    {% elif current_status in [OrderStatus.ACCEPTED.value, OrderStatus.PAYMENT_RECEIVED.value, OrderStatus.PACKED.value] %}bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.6)]
+                                    {% elif current_status in [OrderStatus.DISPATCHED.value, OrderStatus.SHIPPED.value, OrderStatus.IN_TRANSIT.value, OrderStatus.OUT_FOR_DELIVERY.value] %}bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]
+                                    {% elif current_status == OrderStatus.DELIVERED.value %}bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]
+                                    {% else %}bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]{% endif %}">
                                 </span>
                             </div>
                             <select name="status" 
                                     class="appearance-none bg-black/40 border border-white/10 hover:border-indigo-500/50 text-xs font-bold text-gray-300 rounded-lg pl-6 pr-8 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all cursor-pointer shadow-lg w-36">
-                                <option value="Order Placed" {% if order.status == 'Order Placed' %}selected{% endif %}>Placed</option>
-                                <option value="Order Accepted" {% if order.status == 'Order Accepted' %}selected{% endif %}>Accept</option>
-                                <option value="Order Dispatched" {% if order.status == 'Order Dispatched' %}selected{% endif %}>Dispatch</option>
-                                <option value="Order Delivered" {% if order.status == 'Order Delivered' %}selected{% endif %}>Delivered</option>
-                                <option value="Order Rejected" {% if order.status == 'Order Rejected' %}selected{% endif %}>Reject</option>
+                                {% for status_value, status_label in order_status_choices %}
+                                <option value="{{ status_value }}" {% if current_status == status_value %}selected{% endif %}>{{ status_label }}</option>
+                                {% endfor %}
                             </select>
                             <div class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-gray-500">
                                 <i class="fas fa-chevron-down text-[10px]"></i>

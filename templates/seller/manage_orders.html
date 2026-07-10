@@ -13,6 +13,7 @@
 
     <div id="ordersContainer" class="space-y-3">
         {% for order in orders %}
+        {% set current_status = normalize_order_status(order.status) %}
         <div class="glass-panel rounded-xl p-5 border border-white/5 flex flex-wrap gap-4 items-center justify-between hover:bg-white/[0.03] transition-all">
             <div class="flex items-center gap-4">
                 <div class="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 font-bold">
@@ -34,11 +35,10 @@
             <div class="flex items-center gap-3">
                 <select data-url="{{ url_for('seller.update_order_status', order_id=order.id) }}"
                         onchange="ajaxOrderStatus(this)"
-                        class="bg-black/40 border border-white/10 text-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer {{ 'text-green-400' if order.status == 'Order Delivered' else 'text-yellow-400' }}">
-                    <option value="Order Placed" {% if order.status == 'Order Placed' %}selected{% endif %}>Placed</option>
-                    <option value="Order Accepted" {% if order.status == 'Order Accepted' %}selected{% endif %}>Accept</option>
-                    <option value="Order Dispatched" {% if order.status == 'Order Dispatched' %}selected{% endif %}>Dispatch</option>
-                    <option value="Order Delivered" {% if order.status == 'Order Delivered' %}selected{% endif %}>Delivered</option>
+                        class="bg-black/40 border border-white/10 text-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer {{ 'text-green-400' if current_status == OrderStatus.DELIVERED.value else 'text-red-400' if current_status in [OrderStatus.CANCELLED.value, OrderStatus.RETURNED.value] else 'text-yellow-400' }}">
+                    {% for status_value, status_label in order_status_choices %}
+                    <option value="{{ status_value }}" {% if current_status == status_value %}selected{% endif %}>{{ status_label }}</option>
+                    {% endfor %}
                 </select>
                 <span class="status-saved text-xs text-emerald-400 hidden"><i class="fas fa-check-circle"></i></span>
             </div>
@@ -148,12 +148,22 @@
             .then(data => {
                 if (data.success) {
                     sel.className = sel.className.replace(/text-\w+-\d+/g, '');
-                    sel.classList.add(val === 'Order Delivered' ? 'text-green-400' : 'text-yellow-400');
+                    if (data.new_status === 'Order Delivered') {
+                        sel.classList.add('text-green-400');
+                    } else if (['Order Cancelled', 'Returned'].includes(data.new_status)) {
+                        sel.classList.add('text-red-400');
+                    } else {
+                        sel.classList.add('text-yellow-400');
+                    }
                     if (indicator) { indicator.classList.remove('hidden'); setTimeout(() => indicator.classList.add('hidden'), 2000); }
                     if (window.showToast) showToast(data.message, 'success');
+                } else if (window.showToast) {
+                    showToast(data.message || 'Unable to update order.', 'error');
                 }
             })
-            .catch(() => {});
+            .catch(() => {
+                if (window.showToast) showToast('Unable to update order.', 'error');
+            });
     }
 </script>
 {% endblock %}

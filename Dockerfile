@@ -25,9 +25,11 @@ RUN pip install --no-cache-dir --default-timeout=300 --retries=5 -r requirements
 
 # 6. Copy the rest of the application code
 COPY . .
+RUN chmod +x /app/docker-entrypoint.sh
 
 # 7. Expose the port the app runs on
 EXPOSE 5000
 
-# 8. Define the command to run the application
+# 8. Ensure database schema is ready, then run the application command
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["gunicorn", "--worker-class", "gevent", "--workers", "3", "--timeout", "300", "--graceful-timeout", "60", "--keep-alive", "5", "--max-requests", "1000", "--max-requests-jitter", "100", "--bind", "0.0.0.0:5000", "app:app"]

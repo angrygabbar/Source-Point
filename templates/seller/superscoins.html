@@ -1,0 +1,112 @@
+{% extends "layout.html" %}
+{% block title %}My SupersCoins{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-6 pb-10">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+            <div class="text-[10px] font-black tracking-[0.28em] uppercase text-amber-400 mb-2">Seller Wallet</div>
+            <h1 class="text-3xl font-black text-white">My SupersCoins</h1>
+            <p class="text-sm text-gray-500 mt-1">Read-only wallet ledger managed by Source Point admin.</p>
+        </div>
+        <div class="glass-panel-v2 rounded-2xl border border-amber-500/20 px-6 py-4">
+            <p class="text-[10px] font-black uppercase tracking-widest text-gray-500">Current Balance</p>
+            <p class="text-3xl font-black text-amber-300 mt-1">SC {{ "{:,.2f}".format((wallet.balance if wallet else 0)|float) }}</p>
+        </div>
+    </div>
+
+    {% if setup_pending %}
+    <div class="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-200">
+        <div class="font-black text-sm flex items-center gap-2">
+            <i class="fas fa-triangle-exclamation"></i> SupersCoins setup pending
+        </div>
+        <p class="text-xs text-amber-100/80 mt-1">Your wallet is being set up by Source Point admin. Please reload after setup is complete.</p>
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <section class="glass-panel-v2 rounded-2xl border border-white/10 overflow-hidden">
+            <div class="px-5 py-4 border-b border-white/10">
+                <h2 class="text-lg font-black text-white flex items-center gap-2">
+                    <i class="fas fa-clock-rotate-left text-amber-400"></i> Coin Activity
+                </h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-white/5 text-[10px] uppercase tracking-widest text-gray-500">
+                        <tr>
+                            <th class="px-5 py-3 text-left">Date</th>
+                            <th class="px-5 py-3 text-left">Type</th>
+                            <th class="px-5 py-3 text-right">Amount</th>
+                            <th class="px-5 py-3 text-right">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5">
+                        {% for tx in transactions %}
+                        <tr class="hover:bg-white/5">
+                            <td class="px-5 py-4 text-gray-400">{{ tx.created_at.strftime('%d %b %Y') }}</td>
+                            <td class="px-5 py-4">
+                                <span class="px-2 py-1 rounded-lg text-[10px] font-black uppercase {{ 'bg-emerald-500/10 text-emerald-300' if tx.transaction_type == transaction_types.CREDIT.value else 'bg-red-500/10 text-red-300' }}">
+                                    {{ tx.transaction_type }}
+                                </span>
+                            </td>
+                            <td class="px-5 py-4 text-right font-mono {{ 'text-emerald-300' if tx.transaction_type == transaction_types.CREDIT.value else 'text-red-300' }}">
+                                {{ '+' if tx.transaction_type == transaction_types.CREDIT.value else '-' }} SC {{ "{:,.2f}".format(tx.amount|float) }}
+                            </td>
+                            <td class="px-5 py-4 text-right font-mono text-amber-300">SC {{ "{:,.2f}".format(tx.balance_after|float) }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="px-5 py-12 text-center text-gray-500">No wallet activity yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="glass-panel-v2 rounded-2xl border border-white/10 overflow-hidden">
+            <div class="px-5 py-4 border-b border-white/10">
+                <h2 class="text-lg font-black text-white flex items-center gap-2">
+                    <i class="fas fa-file-invoice text-cyan-400"></i> Coin Invoices
+                </h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-white/5 text-[10px] uppercase tracking-widest text-gray-500">
+                        <tr>
+                            <th class="px-5 py-3 text-left">Invoice</th>
+                            <th class="px-5 py-3 text-right">Amount</th>
+                            <th class="px-5 py-3 text-left">Status</th>
+                            <th class="px-5 py-3 text-right">PDF</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5">
+                        {% for invoice in invoices %}
+                        <tr class="hover:bg-white/5">
+                            <td class="px-5 py-4">
+                                <div class="font-mono font-black text-cyan-300">{{ invoice.invoice_number }}</div>
+                                <div class="text-xs text-gray-500">{{ invoice.created_at.strftime('%d %b %Y') }}</div>
+                            </td>
+                            <td class="px-5 py-4 text-right font-mono text-amber-300 font-black">SC {{ "{:,.2f}".format(invoice.amount|float) }}</td>
+                            <td class="px-5 py-4">
+                                <span class="px-2 py-1 rounded-lg text-[10px] font-black bg-cyan-500/10 text-cyan-300">{{ invoice.status }}</span>
+                            </td>
+                            <td class="px-5 py-4 text-right">
+                                <a href="{{ url_for('seller.download_superscoin_invoice', invoice_id=invoice.id) }}" class="px-3 py-1.5 rounded-lg bg-white/5 text-xs font-bold text-gray-300 hover:text-white">
+                                    Download
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="px-5 py-12 text-center text-gray-500">No SupersCoins invoices yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

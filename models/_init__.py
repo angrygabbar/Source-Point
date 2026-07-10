@@ -1,7 +1,8 @@
 from .auth import User, Message, ActivityUpdate, ActivityLog, candidate_contacts
 from .commerce import (Product, ProductImage, Order, OrderItem, Cart, CartItem,
                        Invoice, InvoiceItem, StockRequest, SellerInventory, AffiliateAd,
-                       ShareableLink)
+                       ShareableLink, SupersCoinWallet, SupersCoinTransaction,
+                       SupersCoinInvoice)
 from .hiring import (JobOpening, JobApplication, CodeTestSubmission, CodeSnippet,
                      Feedback, ModeratorAssignmentHistory)
 from .learning import LearningContent, ProblemStatement

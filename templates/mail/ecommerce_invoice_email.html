@@ -4,179 +4,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order Invoice — Source Point</title>
+    <title>Invoice {{ invoice.invoice_number }} - Source Point</title>
 </head>
 
 <body
-    style="margin:0; padding:0; background-color:#f0f2f5; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif; -webkit-text-size-adjust:100%;">
+    style="margin:0; padding:0; background-color:#eef2f7; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif; -webkit-text-size-adjust:100%;">
 
-    <!-- Outer wrapper -->
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f0f2f5;">
+    <span style="display:none; max-height:0; overflow:hidden; opacity:0; color:transparent;">
+        Invoice {{ invoice.invoice_number }} from Source Point is ready. Total due:
+        Rs.{{ '{:,.2f}'.format(invoice.total_amount) }}.
+    </span>
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#eef2f7;">
         <tr>
-            <td align="center" style="padding:40px 16px;">
+            <td align="center" style="padding:36px 14px;">
 
-                <!-- Card -->
-                <table role="presentation" width="640" cellspacing="0" cellpadding="0"
-                    style="max-width:640px; width:100%; background:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.09);">
+                <table role="presentation" width="680" cellspacing="0" cellpadding="0"
+                    style="max-width:680px; width:100%; background:#ffffff; border:1px solid #dfe5ee; border-radius:14px; overflow:hidden; box-shadow:0 18px 45px rgba(15,23,42,0.10);">
 
-                    <!-- ═══════════ HEADER ═══════════ -->
                     <tr>
-                        <td style="background:#ffffff; padding:28px 40px 22px 40px; border-bottom:1px solid #e8e8e8;">
+                        <td style="background:#1e293b; padding:30px 36px;">
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                                 <tr>
-                                    <!-- Brand Logo Area -->
-                                    <td valign="middle">
+                                    <td valign="middle" style="padding-right:18px;">
                                         <table role="presentation" cellspacing="0" cellpadding="0">
                                             <tr>
                                                 <td valign="middle"
-                                                    style="background:linear-gradient(135deg,#059669 0%,#10b981 100%); border-radius:10px; padding:10px 14px; margin-right:12px;">
+                                                    style="background:#0d9488; border-radius:8px; padding:10px 12px;">
                                                     <span
-                                                        style="font-size:20px; font-weight:800; color:#ffffff; letter-spacing:-0.5px;">SP</span>
+                                                        style="font-size:18px; font-weight:800; color:#ffffff; letter-spacing:0;">SP</span>
                                                 </td>
                                                 <td valign="middle" style="padding-left:12px;">
                                                     <div
-                                                        style="font-size:20px; font-weight:700; color:#111827; letter-spacing:-0.3px;">
+                                                        style="font-size:21px; font-weight:800; color:#ffffff; letter-spacing:0;">
                                                         Source Point</div>
-                                                    <div style="font-size:11px; color:#6b7280; margin-top:1px;">Your
-                                                        Trusted Online Store</div>
+                                                    <div
+                                                        style="font-size:12px; color:#ccfbf1; line-height:1.4; margin-top:2px;">
+                                                        Your Trusted Online Store</div>
                                                 </td>
                                             </tr>
                                         </table>
                                     </td>
-                                    <!-- Invoice badge -->
                                     <td align="right" valign="middle">
                                         <div
-                                            style="display:inline-block; background:#f0fdf4; border:1.5px solid #86efac; border-radius:8px; padding:10px 18px; text-align:right;">
-                                            <div
-                                                style="font-size:11px; color:#16a34a; font-weight:600; text-transform:uppercase; letter-spacing:0.8px;">
-                                                TAX INVOICE</div>
-                                            <div
-                                                style="font-size:17px; font-weight:700; color:#059669; margin-top:2px;">
-                                                #{{ invoice.invoice_number }}</div>
-                                        </div>
+                                            style="font-size:11px; font-weight:700; color:#ccfbf1; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">
+                                            Tax Invoice</div>
+                                        <div style="font-size:22px; font-weight:800; color:#ffffff;">
+                                            #{{ invoice.invoice_number }}</div>
+                                        <div style="font-size:12px; color:#cbd5e1; margin-top:6px;">
+                                            Total due</div>
+                                        <div style="font-size:20px; font-weight:800; color:#fbbf24; margin-top:2px;">
+                                            &#8377;{{ '{:,.2f}'.format(invoice.total_amount) }}</div>
                                     </td>
                                 </tr>
                             </table>
                         </td>
                     </tr>
 
-                    <!-- Emerald accent stripe -->
                     <tr>
-                        <td
-                            style="background:linear-gradient(90deg,#059669 0%,#10b981 50%,#34d399 100%); height:4px; font-size:0; line-height:0;">
-                            &nbsp;</td>
+                        <td style="background:#0d9488; height:4px; font-size:0; line-height:0;">&nbsp;</td>
                     </tr>
 
-                    <!-- ═══════════ ORDER CONFIRMATION BANNER ═══════════ -->
                     <tr>
-                        <td style="background:#f0fdf4; padding:20px 40px; border-bottom:1px solid #d1fae5;">
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-                                <tr>
-                                    <td valign="middle">
-                                        <span style="font-size:22px; vertical-align:middle;">✅</span>
-                                        <span
-                                            style="font-size:17px; font-weight:600; color:#065f46; margin-left:8px; vertical-align:middle;">
-                                            Order Confirmed! Thank you, {{ invoice.recipient_name }}.
-                                        </span>
-                                        <div style="font-size:13px; color:#047857; margin-top:6px; margin-left:30px;">
-                                            Your invoice for Order <strong>#{{ invoice.order_id or
-                                                invoice.invoice_number }}</strong>
-                                            is attached below. We appreciate your purchase!
-                                        </div>
-                                    </td>
-                                </tr>
-                            </table>
+                        <td style="padding:28px 36px 18px 36px;">
+                            <p style="margin:0 0 8px 0; font-size:18px; line-height:1.5; color:#0f172a;">
+                                Hello <strong>{{ invoice.recipient_name }}</strong>,
+                            </p>
+                            <p style="margin:0; font-size:14px; line-height:1.7; color:#64748b;">
+                                Thank you for your business. A PDF copy of this invoice is attached, and the full
+                                invoice summary is included below for your records.
+                            </p>
                         </td>
                     </tr>
 
-                    <!-- ═══════════ META INFO STRIP ═══════════ -->
                     <tr>
-                        <td style="background:#fafafa; padding:18px 40px; border-bottom:1px solid #e8e8e8;">
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                        <td style="padding:0 36px 22px 36px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden;">
                                 <tr>
-                                    <!-- Invoice Date -->
-                                    <td width="25%" style="border-right:1px solid #e5e7eb; padding-right:16px;">
+                                    <td width="33.33%"
+                                        style="padding:14px 16px; border-right:1px solid #e2e8f0; border-bottom:1px solid #e2e8f0;">
                                         <div
-                                            style="font-size:10px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.6px;">
+                                            style="font-size:10px; color:#64748b; font-weight:800; text-transform:uppercase; letter-spacing:0.7px;">
                                             Invoice Date</div>
-                                        <div style="font-size:13px; color:#111827; font-weight:600; margin-top:4px;">
+                                        <div style="font-size:13px; color:#0f172a; font-weight:700; margin-top:5px;">
                                             {{ invoice.created_at.strftime('%d %b %Y') if invoice.created_at else 'N/A'
                                             }}
                                         </div>
                                     </td>
-                                    <!-- Due Date -->
-                                    <td width="25%"
-                                        style="border-right:1px solid #e5e7eb; padding-left:16px; padding-right:16px;">
+                                    <td width="33.33%"
+                                        style="padding:14px 16px; border-right:1px solid #e2e8f0; border-bottom:1px solid #e2e8f0;">
                                         <div
-                                            style="font-size:10px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.6px;">
+                                            style="font-size:10px; color:#64748b; font-weight:800; text-transform:uppercase; letter-spacing:0.7px;">
                                             Due Date</div>
-                                        <div style="font-size:13px; color:#111827; font-weight:600; margin-top:4px;">
-                                            {{ invoice.due_date.strftime('%d %b %Y') if invoice.due_date else 'On
-                                            Receipt' }}
+                                        <div style="font-size:13px; color:#0f172a; font-weight:700; margin-top:5px;">
+                                            {{ invoice.due_date.strftime('%d %b %Y') if invoice.due_date else 'On Receipt'
+                                            }}
                                         </div>
                                     </td>
-                                    <!-- Status -->
-                                    <td width="25%"
-                                        style="border-right:1px solid #e5e7eb; padding-left:16px; padding-right:16px;">
+                                    <td width="33.33%"
+                                        style="padding:14px 16px; border-bottom:1px solid #e2e8f0;">
                                         <div
-                                            style="font-size:10px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.6px;">
+                                            style="font-size:10px; color:#64748b; font-weight:800; text-transform:uppercase; letter-spacing:0.7px;">
                                             Status</div>
-                                        <div style="margin-top:4px;">
+                                        <div style="margin-top:5px;">
                                             <span
-                                                style="display:inline-block; background:#dcfce7; color:#15803d; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px;">
+                                                style="display:inline-block; background:#ccfbf1; color:#0f766e; font-size:11px; font-weight:800; padding:4px 10px; border-radius:999px; text-transform:uppercase; letter-spacing:0.4px;">
                                                 {{ invoice.status | default('Processing') }}
                                             </span>
                                         </div>
                                     </td>
-                                    <!-- Terms -->
-                                    <td width="25%" style="padding-left:16px;">
+                                </tr>
+                                <tr>
+                                    <td width="33.33%"
+                                        style="padding:14px 16px; border-right:1px solid #e2e8f0;">
                                         <div
-                                            style="font-size:10px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.6px;">
+                                            style="font-size:10px; color:#64748b; font-weight:800; text-transform:uppercase; letter-spacing:0.7px;">
+                                            Order Reference</div>
+                                        <div style="font-size:13px; color:#0f172a; font-weight:700; margin-top:5px;">
+                                            {{ invoice.order_id or 'N/A' }}
+                                        </div>
+                                    </td>
+                                    <td width="33.33%"
+                                        style="padding:14px 16px; border-right:1px solid #e2e8f0;">
+                                        <div
+                                            style="font-size:10px; color:#64748b; font-weight:800; text-transform:uppercase; letter-spacing:0.7px;">
+                                            Invoice Number</div>
+                                        <div style="font-size:13px; color:#0f172a; font-weight:700; margin-top:5px;">
+                                            {{ invoice.invoice_number }}
+                                        </div>
+                                    </td>
+                                    <td width="33.33%" style="padding:14px 16px;">
+                                        <div
+                                            style="font-size:10px; color:#64748b; font-weight:800; text-transform:uppercase; letter-spacing:0.7px;">
                                             Payment Terms</div>
-                                        <div style="font-size:13px; color:#111827; font-weight:600; margin-top:4px;">Due
-                                            on Receipt</div>
+                                        <div style="font-size:13px; color:#0f172a; font-weight:700; margin-top:5px;">
+                                            Due on Receipt</div>
                                     </td>
                                 </tr>
                             </table>
                         </td>
                     </tr>
 
-                    <!-- ═══════════ BILL TO / SHIP TO ═══════════ -->
                     <tr>
-                        <td style="padding:24px 40px; border-bottom:1px solid #e8e8e8;">
+                        <td style="padding:0 36px 24px 36px;">
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                                 <tr>
-                                    <!-- Bill To -->
                                     <td width="48%" valign="top"
-                                        style="background:#fafafa; border:1px solid #e5e7eb; border-radius:10px; padding:16px 18px;">
+                                        style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:18px;">
                                         <div
-                                            style="font-size:10px; color:#10b981; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:8px;">
-                                            📋 Bill To
-                                        </div>
-                                        <div style="font-size:14px; font-weight:700; color:#111827;">{{
-                                            invoice.recipient_name }}</div>
-                                        <div style="font-size:13px; color:#6b7280; margin-top:4px; line-height:1.6;">
+                                            style="font-size:10px; color:#0d9488; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:10px;">
+                                            Bill To</div>
+                                        <div style="font-size:15px; font-weight:800; color:#0f172a; line-height:1.4;">
+                                            {{ invoice.recipient_name }}</div>
+                                        <div style="font-size:13px; color:#64748b; line-height:1.7; margin-top:5px;">
                                             {{ invoice.recipient_email }}<br>
                                             {% if invoice.bill_to_address %}
-                                            {{ invoice.bill_to_address | replace('\n', '<br>') }}
+                                            {{ invoice.bill_to_address | e | replace('\n', '<br>') | safe }}
                                             {% else %}
-                                            —
+                                            Billing address not provided
                                             {% endif %}
                                         </div>
                                     </td>
                                     <td width="4%"></td>
-                                    <!-- Ship To -->
                                     <td width="48%" valign="top"
-                                        style="background:#fafafa; border:1px solid #e5e7eb; border-radius:10px; padding:16px 18px;">
+                                        style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:18px;">
                                         <div
-                                            style="font-size:10px; color:#10b981; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:8px;">
-                                            📦 Ship To
-                                        </div>
-                                        <div style="font-size:14px; font-weight:700; color:#111827;">{{
-                                            invoice.recipient_name }}</div>
-                                        <div style="font-size:13px; color:#6b7280; margin-top:4px; line-height:1.6;">
+                                            style="font-size:10px; color:#0d9488; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:10px;">
+                                            Ship To</div>
+                                        <div style="font-size:15px; font-weight:800; color:#0f172a; line-height:1.4;">
+                                            {{ invoice.recipient_name }}</div>
+                                        <div style="font-size:13px; color:#64748b; line-height:1.7; margin-top:5px;">
                                             {% if invoice.ship_to_address %}
-                                            {{ invoice.ship_to_address | replace('\n', '<br>') }}
+                                            {{ invoice.ship_to_address | e | replace('\n', '<br>') | safe }}
+                                            {% elif invoice.bill_to_address %}
+                                            {{ invoice.bill_to_address | e | replace('\n', '<br>') | safe }}
                                             {% else %}
                                             Same as billing address
                                             {% endif %}
@@ -187,133 +189,99 @@
                         </td>
                     </tr>
 
-                    <!-- ═══════════ ITEMS TABLE ═══════════ -->
                     <tr>
-                        <td style="padding:0 40px 0 40px;">
+                        <td style="padding:0 36px 0 36px;">
+                            <div
+                                style="font-size:13px; font-weight:800; color:#334155; text-transform:uppercase; letter-spacing:0.7px; padding-bottom:10px;">
+                                Invoice Items</div>
 
-                            <div style="font-size:14px; font-weight:600; color:#374151; padding:20px 0 12px 0;">
-                                Order Items
-                            </div>
-
-                            <!-- Table Header -->
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                style="border-radius:10px; overflow:hidden; border:1px solid #e5e7eb;">
-
-                                <tr style="background:linear-gradient(90deg,#064e3b 0%,#065f46 100%);">
-                                    <td width="4%"
-                                        style="padding:12px 8px 12px 16px; font-size:11px; color:#a7f3d0; font-weight:700; text-transform:uppercase; letter-spacing:0.6px;">
+                                style="border:1px solid #dbe3ed; border-radius:10px; overflow:hidden;">
+                                <tr style="background:#1e293b;">
+                                    <td width="6%"
+                                        style="padding:12px 10px 12px 14px; font-size:10px; color:#ccfbf1; font-weight:800; text-transform:uppercase; letter-spacing:0.6px;">
                                         #</td>
-                                    <td width="36%"
-                                        style="padding:12px 8px; font-size:11px; color:#a7f3d0; font-weight:700; text-transform:uppercase; letter-spacing:0.6px;">
-                                        Item &amp; Description</td>
-                                    <td width="20%"
-                                        style="padding:12px 8px; font-size:11px; color:#a7f3d0; font-weight:700; text-transform:uppercase; letter-spacing:0.6px;">
+                                    <td width="39%"
+                                        style="padding:12px 8px; font-size:10px; color:#ccfbf1; font-weight:800; text-transform:uppercase; letter-spacing:0.6px;">
+                                        Description</td>
+                                    <td width="18%"
+                                        style="padding:12px 8px; font-size:10px; color:#ccfbf1; font-weight:800; text-transform:uppercase; letter-spacing:0.6px;">
                                         SKU / Ref</td>
-                                    <td width="10%"
-                                        style="padding:12px 8px; font-size:11px; color:#a7f3d0; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; text-align:center;">
+                                    <td width="9%"
+                                        style="padding:12px 8px; font-size:10px; color:#ccfbf1; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; text-align:center;">
                                         Qty</td>
-                                    <td width="15%"
-                                        style="padding:12px 8px; font-size:11px; color:#a7f3d0; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; text-align:right;">
+                                    <td width="14%"
+                                        style="padding:12px 8px; font-size:10px; color:#ccfbf1; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; text-align:right;">
                                         Unit Price</td>
-                                    <td width="15%"
-                                        style="padding:12px 16px 12px 8px; font-size:11px; color:#a7f3d0; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; text-align:right;">
-                                        Subtotal</td>
+                                    <td width="14%"
+                                        style="padding:12px 14px 12px 8px; font-size:10px; color:#ccfbf1; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; text-align:right;">
+                                        Amount</td>
                                 </tr>
 
                                 {% for item in invoice.items %}
-                                <tr
-                                    style="background:{% if loop.index is odd %}#ffffff{% else %}#f9fafb{% endif %}; border-top:1px solid #e5e7eb;">
-                                    <!-- Row Number -->
+                                <tr style="background:{% if loop.index is odd %}#ffffff{% else %}#f8fafc{% endif %};">
                                     <td
-                                        style="padding:14px 8px 14px 16px; font-size:12px; color:#9ca3af; font-weight:600; vertical-align:top;">
-                                        {{ loop.index }}
-                                    </td>
-                                    <!-- Product thumbnail + description -->
-                                    <td style="padding:14px 8px; vertical-align:top;">
-                                        <table role="presentation" cellspacing="0" cellpadding="0">
-                                            <tr>
-                                                <!-- Thumbnail placeholder -->
-                                                <td valign="top" style="padding-right:10px;">
-                                                    <div
-                                                        style="width:44px; height:44px; background:linear-gradient(135deg,#d1fae5 0%,#a7f3d0 100%); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:20px; text-align:center; line-height:44px;">
-                                                        🛒
-                                                    </div>
-                                                </td>
-                                                <td valign="middle">
-                                                    <div
-                                                        style="font-size:13px; font-weight:600; color:#111827; line-height:1.4;">
-                                                        {{ item.description }}
-                                                    </div>
-                                                    <div
-                                                        style="font-size:11px; color:#10b981; margin-top:3px; font-weight:500;">
-                                                        In Stock · Ready to Ship
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                    <!-- SKU -->
-                                    <td style="padding:14px 8px; vertical-align:top;">
-                                        <span
-                                            style="font-size:11px; color:#6b7280; font-family:monospace; background:#f3f4f6; padding:3px 7px; border-radius:4px;">
-                                            SP-{{ '%04d' | format(item.id) }}
-                                        </span>
-                                    </td>
-                                    <!-- Qty -->
-                                    <td style="padding:14px 8px; vertical-align:top; text-align:center;">
-                                        <span style="font-size:13px; color:#374151; font-weight:600;">{{ item.quantity
-                                            }}</span>
-                                    </td>
-                                    <!-- Unit Price -->
-                                    <td style="padding:14px 8px; vertical-align:top; text-align:right;">
-                                        <span style="font-size:13px; color:#374151; font-weight:500;">₹{{
-                                            '{:,.2f}'.format(item.price) }}</span>
-                                    </td>
-                                    <!-- Subtotal -->
-                                    <td style="padding:14px 16px 14px 8px; vertical-align:top; text-align:right;">
-                                        <span style="font-size:13px; color:#059669; font-weight:700;">₹{{
-                                            '{:,.2f}'.format(item.quantity * item.price) }}</span>
-                                    </td>
+                                        style="padding:14px 10px 14px 14px; border-top:1px solid #e2e8f0; font-size:12px; color:#94a3b8; font-weight:700; vertical-align:top;">
+                                        {{ loop.index }}</td>
+                                    <td
+                                        style="padding:14px 8px; border-top:1px solid #e2e8f0; font-size:13px; color:#0f172a; font-weight:700; line-height:1.45; vertical-align:top;">
+                                        {{ item.description }}</td>
+                                    <td
+                                        style="padding:14px 8px; border-top:1px solid #e2e8f0; font-size:11px; color:#64748b; font-family:'Courier New',monospace; vertical-align:top;">
+                                        SP-{{ '%04d' | format(item.id) }}</td>
+                                    <td
+                                        style="padding:14px 8px; border-top:1px solid #e2e8f0; font-size:13px; color:#334155; font-weight:700; text-align:center; vertical-align:top;">
+                                        {{ item.quantity }}</td>
+                                    <td
+                                        style="padding:14px 8px; border-top:1px solid #e2e8f0; font-size:13px; color:#334155; font-weight:600; text-align:right; vertical-align:top;">
+                                        &#8377;{{ '{:,.2f}'.format(item.price) }}</td>
+                                    <td
+                                        style="padding:14px 14px 14px 8px; border-top:1px solid #e2e8f0; font-size:13px; color:#0f766e; font-weight:800; text-align:right; vertical-align:top;">
+                                        &#8377;{{ '{:,.2f}'.format(item.quantity * item.price) }}</td>
                                 </tr>
                                 {% endfor %}
-
                             </table>
                         </td>
                     </tr>
 
-                    <!-- ═══════════ TOTALS ═══════════ -->
                     <tr>
-                        <td style="padding:20px 40px 24px 40px;">
+                        <td style="padding:22px 36px 24px 36px;">
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                                 <tr>
-                                    <td width="55%">&nbsp;</td>
-                                    <td width="45%">
+                                    <td width="50%" valign="top"
+                                        style="font-size:12px; line-height:1.7; color:#64748b; padding-right:22px;">
+                                        <strong
+                                            style="display:block; color:#334155; font-size:13px; margin-bottom:5px;">Payment Details</strong>
+                                        {% if invoice.payment_details %}
+                                        {{ invoice.payment_details | e | replace('\n', '<br>') | safe }}
+                                        {% else %}
+                                        Payment is due on receipt unless otherwise agreed.
+                                        {% endif %}
+                                    </td>
+                                    <td width="50%" valign="top">
                                         <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                            style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden;">
-                                            <!-- Subtotal -->
-                                            <tr style="border-bottom:1px solid #e5e7eb;">
-                                                <td style="padding:11px 16px; font-size:13px; color:#6b7280;">Subtotal
+                                            style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden;">
+                                            <tr>
+                                                <td style="padding:12px 16px; font-size:13px; color:#64748b;">Subtotal
                                                 </td>
                                                 <td
-                                                    style="padding:11px 16px; font-size:13px; color:#374151; font-weight:600; text-align:right;">
-                                                    ₹{{ '{:,.2f}'.format(invoice.subtotal) }}</td>
+                                                    style="padding:12px 16px; font-size:13px; color:#334155; font-weight:700; text-align:right;">
+                                                    &#8377;{{ '{:,.2f}'.format(invoice.subtotal) }}</td>
                                             </tr>
-                                            <!-- Tax -->
-                                            <tr style="border-bottom:1px solid #e5e7eb;">
-                                                <td style="padding:11px 16px; font-size:13px; color:#6b7280;">Tax &amp;
-                                                    Fees</td>
+                                            <tr>
                                                 <td
-                                                    style="padding:11px 16px; font-size:13px; color:#374151; font-weight:600; text-align:right;">
-                                                    ₹{{ '{:,.2f}'.format(invoice.tax) }}</td>
+                                                    style="padding:12px 16px; border-top:1px solid #e2e8f0; font-size:13px; color:#64748b;">
+                                                    Tax</td>
+                                                <td
+                                                    style="padding:12px 16px; border-top:1px solid #e2e8f0; font-size:13px; color:#334155; font-weight:700; text-align:right;">
+                                                    &#8377;{{ '{:,.2f}'.format(invoice.tax) }}</td>
                                             </tr>
-                                            <!-- Total -->
-                                            <tr style="background:linear-gradient(90deg,#064e3b 0%,#065f46 100%);">
-                                                <td
-                                                    style="padding:14px 16px; font-size:14px; color:#d1fae5; font-weight:600;">
+                                            <tr style="background:#1e293b;">
+                                                <td style="padding:15px 16px; font-size:14px; color:#ccfbf1; font-weight:800;">
                                                     Total (INR)</td>
                                                 <td
-                                                    style="padding:14px 16px; font-size:18px; color:#ffffff; font-weight:800; text-align:right;">
-                                                    ₹{{ '{:,.2f}'.format(invoice.total_amount) }}</td>
+                                                    style="padding:15px 16px; font-size:18px; color:#ffffff; font-weight:900; text-align:right;">
+                                                    &#8377;{{ '{:,.2f}'.format(invoice.total_amount) }}</td>
                                             </tr>
                                         </table>
                                     </td>
@@ -322,90 +290,19 @@
                         </td>
                     </tr>
 
-                    <!-- ═══════════ TRACKING / SHIPPING / RETURNS ═══════════ -->
-                    <tr>
-                        <td style="padding:0 40px 28px 40px;">
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; overflow:hidden;">
-
-                                <!-- Tracking Number -->
-                                <tr style="border-bottom:1px solid #bbf7d0;">
-                                    <td style="padding:16px 20px;">
-                                        <table role="presentation" cellspacing="0" cellpadding="0" width="100%">
-                                            <tr>
-                                                <td valign="middle">
-                                                    <span style="font-size:16px;">🚚</span>
-                                                    <span
-                                                        style="font-size:13px; font-weight:700; color:#065f46; margin-left:8px; vertical-align:middle;">Tracking
-                                                        Number</span>
-                                                </td>
-                                                <td align="right">
-                                                    <span
-                                                        style="font-size:13px; font-family:monospace; color:#059669; font-weight:700; background:#dcfce7; padding:5px 12px; border-radius:6px; letter-spacing:1px;">
-                                                        {{ invoice.payment_details or 'IN TRANSIT — Processing' }}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-
-                                <!-- Shipping Address -->
-                                <tr style="border-bottom:1px solid #bbf7d0;">
-                                    <td style="padding:16px 20px;">
-                                        <div style="font-size:16px; display:inline;">📍</div>
-                                        <span
-                                            style="font-size:13px; font-weight:700; color:#065f46; margin-left:8px; vertical-align:middle;">Shipping
-                                            Address</span>
-                                        <div
-                                            style="font-size:13px; color:#047857; margin-top:6px; margin-left:26px; line-height:1.7;">
-                                            {% if invoice.ship_to_address %}
-                                            {{ invoice.ship_to_address | replace('\n', ' · ') }}
-                                            {% else %}
-                                            Same as billing address on file.
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <!-- Return Policy -->
-                                <tr>
-                                    <td style="padding:16px 20px;">
-                                        <div style="font-size:16px; display:inline;">🔄</div>
-                                        <span
-                                            style="font-size:13px; font-weight:700; color:#065f46; margin-left:8px; vertical-align:middle;">Return
-                                            &amp; Refund Policy</span>
-                                        <div
-                                            style="font-size:11px; color:#6b7280; margin-top:6px; margin-left:26px; line-height:1.7;">
-                                            Items are eligible for return within <strong>7 days</strong> of delivery if
-                                            unused and in original packaging.
-                                            To initiate a return, contact our support team at
-                                            <a href="mailto:admin@sourcepoint.in"
-                                                style="color:#059669; text-decoration:none; font-weight:600;">admin@sourcepoint.in</a>.
-                                            Refunds are processed within 5–7 business days of return receipt.
-                                            Digital goods and gift cards are non-refundable.
-                                        </div>
-                                    </td>
-                                </tr>
-
-                            </table>
-                        </td>
-                    </tr>
-
-                    <!-- ═══════════ NOTES (conditional) ═══════════ -->
                     {% if invoice.notes %}
                     <tr>
-                        <td style="padding:0 40px 24px 40px;">
+                        <td style="padding:0 36px 22px 36px;">
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                style="background:#fffbeb; border-left:4px solid #f59e0b; border-radius:0 8px 8px 0; padding:14px 18px;">
+                                style="background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #d97706; border-radius:10px;">
                                 <tr>
-                                    <td style="padding:14px 18px;">
+                                    <td style="padding:16px 18px;">
                                         <div
-                                            style="font-size:12px; font-weight:700; color:#92400e; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">
-                                            💡 Note
+                                            style="font-size:11px; font-weight:800; color:#92400e; text-transform:uppercase; letter-spacing:0.7px; margin-bottom:6px;">
+                                            Notes / Terms
                                         </div>
-                                        <div style="font-size:13px; color:#78350f; line-height:1.6;">
-                                            {{ invoice.notes }}
+                                        <div style="font-size:13px; color:#78350f; line-height:1.7;">
+                                            {{ invoice.notes | e | replace('\n', '<br>') | safe }}
                                         </div>
                                     </td>
                                 </tr>
@@ -414,45 +311,39 @@
                     </tr>
                     {% endif %}
 
-                    <!-- ═══════════ CTA BUTTON ═══════════ -->
                     <tr>
-                        <td align="center" style="padding:0 40px 32px 40px;">
-                            <a href="#"
-                                style="display:inline-block; background:linear-gradient(135deg,#059669 0%,#10b981 100%); color:#ffffff; text-decoration:none; font-size:14px; font-weight:700; padding:14px 36px; border-radius:50px; letter-spacing:0.3px; box-shadow:0 4px 14px rgba(5,150,105,0.35);">
-                                View Order Details &rarr;
-                            </a>
+                        <td style="padding:0 36px 30px 36px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background:#f0fdfa; border:1px solid #99f6e4; border-radius:10px;">
+                                <tr>
+                                    <td style="padding:16px 18px; font-size:12px; color:#475569; line-height:1.7;">
+                                        <strong style="display:block; color:#0f766e; font-size:13px; margin-bottom:4px;">Return
+                                            and Refund Policy</strong>
+                                        Items are eligible for return within 7 days of delivery if unused and in original
+                                        packaging. Refunds are processed within 5-7 business days of return receipt.
+                                        Digital goods and gift cards are non-refundable.
+                                    </td>
+                                </tr>
+                            </table>
                         </td>
                     </tr>
 
-                    <!-- Bottom accent stripe -->
                     <tr>
-                        <td
-                            style="background:linear-gradient(90deg,#059669 0%,#10b981 50%,#34d399 100%); height:4px; font-size:0; line-height:0;">
-                            &nbsp;</td>
-                    </tr>
-
-                    <!-- ═══════════ FOOTER ═══════════ -->
-                    <tr>
-                        <td style="background:#f9fafb; padding:24px 40px; border-top:1px solid #e5e7eb;">
+                        <td style="background:#f8fafc; padding:24px 36px; border-top:1px solid #e2e8f0;">
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                                 <tr>
                                     <td align="center">
-                                        <p style="margin:0 0 6px 0; font-size:13px; color:#374151; font-weight:600;">
-                                            Source Point — Your Trusted Online Store
+                                        <p style="margin:0 0 7px 0; font-size:13px; color:#334155; font-weight:800;">
+                                            Source Point Finance
                                         </p>
-                                        <p style="margin:0 0 10px 0; font-size:11px; color:#9ca3af;">
-                                            Questions? Reply to this email or contact us at
+                                        <p style="margin:0 0 10px 0; font-size:12px; color:#64748b;">
+                                            Questions? Reply to this email or contact
                                             <a href="mailto:admin@sourcepoint.in"
-                                                style="color:#059669; text-decoration:none;">admin@sourcepoint.in</a>
+                                                style="color:#0d9488; text-decoration:none; font-weight:700;">admin@sourcepoint.in</a>
                                         </p>
-                                        <p style="margin:0; font-size:10px; color:#d1d5db; line-height:1.7;">
-                                            © 2025 Source Point. All rights reserved. &nbsp;·&nbsp;
-                                            <a href="#" style="color:#d1d5db; text-decoration:none;">Privacy Policy</a>
-                                            &nbsp;·&nbsp;
-                                            <a href="#" style="color:#d1d5db; text-decoration:none;">Terms of
-                                                Service</a>
-                                            &nbsp;·&nbsp;
-                                            <a href="#" style="color:#d1d5db; text-decoration:none;">Unsubscribe</a>
+                                        <p style="margin:0; font-size:10px; color:#94a3b8; line-height:1.7;">
+                                            (c) {{ now.year if now is defined else '2026' }} Source Point. All rights
+                                            reserved. This is an automated invoice notification.
                                         </p>
                                     </td>
                                 </tr>
@@ -461,12 +352,9 @@
                     </tr>
 
                 </table>
-                <!-- /Card -->
-
             </td>
         </tr>
     </table>
-    <!-- /Outer wrapper -->
 
 </body>
 

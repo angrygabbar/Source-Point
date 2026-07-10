@@ -297,6 +297,11 @@
                         <span class="text-xs font-bold leading-tight">Seller Stock</span>
                         <span class="text-[9px] text-gray-600">Seller inventory</span>
                     </a>
+                    <a hx-get="{{ url_for('admin_superscoins.dashboard') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true" class="quick-btn commerce-btn cursor-pointer">
+                        <div class="btn-icon"><i class="fas fa-coins"></i></div>
+                        <span class="text-xs font-bold leading-tight">SupersCoins</span>
+                        <span class="text-[9px] text-gray-600">Wallet ledger</span>
+                    </a>
                 </div>
             </div>
         </div>

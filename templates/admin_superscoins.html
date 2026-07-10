@@ -1,0 +1,321 @@
+{% extends "layout.html" %}
+{% block title %}SupersCoins Control{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6 pb-10">
+    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+        <div>
+            <div class="text-[10px] font-black tracking-[0.28em] uppercase text-amber-400 mb-2">Admin Wallet Operations</div>
+            <h1 class="text-3xl font-black text-white">SupersCoins Control</h1>
+            <p class="text-sm text-gray-500 mt-1">Credit, deduct, invoice, and audit seller SupersCoins wallets.</p>
+        </div>
+        <form method="GET" action="{{ url_for('admin_superscoins.dashboard') }}" class="flex flex-col sm:flex-row gap-2">
+            <select name="seller_id" class="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white min-w-[260px]">
+                <option value="">All sellers</option>
+                {% for seller in sellers %}
+                <option value="{{ seller.id }}" {% if selected_seller and selected_seller.id == seller.id %}selected{% endif %}>
+                    {{ seller.username }} · {{ seller.email }}
+                </option>
+                {% endfor %}
+            </select>
+            <button class="px-4 py-3 rounded-xl bg-amber-500 text-black text-sm font-black hover:bg-amber-400 transition-colors">
+                <i class="fas fa-filter mr-2"></i>View
+            </button>
+        </form>
+    </div>
+
+    {% if setup_pending %}
+    <div class="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-200">
+        <div class="font-black text-sm flex items-center gap-2">
+            <i class="fas fa-triangle-exclamation"></i> SupersCoins setup pending
+        </div>
+        <p class="text-xs text-amber-100/80 mt-1">The SupersCoins database tables are not installed yet. Apply the database migration, then reload this page.</p>
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div class="glass-panel-v2 rounded-2xl border border-amber-500/20 p-5">
+            <p class="text-[10px] font-black uppercase tracking-widest text-amber-300">Total Balance</p>
+            <p class="text-3xl font-black text-white mt-2">SC {{ "{:,.2f}".format(total_balance|float) }}</p>
+        </div>
+        <div class="glass-panel-v2 rounded-2xl border border-emerald-500/20 p-5">
+            <p class="text-[10px] font-black uppercase tracking-widest text-emerald-300">Total Credited</p>
+            <p class="text-3xl font-black text-emerald-300 mt-2">SC {{ "{:,.2f}".format(total_credited|float) }}</p>
+        </div>
+        <div class="glass-panel-v2 rounded-2xl border border-red-500/20 p-5">
+            <p class="text-[10px] font-black uppercase tracking-widest text-red-300">Total Deducted</p>
+            <p class="text-3xl font-black text-red-300 mt-2">SC {{ "{:,.2f}".format(total_debited|float) }}</p>
+        </div>
+        <div class="glass-panel-v2 rounded-2xl border border-cyan-500/20 p-5">
+            <p class="text-[10px] font-black uppercase tracking-widest text-cyan-300">Selected Seller</p>
+            <p class="text-xl font-black text-white mt-2 truncate">{{ selected_seller.username if selected_seller else 'All Sellers' }}</p>
+            <p class="text-xs text-gray-500 mt-1">
+                {% if selected_seller %}
+                    Balance: SC {{ "{:,.2f}".format((selected_wallet.balance if selected_wallet else 0)|float) }}
+                {% else %}
+                    Choose a seller for profile-level history
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <section class="lg:col-span-1 space-y-4">
+            <div class="glass-panel-v2 rounded-2xl border border-white/10 p-5">
+                <h2 class="text-lg font-black text-white flex items-center gap-2">
+                    <i class="fas fa-wallet text-amber-400"></i> Wallet Operation
+                </h2>
+                <form method="POST" action="{{ url_for('admin_superscoins.adjust_wallet') }}" class="mt-5 space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Seller</label>
+                        <select name="seller_id" required class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white">
+                            <option value="">Select seller</option>
+                            {% for seller in sellers %}
+                            <option value="{{ seller.id }}" {% if selected_seller and selected_seller.id == seller.id %}selected{% endif %}>
+                                {{ seller.username }} · {{ seller.email }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="transaction_type" value="{{ transaction_types.CREDIT.value }}" checked class="sr-only peer">
+                            <span class="block rounded-xl border border-emerald-500/20 bg-emerald-500/8 px-4 py-3 text-center text-sm font-black text-emerald-300 peer-checked:bg-emerald-500 peer-checked:text-white transition-colors">
+                                Credit
+                            </span>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="transaction_type" value="{{ transaction_types.DEBIT.value }}" class="sr-only peer">
+                            <span class="block rounded-xl border border-red-500/20 bg-red-500/8 px-4 py-3 text-center text-sm font-black text-red-300 peer-checked:bg-red-500 peer-checked:text-white transition-colors">
+                                Deduct
+                            </span>
+                        </label>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Coins</label>
+                        <input type="number" name="amount" min="0.01" step="0.01" required placeholder="500"
+                               class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Reason</label>
+                        <textarea name="note" rows="3" placeholder="Adjustment reason" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white"></textarea>
+                    </div>
+                    <button class="w-full rounded-xl bg-amber-500 px-4 py-3 text-sm font-black text-black hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" {% if setup_pending %}disabled{% endif %}>
+                        <i class="fas fa-bolt mr-2"></i>Apply Wallet Update
+                    </button>
+                </form>
+            </div>
+
+            <div class="glass-panel-v2 rounded-2xl border border-white/10 p-5">
+                <h2 class="text-lg font-black text-white flex items-center gap-2">
+                    <i class="fas fa-file-invoice text-cyan-400"></i> Coin Invoice
+                </h2>
+                <form method="POST" action="{{ url_for('admin_superscoins.create_invoice') }}" class="mt-5 space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Seller</label>
+                        <select name="seller_id" required class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white">
+                            <option value="">Select seller</option>
+                            {% for seller in sellers %}
+                            <option value="{{ seller.id }}" {% if selected_seller and selected_seller.id == seller.id %}selected{% endif %}>
+                                {{ seller.username }} · {{ seller.email }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Coins</label>
+                            <input type="number" name="amount" min="0.01" step="0.01" required class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Due Date</label>
+                            <input type="date" name="due_date" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Description</label>
+                        <input type="text" name="description" value="SupersCoins allocation" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Spent On</label>
+                        <select name="spending_category" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white">
+                            <option value="">Select category (optional)</option>
+                            {% for cat in spending_categories %}
+                            <option value="{{ cat.value }}">{{ cat.value }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Booking Details</label>
+                        <textarea name="booking_details" rows="3" placeholder="e.g. Hotel name, dates, PNR, traveller name..." class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Notes</label>
+                        <textarea name="notes" rows="3" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white"></textarea>
+                    </div>
+                    <button class="w-full rounded-xl bg-cyan-500 px-4 py-3 text-sm font-black text-black hover:bg-cyan-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" {% if setup_pending %}disabled{% endif %}>
+                        <i class="fas fa-paper-plane mr-2"></i>Create & Notify
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <section class="lg:col-span-2 space-y-6">
+            <div class="glass-panel-v2 rounded-2xl border border-white/10 overflow-hidden">
+                <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+                    <h2 class="text-lg font-black text-white">Seller Wallets</h2>
+                    <span class="text-xs text-gray-500">{{ sellers|length }} sellers</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-white/5 text-[10px] uppercase tracking-widest text-gray-500">
+                            <tr>
+                                <th class="px-5 py-3 text-left">Seller</th>
+                                <th class="px-5 py-3 text-right">Balance</th>
+                                <th class="px-5 py-3 text-right">Profile</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5">
+                            {% for seller in sellers %}
+                            {% set wallet = wallet_map.get(seller.id) %}
+                            <tr class="hover:bg-white/5">
+                                <td class="px-5 py-4">
+                                    <div class="font-bold text-white">{{ seller.username }}</div>
+                                    <div class="text-xs text-gray-500">{{ seller.email }}</div>
+                                </td>
+                                <td class="px-5 py-4 text-right font-mono font-black text-amber-300">
+                                    SC {{ "{:,.2f}".format((wallet.balance if wallet else 0)|float) }}
+                                </td>
+                                <td class="px-5 py-4 text-right">
+                                    <a href="{{ url_for('admin_superscoins.dashboard', seller_id=seller.id) }}" class="text-xs font-black text-cyan-300 hover:text-cyan-200">
+                                        View History
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="glass-panel-v2 rounded-2xl border border-white/10 overflow-hidden">
+                <div class="px-5 py-4 border-b border-white/10">
+                    <h2 class="text-lg font-black text-white">Coin Activity History</h2>
+                    <p class="text-xs text-gray-500 mt-1">{{ 'Filtered by ' ~ selected_seller.username if selected_seller else 'Latest activity across all sellers' }}</p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-white/5 text-[10px] uppercase tracking-widest text-gray-500">
+                            <tr>
+                                <th class="px-5 py-3 text-left">Date</th>
+                                <th class="px-5 py-3 text-left">Seller</th>
+                                <th class="px-5 py-3 text-left">Type</th>
+                                <th class="px-5 py-3 text-right">Amount</th>
+                                <th class="px-5 py-3 text-right">Balance</th>
+                                <th class="px-5 py-3 text-left">Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5">
+                            {% for tx in transactions %}
+                            <tr class="hover:bg-white/5">
+                                <td class="px-5 py-4 text-gray-400">{{ tx.created_at.strftime('%d %b %Y %H:%M') }}</td>
+                                <td class="px-5 py-4 text-white font-bold">{{ tx.seller.username }}</td>
+                                <td class="px-5 py-4">
+                                    <span class="px-2 py-1 rounded-lg text-[10px] font-black uppercase {{ 'bg-emerald-500/10 text-emerald-300' if tx.transaction_type == transaction_types.CREDIT.value else 'bg-red-500/10 text-red-300' }}">
+                                        {{ tx.transaction_type }}
+                                    </span>
+                                </td>
+                                <td class="px-5 py-4 text-right font-mono {{ 'text-emerald-300' if tx.transaction_type == transaction_types.CREDIT.value else 'text-red-300' }}">
+                                    {{ '+' if tx.transaction_type == transaction_types.CREDIT.value else '-' }} SC {{ "{:,.2f}".format(tx.amount|float) }}
+                                </td>
+                                <td class="px-5 py-4 text-right font-mono text-amber-300">SC {{ "{:,.2f}".format(tx.balance_after|float) }}</td>
+                                <td class="px-5 py-4 text-gray-500 max-w-xs truncate">{{ tx.note or 'No note' }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="px-5 py-10 text-center text-gray-500">No SupersCoins activity yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="glass-panel-v2 rounded-2xl border border-white/10 overflow-hidden">
+                <div class="px-5 py-4 border-b border-white/10">
+                    <h2 class="text-lg font-black text-white">SupersCoins Invoices</h2>
+                    <p class="text-xs text-gray-500 mt-1">Separate from order invoices. Currency: Super Coins.</p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-white/5 text-[10px] uppercase tracking-widest text-gray-500">
+                            <tr>
+                                <th class="px-5 py-3 text-left">Invoice</th>
+                                <th class="px-5 py-3 text-left">Seller</th>
+                                <th class="px-5 py-3 text-right">Amount</th>
+                                <th class="px-5 py-3 text-left">Category</th>
+                                <th class="px-5 py-3 text-left">Status</th>
+                                <th class="px-5 py-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5">
+                            {% for invoice in invoices %}
+                            <tr class="hover:bg-white/5">
+                                <td class="px-5 py-4">
+                                    <div class="font-mono text-cyan-300 font-black">{{ invoice.invoice_number }}</div>
+                                    <div class="text-xs text-gray-500">{{ invoice.created_at.strftime('%d %b %Y') }}</div>
+                                </td>
+                                <td class="px-5 py-4 text-white font-bold">{{ invoice.seller.username }}</td>
+                                <td class="px-5 py-4 text-right font-mono text-amber-300 font-black">SC {{ "{:,.2f}".format(invoice.amount|float) }}</td>
+                                <td class="px-5 py-4">
+                                    {% if invoice.spending_category %}
+                                    <div class="text-xs font-bold text-purple-300">{{ invoice.spending_category }}</div>
+                                    {% if invoice.booking_details %}
+                                    <div class="text-[10px] text-gray-500 mt-0.5 max-w-[160px] truncate" title="{{ invoice.booking_details }}">{{ invoice.booking_details }}</div>
+                                    {% endif %}
+                                    {% else %}
+                                    <span class="text-xs text-gray-600">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-5 py-4">
+                                    {% if invoice.status|string|lower in ['paid', 'superscoininvoicestatus.paid'] %}
+                                    <span class="px-2 py-1 rounded-lg text-[10px] font-black bg-emerald-500/10 text-emerald-300">✅ Paid</span>
+                                    {% elif invoice.status|string|lower in ['cancelled', 'superscoininvoicestatus.cancelled'] %}
+                                    <span class="px-2 py-1 rounded-lg text-[10px] font-black bg-gray-500/10 text-gray-400">Cancelled</span>
+                                    {% else %}
+                                    <span class="px-2 py-1 rounded-lg text-[10px] font-black bg-amber-500/10 text-amber-300">Unpaid</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-5 py-4 text-right">
+                                    <div class="flex justify-end gap-2">
+                                        <a href="{{ url_for('admin_superscoins.download_invoice', invoice_id=invoice.id) }}" class="px-3 py-1.5 rounded-lg bg-white/5 text-xs font-bold text-gray-300 hover:text-white">
+                                            PDF
+                                        </a>
+                                        <form method="POST" action="{{ url_for('admin_superscoins.send_invoice', invoice_id=invoice.id) }}">
+                                            <button class="px-3 py-1.5 rounded-lg bg-cyan-500/10 text-xs font-bold text-cyan-300 hover:bg-cyan-500/20">
+                                                Send
+                                            </button>
+                                        </form>
+                                        {% if invoice.status|string|lower in ['unpaid', 'superscoininvoicestatus.unpaid'] %}
+                                        <form method="POST" action="{{ url_for('admin_superscoins.mark_invoice_paid', invoice_id=invoice.id) }}" onsubmit="return confirm('Mark invoice {{ invoice.invoice_number }} as Paid? The seller will be notified via email.')">
+                                            <button class="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-xs font-bold text-emerald-300 hover:bg-emerald-500/20">
+                                                Mark Paid
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="px-5 py-10 text-center text-gray-500">No SupersCoins invoices yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

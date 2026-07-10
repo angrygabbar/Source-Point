@@ -9,6 +9,7 @@ from models.finance import Project, Transaction, BRD, EMIPlan, EMIPayment
 from models.learning import LearningContent
 from utils import role_required, log_user_action, send_email
 from invoice_service import BrdGenerator
+from services.commerce_service import CommerceService
 from datetime import datetime, timedelta
 from sqlalchemy import func
 from werkzeug.utils import secure_filename
@@ -16,7 +17,7 @@ import csv
 from io import TextIOWrapper
 import re
 import pypdf
-from enums import UserRole, ApplicationStatus, OrderStatus
+from enums import UserRole, ApplicationStatus
 
 admin_core_bp = Blueprint('admin_core', __name__, url_prefix='/admin')
 
@@ -68,7 +69,7 @@ def admin_dashboard():
     moderators_map = {m.id: m for m in moderators_for_assignments}
     
     # 7. Orders & Stock Stats
-    pending_orders_count = Order.query.filter_by(status=OrderStatus.PLACED.value).count()
+    pending_orders_count = Order.query.filter(Order.status.in_(CommerceService.placed_status_values)).count()
     pending_requests_count = StockRequest.query.filter_by(status='Pending').count()
 
     return render_template('admin_dashboard.html',

@@ -17,7 +17,10 @@ from bs4 import BeautifulSoup
 from flask_login import current_user
 from config import DevelopmentConfig, ProductionConfig
 from errors import BusinessValidationError, ResourceNotFoundError, PermissionDeniedError
-from enums import UserRole, OrderStatus, InvoiceStatus, ApplicationStatus, JobStatus, PaymentStatus
+from enums import (
+    UserRole, OrderStatus, InvoiceStatus, ApplicationStatus, JobStatus,
+    PaymentStatus, SupersCoinTransactionType, SupersCoinInvoiceStatus
+)
 
 load_dotenv()
 
@@ -121,6 +124,7 @@ def create_app():
     from blueprints.admin_users import admin_users_bp
     from blueprints.admin_hiring import admin_hiring_bp
     from blueprints.admin_commerce import admin_commerce_bp
+    from blueprints.admin_superscoins import admin_superscoins_bp
     from blueprints.admin_mcq import admin_mcq_bp
     from blueprints.buyer import buyer_bp
     from blueprints.candidate import candidate_bp
@@ -142,6 +146,7 @@ def create_app():
     app.register_blueprint(admin_users_bp)
     app.register_blueprint(admin_hiring_bp)
     app.register_blueprint(admin_commerce_bp)
+    app.register_blueprint(admin_superscoins_bp)
     app.register_blueprint(admin_mcq_bp)
     app.register_blueprint(buyer_bp)
     app.register_blueprint(candidate_bp)
@@ -191,6 +196,8 @@ def create_app():
             UserRole=UserRole,
             OrderStatus=OrderStatus,
             InvoiceStatus=InvoiceStatus,
+            SupersCoinTransactionType=SupersCoinTransactionType,
+            SupersCoinInvoiceStatus=SupersCoinInvoiceStatus,
             ApplicationStatus=ApplicationStatus,
             JobStatus=JobStatus,
             PaymentStatus=PaymentStatus

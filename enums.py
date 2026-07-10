@@ -11,10 +11,16 @@ class UserRole(enum.Enum):
 
 class OrderStatus(enum.Enum):
     PLACED = "Order Placed"
-    CONFIRMED = "Confirmed"
+    ACCEPTED = "Order Accepted"
+    CONFIRMED = "Order Accepted"
+    PAYMENT_RECEIVED = "Payment Received"
+    PACKED = "Packed"
+    DISPATCHED = "Order Dispatched"
     SHIPPED = "Shipped"
-    DELIVERED = "Delivered"
-    CANCELLED = "Cancelled"
+    IN_TRANSIT = "In Transit"
+    OUT_FOR_DELIVERY = "Out for Delivery"
+    DELIVERED = "Order Delivered"
+    CANCELLED = "Order Cancelled"
     RETURNED = "Returned"
 
 class InvoiceStatus(enum.Enum):
@@ -22,6 +28,21 @@ class InvoiceStatus(enum.Enum):
     PAID = "Paid"
     OVERDUE = "Overdue"
     CANCELLED = "Cancelled"
+
+class SupersCoinTransactionType(enum.Enum):
+    CREDIT = "credit"
+    DEBIT = "debit"
+
+class SupersCoinInvoiceStatus(enum.Enum):
+    UNPAID = "Unpaid"
+    PAID = "Paid"
+    CANCELLED = "Cancelled"
+
+class CoinSpendingCategory(enum.Enum):
+    HOTEL_BOOKING = "Hotel Booking"
+    BUS_BOOKING = "Bus Booking"
+    FLIGHT_BOOKING = "Flight Booking"
+    OTHER = "Other"
 
 class JobStatus(enum.Enum):
     OPEN = "Open"

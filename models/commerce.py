@@ -2,7 +2,7 @@
 from extensions import db
 from datetime import datetime
 from sqlalchemy import Numeric
-from enums import OrderStatus, InvoiceStatus, VoucherOrderStatus
+from enums import OrderStatus, InvoiceStatus, VoucherOrderStatus, SupersCoinInvoiceStatus
 
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -138,6 +138,65 @@ class ShareableLink(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     seller = db.relationship('User', backref='shareable_links')
+
+class SupersCoinWallet(db.Model):
+    __tablename__ = 'supers_coin_wallet'
+
+    id = db.Column(db.Integer, primary_key=True)
+    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), unique=True, nullable=False, index=True)
+    balance = db.Column(Numeric(12, 2), nullable=False, default=0.00)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    seller = db.relationship('User', foreign_keys=[seller_id], backref=db.backref('supers_coin_wallet', uselist=False))
+    transactions = db.relationship(
+        'SupersCoinTransaction',
+        backref='wallet',
+        lazy=True,
+        cascade='all, delete-orphan',
+        order_by='SupersCoinTransaction.created_at.desc()'
+    )
+
+class SupersCoinTransaction(db.Model):
+    __tablename__ = 'supers_coin_transaction'
+
+    id = db.Column(db.Integer, primary_key=True)
+    wallet_id = db.Column(db.Integer, db.ForeignKey('supers_coin_wallet.id'), nullable=False, index=True)
+    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    transaction_type = db.Column(db.String(20), nullable=False, index=True)
+    amount = db.Column(Numeric(12, 2), nullable=False)
+    balance_before = db.Column(Numeric(12, 2), nullable=False)
+    balance_after = db.Column(Numeric(12, 2), nullable=False)
+    note = db.Column(db.Text, nullable=True)
+    reference_type = db.Column(db.String(40), nullable=True)
+    reference_id = db.Column(db.Integer, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    seller = db.relationship('User', foreign_keys=[seller_id], backref='supers_coin_transactions')
+    admin = db.relationship('User', foreign_keys=[admin_id], backref='admin_supers_coin_transactions')
+
+class SupersCoinInvoice(db.Model):
+    __tablename__ = 'supers_coin_invoice'
+
+    id = db.Column(db.Integer, primary_key=True)
+    invoice_number = db.Column(db.String(60), unique=True, nullable=False, index=True)
+    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    transaction_id = db.Column(db.Integer, db.ForeignKey('supers_coin_transaction.id'), nullable=True)
+    amount = db.Column(Numeric(12, 2), nullable=False)
+    status = db.Column(db.String(20), default=SupersCoinInvoiceStatus.UNPAID.value, nullable=False, index=True)
+    description = db.Column(db.String(255), nullable=False, default='SupersCoins allocation')
+    notes = db.Column(db.Text, nullable=True)
+    due_date = db.Column(db.Date, nullable=True)
+    spending_category = db.Column(db.String(40), nullable=True)
+    booking_details = db.Column(db.Text, nullable=True)
+    paid_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    seller = db.relationship('User', foreign_keys=[seller_id], backref='supers_coin_invoices')
+    admin = db.relationship('User', foreign_keys=[admin_id], backref='admin_supers_coin_invoices')
+    transaction = db.relationship('SupersCoinTransaction', foreign_keys=[transaction_id])
 
 
 class VoucherOrder(db.Model):

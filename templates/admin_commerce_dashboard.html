@@ -246,6 +246,7 @@
                             </thead>
                             <tbody class="divide-y divide-white/4">
                                 {% for order in recent_orders %}
+                                {% set current_status = normalize_order_status(order.status) %}
                                 <tr class="hover:bg-white/4 transition-all">
                                     <td class="px-4 py-3 font-mono text-xs text-emerald-400 font-bold">#{{
                                         order.order_number }}</td>
@@ -265,18 +266,18 @@
                                     </td>
                                     <td class="px-4 py-3">
                                         <span class="badge-glow
-                                            {% if 'Placed' in order.status %}placed
-                                            {% elif 'Accepted' in order.status %}accepted
+                                            {% if current_status == OrderStatus.PLACED.value %}placed
+                                            {% elif current_status == OrderStatus.ACCEPTED.value %}accepted
                                             {% else %}pending{% endif %}">
-                                            {{ order.status }}
+                                            {{ current_status }}
                                         </span>
                                     </td>
                                     <td class="px-4 py-3 text-right">
-                                        {% if order.status == 'Order Placed' %}
+                                        {% if current_status == OrderStatus.PLACED.value %}
                                         <form
                                             action="{{ url_for('admin_commerce.update_order_status', order_id=order.id) }}"
                                             method="POST" class="inline">
-                                            <input type="hidden" name="status" value="Order Accepted">
+                                            <input type="hidden" name="status" value="{{ OrderStatus.ACCEPTED.value }}">
                                             <button
                                                 class="glow-btn px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-400
                                                            hover:bg-emerald-500 hover:text-white transition-all text-xs font-bold">

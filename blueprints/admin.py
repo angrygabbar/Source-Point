@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import func, or_
 from werkzeug.utils import secure_filename
 from invoice_service import InvoiceGenerator, BrdGenerator
+from services.commerce_service import CommerceService
 import os
 import cloudinary.uploader
 import csv
@@ -20,6 +21,7 @@ from io import TextIOWrapper
 import openpyxl 
 import pypdf
 import re
+from enums import OrderStatus
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -84,7 +86,7 @@ def admin_dashboard():
     moderators_map = {m.id: m for m in moderators_for_assignments}
     
     # 7. Orders & Stock Stats
-    pending_orders_count = Order.query.filter_by(status='Order Placed').count()
+    pending_orders_count = Order.query.filter(Order.status.in_(CommerceService.placed_status_values)).count()
     pending_requests_count = StockRequest.query.filter_by(status='Pending').count()
 
     # --- MEMORY OPTIMIZATION END ---
@@ -116,7 +118,7 @@ def admin_dashboard():
 @role_required('admin')
 def admin_commerce_dashboard():
     # --- COMMERCE METRICS ---
-    pending_orders_count = Order.query.filter_by(status='Order Placed').count()
+    pending_orders_count = Order.query.filter(Order.status.in_(CommerceService.placed_status_values)).count()
     pending_requests_count = StockRequest.query.filter_by(status='Pending').count()
     low_stock_count = Product.query.filter(Product.stock < 10).count()
     
@@ -144,7 +146,8 @@ def admin_commerce_dashboard():
                            recent_invoices=recent_invoices,
                            pending_commerce_users=pending_commerce_users,
                            sellers=sellers,
-                           buyers=buyers)
+                           buyers=buyers,
+                           normalize_order_status=CommerceService.normalize_order_status)
 
 # --- NEW: HIRING DASHBOARD ---
 @admin_bp.route('/hiring_dashboard')
@@ -1433,7 +1436,24 @@ def mark_invoice_paid(invoice_id):
 @role_required('admin')
 def manage_orders():
     orders = Order.query.order_by(Order.created_at.desc()).all()
-    return render_template('manage_orders.html', orders=orders)
+    total_revenue = sum(order.total_amount for order in orders)
+    pending_count = sum(1 for order in orders if CommerceService.normalize_order_status(order.status) == OrderStatus.PLACED.value)
+    active_fulfillment_statuses = {
+        OrderStatus.SHIPPED.value,
+        OrderStatus.IN_TRANSIT.value,
+        OrderStatus.OUT_FOR_DELIVERY.value,
+        OrderStatus.DELIVERED.value,
+    }
+    completed_count = sum(1 for order in orders if CommerceService.normalize_order_status(order.status) in active_fulfillment_statuses)
+    return render_template(
+        'manage_orders.html',
+        orders=orders,
+        total_revenue=total_revenue,
+        pending_count=pending_count,
+        completed_count=completed_count,
+        order_status_choices=CommerceService.order_status_choices,
+        normalize_order_status=CommerceService.normalize_order_status,
+    )
 
 @admin_bp.route('/orders/update/<int:order_id>', methods=['POST'])
 @login_required
@@ -1446,25 +1466,38 @@ def update_order_status(order_id):
         flash('Status is required.', 'danger')
         return redirect(url_for('admin.manage_orders'))
 
-    old_status = order.status
+    raw_old_status = order.status
+    old_status = CommerceService.normalize_order_status(order.status)
     
-    if old_status != new_status:
-        order.status = new_status
+    success, message, restored_items, missing_items = CommerceService.transition_order_status(order, new_status)
+    if not success:
+        db.session.rollback()
+        flash(message, 'danger')
+        return redirect(url_for('admin.manage_orders'))
+
+    normalized_status = CommerceService.normalize_order_status(new_status)
+
+    if raw_old_status != normalized_status or old_status != normalized_status:
         db.session.commit()
-        log_user_action("Update Order", f"Updated order {order.order_number} to {new_status}")
-        flash(f'Order {order.order_number} status updated to {new_status}.', 'success')
+        log_details = f"Updated order {order.order_number} to {normalized_status}"
+        if restored_items:
+            log_details += f"; restored inventory: {', '.join(restored_items)}"
+        if missing_items:
+            log_details += f"; inventory not found for: {', '.join(missing_items)}"
+        log_user_action("Update Order", log_details)
+        flash(f'Order {order.order_number} status updated to {normalized_status}.', 'success')
 
         try:
             send_email(
-                to=order.buyer.email, subject=f'Order Update: {new_status} (Order #{order.order_number})',
+                to=order.buyer.email, subject=f'Order Update: {normalized_status} (Order #{order.order_number})',
                 template='mail/order_status_update.html', buyer_name=order.buyer.username,
-                order_number=order.order_number, status=new_status, order_date=order.created_at.strftime('%B %d, %Y'),
+                order_number=order.order_number, status=normalized_status, order_date=order.created_at.strftime('%B %d, %Y'),
                 total_amount=order.total_amount, shipping_address=order.shipping_address, now=datetime.utcnow()
             )
         except Exception as e:
             print(f"Failed to send status update email: {e}")
 
-        if new_status == 'Order Accepted' and old_status != 'Order Accepted':
+        if normalized_status == OrderStatus.ACCEPTED.value and old_status != OrderStatus.ACCEPTED.value:
             existing_invoice = Invoice.query.filter_by(order_id=order.order_number).first()
             
             if not existing_invoice:

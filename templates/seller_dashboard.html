@@ -39,10 +39,14 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
         <div class="glass-panel-v2 p-6 rounded-2xl border border-white/5">
             <h3 class="text-gray-400 text-xs font-bold uppercase">Total Revenue</h3>
             <p class="text-3xl font-bold text-white mt-2">₹{{ "{:,.2f}".format(total_revenue) }}</p>
+        </div>
+        <div class="glass-panel-v2 p-6 rounded-2xl border border-amber-500/20">
+            <h3 class="text-gray-400 text-xs font-bold uppercase">SupersCoins</h3>
+            <p class="text-3xl font-bold text-amber-300 mt-2">SC {{ "{:,.2f}".format(superscoin_balance|float) }}</p>
         </div>
         <div class="glass-panel-v2 p-6 rounded-2xl border border-white/5">
             <h3 class="text-gray-400 text-xs font-bold uppercase">Inventory Value</h3>
@@ -71,16 +75,18 @@
             </thead>
             <tbody>
                 {% for order in recent_orders %}
+                {% set current_status = normalize_order_status(order.status) %}
                 <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
                     <td class="px-6 py-4 font-bold text-white">{{ order.order_number }}</td>
                     <td class="px-6 py-4">{{ order.buyer.username }}</td>
                     <td class="px-6 py-4">₹{{ "{:,.2f}".format(order.total_amount) }}</td>
                     <td class="px-6 py-4">
                         <span class="px-2 py-1 rounded text-xs font-bold 
-                            {{ 'bg-green-500/20 text-green-400' if order.status == 'Delivered' else 
-                               'bg-yellow-500/20 text-yellow-400' if order.status == 'Pending' else 
+                            {{ 'bg-green-500/20 text-green-400' if current_status == OrderStatus.DELIVERED.value else 
+                               'bg-red-500/20 text-red-400' if current_status in [OrderStatus.CANCELLED.value, OrderStatus.RETURNED.value] else 
+                               'bg-yellow-500/20 text-yellow-400' if current_status == OrderStatus.PLACED.value else 
                                'bg-blue-500/20 text-blue-400' }}">
-                            {{ order.status }}
+                            {{ current_status }}
                         </span>
                     </td>
                 </tr>

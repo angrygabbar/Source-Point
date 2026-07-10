@@ -1,13 +1,19 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_file
 from flask_login import login_required, current_user
+from io import BytesIO
 from extensions import db
 from models.auth import User
-from models.commerce import Product, Order, OrderItem, Invoice, InvoiceItem, StockRequest, SellerInventory
+from models.commerce import (
+    Product, Order, OrderItem, Invoice, InvoiceItem, StockRequest,
+    SellerInventory, SupersCoinWallet, SupersCoinTransaction, SupersCoinInvoice
+)
 from utils import role_required, log_user_action, send_email
 from datetime import datetime
-from invoice_service import InvoiceGenerator
+from invoice_service import InvoiceGenerator, SupersCoinInvoiceGenerator
+from services.commerce_service import CommerceService
+from services.superscoins_service import SupersCoinsService
 import os 
-from enums import UserRole, OrderStatus, InvoiceStatus
+from enums import UserRole, OrderStatus, InvoiceStatus, SupersCoinTransactionType
 
 seller_bp = Blueprint('seller', __name__, url_prefix='/seller')
 
@@ -41,16 +47,23 @@ def seller_dashboard():
     total_revenue = sum(inv.total_amount for inv in my_invoices if inv.status == InvoiceStatus.PAID.value)
     
     # Pending orders assigned to ME
-    pending_orders_count = Order.query.filter_by(seller_id=current_user.id, status=OrderStatus.PLACED.value).count()
+    pending_orders_count = Order.query.filter(
+        Order.seller_id == current_user.id,
+        Order.status.in_(CommerceService.placed_status_values)
+    ).count()
     
     recent_orders = Order.query.filter_by(seller_id=current_user.id).order_by(Order.created_at.desc()).limit(5).all()
+    superscoin_wallet = SupersCoinWallet.query.filter_by(seller_id=current_user.id).first() if SupersCoinsService.tables_ready() else None
+    superscoin_balance = superscoin_wallet.balance if superscoin_wallet else 0
 
     return render_template('seller_dashboard.html',
                            total_inventory_value=total_inventory_value,
                            low_stock_count=low_stock_count,
                            pending_orders_count=pending_orders_count,
                            total_revenue=total_revenue,
-                           recent_orders=recent_orders)
+                           recent_orders=recent_orders,
+                           superscoin_balance=superscoin_balance,
+                           normalize_order_status=CommerceService.normalize_order_status)
 
 # =========================================================
 # 2. INVENTORY MANAGEMENT
@@ -236,7 +249,14 @@ def manage_orders():
         prod.max_qty = inv.stock 
         products_available.append(prod)
 
-    return render_template('seller/manage_orders.html', orders=orders, buyers=buyers, products=products_available)
+    return render_template(
+        'seller/manage_orders.html',
+        orders=orders,
+        buyers=buyers,
+        products=products_available,
+        order_status_choices=CommerceService.order_status_choices,
+        normalize_order_status=CommerceService.normalize_order_status,
+    )
 
 @seller_bp.route('/orders/create', methods=['POST'])
 @login_required
@@ -303,33 +323,56 @@ def create_order():
 def update_order_status(order_id):
     order = Order.query.get_or_404(order_id)
     if order.seller_id != current_user.id:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': 'Unauthorized action.'}), 403
+        flash('Unauthorized action.', 'danger')
         return redirect(url_for('seller.manage_orders'))
 
     new_status = request.form.get('status')
-    if new_status:
-        order.status = new_status
-        db.session.commit()
-        
-        # Notify Buyer
-        try:
-            send_email(
-                to=order.buyer.email, 
-                subject=f'Order Update: {new_status}', 
-                template='mail/order_status_update.html', 
-                buyer_name=order.buyer.username, 
-                order_number=order.order_number, 
-                status=new_status, 
-                order_date=order.created_at.strftime('%Y-%m-%d'), 
-                total_amount=order.total_amount,
-                shipping_address=order.shipping_address,
-                now=datetime.utcnow()
-            )
-        except Exception: pass
-        
-        flash(f'Order {order.order_number} updated to {new_status}.', 'success')
+    if not new_status:
+        message = 'Status is required.'
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': message}), 400
+        flash(message, 'danger')
+        return redirect(url_for('seller.manage_orders'))
+
+    success, message, restored_items, missing_items = CommerceService.transition_order_status(order, new_status)
+    if not success:
+        db.session.rollback()
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': message}), 400
+        flash(message, 'danger')
+        return redirect(url_for('seller.manage_orders'))
+
+    normalized_status = CommerceService.normalize_order_status(new_status)
+    db.session.commit()
+    
+    # Notify Buyer
+    try:
+        send_email(
+            to=order.buyer.email, 
+            subject=f'Order Update: {normalized_status}', 
+            template='mail/order_status_update.html', 
+            buyer_name=order.buyer.username, 
+            order_number=order.order_number, 
+            status=normalized_status, 
+            order_date=order.created_at.strftime('%Y-%m-%d'), 
+            total_amount=order.total_amount,
+            shipping_address=order.shipping_address,
+            now=datetime.utcnow()
+        )
+    except Exception as e:
+        print(f"Failed to send seller order status email: {e}")
+    
+    extra = ''
+    if restored_items:
+        extra = ' Inventory was restored.'
+    if missing_items:
+        extra += f" Could not find inventory for: {', '.join(missing_items)}."
+    flash(f'Order {order.order_number} updated to {normalized_status}.{extra}', 'success')
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return jsonify({'success': True, 'message': f'Order updated to {new_status}.', 'new_status': new_status})
+        return jsonify({'success': True, 'message': f'Order updated to {normalized_status}.', 'new_status': normalized_status})
     return redirect(url_for('seller.manage_orders'))
 
 # =========================================================
@@ -448,27 +491,39 @@ def mark_invoice_paid(invoice_id):
 @role_required(UserRole.SELLER.value)
 def resend_invoice():
     invoice_id = request.form.get('invoice_id')
+    recipients = request.form.get('recipient_emails', '')
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     invoice = Invoice.query.get_or_404(invoice_id)
     if invoice.admin_id != current_user.id:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+    recipient_list = []
+    seen_recipients = set()
+    for recipient in recipients.split(','):
+        email_to = recipient.strip()
+        if email_to and email_to not in seen_recipients:
+            recipient_list.append(email_to)
+            seen_recipients.add(email_to)
+
+    if not recipient_list:
+        recipient_list = [invoice.recipient_email]
 
     try:
         gen = InvoiceGenerator(invoice)
         pdf = gen.generate_pdf()
         att = {'filename': f'{invoice.invoice_number}.pdf', 'content_type': 'application/pdf', 'data': pdf}
         send_email(
-            to=invoice.recipient_email, 
+            to=recipient_list,
             subject=f"Resent: Invoice {invoice.invoice_number}", 
             template='mail/ecommerce_invoice_email.html', 
             invoice=invoice,
-            attachments=[att],
-            sync=True
+            attachments=[att]
         )
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'success': True, 'message': 'Invoice email resent.'})
+        if is_ajax:
+            return jsonify({'success': True, 'message': 'Invoice resend queued successfully.'})
         flash('Invoice email resent.', 'success')
     except Exception as e:
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        if is_ajax:
             return jsonify({'success': False, 'message': f'Error: {str(e)}'})
         flash(f'Error resending email: {str(e)}', 'danger')
 
@@ -489,7 +544,54 @@ def send_invoice_reminder(invoice_id):
     return redirect(url_for('seller.manage_invoices'))
 
 # =========================================================
-# 5. SHAREABLE LINK
+# 5. SUPERSCOINS WALLET (READ-ONLY)
+# =========================================================
+
+@seller_bp.route('/superscoins')
+@login_required
+@role_required(UserRole.SELLER.value)
+def superscoins_wallet():
+    setup_pending = not SupersCoinsService.tables_ready()
+    if setup_pending:
+        flash("SupersCoins wallet is being set up. Please try again after the database migration is applied.", "warning")
+        wallet = None
+        transactions = []
+        invoices = []
+    else:
+        wallet = SupersCoinWallet.query.filter_by(seller_id=current_user.id).first()
+        transactions = SupersCoinTransaction.query.filter_by(seller_id=current_user.id)\
+            .order_by(SupersCoinTransaction.created_at.desc()).limit(100).all()
+        invoices = SupersCoinInvoice.query.filter_by(seller_id=current_user.id)\
+            .order_by(SupersCoinInvoice.created_at.desc()).limit(50).all()
+
+    return render_template(
+        'seller/superscoins.html',
+        wallet=wallet,
+        transactions=transactions,
+        invoices=invoices,
+        transaction_types=SupersCoinTransactionType,
+        setup_pending=setup_pending,
+    )
+
+@seller_bp.route('/superscoins/invoices/<int:invoice_id>/download')
+@login_required
+@role_required(UserRole.SELLER.value)
+def download_superscoin_invoice(invoice_id):
+    if not SupersCoinsService.tables_ready():
+        flash("SupersCoins wallet is being set up. Please try again after the database migration is applied.", "warning")
+        return redirect(url_for('seller.superscoins_wallet'))
+
+    invoice = SupersCoinInvoice.query.filter_by(id=invoice_id, seller_id=current_user.id).first_or_404()
+    pdf_bytes = SupersCoinInvoiceGenerator(invoice).generate_pdf()
+    return send_file(
+        BytesIO(pdf_bytes),
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=f'{invoice.invoice_number}.pdf',
+    )
+
+# =========================================================
+# 6. SHAREABLE LINK
 # =========================================================
 
 @seller_bp.route('/share-link', methods=['POST'])

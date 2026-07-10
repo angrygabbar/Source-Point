@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify
 from flask_login import login_required, current_user
 from extensions import db, cache
 from models.commerce import Product, Cart, Order, VoucherOrder
@@ -8,7 +8,7 @@ from services.commerce_service import CommerceService
 from utils import role_required, send_email
 from forms.commerce_forms import CheckoutForm
 from sqlalchemy import or_
-from enums import GiftCardStatus, VoucherOrderStatus, UserRole
+from enums import GiftCardStatus, VoucherOrderStatus, UserRole, OrderStatus
 from datetime import datetime
 
 buyer_bp = Blueprint('buyer', __name__)
@@ -141,7 +141,72 @@ def my_orders():
     orders = Order.query.options(joinedload(Order.items))\
                 .filter_by(user_id=current_user.id)\
                 .order_by(Order.created_at.desc()).all()
-    return render_template('my_orders.html', orders=orders, partial=is_htmx())
+    return render_template(
+        'my_orders.html',
+        orders=orders,
+        partial=is_htmx(),
+        can_cancel_order=CommerceService.can_buyer_cancel_order,
+        normalize_order_status=CommerceService.normalize_order_status,
+    )
+
+@buyer_bp.route('/orders/<int:order_id>/cancel', methods=['POST'])
+@login_required
+@role_required('buyer')
+def cancel_order(order_id):
+    order = Order.query.get_or_404(order_id)
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+    if order.user_id != current_user.id:
+        if is_ajax:
+            return jsonify({'success': False, 'message': 'Unauthorized action.'}), 403
+        abort(403)
+
+    if not CommerceService.can_buyer_cancel_order(order):
+        message = 'This order can no longer be cancelled from your account.'
+        if is_ajax:
+            return jsonify({'success': False, 'message': message}), 400
+        flash(message, 'warning')
+        return redirect(url_for('buyer.my_orders'))
+
+    success, message, restored_items, missing_items = CommerceService.transition_order_status(
+        order,
+        OrderStatus.CANCELLED.value
+    )
+    if not success:
+        db.session.rollback()
+        if is_ajax:
+            return jsonify({'success': False, 'message': message}), 400
+        flash(message, 'danger')
+        return redirect(url_for('buyer.my_orders'))
+
+    db.session.commit()
+
+    try:
+        send_email(
+            to=current_user.email,
+            subject=f"Order Cancelled: {order.order_number}",
+            template="mail/order_status_update.html",
+            buyer_name=current_user.username,
+            order_number=order.order_number,
+            status=OrderStatus.CANCELLED.value,
+            order_date=order.created_at.strftime('%B %d, %Y'),
+            total_amount=order.total_amount,
+            shipping_address=order.shipping_address,
+            message="Your order has been cancelled. Reserved inventory has been released.",
+            now=datetime.utcnow()
+        )
+    except Exception as e:
+        print(f"Failed to send cancellation email: {e}")
+
+    notice = 'Order cancelled successfully.'
+    if missing_items:
+        notice += f" Inventory could not be restored for: {', '.join(missing_items)}."
+
+    if is_ajax:
+        return jsonify({'success': True, 'message': notice, 'new_status': OrderStatus.CANCELLED.value})
+
+    flash(notice, 'success')
+    return redirect(url_for('buyer.my_orders'))
 
 
 # ─── Voucher Routes ───────────────────────────────────────────────

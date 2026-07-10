@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Confirmed — {{ invoice.invoice_number }}</title>
+</head>
+
+<body style="margin:0;padding:0;background:#07070f;font-family:Arial,Helvetica,sans-serif;color:#e5e7eb;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#07070f;padding:32px 16px;">
+        <tr>
+            <td align="center">
+                <table width="620" cellpadding="0" cellspacing="0" style="max-width:620px;width:100%;background:#0f172a;border:1px solid #1f2937;border-radius:18px;overflow:hidden;">
+                    <tr>
+                        <td style="padding:30px;background:linear-gradient(135deg,#064e3b,#059669);">
+                            <p style="margin:0 0 8px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#6ee7b7;font-weight:700;">Payment Confirmed</p>
+                            <h1 style="margin:0;color:#ffffff;font-size:26px;">{{ invoice.invoice_number }}</h1>
+                            <p style="margin:10px 0 0;color:#d1fae5;font-size:14px;">Your SupersCoins invoice has been marked as <strong>Paid</strong>.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:28px 30px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:#111827;border:1px solid #243244;border-radius:14px;">
+                                <tr>
+                                    <td style="padding:20px;">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding:8px 0;color:#94a3b8;font-size:13px;">Invoice</td>
+                                                <td style="padding:8px 0;color:#ffffff;font-size:14px;font-weight:700;text-align:right;">{{ invoice.invoice_number }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:8px 0;color:#94a3b8;font-size:13px;">Description</td>
+                                                <td style="padding:8px 0;color:#e5e7eb;font-size:14px;text-align:right;">{{ invoice.description }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:8px 0;color:#94a3b8;font-size:13px;">Currency</td>
+                                                <td style="padding:8px 0;color:#67e8f9;font-size:14px;font-weight:700;text-align:right;">Super Coins</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:8px 0;color:#94a3b8;font-size:13px;">Amount</td>
+                                                <td style="padding:8px 0;color:#fbbf24;font-size:20px;font-weight:800;text-align:right;">SC {{ "{:,.2f}".format(invoice.amount|float) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:8px 0;color:#94a3b8;font-size:13px;">Due Date</td>
+                                                <td style="padding:8px 0;color:#cbd5e1;font-size:14px;text-align:right;">{{ invoice.due_date.strftime('%d %b %Y') if invoice.due_date else 'On Receipt' }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:8px 0;color:#94a3b8;font-size:13px;">Status</td>
+                                                <td style="padding:8px 0;color:#34d399;font-size:14px;font-weight:700;text-align:right;">✅ Paid</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:8px 0;color:#94a3b8;font-size:13px;">Payment Date</td>
+                                                <td style="padding:8px 0;color:#a5f3fc;font-size:14px;font-weight:700;text-align:right;">{{ invoice.paid_at.strftime('%d %b %Y, %I:%M %p') if invoice.paid_at else now.strftime('%d %b %Y, %I:%M %p') }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:8px 0;color:#94a3b8;font-size:13px;">Confirmed By</td>
+                                                <td style="padding:8px 0;color:#e5e7eb;font-size:14px;text-align:right;">{{ admin.username }}</td>
+                                            </tr>
+                                            {% if invoice.spending_category %}
+                                            <tr>
+                                                <td style="padding:8px 0;color:#94a3b8;font-size:13px;">Spent On</td>
+                                                <td style="padding:8px 0;color:#c084fc;font-size:14px;font-weight:700;text-align:right;">{{ invoice.spending_category }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% if invoice.booking_details %}
+                                            <tr>
+                                                <td style="padding:8px 0;color:#94a3b8;font-size:13px;">Booking Details</td>
+                                                <td style="padding:8px 0;color:#cbd5e1;font-size:13px;text-align:right;">{{ invoice.booking_details }}</td>
+                                            </tr>
+                                            {% endif %}
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% if invoice.notes %}
+                            <p style="margin:18px 0 0;color:#cbd5e1;font-size:13px;line-height:1.6;">{{ invoice.notes }}</p>
+                            {% endif %}
+                            <p style="margin:20px 0 0;color:#94a3b8;font-size:13px;line-height:1.6;">
+                                The updated PDF copy is attached. No further action is required on this invoice.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:20px 30px;background:#020617;border-top:1px solid #1f2937;text-align:center;color:#64748b;font-size:12px;">
+                            Source Point SupersCoins — Payment Confirmation
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>
