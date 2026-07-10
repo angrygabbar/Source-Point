@@ -36,6 +36,20 @@ jobs:
       - name: Run Database Migrations
         run: |
           cd /Users/gaurav/Developer/Source-Point
+
+          # Get the current migration revision in the DB
+          CURRENT=$(docker compose exec -T web flask db current 2>/dev/null | grep -oE '[a-f0-9]{12}' | head -1)
+          echo "Current DB revision: $CURRENT"
+
+          # If DB has no revision stamped, it means tables may already exist
+          # (created before Alembic was set up). Stamp the last known migration
+          # that has been manually applied so that upgrade only runs new ones.
+          if [ -z "$CURRENT" ]; then
+            echo "No revision stamped. Stamping f4b2c8d9e101 (superscoins tables baseline)..."
+            docker compose exec -T web flask db stamp f4b2c8d9e101
+          fi
+
+          # Now safely apply only pending migrations
           docker compose exec -T web flask db upgrade
 
       # 5. Cleanup
