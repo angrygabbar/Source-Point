@@ -41,11 +41,11 @@ jobs:
           CURRENT=$(docker compose exec -T web flask db current 2>/dev/null | grep -oE '[a-f0-9]{12}' | head -1)
           echo "Current DB revision: $CURRENT"
 
-          # If DB has no revision stamped, it means tables may already exist
-          # (created before Alembic was set up). Stamp the last known migration
-          # that has been manually applied so that upgrade only runs new ones.
-          if [ -z "$CURRENT" ]; then
-            echo "No revision stamped. Stamping f4b2c8d9e101 (superscoins tables baseline)..."
+          # If DB has no revision stamped, OR is at a3f7c8d91e2b (the pre-superscoins
+          # baseline) — the superscoins tables already exist physically in production
+          # but Alembic doesn't know about them. Stamp f4b2c8d9e101 to skip that migration.
+          if [ -z "$CURRENT" ] || [ "$CURRENT" = "a3f7c8d91e2b" ]; then
+            echo "Stamping f4b2c8d9e101 (superscoins tables baseline) to skip already-applied migration..."
             docker compose exec -T web flask db stamp f4b2c8d9e101
           fi
 
