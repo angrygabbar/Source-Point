@@ -195,6 +195,10 @@
                         hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true"
                         class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer"><i
                             class="fas fa-gift w-6 text-center mr-2"></i> Gift Cards</a>
+                    <a hx-get="{{ url_for('admin_assets.dashboard') }}" hx-target="#main-content"
+                        hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer {{ 'bg-white/10 text-white border border-white/5' if request.endpoint and request.endpoint.startswith('admin_assets.') else '' }}"><i
+                            class="fas fa-laptop w-6 text-center mr-2 text-cyan-400"></i> Asset Manager</a>
                     {% endif %}
 
                     {% if current_user.role == 'developer' %}

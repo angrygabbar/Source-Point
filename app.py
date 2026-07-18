@@ -138,6 +138,7 @@ def create_app():
     from blueprints.public import public_bp
     from blueprints.app_release import app_release_bp
     from blueprints.newsletter import newsletter_bp
+    from blueprints.admin_assets import admin_assets_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -160,6 +161,7 @@ def create_app():
     app.register_blueprint(public_bp)
     app.register_blueprint(app_release_bp)
     app.register_blueprint(newsletter_bp)
+    app.register_blueprint(admin_assets_bp)
 
     # --- 8. CONTEXT PROCESSORS (FIXED) ---
     @app.context_processor

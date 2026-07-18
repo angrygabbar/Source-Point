@@ -150,3 +150,32 @@ class GiftCardBrand(enum.Enum):
     XBOX = "Xbox"
     # ── Other ──
     OTHER = "Other"
+
+class AssetType(enum.Enum):
+    LAPTOP = "Laptop"
+    SERVER = "Server"
+    MONITOR = "Monitor"
+    KEYBOARD = "Keyboard"
+    MOUSE = "Mouse"
+    HEADPHONE = "Headphone"
+    MOBILE = "Mobile"
+    TABLET = "Tablet"
+    PRINTER = "Printer"
+    NETWORKING = "Networking"
+    STORAGE = "Storage"
+    CHARGER = "Charger"
+    CABLE = "Cable"
+    OTHER = "Other"
+
+class AssetStatus(enum.Enum):
+    ACTIVE = "Active"
+    IN_STORAGE = "In Storage"
+    UNDER_REPAIR = "Under Repair"
+    RETIRED = "Retired"
+    LOST = "Lost"
+
+class AssetCondition(enum.Enum):
+    NEW = "New"
+    GOOD = "Good"
+    FAIR = "Fair"
+    POOR = "Poor"

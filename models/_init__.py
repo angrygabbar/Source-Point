@@ -12,4 +12,5 @@ from .interview import Interview, InterviewParticipant, InterviewFeedback
 from .mcq import MCQQuestion, Test, TestAssignment, TestResult
 from .gift_card import GiftCard
 from .newsletter import NewsArticle
+from .asset import Asset
 #from .payment import EMIPayment
