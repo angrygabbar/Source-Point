@@ -371,6 +371,7 @@ def toggle_user_status(user_id):
         )
     except Exception as e:
         print(f"[WARN] Account status email failed: {e}")
+        current_app.logger.error(f"Account status email failed for {user_to_toggle.username}: {e}")
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({
@@ -392,7 +393,7 @@ def approve_user(user_id):
 
     send_email(
         to=user.email,
-        subject="Your DevConnect Hub Account is Approved!",
+        subject="Your SourcePoint Account is Approved!",
         template="mail/account_approved.html",
         user=user,
         now=datetime.utcnow()

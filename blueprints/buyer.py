@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify, current_app
 from flask_login import login_required, current_user
 from extensions import db, cache
 from models.commerce import Product, Cart, Order, VoucherOrder
@@ -286,6 +286,7 @@ def request_voucher(card_id):
     except Exception as e:
         # Don't block the user flow if email fails
         print(f"[WARN] Admin notification email failed: {e}")
+        current_app.logger.error(f"Admin notification email failed for voucher request: {e}")
 
     flash(f'Voucher request placed! Admin will review your request for {card.brand} ₹{card.denomination}.', 'success')
     return redirect(url_for('buyer.browse_vouchers'))

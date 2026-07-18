@@ -5,6 +5,7 @@ from extensions import db, bcrypt
 from utils import send_email, log_user_action
 from datetime import datetime
 from enums import UserRole
+import os
 import sys
 import traceback
 
@@ -110,7 +111,7 @@ def register():
             if not user.is_approved: 
                 try:
                     from models.auth import User 
-                    admin_email = current_app.config.get('ADMIN_EMAIL')
+                    admin_email = os.environ.get('ADMIN_EMAIL')
                     if not admin_email:
                         admin_user = User.query.filter_by(role=UserRole.ADMIN.value).first()
                         if admin_user:
@@ -124,8 +125,10 @@ def register():
                             new_user=user, 
                             now=datetime.utcnow()
                         )
+                    else:
+                        current_app.logger.error("No ADMIN_EMAIL configured and no admin user found in DB. Registration email skipped.")
                 except Exception as e:
-                    print(f"WARNING: Failed to send Email: {e}")
+                    current_app.logger.error(f"Failed to send registration notification email: {e}")
 
             if user.is_approved:
                 flash(message, 'success')
