@@ -1,0 +1,178 @@
+{% extends "layout.html" %}
+{% block title %}Add New Asset{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6 pb-10">
+
+    <!-- Header -->
+    <div class="flex items-center gap-4">
+        <a href="{{ url_for('admin_assets.dashboard') }}"
+            class="p-2 rounded-xl bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-all">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div>
+            <div class="text-[10px] font-black tracking-[0.28em] uppercase text-cyan-400 mb-1">Asset Management</div>
+            <h1 class="text-2xl font-black text-white">Add New Asset</h1>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="px-4 py-3 rounded-xl text-sm font-bold
+        {% if category == 'success' %}bg-emerald-500/10 border border-emerald-500/30 text-emerald-300
+        {% elif category == 'danger' %}bg-red-500/10 border border-red-500/30 text-red-300
+        {% else %}bg-blue-500/10 border border-blue-500/30 text-blue-300{% endif %}">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <!-- Form Card -->
+    <div class="glass-panel-v2 rounded-2xl border border-white/10 p-7">
+        <form method="POST" action="{{ url_for('admin_assets.add_asset_page') }}" class="space-y-6">
+
+            <!-- Section: Basic Info -->
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-cyan-400 mb-4">Basic Information</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="sm:col-span-2">
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Asset Name *</label>
+                        <input type="text" name="name" required placeholder="e.g. MacBook Pro 16-inch M3"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:border-cyan-500/50 focus:outline-none transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Asset Type *</label>
+                        <select name="asset_type" required
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-cyan-500/50 focus:outline-none transition-colors">
+                            <option value="">— Select Type —</option>
+                            {% for val, label in asset_types %}
+                            <option value="{{ val }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Brand</label>
+                        <input type="text" name="brand" placeholder="e.g. Apple, Dell, HP"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:border-cyan-500/50 focus:outline-none transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Serial Number</label>
+                        <input type="text" name="serial_number" placeholder="Manufacturer serial number"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 font-mono focus:border-cyan-500/50 focus:outline-none transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Model Number</label>
+                        <input type="text" name="model_number" placeholder="e.g. MNW83LL/A"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:border-cyan-500/50 focus:outline-none transition-colors">
+                    </div>
+                </div>
+            </div>
+
+            <hr class="border-white/5">
+
+            <!-- Section: Status & Condition -->
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-cyan-400 mb-4">Status & Condition</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Status</label>
+                        <select name="status"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-cyan-500/50 focus:outline-none transition-colors">
+                            {% for val, label in asset_statuses %}
+                            <option value="{{ val }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Condition</label>
+                        <select name="condition"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-cyan-500/50 focus:outline-none transition-colors">
+                            {% for val, label in asset_conditions %}
+                            <option value="{{ val }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="border-white/5">
+
+            <!-- Section: Purchase Details -->
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-cyan-400 mb-4">Purchase Details</p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Purchase Date</label>
+                        <input type="date" name="purchase_date"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-cyan-500/50 focus:outline-none transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Purchase Price (₹)</label>
+                        <input type="number" name="purchase_price" step="0.01" placeholder="0.00"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:border-cyan-500/50 focus:outline-none transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Warranty Expiry</label>
+                        <input type="date" name="warranty_expiry"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-cyan-500/50 focus:outline-none transition-colors">
+                    </div>
+                </div>
+            </div>
+
+            <hr class="border-white/5">
+
+            <!-- Section: Assignment -->
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-cyan-400 mb-4">Assignment Details</p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Assign To</label>
+                        <select name="assigned_to_id"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-cyan-500/50 focus:outline-none transition-colors">
+                            <option value="">— Unassigned —</option>
+                            {% for user in all_users %}
+                            <option value="{{ user.id }}">{{ user.username }} ({{ user.role }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Allocation Date</label>
+                        <input type="date" name="allocation_date"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-cyan-500/50 focus:outline-none transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Location</label>
+                        <input type="text" name="location" placeholder="e.g. Mumbai Office, Remote"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:border-cyan-500/50 focus:outline-none transition-colors">
+                    </div>
+                </div>
+            </div>
+
+            <hr class="border-white/5">
+
+            <!-- Section: Notes -->
+            <div>
+                <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Notes / Remarks</label>
+                <textarea name="notes" rows="3" placeholder="Any additional details or remarks..."
+                    class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 resize-none focus:border-cyan-500/50 focus:outline-none transition-colors"></textarea>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-3 pt-2">
+                <button type="submit"
+                    class="flex-1 py-3 rounded-xl bg-cyan-500 text-black text-sm font-black hover:bg-cyan-400 transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Add Asset
+                </button>
+                <a href="{{ url_for('admin_assets.dashboard') }}"
+                    class="px-6 py-3 rounded-xl bg-white/5 text-gray-400 text-sm font-bold hover:bg-white/10 hover:text-white transition-all">
+                    Cancel
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+{% endblock %}

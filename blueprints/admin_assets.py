@@ -25,6 +25,16 @@ def _generate_asset_code():
     return f"SP-AST-{next_id:04d}"
 
 
+def _get_dropdowns():
+    """Return common dropdown data used across templates."""
+    return {
+        'all_users': User.query.order_by(User.username).all(),
+        'asset_types': [(t.value, t.value) for t in AssetType],
+        'asset_statuses': [(s.value, s.value) for s in AssetStatus],
+        'asset_conditions': [(c.value, c.value) for c in AssetCondition],
+    }
+
+
 @admin_assets_bp.route('/')
 @login_required
 @role_required(UserRole.ADMIN.value)
@@ -66,15 +76,11 @@ def dashboard():
     retired_count = Asset.query.filter_by(status=AssetStatus.RETIRED.value).count()
     assigned_count = Asset.query.filter(Asset.assigned_to_id.isnot(None), Asset.status == AssetStatus.ACTIVE.value).count()
 
-    # --- Dropdowns ---
-    all_users = User.query.order_by(User.username).all()
-    asset_types = [(t.value, t.value) for t in AssetType]
-    asset_statuses = [(s.value, s.value) for s in AssetStatus]
-    asset_conditions = [(c.value, c.value) for c in AssetCondition]
-
     # Get unique locations for filter dropdown
     locations = db.session.query(Asset.location).filter(Asset.location.isnot(None)).distinct().all()
     locations = sorted([loc[0] for loc in locations if loc[0]])
+
+    dropdowns = _get_dropdowns()
 
     return render_template(
         'admin_assets.html',
@@ -85,23 +91,26 @@ def dashboard():
         repair_count=repair_count,
         retired_count=retired_count,
         assigned_count=assigned_count,
-        all_users=all_users,
-        asset_types=asset_types,
-        asset_statuses=asset_statuses,
-        asset_conditions=asset_conditions,
         locations=locations,
         filter_type=filter_type,
         filter_status=filter_status,
         filter_assigned=filter_assigned,
         filter_location=filter_location,
         search_query=search_query,
+        **dropdowns,
     )
 
 
-@admin_assets_bp.route('/add', methods=['POST'])
+@admin_assets_bp.route('/add', methods=['GET', 'POST'])
 @login_required
 @role_required(UserRole.ADMIN.value)
-def add_asset():
+def add_asset_page():
+    dropdowns = _get_dropdowns()
+
+    if request.method == 'GET':
+        return render_template('admin_assets_add.html', **dropdowns)
+
+    # --- POST: process the form ---
     name = request.form.get('name', '').strip()
     asset_type = request.form.get('asset_type', '')
     serial_number = request.form.get('serial_number', '').strip()
@@ -119,7 +128,7 @@ def add_asset():
 
     if not name or not asset_type:
         flash('Asset name and type are required.', 'danger')
-        return redirect(url_for('admin_assets.dashboard'))
+        return render_template('admin_assets_add.html', **dropdowns)
 
     new_asset = Asset(
         asset_code=_generate_asset_code(),
@@ -171,6 +180,15 @@ def add_asset():
     log_user_action("Add Asset", f"Added asset {new_asset.asset_code}: {new_asset.name}")
     flash(f'Asset "{new_asset.name}" ({new_asset.asset_code}) added successfully.', 'success')
     return redirect(url_for('admin_assets.dashboard'))
+
+
+@admin_assets_bp.route('/view/<int:asset_id>')
+@login_required
+@role_required(UserRole.ADMIN.value)
+def view_asset(asset_id):
+    from datetime import date
+    asset = Asset.query.get_or_404(asset_id)
+    return render_template('admin_assets_view.html', asset=asset, today=date.today())
 
 
 @admin_assets_bp.route('/edit/<int:asset_id>', methods=['POST'])

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rollback Request Submitted — SourcePoint</title>
+</head>
+
+<body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+
+    <!-- Preheader -->
+    <span style="display:none;max-height:0;overflow:hidden;">
+        Your rollback request {{ rollback_req.request_number }} for {{ product.name }} has been submitted and is pending admin review.
+    </span>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#07070f;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="background:linear-gradient(135deg,#1d4ed8,#2563eb,#3b82f6);border-radius:20px 20px 0 0;padding:40px 40px 50px;text-align:center;">
+                            <div style="display:inline-block;background:rgba(255,255,255,0.15);border-radius:16px;padding:14px;margin-bottom:20px;">
+                                <img src="https://img.icons8.com/fluency/48/paper-plane.png" alt="Submitted" width="48" height="48" style="display:block;">
+                            </div>
+                            <h1 style="margin:0;font-size:28px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">
+                                🔄 Rollback Request Submitted
+                            </h1>
+                            <p style="margin:10px 0 0;font-size:15px;color:rgba(255,255,255,0.85);">Your request is pending admin review</p>
+                        </td>
+                    </tr>
+
+                    <!-- Wave Divider -->
+                    <tr>
+                        <td style="background:linear-gradient(135deg,#1d4ed8,#2563eb);height:30px;">
+                            <div style="background:#0f0f1e;height:30px;border-radius:30px 30px 0 0;"></div>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="background:#0f0f1e;padding:0 40px 36px;">
+
+                            <p style="font-size:17px;color:#f1f5f9;margin:28px 0 6px;">Hello <strong style="color:#60a5fa;">{{ rollback_req.seller.username }}</strong>,</p>
+                            <p style="font-size:15px;color:#94a3b8;line-height:1.7;margin:0 0 28px;">
+                                Your inventory rollback request has been <strong style="color:#60a5fa;">successfully submitted</strong>. Our admin team will review it shortly.
+                                You'll receive another email once a decision has been made. No inventory changes have been made yet.
+                            </p>
+
+                            <!-- Request ID Banner -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+                                <tr>
+                                    <td style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:12px;padding:14px 22px;text-align:center;">
+                                        <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#60a5fa;font-weight:700;">Request Number</p>
+                                        <p style="margin:6px 0 0;font-size:22px;font-weight:800;color:#ffffff;font-family:'Courier New',monospace;letter-spacing:2px;">{{ rollback_req.request_number }}</p>
+                                        <p style="margin:8px 0 0;font-size:11px;color:#475569;">Status: <span style="color:#fbbf24;font-weight:700;">⏳ Pending Review</span></p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Request Details -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.18);border-radius:14px;margin-bottom:20px;">
+                                <tr>
+                                    <td style="padding:22px 26px;">
+                                        <p style="margin:0 0 14px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#60a5fa;font-weight:700;">
+                                            📦 Request Summary
+                                        </p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;width:140px;">Product</td>
+                                                <td style="padding:7px 0;color:#f1f5f9;font-size:15px;font-weight:700;">{{ product.name }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Product Code</td>
+                                                <td style="padding:7px 0;color:#93c5fd;font-size:13px;font-family:'Courier New',monospace;letter-spacing:1px;">{{ product.product_code }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Qty Requested</td>
+                                                <td style="padding:7px 0;">
+                                                    <span style="background:rgba(59,130,246,0.15);color:#60a5fa;font-size:14px;font-weight:800;padding:4px 16px;border-radius:20px;">
+                                                        {{ rollback_req.quantity }} Units
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Submitted At</td>
+                                                <td style="padding:7px 0;color:#e2e8f0;font-size:14px;">{{ now.strftime('%d %b %Y, %I:%M %p') }} IST</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            {% if rollback_req.reason %}
+                            <!-- Reason -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(251,191,36,0.07);border-left:4px solid #f59e0b;border-radius:0 12px 12px 0;margin-bottom:24px;">
+                                <tr>
+                                    <td style="padding:16px 20px;">
+                                        <p style="margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#f59e0b;font-weight:600;">
+                                            📝 Your Reason
+                                        </p>
+                                        <p style="margin:0;font-size:14px;color:#fcd34d;line-height:1.6;">{{ rollback_req.reason }}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            <!-- What happens next -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);border-radius:14px;margin-bottom:24px;">
+                                <tr>
+                                    <td style="padding:20px 24px;">
+                                        <p style="margin:0 0 12px;font-size:14px;font-weight:700;color:#60a5fa;">⏱ What happens next?</p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding:5px 0;color:#93c5fd;font-size:13px;line-height:1.6;">→ The admin will review your request and your inventory remains unchanged until a decision is made.</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:5px 0;color:#93c5fd;font-size:13px;line-height:1.6;">→ You'll receive an email notification once the admin Approves or Rejects this request.</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:5px 0;color:#93c5fd;font-size:13px;line-height:1.6;">→ If approved, the requested units will be deducted from your inventory automatically.</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- CTA -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{ url_for('seller.rollback_requests', _external=True) }}"
+                                            style="display:inline-block;background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#ffffff;text-decoration:none;padding:15px 44px;border-radius:12px;font-size:15px;font-weight:700;letter-spacing:0.3px;box-shadow:0 8px 24px rgba(37,99,235,0.35);">
+                                            📋 View My Requests
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="font-size:15px;color:#e2e8f0;margin:0;">
+                                Best regards,<br>
+                                <strong style="color:#60a5fa;">The SourcePoint Team</strong>
+                            </p>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background:#07070f;border-top:1px solid #1e1e30;padding:24px 40px;text-align:center;border-radius:0 0 20px 20px;">
+                            <p style="margin:0 0 4px;font-size:13px;color:#64748b;font-weight:600;">⚡ SourcePoint Platform</p>
+                            <p style="margin:0 0 8px;font-size:12px;color:#334155;">
+                                Need help? <a href="mailto:admin@sourcepoint.in" style="color:#2563eb;text-decoration:none;">admin@sourcepoint.in</a>
+                            </p>
+                            <p style="margin:0;font-size:11px;color:#1e293b;">
+                                © {{ now.year }} Source Point. All rights reserved. · This is an automated notification.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

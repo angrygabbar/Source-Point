@@ -2,7 +2,7 @@
 from extensions import db
 from datetime import datetime
 from sqlalchemy import Numeric
-from enums import OrderStatus, InvoiceStatus, VoucherOrderStatus, SupersCoinInvoiceStatus
+from enums import OrderStatus, InvoiceStatus, VoucherOrderStatus, SupersCoinInvoiceStatus, RollbackRequestStatus
 
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -213,3 +213,29 @@ class VoucherOrder(db.Model):
     user = db.relationship('User', foreign_keys=[user_id], backref='voucher_orders')
     gift_card = db.relationship('GiftCard', backref='voucher_orders')
     reviewed_by = db.relationship('User', foreign_keys=[reviewed_by_id])
+
+
+class InventoryRollbackRequest(db.Model):
+    """A seller's request to return inventory back to master stock."""
+    __tablename__ = 'inventory_rollback_request'
+
+    id = db.Column(db.Integer, primary_key=True)
+    request_number = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False, index=True)
+    seller_inventory_id = db.Column(db.Integer, db.ForeignKey('seller_inventory.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    reason = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), default=RollbackRequestStatus.PENDING.value, nullable=False, index=True)
+    admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    admin_note = db.Column(db.Text, nullable=True)
+    request_date = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+    response_date = db.Column(db.DateTime, nullable=True)
+
+    seller = db.relationship('User', foreign_keys=[seller_id], backref='rollback_requests')
+    admin = db.relationship('User', foreign_keys=[admin_id], backref='admin_rollback_decisions')
+    product = db.relationship('Product', backref='rollback_requests')
+    seller_inventory = db.relationship('SellerInventory', backref='rollback_requests')
+
+    def __repr__(self):
+        return f'<RollbackRequest {self.request_number}: {self.status}>'

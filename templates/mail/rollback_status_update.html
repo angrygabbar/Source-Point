@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rollback Request {{ status }} — SourcePoint</title>
+</head>
+
+<body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+
+    <!-- Preheader -->
+    <span style="display:none;max-height:0;overflow:hidden;">
+        Your rollback request {{ rollback_req.request_number }} for {{ product.name }} has been {{ status }}.
+    </span>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#07070f;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="{% if status == 'Approved' %}background:linear-gradient(135deg,#065f46,#059669,#10b981);{% else %}background:linear-gradient(135deg,#7f1d1d,#dc2626,#ef4444);{% endif %}border-radius:20px 20px 0 0;padding:40px 40px 50px;text-align:center;">
+                            <div style="display:inline-block;background:rgba(255,255,255,0.15);border-radius:16px;padding:14px;margin-bottom:20px;">
+                                {% if status == 'Approved' %}
+                                <img src="https://img.icons8.com/fluency/48/ok.png" alt="Approved" width="48" height="48" style="display:block;">
+                                {% else %}
+                                <img src="https://img.icons8.com/fluency/48/cancel.png" alt="Rejected" width="48" height="48" style="display:block;">
+                                {% endif %}
+                            </div>
+                            <h1 style="margin:0;font-size:28px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">
+                                {% if status == 'Approved' %}✅ Rollback Approved!{% else %}❌ Rollback Rejected{% endif %}
+                            </h1>
+                            <p style="margin:10px 0 0;font-size:15px;color:rgba(255,255,255,0.85);">
+                                {% if status == 'Approved' %}Your inventory has been updated and units returned to master stock{% else %}Your rollback request could not be processed{% endif %}
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Wave Divider -->
+                    <tr>
+                        <td style="{% if status == 'Approved' %}background:linear-gradient(135deg,#065f46,#059669);{% else %}background:linear-gradient(135deg,#7f1d1d,#dc2626);{% endif %}height:30px;">
+                            <div style="background:#0f0f1e;height:30px;border-radius:30px 30px 0 0;"></div>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="background:#0f0f1e;padding:0 40px 36px;">
+
+                            <p style="font-size:17px;color:#f1f5f9;margin:28px 0 6px;">Hello <strong style="color:{% if status == 'Approved' %}#34d399{% else %}#f87171{% endif %};">{{ rollback_req.seller.username }}</strong>,</p>
+                            <p style="font-size:15px;color:#94a3b8;line-height:1.7;margin:0 0 28px;">
+                                {% if status == 'Approved' %}
+                                Your inventory rollback request has been reviewed and <strong style="color:#34d399;">approved</strong> by our admin team.
+                                The requested units have been deducted from your inventory and returned to master stock.
+                                {% else %}
+                                Your inventory rollback request has been reviewed and unfortunately <strong style="color:#f87171;">rejected</strong> by our admin team.
+                                No changes have been made to your inventory. Please see the details below.
+                                {% endif %}
+                            </p>
+
+                            <!-- Request ID Banner -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+                                <tr>
+                                    <td style="background:{% if status == 'Approved' %}rgba(16,185,129,0.1){% else %}rgba(239,68,68,0.1){% endif %};border:1px solid {% if status == 'Approved' %}rgba(16,185,129,0.3){% else %}rgba(239,68,68,0.3){% endif %};border-radius:12px;padding:14px 22px;text-align:center;">
+                                        <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:2px;color:{% if status == 'Approved' %}#34d399{% else %}#f87171{% endif %};font-weight:700;">Request Number</p>
+                                        <p style="margin:6px 0 0;font-size:22px;font-weight:800;color:#ffffff;font-family:'Courier New',monospace;letter-spacing:2px;">{{ rollback_req.request_number }}</p>
+                                        <p style="margin:8px 0 0;font-size:12px;font-weight:700;color:{% if status == 'Approved' %}#34d399{% else %}#f87171{% endif %};">
+                                            {% if status == 'Approved' %}✅ Approved{% else %}❌ Rejected{% endif %}
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Request Summary -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:{% if status == 'Approved' %}rgba(16,185,129,0.07){% else %}rgba(239,68,68,0.07){% endif %};border:1px solid {% if status == 'Approved' %}rgba(16,185,129,0.18){% else %}rgba(239,68,68,0.18){% endif %};border-radius:14px;margin-bottom:20px;">
+                                <tr>
+                                    <td style="padding:22px 26px;">
+                                        <p style="margin:0 0 14px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:{% if status == 'Approved' %}#34d399{% else %}#f87171{% endif %};font-weight:700;">
+                                            📦 Rollback Summary
+                                        </p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;width:150px;">Product</td>
+                                                <td style="padding:7px 0;color:#f1f5f9;font-size:15px;font-weight:700;">{{ product.name }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Product Code</td>
+                                                <td style="padding:7px 0;color:#c7d2fe;font-size:13px;font-family:'Courier New',monospace;letter-spacing:1px;">{{ product.product_code }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Qty Requested</td>
+                                                <td style="padding:7px 0;color:#e2e8f0;font-size:14px;font-weight:600;">{{ rollback_req.quantity }} Units</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Decision</td>
+                                                <td style="padding:7px 0;">
+                                                    <span style="background:{% if status == 'Approved' %}rgba(16,185,129,0.15){% else %}rgba(239,68,68,0.15){% endif %};color:{% if status == 'Approved' %}#34d399{% else %}#f87171{% endif %};font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;">
+                                                        ● {{ status }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Decided By</td>
+                                                <td style="padding:7px 0;color:#e2e8f0;font-size:14px;">{{ rollback_req.admin.username if rollback_req.admin else 'Admin' }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Decision Date</td>
+                                                <td style="padding:7px 0;color:#e2e8f0;font-size:14px;">{{ rollback_req.response_date.strftime('%d %b %Y, %I:%M %p') if rollback_req.response_date else '—' }} IST</td>
+                                            </tr>
+                                            {% if status == 'Approved' %}
+                                            <tr>
+                                                <td style="padding:7px 0;color:#64748b;font-size:13px;">Your New Stock</td>
+                                                <td style="padding:7px 0;color:#34d399;font-size:16px;font-weight:700;">{{ rollback_req.seller_inventory.stock }} Units</td>
+                                            </tr>
+                                            {% endif %}
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            {% if rollback_req.admin_note %}
+                            <!-- Admin Note -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(251,191,36,0.07);border-left:4px solid #f59e0b;border-radius:0 12px 12px 0;margin-bottom:24px;">
+                                <tr>
+                                    <td style="padding:16px 20px;">
+                                        <p style="margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#f59e0b;font-weight:600;">
+                                            📝 Admin Note
+                                        </p>
+                                        <p style="margin:0;font-size:14px;color:#fcd34d;line-height:1.6;">{{ rollback_req.admin_note }}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            {% if status == 'Approved' %}
+                            <!-- What happened -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:14px;margin-bottom:24px;">
+                                <tr>
+                                    <td style="padding:20px 24px;">
+                                        <p style="margin:0 0 12px;font-size:14px;font-weight:700;color:#34d399;">✅ What changed?</p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding:5px 0;color:#a7f3d0;font-size:13px;line-height:1.6;">→ {{ rollback_req.quantity }} units of <strong>{{ product.name }}</strong> have been deducted from your inventory.</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:5px 0;color:#a7f3d0;font-size:13px;line-height:1.6;">→ These units have been returned to the master stock pool.</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:5px 0;color:#a7f3d0;font-size:13px;line-height:1.6;">→ Your updated inventory is reflected in real time on your seller dashboard.</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% else %}
+                            <!-- Rejection guidance -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);border-radius:14px;margin-bottom:24px;">
+                                <tr>
+                                    <td style="padding:20px 24px;">
+                                        <p style="margin:0 0 12px;font-size:14px;font-weight:700;color:#f87171;">What can you do?</p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding:5px 0;color:#fca5a5;font-size:13px;line-height:1.6;">→ Review the admin note above for the reason of rejection.</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:5px 0;color:#fca5a5;font-size:13px;line-height:1.6;">→ Your inventory remains unchanged — no deduction has been made.</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:5px 0;color:#fca5a5;font-size:13px;line-height:1.6;">→ Contact admin if you believe this is an error or submit a new request with updated details.</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            <!-- CTA -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{ url_for('seller.rollback_requests', _external=True) }}"
+                                            style="display:inline-block;background:{% if status == 'Approved' %}linear-gradient(135deg,#065f46,#059669){% else %}linear-gradient(135deg,#7f1d1d,#dc2626){% endif %};color:#ffffff;text-decoration:none;padding:15px 44px;border-radius:12px;font-size:15px;font-weight:700;letter-spacing:0.3px;box-shadow:0 8px 24px {% if status == 'Approved' %}rgba(16,185,129,0.3){% else %}rgba(239,68,68,0.3){% endif %};">
+                                            📋 View My Requests
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="font-size:15px;color:#e2e8f0;margin:0;">
+                                Best regards,<br>
+                                <strong style="color:{% if status == 'Approved' %}#34d399{% else %}#f87171{% endif %};">The SourcePoint Team</strong>
+                            </p>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background:#07070f;border-top:1px solid #1e1e30;padding:24px 40px;text-align:center;border-radius:0 0 20px 20px;">
+                            <p style="margin:0 0 4px;font-size:13px;color:#64748b;font-weight:600;">⚡ SourcePoint Platform</p>
+                            <p style="margin:0 0 8px;font-size:12px;color:#334155;">
+                                Need help? <a href="mailto:admin@sourcepoint.in" style="color:#6366f1;text-decoration:none;">admin@sourcepoint.in</a>
+                            </p>
+                            <p style="margin:0;font-size:11px;color:#1e293b;">
+                                © {{ rollback_req.response_date.year if rollback_req.response_date else '2025' }} Source Point. All rights reserved. · This is an automated notification.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

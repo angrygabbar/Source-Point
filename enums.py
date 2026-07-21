@@ -9,7 +9,13 @@ class UserRole(enum.Enum):
     RECRUITER = "recruiter"
     MODERATOR = "moderator"
 
+class RollbackRequestStatus(enum.Enum):
+    PENDING = "Pending"
+    APPROVED = "Approved"
+    REJECTED = "Rejected"
+
 class OrderStatus(enum.Enum):
+
     PLACED = "Order Placed"
     ACCEPTED = "Order Accepted"
     CONFIRMED = "Order Accepted"

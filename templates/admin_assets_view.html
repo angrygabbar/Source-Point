@@ -1,0 +1,258 @@
+{% extends "layout.html" %}
+{% block title %}{{ asset.name }} — Asset Details{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6 pb-10">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <a href="{{ url_for('admin_assets.dashboard') }}"
+                class="p-2 rounded-xl bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-all">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <div class="text-[10px] font-black tracking-[0.28em] uppercase text-cyan-400 mb-1">Asset Details</div>
+                <h1 class="text-2xl font-black text-white">{{ asset.name }}</h1>
+                <span class="text-xs font-mono font-bold text-cyan-400 bg-cyan-500/10 px-2.5 py-0.5 rounded-lg mt-1 inline-block">
+                    {{ asset.asset_code }}
+                </span>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <span class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-black
+                {% if asset.status == 'Active' %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30
+                {% elif asset.status == 'In Storage' %}bg-amber-500/20 text-amber-300 border border-amber-500/30
+                {% elif asset.status == 'Under Repair' %}bg-orange-500/20 text-orange-300 border border-orange-500/30
+                {% elif asset.status == 'Retired' %}bg-red-500/20 text-red-300 border border-red-500/30
+                {% elif asset.status == 'Lost' %}bg-red-700/20 text-red-400 border border-red-700/30
+                {% else %}bg-gray-500/20 text-gray-300 border border-gray-500/30{% endif %}">
+                <i class="fas fa-circle text-[5px] mr-1.5"></i>{{ asset.status }}
+            </span>
+            <span class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-black bg-white/5 text-gray-400 border border-white/10">
+                {{ asset.condition }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="px-4 py-3 rounded-xl text-sm font-bold
+        {% if category == 'success' %}bg-emerald-500/10 border border-emerald-500/30 text-emerald-300
+        {% elif category == 'danger' %}bg-red-500/10 border border-red-500/30 text-red-300
+        {% else %}bg-blue-500/10 border border-blue-500/30 text-blue-300{% endif %}">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Left Column: Main Details -->
+        <div class="lg:col-span-2 space-y-5">
+
+            <!-- Basic Info Card -->
+            <div class="glass-panel-v2 rounded-2xl border border-white/10 p-6">
+                <h2 class="text-xs font-black uppercase tracking-widest text-cyan-400 mb-4">
+                    <i class="fas fa-laptop mr-2"></i>Basic Information
+                </h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Asset Type</p>
+                        <span class="inline-flex items-center mt-1 px-2.5 py-1 rounded-lg text-xs font-bold
+                            {% if asset.asset_type == 'Laptop' %}bg-blue-500/20 text-blue-300
+                            {% elif asset.asset_type == 'Server' %}bg-purple-500/20 text-purple-300
+                            {% elif asset.asset_type == 'Monitor' %}bg-indigo-500/20 text-indigo-300
+                            {% elif asset.asset_type == 'Mobile' %}bg-pink-500/20 text-pink-300
+                            {% else %}bg-gray-500/20 text-gray-300{% endif %}">
+                            {{ asset.asset_type }}
+                        </span>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Brand</p>
+                        <p class="text-sm font-bold text-white mt-1">{{ asset.brand or '—' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Model Number</p>
+                        <p class="text-sm font-bold text-white mt-1">{{ asset.model_number or '—' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Serial Number</p>
+                        <p class="text-sm font-bold text-white font-mono mt-1">{{ asset.serial_number or '—' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Purchase Details Card -->
+            <div class="glass-panel-v2 rounded-2xl border border-white/10 p-6">
+                <h2 class="text-xs font-black uppercase tracking-widest text-cyan-400 mb-4">
+                    <i class="fas fa-receipt mr-2"></i>Purchase Details
+                </h2>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Purchase Date</p>
+                        <p class="text-sm font-bold text-white mt-1">
+                            {{ asset.purchase_date.strftime('%d %b %Y') if asset.purchase_date else '—' }}
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Purchase Price</p>
+                        <p class="text-sm font-bold text-white mt-1">
+                            {% if asset.purchase_price %}
+                                ₹{{ "{:,.2f}".format(asset.purchase_price) }}
+                            {% else %}—{% endif %}
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Warranty Expiry</p>
+                        <p class="text-sm font-bold mt-1
+                            {% if asset.warranty_expiry and asset.warranty_expiry < today %}text-red-400
+                            {% elif asset.warranty_expiry %}text-emerald-300
+                            {% else %}text-white{% endif %}">
+                            {% if asset.warranty_expiry %}
+                                {{ asset.warranty_expiry.strftime('%d %b %Y') }}
+                                {% if asset.warranty_expiry < today %}
+                                    <span class="text-[9px] ml-1">(Expired)</span>
+                                {% endif %}
+                            {% else %}—{% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Assignment Card -->
+            <div class="glass-panel-v2 rounded-2xl border border-white/10 p-6">
+                <h2 class="text-xs font-black uppercase tracking-widest text-cyan-400 mb-4">
+                    <i class="fas fa-user-check mr-2"></i>Assignment
+                </h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Assigned To</p>
+                        {% if asset.assigned_to %}
+                        <div class="flex items-center gap-2 mt-1">
+                            <div class="w-7 h-7 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-400 text-xs font-black">
+                                {{ asset.assigned_to.username[0].upper() }}
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-white">{{ asset.assigned_to.username }}</p>
+                                <p class="text-[10px] text-gray-500">{{ asset.assigned_to.role | title }}</p>
+                            </div>
+                        </div>
+                        {% else %}
+                        <p class="text-sm font-bold text-gray-600 mt-1">Unassigned</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Authorized By</p>
+                        {% if asset.authorized_by %}
+                        <div class="flex items-center gap-2 mt-1">
+                            <div class="w-7 h-7 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400 text-xs font-black">
+                                {{ asset.authorized_by.username[0].upper() }}
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-white">{{ asset.authorized_by.username }}</p>
+                                <p class="text-[10px] text-gray-500">Admin</p>
+                            </div>
+                        </div>
+                        {% else %}
+                        <p class="text-sm font-bold text-gray-600 mt-1">—</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Allocation Date</p>
+                        <p class="text-sm font-bold text-white mt-1">
+                            {{ asset.allocation_date.strftime('%d %b %Y') if asset.allocation_date else '—' }}
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Location</p>
+                        <p class="text-sm font-bold text-white mt-1 flex items-center gap-1">
+                            {% if asset.location %}
+                            <i class="fas fa-location-dot text-cyan-400 text-xs"></i> {{ asset.location }}
+                            {% else %}—{% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes Card -->
+            {% if asset.notes %}
+            <div class="glass-panel-v2 rounded-2xl border border-white/10 p-6">
+                <h2 class="text-xs font-black uppercase tracking-widest text-cyan-400 mb-3">
+                    <i class="fas fa-note-sticky mr-2"></i>Notes
+                </h2>
+                <p class="text-sm text-gray-300 leading-relaxed">{{ asset.notes }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Column: Quick Info + Actions -->
+        <div class="space-y-5">
+
+            <!-- Asset ID Card -->
+            <div class="glass-panel-v2 rounded-2xl border border-cyan-500/20 p-5">
+                <h2 class="text-xs font-black uppercase tracking-widest text-cyan-400 mb-4">Asset Identity</h2>
+                <div class="space-y-3">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Asset Code</p>
+                        <p class="text-base font-black text-cyan-400 font-mono mt-0.5">{{ asset.asset_code }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Condition</p>
+                        <p class="text-sm font-bold text-white mt-0.5">{{ asset.condition }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Added On</p>
+                        <p class="text-sm font-bold text-white mt-0.5">
+                            {{ asset.created_at.strftime('%d %b %Y') if asset.created_at else '—' }}
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Last Updated</p>
+                        <p class="text-sm font-bold text-white mt-0.5">
+                            {{ asset.updated_at.strftime('%d %b %Y, %I:%M %p') if asset.updated_at else '—' }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Card -->
+            <div class="glass-panel-v2 rounded-2xl border border-white/10 p-5 space-y-3">
+                <h2 class="text-xs font-black uppercase tracking-widest text-cyan-400 mb-2">Actions</h2>
+                <a href="{{ url_for('admin_assets.dashboard') }}"
+                    class="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-white/5 text-gray-300 text-sm font-bold hover:bg-white/10 hover:text-white transition-all">
+                    <i class="fas fa-table-list text-gray-500 w-4 text-center"></i> Back to All Assets
+                </a>
+                <!-- Trigger edit modal via redirect-to-dashboard trick -->
+                <a href="{{ url_for('admin_assets.dashboard') }}#edit-{{ asset.id }}"
+                    onclick="sessionStorage.setItem('pendingEdit', '{{ asset.id }}'); return true;"
+                    class="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-cyan-500/10 text-cyan-300 text-sm font-bold hover:bg-cyan-500/20 hover:text-cyan-200 transition-all">
+                    <i class="fas fa-pen-to-square text-cyan-400 w-4 text-center"></i> Edit this Asset
+                </a>
+                <form method="POST" action="{{ url_for('admin_assets.delete_asset', asset_id=asset.id) }}"
+                    onsubmit="return confirm('Are you sure you want to delete {{ asset.name }} ({{ asset.asset_code }})? This action cannot be undone.')">
+                    <button type="submit"
+                        class="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-red-500/10 text-red-400 text-sm font-bold hover:bg-red-500/20 transition-all">
+                        <i class="fas fa-trash w-4 text-center"></i> Delete this Asset
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<script>
+// If the user clicks "Edit" from the view page, we store the asset ID so that
+// when the dashboard loads it can auto-open the edit modal.
+document.addEventListener('DOMContentLoaded', function () {
+    const pending = sessionStorage.getItem('pendingEdit');
+    if (pending && typeof openEditModal === 'function') {
+        sessionStorage.removeItem('pendingEdit');
+        openEditModal(parseInt(pending));
+    }
+});
+</script>

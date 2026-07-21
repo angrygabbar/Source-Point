@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from extensions import db
 from models.auth import User
-from models.commerce import Product, ProductImage, Order, AffiliateAd, Invoice, InvoiceItem, SellerInventory, StockRequest
+from models.commerce import Product, ProductImage, Order, AffiliateAd, Invoice, InvoiceItem, SellerInventory, StockRequest, InventoryRollbackRequest
 from utils import role_required, log_user_action, send_email
 from invoice_service import InvoiceGenerator
 from services.commerce_service import CommerceService
@@ -12,7 +12,7 @@ import csv
 from io import TextIOWrapper
 import openpyxl 
 import traceback 
-from enums import UserRole, OrderStatus, InvoiceStatus
+from enums import UserRole, OrderStatus, InvoiceStatus, RollbackRequestStatus
 
 admin_commerce_bp = Blueprint('admin_commerce', __name__, url_prefix='/admin/commerce')
 
@@ -1001,3 +1001,125 @@ def toggle_share_link():
     link.is_active = not link.is_active
     db.session.commit()
     return jsonify({'success': True, 'is_active': link.is_active, 'message': f"Link {'activated' if link.is_active else 'deactivated'}."})
+
+
+# =========================================================
+# INVENTORY ROLLBACK REQUESTS (ADMIN)
+# =========================================================
+
+@admin_commerce_bp.route('/rollback')
+@login_required
+@role_required(UserRole.ADMIN.value)
+def admin_rollback_dashboard():
+    """Admin dashboard for inventory rollback requests."""
+    pending = InventoryRollbackRequest.query\
+        .filter_by(status=RollbackRequestStatus.PENDING.value)\
+        .order_by(InventoryRollbackRequest.request_date.desc())\
+        .all()
+    history = InventoryRollbackRequest.query\
+        .filter(InventoryRollbackRequest.status != RollbackRequestStatus.PENDING.value)\
+        .order_by(InventoryRollbackRequest.response_date.desc())\
+        .limit(50).all()
+
+    pending_count = len(pending)
+    approved_count = InventoryRollbackRequest.query.filter_by(status=RollbackRequestStatus.APPROVED.value).count()
+    rejected_count = InventoryRollbackRequest.query.filter_by(status=RollbackRequestStatus.REJECTED.value).count()
+
+    return render_template(
+        'admin_inventory_rollback.html',
+        pending=pending,
+        history=history,
+        pending_count=pending_count,
+        approved_count=approved_count,
+        rejected_count=rejected_count,
+        RollbackRequestStatus=RollbackRequestStatus,
+    )
+
+
+@admin_commerce_bp.route('/rollback/approve/<int:req_id>', methods=['POST'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def approve_rollback_request(req_id):
+    """Approve a rollback request — deduct from seller inventory, return to master stock."""
+    req = InventoryRollbackRequest.query.get_or_404(req_id)
+
+    if req.status != RollbackRequestStatus.PENDING.value:
+        flash('This request has already been processed.', 'warning')
+        return redirect(url_for('admin_commerce.admin_rollback_dashboard'))
+
+    seller_inv = req.seller_inventory
+
+    if seller_inv.stock < req.quantity:
+        flash(f'Insufficient seller inventory. Seller only has {seller_inv.stock} units but request is for {req.quantity}.', 'danger')
+        return redirect(url_for('admin_commerce.admin_rollback_dashboard'))
+
+    admin_note = request.form.get('admin_note', '').strip() or None
+
+    # Deduct from seller inventory
+    seller_inv.stock -= req.quantity
+    # Return to master product stock
+    req.product.stock += req.quantity
+
+    req.status = RollbackRequestStatus.APPROVED.value
+    req.admin_id = current_user.id
+    req.admin_note = admin_note
+    req.response_date = datetime.utcnow()
+    db.session.commit()
+
+    log_user_action("Approve Rollback", f"Approved rollback {req.request_number} for {req.seller.username}: {req.product.name} x{req.quantity}")
+
+    try:
+        send_email(
+            to=req.seller.email,
+            subject=f"Rollback Request Approved: {req.product.name}",
+            template="mail/rollback_status_update.html",
+            rollback_req=req,
+            product=req.product,
+            status="Approved",
+            now=datetime.utcnow()
+        )
+    except Exception as e:
+        from flask import current_app
+        current_app.logger.error(f"Error sending rollback approval email: {e}")
+
+    flash(f'Rollback request {req.request_number} approved. {req.quantity} units returned to master stock.', 'success')
+    return redirect(url_for('admin_commerce.admin_rollback_dashboard'))
+
+
+@admin_commerce_bp.route('/rollback/reject/<int:req_id>', methods=['POST'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def reject_rollback_request(req_id):
+    """Reject a rollback request — no stock changes."""
+    req = InventoryRollbackRequest.query.get_or_404(req_id)
+
+    if req.status != RollbackRequestStatus.PENDING.value:
+        flash('This request has already been processed.', 'warning')
+        return redirect(url_for('admin_commerce.admin_rollback_dashboard'))
+
+    admin_note = request.form.get('admin_note', '').strip() or None
+
+    req.status = RollbackRequestStatus.REJECTED.value
+    req.admin_id = current_user.id
+    req.admin_note = admin_note
+    req.response_date = datetime.utcnow()
+    db.session.commit()
+
+    log_user_action("Reject Rollback", f"Rejected rollback {req.request_number} for {req.seller.username}: {req.product.name} x{req.quantity}")
+
+    try:
+        send_email(
+            to=req.seller.email,
+            subject=f"Rollback Request Rejected: {req.product.name}",
+            template="mail/rollback_status_update.html",
+            rollback_req=req,
+            product=req.product,
+            status="Rejected",
+            now=datetime.utcnow()
+        )
+    except Exception as e:
+        from flask import current_app
+        current_app.logger.error(f"Error sending rollback rejection email: {e}")
+
+    flash(f'Rollback request {req.request_number} has been rejected.', 'warning')
+    return redirect(url_for('admin_commerce.admin_rollback_dashboard'))

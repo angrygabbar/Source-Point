@@ -11,13 +11,19 @@
             <h1 class="text-3xl font-black text-white">Asset Management</h1>
             <p class="text-sm text-gray-500 mt-1">Track, assign, and manage all IT assets across SourcePoint.</p>
         </div>
-        <form method="GET" action="{{ url_for('admin_assets.dashboard') }}" class="flex flex-col sm:flex-row gap-2 items-end">
-            <input type="text" name="q" value="{{ search_query }}" placeholder="Search name, code, serial..."
-                class="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white min-w-[220px] placeholder-gray-600">
-            <button class="px-4 py-3 rounded-xl bg-cyan-500 text-black text-sm font-black hover:bg-cyan-400 transition-colors">
-                <i class="fas fa-search mr-2"></i>Search
-            </button>
-        </form>
+        <div class="flex flex-col sm:flex-row gap-2 items-end">
+            <form method="GET" action="{{ url_for('admin_assets.dashboard') }}" class="flex gap-2 items-end">
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Search name, code, serial..."
+                    class="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white min-w-[220px] placeholder-gray-600">
+                <button class="px-4 py-3 rounded-xl bg-white/10 text-white text-sm font-bold hover:bg-white/20 transition-colors">
+                    <i class="fas fa-search mr-2"></i>Search
+                </button>
+            </form>
+            <a href="{{ url_for('admin_assets.add_asset_page') }}"
+                class="px-5 py-3 rounded-xl bg-cyan-500 text-black text-sm font-black hover:bg-cyan-400 transition-colors flex items-center gap-2">
+                <i class="fas fa-plus"></i> Add Asset
+            </a>
+        </div>
     </div>
 
     <!-- Stats Cards -->
@@ -48,288 +54,165 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        <!-- LEFT: Add Asset Form -->
-        <section class="lg:col-span-1 space-y-4">
-            <div class="glass-panel-v2 rounded-2xl border border-white/10 p-5">
-                <h2 class="text-lg font-black text-white flex items-center gap-2">
-                    <i class="fas fa-plus-circle text-cyan-400"></i> Add New Asset
-                </h2>
-                <form method="POST" action="{{ url_for('admin_assets.add_asset') }}" class="mt-5 space-y-3">
-
-                    <div>
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">Asset Name *</label>
-                        <input type="text" name="name" required placeholder="e.g. MacBook Pro 16-inch"
-                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600">
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">Type *</label>
-                            <select name="asset_type" required class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white">
-                                {% for val, label in asset_types %}
-                                <option value="{{ val }}">{{ label }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">Brand</label>
-                            <input type="text" name="brand" placeholder="e.g. Apple"
-                                class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">Serial Number</label>
-                            <input type="text" name="serial_number" placeholder="S/N"
-                                class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">Model Number</label>
-                            <input type="text" name="model_number" placeholder="Model"
-                                class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">Status</label>
-                            <select name="status" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white">
-                                {% for val, label in asset_statuses %}
-                                <option value="{{ val }}">{{ label }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">Condition</label>
-                            <select name="condition" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white">
-                                {% for val, label in asset_conditions %}
-                                <option value="{{ val }}">{{ label }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">Purchase Date</label>
-                            <input type="date" name="purchase_date"
-                                class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">Price (₹)</label>
-                            <input type="number" name="purchase_price" step="0.01" placeholder="0.00"
-                                class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">Warranty Expiry</label>
-                        <input type="date" name="warranty_expiry"
-                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white">
-                    </div>
-
-                    <hr class="border-white/5 my-2">
-                    <p class="text-[10px] font-black uppercase tracking-widest text-cyan-400">Assignment Details</p>
-
-                    <div>
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">Assign To</label>
-                        <select name="assigned_to_id" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white">
-                            <option value="">— Unassigned —</option>
-                            {% for user in all_users %}
-                            <option value="{{ user.id }}">{{ user.username }} ({{ user.role }})</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">Allocation Date</label>
-                            <input type="date" name="allocation_date"
-                                class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">Location</label>
-                            <input type="text" name="location" placeholder="e.g. Mumbai Office"
-                                class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">Notes</label>
-                        <textarea name="notes" rows="2" placeholder="Any additional details..."
-                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 resize-none"></textarea>
-                    </div>
-
-                    <button type="submit"
-                        class="w-full py-3 rounded-xl bg-cyan-500 text-black text-sm font-black hover:bg-cyan-400 transition-colors">
-                        <i class="fas fa-plus mr-2"></i>Add Asset
-                    </button>
-                </form>
+    <!-- Filters -->
+    <div class="glass-panel-v2 rounded-2xl border border-white/10 p-4">
+        <form method="GET" action="{{ url_for('admin_assets.dashboard') }}" class="flex flex-wrap gap-2 items-end">
+            <div class="flex-1 min-w-[140px]">
+                <label class="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-1">Type</label>
+                <select name="type" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white">
+                    <option value="">All Types</option>
+                    {% for val, label in asset_types %}
+                    <option value="{{ val }}" {{ 'selected' if filter_type == val }}>{{ label }}</option>
+                    {% endfor %}
+                </select>
             </div>
-        </section>
-
-        <!-- RIGHT: Asset Table -->
-        <section class="lg:col-span-2 space-y-4">
-
-            <!-- Filters -->
-            <div class="glass-panel-v2 rounded-2xl border border-white/10 p-4">
-                <form method="GET" action="{{ url_for('admin_assets.dashboard') }}" class="flex flex-wrap gap-2 items-end">
-                    <div class="flex-1 min-w-[140px]">
-                        <label class="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-1">Type</label>
-                        <select name="type" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white">
-                            <option value="">All Types</option>
-                            {% for val, label in asset_types %}
-                            <option value="{{ val }}" {{ 'selected' if filter_type == val }}>{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="flex-1 min-w-[140px]">
-                        <label class="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-1">Status</label>
-                        <select name="status" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white">
-                            <option value="">All Statuses</option>
-                            {% for val, label in asset_statuses %}
-                            <option value="{{ val }}" {{ 'selected' if filter_status == val }}>{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="flex-1 min-w-[140px]">
-                        <label class="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-1">Assigned To</label>
-                        <select name="assigned_to" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white">
-                            <option value="">All Users</option>
-                            {% for user in all_users %}
-                            <option value="{{ user.id }}" {{ 'selected' if filter_assigned == user.id|string }}>{{ user.username }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="flex-1 min-w-[140px]">
-                        <label class="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-1">Location</label>
-                        <select name="location" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white">
-                            <option value="">All Locations</option>
-                            {% for loc in locations %}
-                            <option value="{{ loc }}" {{ 'selected' if filter_location == loc }}>{{ loc }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <button type="submit" class="px-4 py-2 rounded-lg bg-white/10 text-white text-xs font-bold hover:bg-white/20 transition-colors">
-                        <i class="fas fa-filter mr-1"></i>Filter
-                    </button>
-                    {% if filter_type or filter_status or filter_assigned or filter_location or search_query %}
-                    <a href="{{ url_for('admin_assets.dashboard') }}" class="px-4 py-2 rounded-lg bg-red-500/20 text-red-300 text-xs font-bold hover:bg-red-500/30 transition-colors">
-                        <i class="fas fa-times mr-1"></i>Clear
-                    </a>
-                    {% endif %}
-                </form>
+            <div class="flex-1 min-w-[140px]">
+                <label class="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-1">Status</label>
+                <select name="status" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white">
+                    <option value="">All Statuses</option>
+                    {% for val, label in asset_statuses %}
+                    <option value="{{ val }}" {{ 'selected' if filter_status == val }}>{{ label }}</option>
+                    {% endfor %}
+                </select>
             </div>
+            <div class="flex-1 min-w-[140px]">
+                <label class="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-1">Assigned To</label>
+                <select name="assigned_to" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white">
+                    <option value="">All Users</option>
+                    {% for user in all_users %}
+                    <option value="{{ user.id }}" {{ 'selected' if filter_assigned == user.id|string }}>{{ user.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex-1 min-w-[140px]">
+                <label class="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-1">Location</label>
+                <select name="location" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white">
+                    <option value="">All Locations</option>
+                    {% for loc in locations %}
+                    <option value="{{ loc }}" {{ 'selected' if filter_location == loc }}>{{ loc }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="px-4 py-2 rounded-lg bg-white/10 text-white text-xs font-bold hover:bg-white/20 transition-colors">
+                <i class="fas fa-filter mr-1"></i>Filter
+            </button>
+            {% if filter_type or filter_status or filter_assigned or filter_location or search_query %}
+            <a href="{{ url_for('admin_assets.dashboard') }}" class="px-4 py-2 rounded-lg bg-red-500/20 text-red-300 text-xs font-bold hover:bg-red-500/30 transition-colors">
+                <i class="fas fa-times mr-1"></i>Clear
+            </a>
+            {% endif %}
+        </form>
+    </div>
 
-            <!-- Asset Table -->
-            <div class="glass-panel-v2 rounded-2xl border border-white/10 overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead>
-                            <tr class="border-b border-white/10">
-                                <th class="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Code</th>
-                                <th class="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Asset</th>
-                                <th class="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Type</th>
-                                <th class="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Serial</th>
-                                <th class="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Status</th>
-                                <th class="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Assigned To</th>
-                                <th class="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Location</th>
-                                <th class="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Allocated</th>
-                                <th class="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500 text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-white/5">
-                            {% for asset in assets %}
-                            <tr class="hover:bg-white/[0.02] transition-colors">
-                                <td class="px-4 py-3">
-                                    <span class="text-xs font-mono font-bold text-cyan-400">{{ asset.asset_code }}</span>
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div class="text-sm font-bold text-white">{{ asset.name }}</div>
-                                    {% if asset.brand %}
-                                    <div class="text-[10px] text-gray-500">{{ asset.brand }}{% if asset.model_number %} · {{ asset.model_number }}{% endif %}</div>
-                                    {% endif %}
-                                </td>
-                                <td class="px-4 py-3">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold
-                                        {% if asset.asset_type == 'Laptop' %}bg-blue-500/20 text-blue-300
-                                        {% elif asset.asset_type == 'Server' %}bg-purple-500/20 text-purple-300
-                                        {% elif asset.asset_type == 'Monitor' %}bg-indigo-500/20 text-indigo-300
-                                        {% elif asset.asset_type == 'Mobile' %}bg-pink-500/20 text-pink-300
-                                        {% else %}bg-gray-500/20 text-gray-300{% endif %}">
-                                        {{ asset.asset_type }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3 text-xs text-gray-400 font-mono">{{ asset.serial_number or '—' }}</td>
-                                <td class="px-4 py-3">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold
-                                        {% if asset.status == 'Active' %}bg-emerald-500/20 text-emerald-300
-                                        {% elif asset.status == 'In Storage' %}bg-amber-500/20 text-amber-300
-                                        {% elif asset.status == 'Under Repair' %}bg-orange-500/20 text-orange-300
-                                        {% elif asset.status == 'Retired' %}bg-red-500/20 text-red-300
-                                        {% elif asset.status == 'Lost' %}bg-red-700/20 text-red-400
-                                        {% else %}bg-gray-500/20 text-gray-300{% endif %}">
-                                        <i class="fas fa-circle text-[5px] mr-1.5"></i>{{ asset.status }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3">
-                                    {% if asset.assigned_to %}
-                                    <div class="text-xs font-bold text-white">{{ asset.assigned_to.username }}</div>
-                                    <div class="text-[10px] text-gray-500">{{ asset.assigned_to.role | title }}</div>
-                                    {% else %}
-                                    <span class="text-xs text-gray-600">Unassigned</span>
-                                    {% endif %}
-                                </td>
-                                <td class="px-4 py-3 text-xs text-gray-400">{{ asset.location or '—' }}</td>
-                                <td class="px-4 py-3 text-xs text-gray-400">
-                                    {{ asset.allocation_date.strftime('%d %b %Y') if asset.allocation_date else '—' }}
-                                </td>
-                                <td class="px-4 py-3 text-center">
-                                    <div class="flex items-center justify-center gap-1">
-                                        <button onclick="openEditModal({{ asset.id }})"
-                                            class="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition-colors text-xs"
-                                            title="Edit">
-                                            <i class="fas fa-pen-to-square"></i>
-                                        </button>
-                                        <button onclick="openViewModal({{ asset.id }})"
-                                            class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors text-xs"
-                                            title="View Details">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <form method="POST" action="{{ url_for('admin_assets.delete_asset', asset_id=asset.id) }}"
-                                            onsubmit="return confirm('Delete asset {{ asset.asset_code }}?')" class="inline">
-                                            <button type="submit"
-                                                class="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors text-xs"
-                                                title="Delete">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
+    <!-- Asset Table -->
+    <div class="glass-panel-v2 rounded-2xl border border-white/10 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="border-b border-white/10">
+                        <th class="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Code</th>
+                        <th class="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Asset</th>
+                        <th class="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Type</th>
+                        <th class="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Serial</th>
+                        <th class="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Status</th>
+                        <th class="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Assigned To</th>
+                        <th class="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Location</th>
+                        <th class="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Allocated</th>
+                        <th class="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500 text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    {% for asset in assets %}
+                    <tr class="hover:bg-white/[0.02] transition-colors">
+                        <td class="px-4 py-3">
+                            <span class="text-xs font-mono font-bold text-cyan-400">{{ asset.asset_code }}</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="text-sm font-bold text-white">{{ asset.name }}</div>
+                            {% if asset.brand %}
+                            <div class="text-[10px] text-gray-500">{{ asset.brand }}{% if asset.model_number %} · {{ asset.model_number }}{% endif %}</div>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold
+                                {% if asset.asset_type == 'Laptop' %}bg-blue-500/20 text-blue-300
+                                {% elif asset.asset_type == 'Server' %}bg-purple-500/20 text-purple-300
+                                {% elif asset.asset_type == 'Monitor' %}bg-indigo-500/20 text-indigo-300
+                                {% elif asset.asset_type == 'Mobile' %}bg-pink-500/20 text-pink-300
+                                {% else %}bg-gray-500/20 text-gray-300{% endif %}">
+                                {{ asset.asset_type }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-xs text-gray-400 font-mono">{{ asset.serial_number or '—' }}</td>
+                        <td class="px-4 py-3">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold
+                                {% if asset.status == 'Active' %}bg-emerald-500/20 text-emerald-300
+                                {% elif asset.status == 'In Storage' %}bg-amber-500/20 text-amber-300
+                                {% elif asset.status == 'Under Repair' %}bg-orange-500/20 text-orange-300
+                                {% elif asset.status == 'Retired' %}bg-red-500/20 text-red-300
+                                {% elif asset.status == 'Lost' %}bg-red-700/20 text-red-400
+                                {% else %}bg-gray-500/20 text-gray-300{% endif %}">
+                                <i class="fas fa-circle text-[5px] mr-1.5"></i>{{ asset.status }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3">
+                            {% if asset.assigned_to %}
+                            <div class="text-xs font-bold text-white">{{ asset.assigned_to.username }}</div>
+                            <div class="text-[10px] text-gray-500">{{ asset.assigned_to.role | title }}</div>
                             {% else %}
-                            <tr>
-                                <td colspan="9" class="px-4 py-12 text-center">
-                                    <div class="text-gray-600">
-                                        <i class="fas fa-laptop text-4xl mb-3"></i>
-                                        <p class="text-sm font-bold">No assets found</p>
-                                        <p class="text-xs mt-1">Add your first asset using the form on the left.</p>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
+                            <span class="text-xs text-gray-600">Unassigned</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-xs text-gray-400">{{ asset.location or '—' }}</td>
+                        <td class="px-4 py-3 text-xs text-gray-400">
+                            {{ asset.allocation_date.strftime('%d %b %Y') if asset.allocation_date else '—' }}
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            <div class="flex items-center justify-center gap-1">
+                                <!-- View Details — dedicated page -->
+                                <a href="{{ url_for('admin_assets.view_asset', asset_id=asset.id) }}"
+                                    class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors text-xs"
+                                    title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <!-- Edit — inline modal -->
+                                <button onclick="openEditModal({{ asset.id }})"
+                                    class="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition-colors text-xs"
+                                    title="Edit">
+                                    <i class="fas fa-pen-to-square"></i>
+                                </button>
+                                <!-- Delete -->
+                                <form method="POST" action="{{ url_for('admin_assets.delete_asset', asset_id=asset.id) }}"
+                                    onsubmit="return confirm('Delete asset {{ asset.asset_code }}?')" class="inline">
+                                    <button type="submit"
+                                        class="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors text-xs"
+                                        title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="px-4 py-16 text-center">
+                            <div class="text-gray-600">
+                                <i class="fas fa-laptop text-4xl mb-3"></i>
+                                <p class="text-sm font-bold">No assets found</p>
+                                <p class="text-xs mt-1">
+                                    <a href="{{ url_for('admin_assets.add_asset_page') }}" class="text-cyan-400 hover:underline">Add your first asset</a> to get started.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
-<!-- Edit Asset Modal -->
+<!-- Edit Asset Modal (inline on dashboard) -->
 <div id="editAssetModal" class="fixed inset-0 z-50 hidden">
     <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeEditModal()"></div>
     <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -442,24 +325,6 @@
     </div>
 </div>
 
-<!-- View Asset Detail Modal -->
-<div id="viewAssetModal" class="fixed inset-0 z-50 hidden">
-    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeViewModal()"></div>
-    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div class="glass-panel-v2 rounded-2xl border border-blue-500/30 p-6 mx-4">
-            <div class="flex items-center justify-between mb-5">
-                <h2 class="text-lg font-black text-white"><i class="fas fa-eye text-blue-400 mr-2"></i>Asset Details</h2>
-                <button onclick="closeViewModal()" class="text-gray-500 hover:text-white transition-colors">
-                    <i class="fas fa-times text-lg"></i>
-                </button>
-            </div>
-            <div id="viewAssetContent" class="space-y-3 text-sm">
-                <!-- Filled by JS -->
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
 function openEditModal(assetId) {
     fetch(`/admin/assets/detail/${assetId}`)
@@ -488,95 +353,16 @@ function closeEditModal() {
     document.getElementById('editAssetModal').classList.add('hidden');
 }
 
-function openViewModal(assetId) {
-    fetch(`/admin/assets/detail/${assetId}`)
-        .then(r => r.json())
-        .then(data => {
-            const statusColors = {
-                'Active': 'text-emerald-300', 'In Storage': 'text-amber-300',
-                'Under Repair': 'text-orange-300', 'Retired': 'text-red-300', 'Lost': 'text-red-400'
-            };
-            const sc = statusColors[data.status] || 'text-gray-300';
-
-            document.getElementById('viewAssetContent').innerHTML = `
-                <div class="text-center mb-4">
-                    <span class="text-xs font-mono font-bold text-cyan-400 bg-cyan-500/10 px-3 py-1 rounded-lg">${data.asset_code}</span>
-                    <h3 class="text-xl font-black text-white mt-2">${data.name}</h3>
-                    <span class="text-xs ${sc} font-bold"><i class="fas fa-circle text-[5px] mr-1"></i>${data.status}</span>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-white/5 rounded-xl p-3">
-                        <p class="text-[9px] font-black uppercase tracking-widest text-gray-500">Type</p>
-                        <p class="text-white font-bold mt-1">${data.asset_type}</p>
-                    </div>
-                    <div class="bg-white/5 rounded-xl p-3">
-                        <p class="text-[9px] font-black uppercase tracking-widest text-gray-500">Condition</p>
-                        <p class="text-white font-bold mt-1">${data.condition}</p>
-                    </div>
-                    <div class="bg-white/5 rounded-xl p-3">
-                        <p class="text-[9px] font-black uppercase tracking-widest text-gray-500">Brand</p>
-                        <p class="text-white font-bold mt-1">${data.brand || '—'}</p>
-                    </div>
-                    <div class="bg-white/5 rounded-xl p-3">
-                        <p class="text-[9px] font-black uppercase tracking-widest text-gray-500">Model</p>
-                        <p class="text-white font-bold mt-1">${data.model_number || '—'}</p>
-                    </div>
-                    <div class="bg-white/5 rounded-xl p-3">
-                        <p class="text-[9px] font-black uppercase tracking-widest text-gray-500">Serial Number</p>
-                        <p class="text-white font-bold font-mono mt-1">${data.serial_number || '—'}</p>
-                    </div>
-                    <div class="bg-white/5 rounded-xl p-3">
-                        <p class="text-[9px] font-black uppercase tracking-widest text-gray-500">Purchase Price</p>
-                        <p class="text-white font-bold mt-1">${data.purchase_price ? '₹' + parseFloat(data.purchase_price).toLocaleString('en-IN') : '—'}</p>
-                    </div>
-                    <div class="bg-white/5 rounded-xl p-3">
-                        <p class="text-[9px] font-black uppercase tracking-widest text-gray-500">Purchase Date</p>
-                        <p class="text-white font-bold mt-1">${data.purchase_date || '—'}</p>
-                    </div>
-                    <div class="bg-white/5 rounded-xl p-3">
-                        <p class="text-[9px] font-black uppercase tracking-widest text-gray-500">Warranty Expiry</p>
-                        <p class="text-white font-bold mt-1">${data.warranty_expiry || '—'}</p>
-                    </div>
-                </div>
-                <hr class="border-white/10">
-                <p class="text-[10px] font-black uppercase tracking-widest text-cyan-400">Assignment</p>
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-white/5 rounded-xl p-3">
-                        <p class="text-[9px] font-black uppercase tracking-widest text-gray-500">Assigned To</p>
-                        <p class="text-white font-bold mt-1">${data.assigned_to_name || 'Unassigned'}</p>
-                    </div>
-                    <div class="bg-white/5 rounded-xl p-3">
-                        <p class="text-[9px] font-black uppercase tracking-widest text-gray-500">Authorized By</p>
-                        <p class="text-white font-bold mt-1">${data.authorized_by_name || '—'}</p>
-                    </div>
-                    <div class="bg-white/5 rounded-xl p-3">
-                        <p class="text-[9px] font-black uppercase tracking-widest text-gray-500">Allocation Date</p>
-                        <p class="text-white font-bold mt-1">${data.allocation_date || '—'}</p>
-                    </div>
-                    <div class="bg-white/5 rounded-xl p-3">
-                        <p class="text-[9px] font-black uppercase tracking-widest text-gray-500">Location</p>
-                        <p class="text-white font-bold mt-1">${data.location || '—'}</p>
-                    </div>
-                </div>
-                ${data.notes ? `<div class="bg-white/5 rounded-xl p-3"><p class="text-[9px] font-black uppercase tracking-widest text-gray-500">Notes</p><p class="text-gray-300 text-xs mt-1">${data.notes}</p></div>` : ''}
-                <div class="flex justify-between text-[10px] text-gray-600 pt-2">
-                    <span>Created: ${data.created_at}</span>
-                    <span>Updated: ${data.updated_at}</span>
-                </div>
-            `;
-            document.getElementById('viewAssetModal').classList.remove('hidden');
-        });
-}
-
-function closeViewModal() {
-    document.getElementById('viewAssetModal').classList.add('hidden');
-}
-
-// Close modals on Escape key
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        closeEditModal();
-        closeViewModal();
+    if (e.key === 'Escape') closeEditModal();
+});
+
+// Auto-open edit modal if triggered from the view page
+document.addEventListener('DOMContentLoaded', function () {
+    const pending = sessionStorage.getItem('pendingEdit');
+    if (pending) {
+        sessionStorage.removeItem('pendingEdit');
+        openEditModal(parseInt(pending));
     }
 });
 </script>

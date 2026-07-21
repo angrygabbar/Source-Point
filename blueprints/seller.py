@@ -1,11 +1,12 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_file
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_file, current_app
 from flask_login import login_required, current_user
 from io import BytesIO
 from extensions import db
 from models.auth import User
 from models.commerce import (
     Product, Order, OrderItem, Invoice, InvoiceItem, StockRequest,
-    SellerInventory, SupersCoinWallet, SupersCoinTransaction, SupersCoinInvoice
+    SellerInventory, SupersCoinWallet, SupersCoinTransaction, SupersCoinInvoice,
+    InventoryRollbackRequest
 )
 from utils import role_required, log_user_action, send_email
 from datetime import datetime
@@ -13,7 +14,7 @@ from invoice_service import InvoiceGenerator, SupersCoinInvoiceGenerator
 from services.commerce_service import CommerceService
 from services.superscoins_service import SupersCoinsService
 import os 
-from enums import UserRole, OrderStatus, InvoiceStatus, SupersCoinTransactionType
+from enums import UserRole, OrderStatus, InvoiceStatus, SupersCoinTransactionType, RollbackRequestStatus
 
 seller_bp = Blueprint('seller', __name__, url_prefix='/seller')
 
@@ -628,3 +629,148 @@ def toggle_share_link():
     link.is_active = not link.is_active
     db.session.commit()
     return jsonify({'success': True, 'is_active': link.is_active, 'message': f"Link {'activated' if link.is_active else 'deactivated'}."})
+
+
+# =========================================================
+# INVENTORY ROLLBACK REQUESTS
+# =========================================================
+
+def _generate_rollback_number():
+    """Generate the next rollback request number like RB-0001."""
+    last = InventoryRollbackRequest.query.order_by(InventoryRollbackRequest.id.desc()).first()
+    next_id = (last.id + 1) if last else 1
+    return f"RB-{next_id:04d}"
+
+
+@seller_bp.route('/inventory/rollback')
+@login_required
+@role_required(UserRole.SELLER.value)
+def rollback_requests():
+    """Seller's rollback request dashboard."""
+    # Only show seller's own inventory for the form dropdown
+    inventory_items = db.session.query(SellerInventory, Product)\
+        .join(Product, SellerInventory.product_id == Product.id)\
+        .filter(SellerInventory.seller_id == current_user.id, SellerInventory.stock > 0)\
+        .order_by(Product.name)\
+        .all()
+
+    my_requests = InventoryRollbackRequest.query\
+        .filter_by(seller_id=current_user.id)\
+        .order_by(InventoryRollbackRequest.request_date.desc())\
+        .all()
+
+    pending_count = sum(1 for r in my_requests if r.status == RollbackRequestStatus.PENDING.value)
+    approved_count = sum(1 for r in my_requests if r.status == RollbackRequestStatus.APPROVED.value)
+    rejected_count = sum(1 for r in my_requests if r.status == RollbackRequestStatus.REJECTED.value)
+
+    return render_template(
+        'seller/rollback_requests.html',
+        inventory_items=inventory_items,
+        my_requests=my_requests,
+        pending_count=pending_count,
+        approved_count=approved_count,
+        rejected_count=rejected_count,
+        RollbackRequestStatus=RollbackRequestStatus,
+    )
+
+
+@seller_bp.route('/inventory/rollback/submit', methods=['POST'])
+@login_required
+@role_required(UserRole.SELLER.value)
+def submit_rollback_request():
+    """Submit a new inventory rollback request."""
+    inventory_id = request.form.get('inventory_id', '').strip()
+    quantity_str = request.form.get('quantity', '').strip()
+    reason = request.form.get('reason', '').strip()
+
+    if not inventory_id or not quantity_str:
+        flash('Please select a product and enter a quantity.', 'danger')
+        return redirect(url_for('seller.rollback_requests'))
+
+    # Verify this inventory record belongs to the current seller
+    seller_inv = SellerInventory.query.filter_by(
+        id=int(inventory_id),
+        seller_id=current_user.id
+    ).first()
+
+    if not seller_inv:
+        flash('Invalid inventory selection.', 'danger')
+        return redirect(url_for('seller.rollback_requests'))
+
+    try:
+        qty = int(quantity_str)
+        if qty <= 0:
+            raise ValueError
+    except ValueError:
+        flash('Please enter a valid positive quantity.', 'danger')
+        return redirect(url_for('seller.rollback_requests'))
+
+    if qty > seller_inv.stock:
+        flash(f'Cannot request more than your current stock ({seller_inv.stock} units).', 'danger')
+        return redirect(url_for('seller.rollback_requests'))
+
+    # Prevent duplicate pending request for the same inventory
+    existing_pending = InventoryRollbackRequest.query.filter_by(
+        seller_id=current_user.id,
+        seller_inventory_id=seller_inv.id,
+        status=RollbackRequestStatus.PENDING.value
+    ).first()
+
+    if existing_pending:
+        flash(f'You already have a pending rollback request ({existing_pending.request_number}) for this product. Please wait for the admin to process it.', 'warning')
+        return redirect(url_for('seller.rollback_requests'))
+
+    try:
+        rollback_req = InventoryRollbackRequest(
+            request_number=_generate_rollback_number(),
+            seller_id=current_user.id,
+            product_id=seller_inv.product_id,
+            seller_inventory_id=seller_inv.id,
+            quantity=qty,
+            reason=reason or None,
+            status=RollbackRequestStatus.PENDING.value,
+        )
+        db.session.add(rollback_req)
+        db.session.commit()
+
+        log_user_action("Submit Rollback Request", f"Submitted rollback {rollback_req.request_number} for {rollback_req.product.name} x{qty}")
+
+        # Notify admins via email (best-effort)
+        admins = User.query.filter_by(role=UserRole.ADMIN.value).all()
+        for admin in admins:
+            try:
+                send_email(
+                    to=admin.email,
+                    subject=f"Inventory Rollback Request: {rollback_req.product.name}",
+                    template="mail/new_rollback_request_admin.html",
+                    rollback_req=rollback_req,
+                    seller=current_user,
+                    product=rollback_req.product,
+                    now=datetime.utcnow(),
+                    sync=False
+                )
+            except Exception as e:
+                current_app.logger.error(f"Failed to send rollback request email to {admin.email}: {e}")
+
+        # Send confirmation to seller
+        try:
+            send_email(
+                to=current_user.email,
+                subject=f"Rollback Request Submitted: {rollback_req.product.name} ({rollback_req.request_number})",
+                template="mail/new_rollback_request_seller_confirm.html",
+                rollback_req=rollback_req,
+                product=rollback_req.product,
+                now=datetime.utcnow(),
+                sync=False
+            )
+        except Exception as e:
+            current_app.logger.error(f"Failed to send rollback confirmation email to seller: {e}")
+
+        flash(f'Rollback request {rollback_req.request_number} submitted successfully. Awaiting admin approval.', 'success')
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error submitting rollback request: {e}")
+        flash(f'Error submitting request. Please try again.', 'danger')
+
+    return redirect(url_for('seller.rollback_requests'))
