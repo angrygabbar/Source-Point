@@ -32,73 +32,82 @@ DEFAULT_ROLLBACK_TERMS_CONTENT = """<h2>Inventory Rollback Terms</h2>
 
 def upgrade():
     now = datetime.utcnow()
-    op.create_table('inventory_rollback_terms',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('version', sa.Integer(), nullable=False),
-    sa.Column('title', sa.String(length=150), nullable=False),
-    sa.Column('content', sa.Text(), nullable=False),
-    sa.Column('is_active', sa.Boolean(), nullable=False),
-    sa.Column('created_by_id', sa.Integer(), nullable=True),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['created_by_id'], ['user.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    with op.batch_alter_table('inventory_rollback_terms', schema=None) as batch_op:
-        batch_op.create_index(batch_op.f('ix_inventory_rollback_terms_created_at'), ['created_at'], unique=False)
-        batch_op.create_index(batch_op.f('ix_inventory_rollback_terms_is_active'), ['is_active'], unique=False)
-        batch_op.create_index(batch_op.f('ix_inventory_rollback_terms_version'), ['version'], unique=True)
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    tables = inspector.get_table_names()
 
-    op.create_table('inventory_rollback_terms_decision',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('terms_id', sa.Integer(), nullable=False),
-    sa.Column('seller_id', sa.Integer(), nullable=False),
-    sa.Column('decision', sa.String(length=20), nullable=False),
-    sa.Column('decided_at', sa.DateTime(), nullable=False),
-    sa.Column('ip_address', sa.String(length=50), nullable=True),
-    sa.Column('user_agent', sa.String(length=255), nullable=True),
-    sa.ForeignKeyConstraint(['seller_id'], ['user.id'], ),
-    sa.ForeignKeyConstraint(['terms_id'], ['inventory_rollback_terms.id'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('terms_id', 'seller_id', name='uq_rollback_terms_decision_terms_seller')
-    )
-    with op.batch_alter_table('inventory_rollback_terms_decision', schema=None) as batch_op:
-        batch_op.create_index(batch_op.f('ix_inventory_rollback_terms_decision_decided_at'), ['decided_at'], unique=False)
-        batch_op.create_index(batch_op.f('ix_inventory_rollback_terms_decision_decision'), ['decision'], unique=False)
-        batch_op.create_index(batch_op.f('ix_inventory_rollback_terms_decision_seller_id'), ['seller_id'], unique=False)
-        batch_op.create_index(batch_op.f('ix_inventory_rollback_terms_decision_terms_id'), ['terms_id'], unique=False)
+    if 'inventory_rollback_terms' not in tables:
+        op.create_table('inventory_rollback_terms',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('version', sa.Integer(), nullable=False),
+        sa.Column('title', sa.String(length=150), nullable=False),
+        sa.Column('content', sa.Text(), nullable=False),
+        sa.Column('is_active', sa.Boolean(), nullable=False),
+        sa.Column('created_by_id', sa.Integer(), nullable=True),
+        sa.Column('created_at', sa.DateTime(), nullable=False),
+        sa.Column('updated_at', sa.DateTime(), nullable=False),
+        sa.ForeignKeyConstraint(['created_by_id'], ['user.id'], ),
+        sa.PrimaryKeyConstraint('id')
+        )
+        with op.batch_alter_table('inventory_rollback_terms', schema=None) as batch_op:
+            batch_op.create_index(batch_op.f('ix_inventory_rollback_terms_created_at'), ['created_at'], unique=False)
+            batch_op.create_index(batch_op.f('ix_inventory_rollback_terms_is_active'), ['is_active'], unique=False)
+            batch_op.create_index(batch_op.f('ix_inventory_rollback_terms_version'), ['version'], unique=True)
 
-    terms_table = sa.table(
-        'inventory_rollback_terms',
-        sa.column('version', sa.Integer),
-        sa.column('title', sa.String),
-        sa.column('content', sa.Text),
-        sa.column('is_active', sa.Boolean),
-        sa.column('created_at', sa.DateTime),
-        sa.column('updated_at', sa.DateTime),
-    )
-    op.bulk_insert(terms_table, [{
-        'version': 1,
-        'title': 'Inventory Rollback Terms and Conditions',
-        'content': DEFAULT_ROLLBACK_TERMS_CONTENT,
-        'is_active': True,
-        'created_at': now,
-        'updated_at': now,
-    }])
+        op.create_table('inventory_rollback_terms_decision',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('terms_id', sa.Integer(), nullable=False),
+        sa.Column('seller_id', sa.Integer(), nullable=False),
+        sa.Column('decision', sa.String(length=20), nullable=False),
+        sa.Column('decided_at', sa.DateTime(), nullable=False),
+        sa.Column('ip_address', sa.String(length=50), nullable=True),
+        sa.Column('user_agent', sa.String(length=255), nullable=True),
+        sa.ForeignKeyConstraint(['seller_id'], ['user.id'], ),
+        sa.ForeignKeyConstraint(['terms_id'], ['inventory_rollback_terms.id'], ),
+        sa.PrimaryKeyConstraint('id'),
+        sa.UniqueConstraint('terms_id', 'seller_id', name='uq_rollback_terms_decision_terms_seller')
+        )
+        with op.batch_alter_table('inventory_rollback_terms_decision', schema=None) as batch_op:
+            batch_op.create_index(batch_op.f('ix_inventory_rollback_terms_decision_decided_at'), ['decided_at'], unique=False)
+            batch_op.create_index(batch_op.f('ix_inventory_rollback_terms_decision_decision'), ['decision'], unique=False)
+            batch_op.create_index(batch_op.f('ix_inventory_rollback_terms_decision_seller_id'), ['seller_id'], unique=False)
+            batch_op.create_index(batch_op.f('ix_inventory_rollback_terms_decision_terms_id'), ['terms_id'], unique=False)
+
+        terms_table = sa.table(
+            'inventory_rollback_terms',
+            sa.column('version', sa.Integer),
+            sa.column('title', sa.String),
+            sa.column('content', sa.Text),
+            sa.column('is_active', sa.Boolean),
+            sa.column('created_at', sa.DateTime),
+            sa.column('updated_at', sa.DateTime),
+        )
+        op.bulk_insert(terms_table, [{
+            'version': 1,
+            'title': 'Inventory Rollback Terms and Conditions',
+            'content': DEFAULT_ROLLBACK_TERMS_CONTENT,
+            'is_active': True,
+            'created_at': now,
+            'updated_at': now,
+        }])
 
 
 def downgrade():
-    with op.batch_alter_table('inventory_rollback_terms_decision', schema=None) as batch_op:
-        batch_op.drop_index(batch_op.f('ix_inventory_rollback_terms_decision_terms_id'))
-        batch_op.drop_index(batch_op.f('ix_inventory_rollback_terms_decision_seller_id'))
-        batch_op.drop_index(batch_op.f('ix_inventory_rollback_terms_decision_decision'))
-        batch_op.drop_index(batch_op.f('ix_inventory_rollback_terms_decision_decided_at'))
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    tables = inspector.get_table_names()
 
-    op.drop_table('inventory_rollback_terms_decision')
+    if 'inventory_rollback_terms_decision' in tables:
+        with op.batch_alter_table('inventory_rollback_terms_decision', schema=None) as batch_op:
+            batch_op.drop_index(batch_op.f('ix_inventory_rollback_terms_decision_terms_id'))
+            batch_op.drop_index(batch_op.f('ix_inventory_rollback_terms_decision_seller_id'))
+            batch_op.drop_index(batch_op.f('ix_inventory_rollback_terms_decision_decision'))
+            batch_op.drop_index(batch_op.f('ix_inventory_rollback_terms_decision_decided_at'))
+        op.drop_table('inventory_rollback_terms_decision')
 
-    with op.batch_alter_table('inventory_rollback_terms', schema=None) as batch_op:
-        batch_op.drop_index(batch_op.f('ix_inventory_rollback_terms_version'))
-        batch_op.drop_index(batch_op.f('ix_inventory_rollback_terms_is_active'))
-        batch_op.drop_index(batch_op.f('ix_inventory_rollback_terms_created_at'))
-
-    op.drop_table('inventory_rollback_terms')
+    if 'inventory_rollback_terms' in tables:
+        with op.batch_alter_table('inventory_rollback_terms', schema=None) as batch_op:
+            batch_op.drop_index(batch_op.f('ix_inventory_rollback_terms_version'))
+            batch_op.drop_index(batch_op.f('ix_inventory_rollback_terms_is_active'))
+            batch_op.drop_index(batch_op.f('ix_inventory_rollback_terms_created_at'))
+        op.drop_table('inventory_rollback_terms')
