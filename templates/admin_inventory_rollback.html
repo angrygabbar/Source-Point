@@ -11,10 +11,16 @@
             <h1 class="text-2xl font-black text-white">Inventory Rollback Requests</h1>
             <p class="text-sm text-gray-500 mt-1">Review and act on seller inventory return requests.</p>
         </div>
-        <a href="{{ url_for('admin_commerce.admin_commerce_dashboard') }}"
-            class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 text-gray-400 text-sm font-bold hover:bg-white/10 hover:text-white transition-all self-start sm:self-auto">
-            <i class="fas fa-arrow-left"></i> Back to Commerce
-        </a>
+        <div class="flex flex-wrap gap-2 self-start sm:self-auto">
+            <a href="{{ url_for('admin_commerce.rollback_terms_admin') }}"
+                class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-500/15 text-orange-300 text-sm font-bold hover:bg-orange-500/25 transition-all border border-orange-500/25">
+                <i class="fas fa-file-contract"></i> Terms
+            </a>
+            <a href="{{ url_for('admin_commerce.admin_commerce_dashboard') }}"
+                class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 text-gray-400 text-sm font-bold hover:bg-white/10 hover:text-white transition-all">
+                <i class="fas fa-arrow-left"></i> Back to Commerce
+            </a>
+        </div>
     </div>
 
     <!-- Flash Messages -->

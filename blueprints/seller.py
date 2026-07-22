@@ -12,9 +12,13 @@ from utils import role_required, log_user_action, send_email
 from datetime import datetime
 from invoice_service import InvoiceGenerator, SupersCoinInvoiceGenerator
 from services.commerce_service import CommerceService
+from services.rollback_terms_service import RollbackTermsService
 from services.superscoins_service import SupersCoinsService
 import os 
-from enums import UserRole, OrderStatus, InvoiceStatus, SupersCoinTransactionType, RollbackRequestStatus
+from enums import (
+    UserRole, OrderStatus, InvoiceStatus, SupersCoinTransactionType,
+    RollbackRequestStatus, RollbackTermsDecision
+)
 
 seller_bp = Blueprint('seller', __name__, url_prefix='/seller')
 
@@ -647,6 +651,18 @@ def _generate_rollback_number():
 @role_required(UserRole.SELLER.value)
 def rollback_requests():
     """Seller's rollback request dashboard."""
+    active_terms = RollbackTermsService.ensure_active_terms()
+    terms_decision = RollbackTermsService.get_seller_decision(current_user.id, active_terms.id)
+
+    if not terms_decision or terms_decision.decision != RollbackTermsDecision.ACCEPTED.value:
+        return render_template(
+            'seller/rollback_terms.html',
+            active_terms=active_terms,
+            terms_content_html=RollbackTermsService.render_terms_content(active_terms.content),
+            terms_decision=terms_decision,
+            RollbackTermsDecision=RollbackTermsDecision,
+        )
+
     # Only show seller's own inventory for the form dropdown
     inventory_items = db.session.query(SellerInventory, Product)\
         .join(Product, SellerInventory.product_id == Product.id)\
@@ -671,7 +687,48 @@ def rollback_requests():
         approved_count=approved_count,
         rejected_count=rejected_count,
         RollbackRequestStatus=RollbackRequestStatus,
+        active_terms=active_terms,
     )
+
+
+@seller_bp.route('/inventory/rollback/terms/respond', methods=['POST'])
+@login_required
+@role_required(UserRole.SELLER.value)
+def respond_rollback_terms():
+    """Accept or reject the active rollback terms before using rollback."""
+    active_terms = RollbackTermsService.ensure_active_terms()
+    terms_id = request.form.get('terms_id', '').strip()
+    decision = request.form.get('decision', '').strip()
+
+    try:
+        submitted_terms_id = int(terms_id)
+    except ValueError:
+        flash('Please review the latest rollback terms before responding.', 'warning')
+        return redirect(url_for('seller.rollback_requests'))
+
+    if submitted_terms_id != active_terms.id:
+        flash('Rollback terms were updated. Please review the latest version before responding.', 'warning')
+        return redirect(url_for('seller.rollback_requests'))
+
+    if decision not in {RollbackTermsDecision.ACCEPTED.value, RollbackTermsDecision.REJECTED.value}:
+        flash('Please choose Accept or Reject for the rollback terms and conditions.', 'danger')
+        return redirect(url_for('seller.rollback_requests'))
+
+    RollbackTermsService.record_seller_decision(
+        seller_id=current_user.id,
+        terms_id=active_terms.id,
+        decision=decision,
+        request_obj=request,
+    )
+
+    if decision == RollbackTermsDecision.ACCEPTED.value:
+        log_user_action("Accept Rollback Terms", f"Accepted rollback terms v{active_terms.version}")
+        flash('Rollback terms accepted. You can now use the rollback feature.', 'success')
+    else:
+        log_user_action("Reject Rollback Terms", f"Rejected rollback terms v{active_terms.version}")
+        flash('Please accept the terms and conditions to access the rollback feature.', 'warning')
+
+    return redirect(url_for('seller.rollback_requests'))
 
 
 @seller_bp.route('/inventory/rollback/submit', methods=['POST'])
@@ -679,6 +736,10 @@ def rollback_requests():
 @role_required(UserRole.SELLER.value)
 def submit_rollback_request():
     """Submit a new inventory rollback request."""
+    if not RollbackTermsService.seller_has_accepted_current_terms(current_user.id):
+        flash('Please accept the terms and conditions to access the rollback feature.', 'warning')
+        return redirect(url_for('seller.rollback_requests'))
+
     inventory_id = request.form.get('inventory_id', '').strip()
     quantity_str = request.form.get('quantity', '').strip()
     reason = request.form.get('reason', '').strip()

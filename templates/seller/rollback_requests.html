@@ -10,6 +10,11 @@
             <div class="text-[10px] font-black tracking-[0.28em] uppercase text-orange-400 mb-1">Inventory Management</div>
             <h1 class="text-2xl font-black text-white">Rollback Requests</h1>
             <p class="text-sm text-gray-500 mt-1">Request to return allocated inventory back to master stock.</p>
+            {% if active_terms %}
+            <p class="inline-flex items-center gap-1.5 text-[10px] font-black text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 rounded-lg px-2.5 py-1 mt-3">
+                <i class="fas fa-check"></i> Terms v{{ active_terms.version }} accepted
+            </p>
+            {% endif %}
         </div>
         <button onclick="document.getElementById('submitModal').classList.remove('hidden')"
             class="px-5 py-3 rounded-xl bg-orange-500 text-black text-sm font-black hover:bg-orange-400 transition-colors flex items-center gap-2 self-start sm:self-auto">

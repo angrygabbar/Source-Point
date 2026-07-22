@@ -2,17 +2,22 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from extensions import db
 from models.auth import User
-from models.commerce import Product, ProductImage, Order, AffiliateAd, Invoice, InvoiceItem, SellerInventory, StockRequest, InventoryRollbackRequest
+from models.commerce import (
+    Product, ProductImage, Order, AffiliateAd, Invoice, InvoiceItem,
+    SellerInventory, StockRequest, InventoryRollbackRequest,
+    InventoryRollbackTerms, InventoryRollbackTermsDecision
+)
 from utils import role_required, log_user_action, send_email
 from invoice_service import InvoiceGenerator
 from services.commerce_service import CommerceService
+from services.rollback_terms_service import RollbackTermsService
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import csv
 from io import TextIOWrapper
 import openpyxl 
 import traceback 
-from enums import UserRole, OrderStatus, InvoiceStatus, RollbackRequestStatus
+from enums import UserRole, OrderStatus, InvoiceStatus, RollbackRequestStatus, RollbackTermsDecision
 
 admin_commerce_bp = Blueprint('admin_commerce', __name__, url_prefix='/admin/commerce')
 
@@ -1006,6 +1011,83 @@ def toggle_share_link():
 # =========================================================
 # INVENTORY ROLLBACK REQUESTS (ADMIN)
 # =========================================================
+
+@admin_commerce_bp.route('/rollback/terms')
+@login_required
+@role_required(UserRole.ADMIN.value)
+def rollback_terms_admin():
+    """Admin page for rollback terms and seller accept/reject status."""
+    active_terms = RollbackTermsService.ensure_active_terms(created_by_id=current_user.id)
+    sellers = User.query.filter_by(role=UserRole.SELLER.value).order_by(User.username).all()
+    current_decisions = InventoryRollbackTermsDecision.query.filter_by(terms_id=active_terms.id).all()
+    decisions_by_seller = {decision.seller_id: decision for decision in current_decisions}
+
+    seller_rows = []
+    accepted_count = 0
+    rejected_count = 0
+    for seller in sellers:
+        decision = decisions_by_seller.get(seller.id)
+        if decision and decision.decision == RollbackTermsDecision.ACCEPTED.value:
+            accepted_count += 1
+        elif decision and decision.decision == RollbackTermsDecision.REJECTED.value:
+            rejected_count += 1
+
+        seller_rows.append({
+            'seller': seller,
+            'decision': decision,
+            'status': decision.decision if decision else 'Pending',
+        })
+
+    pending_count = len(seller_rows) - accepted_count - rejected_count
+    terms_versions = InventoryRollbackTerms.query.order_by(InventoryRollbackTerms.version.desc()).all()
+    decision_history = InventoryRollbackTermsDecision.query\
+        .order_by(InventoryRollbackTermsDecision.decided_at.desc())\
+        .limit(100).all()
+
+    return render_template(
+        'admin_rollback_terms.html',
+        active_terms=active_terms,
+        terms_content_html=RollbackTermsService.render_terms_content(active_terms.content),
+        seller_rows=seller_rows,
+        terms_versions=terms_versions,
+        decision_history=decision_history,
+        accepted_count=accepted_count,
+        rejected_count=rejected_count,
+        pending_count=pending_count,
+        RollbackTermsDecision=RollbackTermsDecision,
+    )
+
+
+@admin_commerce_bp.route('/rollback/terms/edit', methods=['GET', 'POST'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def edit_rollback_terms():
+    """Dedicated rich-text editor for publishing rollback terms."""
+    active_terms = RollbackTermsService.ensure_active_terms(created_by_id=current_user.id)
+
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip() or 'Inventory Rollback Terms and Conditions'
+        content = request.form.get('content', '').strip()
+
+        if not content:
+            flash('Terms and conditions content is required.', 'danger')
+            return redirect(url_for('admin_commerce.edit_rollback_terms'))
+
+        try:
+            new_terms = RollbackTermsService.publish_new_terms(title, content, current_user.id)
+            log_user_action("Update Rollback Terms", f"Published rollback terms v{new_terms.version}")
+            flash(f'Rollback terms v{new_terms.version} published. Sellers must accept this version before rollback.', 'success')
+            return redirect(url_for('admin_commerce.rollback_terms_admin'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating rollback terms: {str(e)}', 'danger')
+
+    return render_template(
+        'admin_rollback_terms_edit.html',
+        active_terms=active_terms,
+        editor_content=RollbackTermsService.render_terms_content(active_terms.content),
+    )
+
 
 @admin_commerce_bp.route('/rollback')
 @login_required

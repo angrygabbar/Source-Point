@@ -2,7 +2,10 @@
 from extensions import db
 from datetime import datetime
 from sqlalchemy import Numeric
-from enums import OrderStatus, InvoiceStatus, VoucherOrderStatus, SupersCoinInvoiceStatus, RollbackRequestStatus
+from enums import (
+    OrderStatus, InvoiceStatus, VoucherOrderStatus, SupersCoinInvoiceStatus,
+    RollbackRequestStatus, RollbackTermsDecision
+)
 
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -239,3 +242,45 @@ class InventoryRollbackRequest(db.Model):
 
     def __repr__(self):
         return f'<RollbackRequest {self.request_number}: {self.status}>'
+
+
+class InventoryRollbackTerms(db.Model):
+    """Versioned terms sellers must accept before using inventory rollback."""
+    __tablename__ = 'inventory_rollback_terms'
+
+    id = db.Column(db.Integer, primary_key=True)
+    version = db.Column(db.Integer, nullable=False, unique=True, index=True)
+    title = db.Column(db.String(150), nullable=False, default='Inventory Rollback Terms and Conditions')
+    content = db.Column(db.Text, nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False, index=True)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    created_by = db.relationship('User', foreign_keys=[created_by_id], backref='created_rollback_terms')
+
+    def __repr__(self):
+        return f'<InventoryRollbackTerms v{self.version}: {"active" if self.is_active else "inactive"}>'
+
+
+class InventoryRollbackTermsDecision(db.Model):
+    """A seller's latest decision for one rollback terms version."""
+    __tablename__ = 'inventory_rollback_terms_decision'
+
+    id = db.Column(db.Integer, primary_key=True)
+    terms_id = db.Column(db.Integer, db.ForeignKey('inventory_rollback_terms.id'), nullable=False, index=True)
+    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    decision = db.Column(db.String(20), default=RollbackTermsDecision.REJECTED.value, nullable=False, index=True)
+    decided_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+    ip_address = db.Column(db.String(50), nullable=True)
+    user_agent = db.Column(db.String(255), nullable=True)
+
+    terms = db.relationship('InventoryRollbackTerms', backref='seller_decisions')
+    seller = db.relationship('User', foreign_keys=[seller_id], backref='rollback_terms_decisions')
+
+    __table_args__ = (
+        db.UniqueConstraint('terms_id', 'seller_id', name='uq_rollback_terms_decision_terms_seller'),
+    )
+
+    def __repr__(self):
+        return f'<RollbackTermsDecision seller={self.seller_id} terms={self.terms_id} decision={self.decision}>'

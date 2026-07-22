@@ -203,6 +203,10 @@
                         hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true"
                         class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer {{ 'bg-white/10 text-white border border-white/5' if request.endpoint == 'admin_commerce.admin_rollback_dashboard' else '' }}"><i
                             class="fas fa-rotate-left w-6 text-center mr-2 text-orange-400"></i> Inventory Rollback</a>
+                    <a hx-get="{{ url_for('admin_commerce.rollback_terms_admin') }}" hx-target="#main-content"
+                        hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer {{ 'bg-white/10 text-white border border-white/5' if request.endpoint in ['admin_commerce.rollback_terms_admin', 'admin_commerce.edit_rollback_terms'] else '' }}"><i
+                            class="fas fa-file-contract w-6 text-center mr-2 text-orange-300"></i> Rollback Terms</a>
                     {% endif %}
 
                     {% if current_user.role == 'developer' %}

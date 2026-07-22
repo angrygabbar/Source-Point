@@ -1,0 +1,250 @@
+{% extends "layout.html" %}
+{% block title %}Edit Rollback Terms{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6 pb-10">
+    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+        <div>
+            <div class="text-[10px] font-black tracking-[0.28em] uppercase text-orange-400 mb-1">Admin &middot; Commerce</div>
+            <h1 class="text-2xl font-black text-white">Edit Rollback Terms</h1>
+            <p class="text-sm text-gray-500 mt-1">Publish a formatted terms version for seller rollback access.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ url_for('admin_commerce.rollback_terms_admin') }}"
+                class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 text-gray-400 text-sm font-bold hover:bg-white/10 hover:text-white transition-all">
+                <i class="fas fa-chart-simple"></i> Seller Decisions
+            </a>
+            <a href="{{ url_for('admin_commerce.admin_rollback_dashboard') }}"
+                class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 text-gray-400 text-sm font-bold hover:bg-white/10 hover:text-white transition-all">
+                <i class="fas fa-rotate-left"></i> Rollback Requests
+            </a>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for category, message in messages %}
+    <div class="px-4 py-3 rounded-xl text-sm font-bold
+        {% if category == 'success' %}bg-emerald-500/10 border border-emerald-500/30 text-emerald-300
+        {% elif category == 'danger' %}bg-red-500/10 border border-red-500/30 text-red-300
+        {% elif category == 'warning' %}bg-amber-500/10 border border-amber-500/30 text-amber-300
+        {% else %}bg-blue-500/10 border border-blue-500/30 text-blue-300{% endif %}">
+        <i class="fas fa-circle-info mr-2"></i>{{ message }}
+    </div>
+    {% endfor %}{% endif %}
+    {% endwith %}
+
+    <form id="rollbackTermsForm" method="POST" action="{{ url_for('admin_commerce.edit_rollback_terms') }}" class="space-y-5">
+        <div class="glass-panel-v2 rounded-2xl border border-white/10 overflow-hidden">
+            <div class="px-5 py-4 border-b border-white/10 bg-black/20">
+                <div class="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4 lg:items-end">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Document Title</label>
+                        <input type="text" name="title" value="{{ active_terms.title }}" maxlength="150" required
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-base text-white font-bold focus:border-orange-500/50 focus:outline-none transition-colors">
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-orange-500/10 border border-orange-500/25 text-orange-300 text-xs font-black">
+                            <i class="fas fa-code-branch"></i> Current v{{ active_terms.version }}
+                        </span>
+                        <span class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-xs font-black">
+                            <i class="fas fa-upload"></i> Publishes v{{ active_terms.version + 1 }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="terms-editor-shell bg-[#0b1020]">
+                <div class="terms-editor-ribbon px-5 py-3 border-b border-white/10 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-orange-500/15 border border-orange-500/30 flex items-center justify-center text-orange-300">
+                            <i class="fas fa-file-word"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-black text-white">Document Editor</p>
+                            <p class="text-[10px] text-gray-500">Headings, fonts, tables, lists, links, colors, preview, and fullscreen</p>
+                        </div>
+                    </div>
+                    <button type="button" id="previewTermsBtn"
+                        class="px-3 py-2 rounded-xl bg-white/5 text-gray-300 border border-white/10 hover:bg-white/10 hover:text-white transition-all text-xs font-black flex items-center gap-2">
+                        <i class="fas fa-eye"></i> Preview
+                    </button>
+                </div>
+
+                <textarea name="content" id="rollbackTermsEditor" rows="24">{{ editor_content }}</textarea>
+            </div>
+        </div>
+
+        <div class="sticky bottom-4 z-20 glass-panel-v2 rounded-2xl border border-orange-500/20 px-5 py-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <p class="text-sm font-black text-white">Ready to publish?</p>
+                    <p class="text-xs text-gray-500 mt-0.5">Sellers must accept the new version before they can submit rollback requests.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <a href="{{ url_for('admin_commerce.rollback_terms_admin') }}"
+                        class="px-4 py-2.5 rounded-xl bg-white/5 text-gray-400 text-sm font-bold hover:bg-white/10 hover:text-white transition-all">
+                        Cancel
+                    </a>
+                    <button id="publishTermsBtn" type="submit"
+                        class="px-5 py-2.5 rounded-xl bg-orange-500 text-black text-sm font-black hover:bg-orange-400 transition-all flex items-center gap-2">
+                        <i class="fas fa-upload"></i> Publish New Version
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+(function initRollbackTermsEditor() {
+    function loadTinyMCE(callback) {
+        if (typeof tinymce !== 'undefined') {
+            callback();
+            return;
+        }
+        var existing = document.querySelector('script[data-rollback-terms-tinymce="true"]');
+        if (existing) {
+            existing.addEventListener('load', callback);
+            return;
+        }
+        var script = document.createElement('script');
+        script.src = 'https://cdn.tiny.cloud/1/z53vyzj5hcwj6nlffpeu227p3t1sya9zs5w66nd3qshdjniq/tinymce/6/tinymce.min.js';
+        script.referrerPolicy = 'origin';
+        script.dataset.rollbackTermsTinymce = 'true';
+        script.onload = callback;
+        document.head.appendChild(script);
+    }
+
+    function initEditor() {
+        if (typeof tinymce === 'undefined') {
+            setTimeout(initEditor, 150);
+            return;
+        }
+
+        tinymce.remove('#rollbackTermsEditor');
+        tinymce.init({
+            selector: '#rollbackTermsEditor',
+            skin: 'oxide-dark',
+            content_css: false,
+            height: 720,
+            width: '100%',
+            menubar: 'file edit view insert format table tools',
+            statusbar: true,
+            resize: true,
+            branding: false,
+            promotion: false,
+            plugins: [
+                'advlist', 'autolink', 'lists', 'link', 'charmap', 'preview',
+                'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                'insertdatetime', 'table', 'wordcount', 'help', 'codesample', 'hr'
+            ],
+            toolbar: [
+                'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | forecolor backcolor removeformat',
+                'alignleft aligncenter alignright alignjustify | bullist numlist | outdent indent | table link hr | searchreplace preview fullscreen code wordcount'
+            ],
+            toolbar_mode: 'wrap',
+            block_formats: 'Paragraph=p; Heading 1=h1; Heading 2=h2; Heading 3=h3; Heading 4=h4; Quote=blockquote; Code=pre',
+            font_family_formats: 'Aptos=aptos,arial,sans-serif; Calibri=calibri,arial,sans-serif; Arial=arial,helvetica,sans-serif; Georgia=georgia,palatino; Times New Roman=times new roman,times; Verdana=verdana,geneva; Courier New=courier new,courier,monospace',
+            font_size_formats: '10px 11px 12px 13px 14px 16px 18px 20px 24px 28px 32px 36px',
+            table_default_attributes: { border: '1' },
+            table_default_styles: { 'border-collapse': 'collapse', width: '100%' },
+            table_class_list: [
+                { title: 'Standard', value: '' },
+                { title: 'Terms Matrix', value: 'terms-matrix' }
+            ],
+            content_style:
+                'html { background: #00000a; }' +
+                'body.mce-content-body { max-width: 816px; min-height: 1056px; margin: 28px auto; padding: 72px; background: #0d0d1a; color: #e5e7eb; border: 1px solid rgba(251,146,60,0.22); box-shadow: 0 24px 70px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05); font-family: Aptos, Calibri, Arial, sans-serif; font-size: 14px; line-height: 1.65; }' +
+                'h1 { font-size: 28px; line-height: 1.2; margin: 0 0 18px; font-weight: 800; color: #fff7ed; }' +
+                'h2 { font-size: 21px; line-height: 1.3; margin: 22px 0 10px; font-weight: 800; color: #fed7aa; }' +
+                'h3 { font-size: 17px; line-height: 1.3; margin: 18px 0 8px; font-weight: 700; color: #fdba74; }' +
+                'p { margin: 0 0 10px; }' +
+                'ul, ol { margin: 8px 0 12px 24px; padding-left: 20px; }' +
+                'li { margin: 4px 0; }' +
+                'table { border-collapse: collapse; width: 100%; margin: 16px 0; }' +
+                'td, th { border: 1px solid rgba(251,146,60,0.3); padding: 8px 10px; vertical-align: top; }' +
+                'th { background: rgba(251,146,60,0.12); color: #fed7aa; font-weight: 800; }' +
+                'blockquote { border-left: 4px solid #f97316; margin: 14px 0; padding: 8px 14px; background: rgba(251,146,60,0.08); color: #fed7aa; }' +
+                'a { color: #fdba74; text-decoration: underline; }' +
+                'hr { border: 0; border-top: 1px solid rgba(255,255,255,0.12); margin: 18px 0; }' +
+                'code { background: rgba(0,0,0,0.35); color: #86efac; padding: 2px 5px; border-radius: 4px; }' +
+                'pre { background: #030712; color: #bbf7d0; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); }' +
+                '::selection { background: rgba(251,146,60,0.35); }',
+            setup: function(editor) {
+                editor.on('change keyup', function() {
+                    editor.save();
+                });
+            }
+        });
+    }
+
+    loadTinyMCE(initEditor);
+
+    document.getElementById('previewTermsBtn')?.addEventListener('click', function() {
+        var editor = typeof tinymce !== 'undefined' ? tinymce.get('rollbackTermsEditor') : null;
+        if (editor) editor.execCommand('mcePreview');
+    });
+
+    document.getElementById('rollbackTermsForm')?.addEventListener('submit', function(event) {
+        var editor = typeof tinymce !== 'undefined' ? tinymce.get('rollbackTermsEditor') : null;
+        if (editor) editor.save();
+
+        var rawContent = document.getElementById('rollbackTermsEditor').value || '';
+        var probe = document.createElement('div');
+        probe.innerHTML = rawContent;
+        if (!probe.textContent.trim()) {
+            event.preventDefault();
+            if (window.showToast) window.showToast('Terms and conditions content is required.', 'danger');
+            return;
+        }
+
+        var publishBtn = document.getElementById('publishTermsBtn');
+        publishBtn.disabled = true;
+        publishBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publishing';
+    });
+})();
+</script>
+
+<style>
+    .terms-editor-shell .tox.tox-tinymce {
+        border: none !important;
+        border-radius: 0 !important;
+    }
+    .terms-editor-shell .tox .tox-menubar,
+    .terms-editor-shell .tox .tox-toolbar,
+    .terms-editor-shell .tox .tox-toolbar-overlord,
+    .terms-editor-shell .tox .tox-toolbar__primary {
+        background: rgba(17,24,39,0.98) !important;
+    }
+    .terms-editor-shell .tox .tox-menubar {
+        border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+    }
+    .terms-editor-shell .tox .tox-toolbar,
+    .terms-editor-shell .tox .tox-toolbar__overflow {
+        border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+    }
+    .terms-editor-shell .tox .tox-toolbar__group {
+        border-right: 1px solid rgba(255,255,255,0.08) !important;
+        padding: 0 6px !important;
+    }
+    .terms-editor-shell .tox .tox-mbtn,
+    .terms-editor-shell .tox .tox-tbtn,
+    .terms-editor-shell .tox .tox-statusbar,
+    .terms-editor-shell .tox .tox-statusbar a {
+        color: #d1d5db !important;
+    }
+    .terms-editor-shell .tox .tox-mbtn:hover,
+    .terms-editor-shell .tox .tox-tbtn:hover {
+        background: rgba(251,146,60,0.16) !important;
+        color: #ffffff !important;
+    }
+    .terms-editor-shell .tox .tox-tbtn--enabled,
+    .terms-editor-shell .tox .tox-tbtn--enabled:hover {
+        background: rgba(251,146,60,0.22) !important;
+    }
+    .terms-editor-shell .tox .tox-statusbar {
+        background: rgba(17,24,39,0.98) !important;
+        border-top: 1px solid rgba(255,255,255,0.08) !important;
+    }
+</style>
+{% endblock %}

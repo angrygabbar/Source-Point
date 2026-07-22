@@ -1,0 +1,101 @@
+{% extends "layout.html" %}
+{% block title %}Rollback Terms and Conditions{% endblock %}
+
+{% block content %}
+{% include "_rollback_terms_content_styles.html" %}
+<div class="max-w-5xl mx-auto space-y-6 pb-10">
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+            <div class="text-[10px] font-black tracking-[0.28em] uppercase text-orange-400 mb-1">Inventory Rollback</div>
+            <h1 class="text-2xl font-black text-white">{{ active_terms.title }}</h1>
+            <p class="text-sm text-gray-500 mt-1">Version {{ active_terms.version }} must be accepted before rollback requests can be submitted.</p>
+        </div>
+        <a href="{{ url_for('seller.manage_inventory') }}"
+            class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 text-gray-400 text-sm font-bold hover:bg-white/10 hover:text-white transition-all self-start sm:self-auto">
+            <i class="fas fa-arrow-left"></i> Back to Inventory
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for category, message in messages %}
+    <div class="px-4 py-3 rounded-xl text-sm font-bold
+        {% if category == 'success' %}bg-emerald-500/10 border border-emerald-500/30 text-emerald-300
+        {% elif category == 'danger' %}bg-red-500/10 border border-red-500/30 text-red-300
+        {% elif category == 'warning' %}bg-amber-500/10 border border-amber-500/30 text-amber-300
+        {% else %}bg-blue-500/10 border border-blue-500/30 text-blue-300{% endif %}">
+        <i class="fas fa-circle-info mr-2"></i>{{ message }}
+    </div>
+    {% endfor %}{% endif %}
+    {% endwith %}
+
+    {% if terms_decision and terms_decision.decision == RollbackTermsDecision.REJECTED.value %}
+    <div class="bg-red-500/10 border border-red-500/30 rounded-2xl px-5 py-4 text-red-200">
+        <div class="flex gap-3">
+            <i class="fas fa-ban text-red-400 mt-0.5"></i>
+            <div>
+                <p class="text-sm font-black text-red-200">Rollback access is locked</p>
+                <p class="text-xs text-red-200/80 mt-1">Please accept the terms and conditions to access the rollback feature.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <section class="lg:col-span-2 glass-panel-v2 rounded-2xl border border-orange-500/20 overflow-hidden">
+            <div class="px-6 py-4 border-b border-orange-500/10 flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-orange-500/15 border border-orange-500/30 flex items-center justify-center text-orange-300">
+                    <i class="fas fa-file-contract"></i>
+                </div>
+                <div>
+                    <h2 class="text-sm font-black text-white">Terms and Conditions</h2>
+                    <p class="text-[10px] text-gray-500">Published {{ active_terms.created_at.strftime('%d %b %Y') if active_terms.created_at else '-' }}</p>
+                </div>
+            </div>
+            <div class="rollback-terms-content p-6 max-h-[56vh] overflow-y-auto custom-scrollbar">
+                {{ terms_content_html|safe }}
+            </div>
+        </section>
+
+        <aside class="space-y-4">
+            <div class="glass-panel-v2 rounded-2xl border border-white/10 p-5">
+                <p class="text-[10px] font-black uppercase tracking-widest text-gray-500">Current Status</p>
+                {% if terms_decision %}
+                <div class="mt-3 inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-black
+                    {% if terms_decision.decision == RollbackTermsDecision.ACCEPTED.value %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30
+                    {% else %}bg-red-500/20 text-red-300 border border-red-500/30{% endif %}">
+                    <i class="fas {% if terms_decision.decision == RollbackTermsDecision.ACCEPTED.value %}fa-check{% else %}fa-times{% endif %} mr-2"></i>
+                    {{ terms_decision.decision }}
+                </div>
+                <p class="text-xs text-gray-500 mt-3">{{ terms_decision.decided_at.strftime('%d %b %Y, %I:%M %p') if terms_decision.decided_at else '' }}</p>
+                {% else %}
+                <div class="mt-3 inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-black bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    <i class="fas fa-clock mr-2"></i>Pending
+                </div>
+                <p class="text-xs text-gray-500 mt-3">No decision has been recorded for this version.</p>
+                {% endif %}
+            </div>
+
+            <div class="glass-panel-v2 rounded-2xl border border-white/10 p-5 space-y-3">
+                <form method="POST" action="{{ url_for('seller.respond_rollback_terms') }}">
+                    <input type="hidden" name="terms_id" value="{{ active_terms.id }}">
+                    <input type="hidden" name="decision" value="{{ RollbackTermsDecision.ACCEPTED.value }}">
+                    <button type="submit"
+                        class="w-full py-3 rounded-xl bg-emerald-500 text-black text-sm font-black hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2">
+                        <i class="fas fa-check"></i> Accept Terms
+                    </button>
+                </form>
+
+                <form method="POST" action="{{ url_for('seller.respond_rollback_terms') }}"
+                    onsubmit="return confirm('Reject these rollback terms? You will not be able to access rollback until you accept them.')">
+                    <input type="hidden" name="terms_id" value="{{ active_terms.id }}">
+                    <input type="hidden" name="decision" value="{{ RollbackTermsDecision.REJECTED.value }}">
+                    <button type="submit"
+                        class="w-full py-3 rounded-xl bg-red-500/15 text-red-300 text-sm font-black hover:bg-red-500/25 border border-red-500/30 transition-colors flex items-center justify-center gap-2">
+                        <i class="fas fa-times"></i> Reject Terms
+                    </button>
+                </form>
+            </div>
+        </aside>
+    </div>
+</div>
+{% endblock %}

@@ -12,13 +12,21 @@ if str(ROOT_DIR) not in sys.path:
 from app import app
 from extensions import db
 from models.auth import User
-from models.commerce import SupersCoinWallet, SupersCoinTransaction, SupersCoinInvoice
+from models.commerce import (
+    SupersCoinWallet, SupersCoinTransaction, SupersCoinInvoice,
+    InventoryRollbackTerms, InventoryRollbackTermsDecision
+)
 
 
 REQUIRED_SUPERSCOINS_TABLES = [
     SupersCoinWallet.__table__,
     SupersCoinTransaction.__table__,
     SupersCoinInvoice.__table__,
+]
+
+REQUIRED_ROLLBACK_TERMS_TABLES = [
+    InventoryRollbackTerms.__table__,
+    InventoryRollbackTermsDecision.__table__,
 ]
 
 
@@ -67,11 +75,36 @@ def ensure_superscoins_tables():
     print("[schema] SupersCoins tables ready")
 
 
+def ensure_rollback_terms_tables():
+    for table in REQUIRED_ROLLBACK_TERMS_TABLES:
+        table.create(db.engine, checkfirst=True)
+
+    existing_terms = InventoryRollbackTerms.query.filter_by(is_active=True).first()
+    if not existing_terms:
+        from services.rollback_terms_service import (
+            DEFAULT_ROLLBACK_TERMS_CONTENT,
+            DEFAULT_ROLLBACK_TERMS_TITLE,
+        )
+
+        latest_terms = InventoryRollbackTerms.query.order_by(InventoryRollbackTerms.version.desc()).first()
+        next_version = (latest_terms.version + 1) if latest_terms else 1
+        db.session.add(InventoryRollbackTerms(
+            version=next_version,
+            title=DEFAULT_ROLLBACK_TERMS_TITLE,
+            content=DEFAULT_ROLLBACK_TERMS_CONTENT,
+            is_active=True,
+        ))
+
+    db.session.commit()
+    print("[schema] Rollback terms tables ready")
+
+
 def main():
     wait_for_database(app)
     with app.app_context():
         ensure_user_columns()
         ensure_superscoins_tables()
+        ensure_rollback_terms_tables()
 
 
 if __name__ == "__main__":

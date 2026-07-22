@@ -14,6 +14,10 @@ class RollbackRequestStatus(enum.Enum):
     APPROVED = "Approved"
     REJECTED = "Rejected"
 
+class RollbackTermsDecision(enum.Enum):
+    ACCEPTED = "Accepted"
+    REJECTED = "Rejected"
+
 class OrderStatus(enum.Enum):
 
     PLACED = "Order Placed"

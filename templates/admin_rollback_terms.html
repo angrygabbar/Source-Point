@@ -1,0 +1,221 @@
+{% extends "layout.html" %}
+{% block title %}Rollback Terms - Admin{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6 pb-10">
+    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+        <div>
+            <div class="text-[10px] font-black tracking-[0.28em] uppercase text-orange-400 mb-1">Admin &middot; Commerce</div>
+            <h1 class="text-2xl font-black text-white">Rollback Terms and Conditions</h1>
+            <p class="text-sm text-gray-500 mt-1">Monitor seller decisions for the active rollback terms version.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ url_for('admin_commerce.edit_rollback_terms') }}"
+                class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-500 text-black text-sm font-black hover:bg-orange-400 transition-all">
+                <i class="fas fa-pen-to-square"></i> Edit &amp; Publish
+            </a>
+            <a href="{{ url_for('admin_commerce.admin_rollback_dashboard') }}"
+                class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 text-gray-400 text-sm font-bold hover:bg-white/10 hover:text-white transition-all">
+                <i class="fas fa-rotate-left"></i> Rollback Requests
+            </a>
+            <a href="{{ url_for('admin_commerce.admin_commerce_dashboard') }}"
+                class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 text-gray-400 text-sm font-bold hover:bg-white/10 hover:text-white transition-all">
+                <i class="fas fa-arrow-left"></i> Back to Commerce
+            </a>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for category, message in messages %}
+    <div class="px-4 py-3 rounded-xl text-sm font-bold
+        {% if category == 'success' %}bg-emerald-500/10 border border-emerald-500/30 text-emerald-300
+        {% elif category == 'danger' %}bg-red-500/10 border border-red-500/30 text-red-300
+        {% elif category == 'warning' %}bg-amber-500/10 border border-amber-500/30 text-amber-300
+        {% else %}bg-blue-500/10 border border-blue-500/30 text-blue-300{% endif %}">
+        <i class="fas fa-circle-info mr-2"></i>{{ message }}
+    </div>
+    {% endfor %}{% endif %}
+{% endwith %}
+
+    {% include "_rollback_terms_content_styles.html" %}
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="glass-panel-v2 rounded-2xl border border-emerald-500/20 p-5">
+            <p class="text-[9px] font-black uppercase tracking-widest text-emerald-300">Accepted</p>
+            <p class="text-3xl font-black text-emerald-300 mt-1">{{ accepted_count }}</p>
+            <p class="text-[10px] text-gray-600 mt-1">Sellers accepted v{{ active_terms.version }}</p>
+        </div>
+        <div class="glass-panel-v2 rounded-2xl border border-red-500/20 p-5">
+            <p class="text-[9px] font-black uppercase tracking-widest text-red-300">Rejected</p>
+            <p class="text-3xl font-black text-red-300 mt-1">{{ rejected_count }}</p>
+            <p class="text-[10px] text-gray-600 mt-1">Sellers rejected v{{ active_terms.version }}</p>
+        </div>
+        <div class="glass-panel-v2 rounded-2xl border border-amber-500/20 p-5">
+            <p class="text-[9px] font-black uppercase tracking-widest text-amber-300">Pending</p>
+            <p class="text-3xl font-black text-amber-300 mt-1">{{ pending_count }}</p>
+            <p class="text-[10px] text-gray-600 mt-1">No response yet</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+        <section class="xl:col-span-2 glass-panel-v2 rounded-2xl border border-orange-500/20 overflow-hidden">
+            <div class="px-6 py-4 border-b border-orange-500/10 flex items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-sm font-black text-white">Active Terms Preview</h2>
+                    <p class="text-[10px] text-gray-500 mt-1">Version {{ active_terms.version }} published {{ active_terms.created_at.strftime('%d %b %Y') if active_terms.created_at else '-' }}</p>
+                </div>
+                <a href="{{ url_for('admin_commerce.edit_rollback_terms') }}"
+                    class="flex-shrink-0 w-9 h-9 rounded-xl bg-orange-500/15 text-orange-300 border border-orange-500/25 flex items-center justify-center hover:bg-orange-500/25 transition-colors"
+                    title="Edit terms">
+                    <i class="fas fa-pen"></i>
+                </a>
+            </div>
+            <div class="rollback-terms-content p-6 max-h-[520px] overflow-y-auto custom-scrollbar">
+                {{ terms_content_html|safe }}
+            </div>
+        </section>
+
+        <section class="xl:col-span-3 glass-panel-v2 rounded-2xl border border-white/10 overflow-hidden">
+            <div class="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+                <div>
+                    <h2 class="text-sm font-black text-white">Seller Decisions</h2>
+                    <p class="text-[10px] text-gray-500 mt-1">Current active version: v{{ active_terms.version }}</p>
+                </div>
+                <span class="text-xs font-bold text-orange-300 bg-orange-500/10 border border-orange-500/20 px-2.5 py-1 rounded-lg">
+                    {{ seller_rows | length }} sellers
+                </span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="border-b border-white/5">
+                            <th class="px-5 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Seller</th>
+                            <th class="px-5 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Status</th>
+                            <th class="px-5 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Decision Date</th>
+                            <th class="px-5 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">IP Address</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5">
+                        {% for row in seller_rows %}
+                        {% set seller = row.seller %}
+                        {% set decision = row.decision %}
+                        <tr class="hover:bg-white/[0.02] transition-colors">
+                            <td class="px-5 py-4">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center text-orange-400 text-xs font-black flex-shrink-0">
+                                        {{ seller.username[0].upper() }}
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-white">{{ seller.username }}</p>
+                                        <p class="text-[10px] text-gray-500">{{ seller.email }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black
+                                    {% if row.status == RollbackTermsDecision.ACCEPTED.value %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30
+                                    {% elif row.status == RollbackTermsDecision.REJECTED.value %}bg-red-500/20 text-red-300 border border-red-500/30
+                                    {% else %}bg-amber-500/20 text-amber-300 border border-amber-500/30{% endif %}">
+                                    <i class="fas {% if row.status == RollbackTermsDecision.ACCEPTED.value %}fa-check{% elif row.status == RollbackTermsDecision.REJECTED.value %}fa-times{% else %}fa-clock{% endif %} mr-1.5"></i>
+                                    {{ row.status }}
+                                </span>
+                            </td>
+                            <td class="px-5 py-4 text-xs text-gray-400 whitespace-nowrap">
+                                {{ decision.decided_at.strftime('%d %b %Y, %I:%M %p') if decision and decision.decided_at else '-' }}
+                            </td>
+                            <td class="px-5 py-4 text-xs text-gray-500 font-mono">
+                                {{ decision.ip_address if decision and decision.ip_address else '-' }}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="px-5 py-12 text-center text-gray-600 text-sm">No sellers found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <section class="glass-panel-v2 rounded-2xl border border-white/10 overflow-hidden">
+            <div class="px-6 py-4 border-b border-white/10">
+                <h2 class="text-sm font-black text-white">Terms Versions</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="border-b border-white/5">
+                            <th class="px-5 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Version</th>
+                            <th class="px-5 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Title</th>
+                            <th class="px-5 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Published</th>
+                            <th class="px-5 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5">
+                        {% for terms in terms_versions %}
+                        <tr>
+                            <td class="px-5 py-3 text-sm font-black text-white">v{{ terms.version }}</td>
+                            <td class="px-5 py-3 text-sm text-gray-300">{{ terms.title }}</td>
+                            <td class="px-5 py-3 text-xs text-gray-500">{{ terms.created_at.strftime('%d %b %Y') if terms.created_at else '-' }}</td>
+                            <td class="px-5 py-3">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black
+                                    {% if terms.is_active %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30
+                                    {% else %}bg-white/5 text-gray-400 border border-white/10{% endif %}">
+                                    {{ 'Active' if terms.is_active else 'Archived' }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="px-5 py-8 text-center text-gray-600 text-sm">No terms versions yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="glass-panel-v2 rounded-2xl border border-white/10 overflow-hidden">
+            <div class="px-6 py-4 border-b border-white/10">
+                <h2 class="text-sm font-black text-white">Recent Decisions</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="border-b border-white/5">
+                            <th class="px-5 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Seller</th>
+                            <th class="px-5 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Version</th>
+                            <th class="px-5 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Decision</th>
+                            <th class="px-5 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5">
+                        {% for decision in decision_history %}
+                        <tr>
+                            <td class="px-5 py-3 text-sm text-white font-bold">{{ decision.seller.username }}</td>
+                            <td class="px-5 py-3 text-sm text-gray-300">v{{ decision.terms.version }}</td>
+                            <td class="px-5 py-3">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black
+                                    {% if decision.decision == RollbackTermsDecision.ACCEPTED.value %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30
+                                    {% else %}bg-red-500/20 text-red-300 border border-red-500/30{% endif %}">
+                                    {{ decision.decision }}
+                                </span>
+                            </td>
+                            <td class="px-5 py-3 text-xs text-gray-500 whitespace-nowrap">
+                                {{ decision.decided_at.strftime('%d %b %Y, %I:%M %p') if decision.decided_at else '-' }}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="px-5 py-8 text-center text-gray-600 text-sm">No seller decisions yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
