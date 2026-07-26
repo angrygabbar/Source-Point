@@ -373,11 +373,13 @@ class InvoiceGenerator:
     def _draw_items_table(self):
         """
         Product items table with columns: # | Description & SKU | Qty | Unit Price | Subtotal
+        Handles page breaks gracefully — when a row won't fit on the current
+        page, a new page is added and the table header is re-drawn before
+        continuing with the remaining rows.
         """
         sx   = 10
-        sy   = self.pdf.get_y()
         tw   = 190  # total width
-        rh   = 10   # row height
+        rh   = 10   # header row height
 
         # Column widths
         c_no    = 10
@@ -387,13 +389,6 @@ class InvoiceGenerator:
         c_price = 24
         c_sub   = tw - c_no - c_desc - c_sku - c_qty - c_price  # 24
 
-        # ── Header row ────────────────────────────────────────────────────────
-        self._set_fill(self.c_brand_dark)
-        self._set_draw(self.c_brand_dark)
-        self._thin_line()
-        self.pdf.set_xy(sx, sy)
-        self.pdf.rect(sx, sy, tw, rh, 'F')
-
         headers = [
             ('#',           c_no,    'C'),
             ('Item & Description', c_desc, 'L'),
@@ -402,17 +397,30 @@ class InvoiceGenerator:
             ('Unit Price',  c_price, 'R'),
             ('Subtotal',    c_sub,   'R'),
         ]
-        self.pdf.set_font('helvetica', 'B', 7.5)
-        self._set_text(self.c_brand_pale)
-        self.pdf.set_xy(sx, sy)
-        x = sx
-        for label, w, align in headers:
-            pad_x = 3 if align == 'L' else 0
-            self.pdf.set_xy(x + pad_x, sy + 1.5)
-            self.pdf.cell(w - pad_x, rh - 2, label, 0, 0, align)
-            x += w
 
-        sy += rh
+        # Footer occupies y >= 269; keep a 3 mm safety margin above it.
+        PAGE_BOTTOM = 266
+
+        def draw_table_header(y):
+            """Draw the dark header row at vertical position *y* and return
+            the y coordinate immediately below it."""
+            self._set_fill(self.c_brand_dark)
+            self._set_draw(self.c_brand_dark)
+            self._thin_line()
+            self.pdf.rect(sx, y, tw, rh, 'F')
+
+            self.pdf.set_font('helvetica', 'B', 7.5)
+            self._set_text(self.c_brand_pale)
+            x = sx
+            for label, w, align in headers:
+                pad_x = 3 if align == 'L' else 0
+                self.pdf.set_xy(x + pad_x, y + 1.5)
+                self.pdf.cell(w - pad_x, rh - 2, label, 0, 0, align)
+                x += w
+            return y + rh
+
+        # Draw the first header
+        sy = draw_table_header(self.pdf.get_y())
 
         # ── Data rows ─────────────────────────────────────────────────────────
         LINE_H   = 4.5   # must match multi_cell line height below
@@ -427,11 +435,9 @@ class InvoiceGenerator:
             subtotal = f'Rs.{float(item.quantity * item.price):,.2f}'
 
             # ── Accurate row-height using font metrics ─────────────────────
-            # Set EXACTLY the same font used to render the description
             self.pdf.set_font('helvetica', 'B', 8.5)
-            avail_w = c_desc - DESC_PAD  # usable width inside desc cell
+            avail_w = c_desc - DESC_PAD
 
-            # Word-wrap simulation: walk words and count line breaks
             num_lines = 1
             line_w    = 0.0
             for word in desc.split(' '):
@@ -442,8 +448,12 @@ class InvoiceGenerator:
                 else:
                     line_w += word_w
 
-            # row_h = top-pad(2) + text lines + gap before "In Stock" + In Stock label + bottom-pad(2)
             row_h = max(14, 2 + num_lines * LINE_H + 2 + IN_STOCK_H + 2)
+
+            # ── Page-break check ───────────────────────────────────────────
+            if sy + row_h > PAGE_BOTTOM:
+                self.pdf.add_page()
+                sy = draw_table_header(self.pdf.get_y())
 
             # ── Draw row background ────────────────────────────────────────
             row_bg = self.c_bg_card if idx % 2 == 0 else self.c_bg_row_alt
@@ -510,7 +520,6 @@ class InvoiceGenerator:
         Right-aligned totals block: Subtotal | Tax | Total.
         """
         sx = 10
-        sy = self.pdf.get_y()
         bw = 80   # block width
         bx = 210 - 10 - bw  # aligned right
 
@@ -520,6 +529,16 @@ class InvoiceGenerator:
         ]
 
         rh = 8
+        th = 12
+        total_block_h = len(rows) * rh + th + 8  # rows + total row + spacing
+
+        # Page-break check: ensure the totals block fits above the footer
+        PAGE_BOTTOM = 266
+        sy = self.pdf.get_y()
+        if sy + total_block_h > PAGE_BOTTOM:
+            self.pdf.add_page()
+            sy = self.pdf.get_y()
+
         # Light rows
         self._set_draw(self.c_border)
         self._thin_line()
