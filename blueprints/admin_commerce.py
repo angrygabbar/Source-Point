@@ -323,6 +323,7 @@ def assign_inventory():
     quantity = int(request.form.get('quantity'))
 
     product = Product.query.get_or_404(product_id)
+    seller = User.query.get_or_404(seller_id)
     
     # Redirect target
     redirect_target = redirect(url_for('admin_commerce.view_product', product_id=product.id))
@@ -333,13 +334,33 @@ def assign_inventory():
 
     product.stock -= quantity
     seller_inv = SellerInventory.query.filter_by(seller_id=seller_id, product_id=product.id).first()
+    current_seller_stock = quantity
     
-    if seller_inv: seller_inv.stock += quantity
-    else: db.session.add(SellerInventory(seller_id=seller_id, product_id=product.id, stock=quantity))
+    if seller_inv:
+        seller_inv.stock += quantity
+        current_seller_stock = seller_inv.stock
+    else:
+        db.session.add(SellerInventory(seller_id=seller_id, product_id=product.id, stock=quantity))
 
     db.session.commit()
+
+    # Send inventory assignment notification email to seller
+    try:
+        send_email(
+            to=seller.email,
+            subject=f"Inventory Assigned: {product.name}",
+            template="mail/inventory_assigned.html",
+            user=seller,
+            item=product,
+            quantity=quantity,
+            current_stock=current_seller_stock,
+            now=datetime.utcnow()
+        )
+    except Exception:
+        pass
+
     log_user_action("Assign Inventory", f"Assigned {quantity} of {product.name} to seller {seller_id}")
-    flash(f"Assigned {quantity} units to seller.", "success")
+    flash(f"Assigned {quantity} units to {seller.username}.", "success")
     return redirect_target
 
 # --- SELLER INVENTORY ---

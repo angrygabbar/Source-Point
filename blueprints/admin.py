@@ -864,8 +864,8 @@ def assign_inventory():
                 to=seller.email,
                 subject=f"Inventory Assigned: {product.name}",
                 template="mail/inventory_assigned.html",
-                seller=seller,
-                product=product,
+                user=seller,
+                item=product,
                 quantity=qty_to_assign,
                 current_stock=current_seller_stock,
                 now=datetime.utcnow()
