@@ -54,6 +54,10 @@
                     <input type="file" name="file" class="hidden" onchange="this.form.submit()">
                 </label>
             </form>
+            <button onclick="openBulkAssignModal()"
+                class="px-5 py-2.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 text-sm bulk-assign-trigger" style="display:none;">
+                <i class="fas fa-boxes"></i> Bulk Assign (<span id="bulkCount">0</span>)
+            </button>
             <a href="{{ url_for('admin_commerce.add_product_page') }}"
                 class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center text-sm">
                 <i class="fas fa-plus-circle mr-2"></i> Add Product
@@ -84,7 +88,13 @@
     <div class="space-y-3">
         <div
             class="hidden md:grid grid-cols-12 gap-4 px-6 py-2 text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-white/5 pb-2">
-            <div class="col-span-5">Product Details</div>
+            <div class="col-span-1 flex items-center">
+                <label class="relative cursor-pointer" onclick="event.stopPropagation()">
+                    <input type="checkbox" id="selectAllProducts" onchange="toggleSelectAll(this)"
+                        class="w-4 h-4 rounded border-white/20 bg-black/40 text-indigo-600 focus:ring-indigo-500/50 cursor-pointer">
+                </label>
+            </div>
+            <div class="col-span-4">Product Details</div>
             <div class="col-span-2">Category</div>
             <div class="col-span-2 text-center">Master Stock</div>
             <div class="col-span-1 text-right">Price</div>
@@ -98,7 +108,16 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
 
-                    <div class="col-span-5 flex items-center gap-4">
+                    <div class="col-span-1 flex items-center" onclick="event.stopPropagation()">
+                        <label class="relative cursor-pointer">
+                            <input type="checkbox" class="bulk-select-checkbox w-4 h-4 rounded border-white/20 bg-black/40 text-indigo-600 focus:ring-indigo-500/50 cursor-pointer"
+                                data-product-id="{{ product.id }}"
+                                data-product-name="{{ product.name }}"
+                                data-product-stock="{{ product.stock }}"
+                                onchange="updateBulkSelection()">
+                        </label>
+                    </div>
+                    <div class="col-span-4 flex items-center gap-4">
                         <div
                             class="relative w-12 h-12 rounded-lg bg-gray-800 overflow-hidden border border-white/10 flex-shrink-0 group-hover:border-indigo-500/50 transition-colors">
                             {% if product.image_url %}
@@ -269,7 +288,74 @@
     </div>
 </div>
 
+<!-- Bulk Assign Modal -->
+<div id="modalBulkAssign" class="fixed z-50 inset-0 overflow-y-auto hidden">
+    <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity close-bulk-modal-trigger"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div
+                class="relative transform overflow-hidden rounded-2xl bg-[#0f172a] border border-white/10 text-left shadow-2xl sm:w-full sm:max-w-2xl">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                            <span class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400">
+                                <i class="fas fa-boxes"></i>
+                            </span>
+                            Bulk Assign to Seller
+                        </h3>
+                        <button type="button" class="text-gray-500 hover:text-white transition-colors close-bulk-modal-trigger">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-400 mb-5">Assign <span id="bulkModalCount" class="text-amber-400 font-bold">0</span> selected product(s) from Master Inventory to a seller.</p>
+
+                    <!-- Seller Selection -->
+                    <div class="mb-5">
+                        <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">Select Seller</label>
+                        <select id="bulkSellerId"
+                            class="w-full mt-1.5 bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-amber-500/50">
+                            {% for seller in sellers %}
+                            <option value="{{ seller.id }}">{{ seller.username }} ({{ seller.email }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Products List with Quantities -->
+                    <div class="mb-5">
+                        <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Products &amp; Quantities</label>
+                        <div id="bulkItemsList" class="space-y-2 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+
+                    <!-- Apply same quantity -->
+                    <div class="flex items-center gap-3 mb-5 bg-white/5 rounded-xl p-3 border border-white/5">
+                        <label class="text-xs text-gray-400 flex-shrink-0">Apply to all:</label>
+                        <input type="number" id="bulkQtyAll" min="1" placeholder="Qty"
+                            class="w-24 bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-amber-500/50">
+                        <button type="button" onclick="applyQtyToAll()"
+                            class="px-3 py-1.5 bg-amber-600/20 hover:bg-amber-600/40 text-amber-400 rounded-lg text-xs font-bold transition-all border border-amber-500/20">
+                            Apply
+                        </button>
+                    </div>
+
+                    <div class="flex justify-end gap-3">
+                        <button type="button" class="px-4 py-2 text-gray-400 hover:text-white transition-colors close-bulk-modal-trigger">Cancel</button>
+                        <button type="button" onclick="submitBulkAssign()" id="bulkSubmitBtn"
+                            class="px-6 py-2.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-amber-500/20 flex items-center gap-2">
+                            <i class="fas fa-paper-plane"></i> Assign All
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+    // ── Selected products for bulk assign ─────────────────────────────
+    let selectedProducts = new Map();
+
     document.addEventListener('DOMContentLoaded', () => {
         function openModal(id) {
             document.getElementById(id).classList.remove('hidden');
@@ -286,6 +372,13 @@
             });
         });
 
+        // Close bulk modal triggers
+        document.querySelectorAll('.close-bulk-modal-trigger').forEach(el => {
+            el.addEventListener('click', function () {
+                document.getElementById('modalBulkAssign').classList.add('hidden');
+            });
+        });
+
         // Assign Button Logic
         document.querySelectorAll('.assign-btn').forEach(btn => {
             btn.addEventListener('click', function () {
@@ -295,6 +388,143 @@
             });
         });
     });
+
+    // ── Bulk selection helpers ────────────────────────────────────────
+    function toggleSelectAll(masterCheckbox) {
+        const checkboxes = document.querySelectorAll('.bulk-select-checkbox');
+        checkboxes.forEach(cb => {
+            cb.checked = masterCheckbox.checked;
+        });
+        updateBulkSelection();
+    }
+
+    function updateBulkSelection() {
+        selectedProducts.clear();
+        document.querySelectorAll('.bulk-select-checkbox:checked').forEach(cb => {
+            selectedProducts.set(cb.dataset.productId, {
+                id: cb.dataset.productId,
+                name: cb.dataset.productName,
+                stock: parseInt(cb.dataset.productStock)
+            });
+        });
+
+        const count = selectedProducts.size;
+        document.getElementById('bulkCount').textContent = count;
+
+        // Show/hide bulk assign button
+        const bulkBtns = document.querySelectorAll('.bulk-assign-trigger');
+        bulkBtns.forEach(btn => {
+            btn.style.display = count > 0 ? 'flex' : 'none';
+        });
+
+        // Update select-all checkbox state
+        const allCheckboxes = document.querySelectorAll('.bulk-select-checkbox');
+        const selectAll = document.getElementById('selectAllProducts');
+        if (selectAll) {
+            selectAll.checked = allCheckboxes.length > 0 && count === allCheckboxes.length;
+            selectAll.indeterminate = count > 0 && count < allCheckboxes.length;
+        }
+    }
+
+    // ── Bulk assign modal ─────────────────────────────────────────────
+    function openBulkAssignModal() {
+        if (selectedProducts.size === 0) return;
+
+        document.getElementById('bulkModalCount').textContent = selectedProducts.size;
+
+        const list = document.getElementById('bulkItemsList');
+        list.innerHTML = '';
+
+        selectedProducts.forEach((product, id) => {
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-3 bg-white/5 rounded-xl p-3 border border-white/5';
+            row.innerHTML = `
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-white truncate">${product.name}</p>
+                    <p class="text-[10px] text-gray-500">Available: ${product.stock} units</p>
+                </div>
+                <div class="flex-shrink-0">
+                    <input type="number" min="1" max="${product.stock}" value="1"
+                        class="bulk-item-qty w-20 bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm text-center focus:outline-none focus:ring-1 focus:ring-amber-500/50"
+                        data-product-id="${id}">
+                </div>
+            `;
+            list.appendChild(row);
+        });
+
+        document.getElementById('modalBulkAssign').classList.remove('hidden');
+    }
+
+    function applyQtyToAll() {
+        const qty = document.getElementById('bulkQtyAll').value;
+        if (!qty || parseInt(qty) <= 0) return;
+        document.querySelectorAll('.bulk-item-qty').forEach(input => {
+            const maxStock = parseInt(input.getAttribute('max'));
+            input.value = Math.min(parseInt(qty), maxStock);
+        });
+    }
+
+    function submitBulkAssign() {
+        const sellerId = document.getElementById('bulkSellerId').value;
+        if (!sellerId) {
+            if (window.showToast) showToast('Please select a seller.', 'error');
+            return;
+        }
+
+        const items = [];
+        document.querySelectorAll('.bulk-item-qty').forEach(input => {
+            const qty = parseInt(input.value);
+            if (qty > 0) {
+                items.push({ product_id: input.dataset.productId, quantity: qty });
+            }
+        });
+
+        if (items.length === 0) {
+            if (window.showToast) showToast('Please set quantities for at least one product.', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('bulkSubmitBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Assigning...';
+
+        fetch('{{ url_for("admin_commerce.bulk_assign_inventory") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ seller_id: sellerId, items: items })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                if (window.showToast) showToast(data.message, 'success');
+                else alert(data.message);
+                // Clear selections and close modal
+                document.querySelectorAll('.bulk-select-checkbox').forEach(cb => cb.checked = false);
+                const selectAll = document.getElementById('selectAllProducts');
+                if (selectAll) selectAll.checked = false;
+                updateBulkSelection();
+                document.getElementById('modalBulkAssign').classList.add('hidden');
+                // Refresh page after short delay
+                setTimeout(() => location.reload(), 1200);
+            } else {
+                let msg = data.message || 'Bulk assignment failed.';
+                if (data.errors && data.errors.length) msg += '\n' + data.errors.join('\n');
+                if (window.showToast) showToast(msg, 'error');
+                else alert(msg);
+            }
+        })
+        .catch(err => {
+            if (window.showToast) showToast('Network error. Please try again.', 'error');
+            else alert('Network error. Please try again.');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Assign All';
+        });
+    }
 </script>
 
 <!-- Share Catalog Modal -->

@@ -363,6 +363,99 @@ def assign_inventory():
     flash(f"Assigned {quantity} units to {seller.username}.", "success")
     return redirect_target
 
+
+@admin_commerce_bp.route('/inventory/bulk-assign', methods=['POST'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def bulk_assign_inventory():
+    """Bulk assign multiple products to a single seller in one go."""
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'message': 'Invalid request data.'}), 400
+
+    seller_id = data.get('seller_id')
+    items = data.get('items', [])  # [{ product_id, quantity }, ...]
+
+    if not seller_id or not items:
+        return jsonify({'success': False, 'message': 'Seller and at least one product are required.'}), 400
+
+    seller = User.query.get(seller_id)
+    if not seller:
+        return jsonify({'success': False, 'message': 'Seller not found.'}), 404
+
+    assigned_items = []
+    errors = []
+
+    try:
+        for entry in items:
+            product_id = entry.get('product_id')
+            quantity = int(entry.get('quantity', 0))
+
+            if quantity <= 0:
+                errors.append(f"Invalid quantity for product #{product_id}.")
+                continue
+
+            product = Product.query.get(product_id)
+            if not product:
+                errors.append(f"Product #{product_id} not found.")
+                continue
+
+            if product.stock < quantity:
+                errors.append(f"Insufficient stock for {product.name} (Available: {product.stock}, Requested: {quantity}).")
+                continue
+
+            # Deduct from master, add to seller
+            product.stock -= quantity
+            seller_inv = SellerInventory.query.filter_by(seller_id=seller.id, product_id=product.id).first()
+            current_seller_stock = quantity
+
+            if seller_inv:
+                seller_inv.stock += quantity
+                current_seller_stock = seller_inv.stock
+            else:
+                db.session.add(SellerInventory(seller_id=seller.id, product_id=product.id, stock=quantity))
+
+            assigned_items.append({
+                'product': product,
+                'quantity': quantity,
+                'current_stock': current_seller_stock
+            })
+
+        if not assigned_items:
+            db.session.rollback()
+            return jsonify({'success': False, 'message': 'No items could be assigned.', 'errors': errors}), 400
+
+        db.session.commit()
+
+        # Send bulk assignment notification email
+        try:
+            send_email(
+                to=seller.email,
+                subject=f"Bulk Inventory Assigned: {len(assigned_items)} Product(s)",
+                template="mail/bulk_inventory_assigned.html",
+                user=seller,
+                assigned_items=assigned_items,
+                total_items=len(assigned_items),
+                now=datetime.utcnow()
+            )
+        except Exception:
+            pass
+
+        log_user_action(
+            "Bulk Assign Inventory",
+            f"Assigned {len(assigned_items)} products to {seller.username}"
+        )
+
+        msg = f"Successfully assigned {len(assigned_items)} product(s) to {seller.username}."
+        if errors:
+            msg += f" {len(errors)} item(s) skipped."
+
+        return jsonify({'success': True, 'message': msg, 'errors': errors})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error during bulk assignment: {str(e)}'}), 500
+
 # --- SELLER INVENTORY ---
 @admin_commerce_bp.route('/inventory/seller', defaults={'seller_id': None})
 @admin_commerce_bp.route('/inventory/seller/<int:seller_id>')

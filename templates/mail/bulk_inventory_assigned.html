@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Inventory Assigned — SourcePoint</title>
+</head>
+
+<body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+
+    <!-- Preheader -->
+    <span style="display:none;max-height:0;overflow:hidden;">
+        📦 {{ total_items }} product(s) have been assigned to your seller account on SourcePoint.
+    </span>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#07070f;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            style="background:linear-gradient(135deg,#6b21a8,#9333ea,#a855f7);border-radius:20px 20px 0 0;padding:40px 40px 50px;text-align:center;">
+                            <div
+                                style="display:inline-block;background:rgba(255,255,255,0.15);border-radius:16px;padding:14px;margin-bottom:20px;">
+                                <img src="https://img.icons8.com/fluency/48/box.png" alt="Inventory" width="48"
+                                    height="48" style="display:block;">
+                            </div>
+                            <h1 style="margin:0;font-size:28px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">
+                                📦 Bulk Inventory Assigned!
+                            </h1>
+                            <p style="margin:10px 0 0;font-size:15px;color:rgba(255,255,255,0.9);">{{ total_items }}
+                                product(s) added to your account</p>
+                        </td>
+                    </tr>
+
+                    <!-- Wave Divider -->
+                    <tr>
+                        <td style="background:linear-gradient(135deg,#6b21a8,#9333ea);height:30px;">
+                            <div style="background:#0f0f1e;height:30px;border-radius:30px 30px 0 0;"></div>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="background:#0f0f1e;padding:0 40px 36px;">
+
+                            <p style="font-size:17px;color:#f1f5f9;margin:0 0 6px;">Hello <strong
+                                    style="color:#c084fc;">{{ user.username }}</strong>,</p>
+                            <p style="font-size:15px;color:#94a3b8;line-height:1.7;margin:0 0 28px;">
+                                A bulk inventory assignment has been made to your seller account by the admin team.
+                                Multiple products have been allocated to you in a single transfer. Please review the
+                                details below.
+                            </p>
+
+                            <!-- Summary Badge -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.2);border-radius:14px;margin-bottom:20px;">
+                                <tr>
+                                    <td style="padding:18px 26px;text-align:center;">
+                                        <p
+                                            style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#c084fc;font-weight:700;">
+                                            📊 Assignment Summary
+                                        </p>
+                                        <p style="margin:0;font-size:32px;font-weight:800;color:#e9d5ff;">
+                                            {{ total_items }}
+                                        </p>
+                                        <p style="margin:4px 0 0;font-size:13px;color:#a78bfa;">Product(s) Assigned</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Items Table -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(168,85,247,0.05);border:1px solid rgba(168,85,247,0.15);border-radius:14px;margin-bottom:20px;overflow:hidden;">
+                                <tr>
+                                    <td style="padding:0;">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <!-- Table Header -->
+                                            <tr>
+                                                <td
+                                                    style="padding:12px 20px;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#c084fc;font-weight:700;border-bottom:1px solid rgba(168,85,247,0.15);">
+                                                    Product</td>
+                                                <td
+                                                    style="padding:12px 16px;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#c084fc;font-weight:700;border-bottom:1px solid rgba(168,85,247,0.15);text-align:center;">
+                                                    Qty Assigned</td>
+                                                <td
+                                                    style="padding:12px 20px;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#c084fc;font-weight:700;border-bottom:1px solid rgba(168,85,247,0.15);text-align:right;">
+                                                    Your Total Stock</td>
+                                            </tr>
+                                            <!-- Item Rows -->
+                                            {% for entry in assigned_items %}
+                                            <tr style="{% if loop.index is odd %}background:rgba(168,85,247,0.03);{% endif %}">
+                                                <td style="padding:14px 20px;">
+                                                    <p style="margin:0;font-size:14px;font-weight:700;color:#f1f5f9;">
+                                                        {{ entry.product.name }}</p>
+                                                    {% if entry.product.product_code %}
+                                                    <p
+                                                        style="margin:3px 0 0;font-size:11px;color:#64748b;font-family:'Courier New',monospace;letter-spacing:0.5px;">
+                                                        {{ entry.product.product_code }}</p>
+                                                    {% endif %}
+                                                </td>
+                                                <td style="padding:14px 16px;text-align:center;">
+                                                    <span
+                                                        style="background:rgba(168,85,247,0.15);color:#c084fc;font-size:13px;font-weight:700;padding:4px 14px;border-radius:20px;">{{
+                                                        entry.quantity }} Units</span>
+                                                </td>
+                                                <td
+                                                    style="padding:14px 20px;text-align:right;font-size:14px;font-weight:700;color:#e2e8f0;">
+                                                    {{ entry.current_stock }} Units
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Action Note -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.15);border-radius:14px;margin-bottom:24px;">
+                                <tr>
+                                    <td style="padding:20px 24px;">
+                                        <p
+                                            style="margin:0 0 12px;font-size:13px;font-weight:700;color:#34d399;text-transform:uppercase;letter-spacing:1px;">
+                                            ✅ Next Steps</p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding:5px 0;color:#a7f3d0;font-size:13px;line-height:1.6;">
+                                                    → All assigned items are now visible in your seller dashboard.</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:5px 0;color:#a7f3d0;font-size:13px;line-height:1.6;">
+                                                    → Update product listings and pricing as needed.</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:5px 0;color:#a7f3d0;font-size:13px;line-height:1.6;">
+                                                    → Items are immediately available for sale on the platform.</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="font-size:15px;color:#e2e8f0;margin:0;">
+                                Best regards,<br>
+                                <strong style="color:#c084fc;">The Source Point Team</strong>
+                            </p>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background:#07070f;border-top:1px solid #1e1e30;padding:24px 40px;text-align:center;border-radius:0 0 20px 20px;">
+                            <p style="margin:0 0 4px;font-size:13px;color:#64748b;font-weight:600;">⚡ SourcePoint
+                                Commerce</p>
+                            <p style="margin:0 0 8px;font-size:12px;color:#334155;">
+                                Questions? <a href="mailto:admin@sourcepoint.in"
+                                    style="color:#a855f7;text-decoration:none;">admin@sourcepoint.in</a>
+                            </p>
+                            <p style="margin:0;font-size:11px;color:#1e293b;">
+                                © {{ now.year if now is defined else '2025' }} Source Point. All rights reserved. · This
+                                is an automated inventory notification.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>
