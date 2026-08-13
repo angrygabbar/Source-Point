@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from extensions import db
 from models.auth import User
 from models.commerce import (
-    Product, ProductImage, Order, AffiliateAd, Invoice, InvoiceItem,
+    Product, ProductImage, Order, AffiliateAd, Invoice, InvoiceItem, InvoicePayment,
     SellerInventory, StockRequest, InventoryRollbackRequest,
     InventoryRollbackTerms, InventoryRollbackTermsDecision
 )
@@ -965,6 +965,7 @@ def create_invoice():
 def mark_invoice_paid(invoice_id):
     invoice = Invoice.query.get_or_404(invoice_id)
     invoice.status = InvoiceStatus.PAID.value
+    invoice.amount_paid = invoice.total_amount
     if invoice.order_id:
         order = Order.query.filter_by(order_number=invoice.order_id).first()
         if (
@@ -981,6 +982,95 @@ def mark_invoice_paid(invoice_id):
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest': return jsonify({'success': True, 'message': 'Invoice marked as Paid.'})
     flash('Invoice marked as Paid.', 'success')
+    return redirect(url_for('admin_commerce.manage_invoices'))
+
+@admin_commerce_bp.route('/invoices/update_payment/<int:invoice_id>', methods=['POST'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def update_invoice_payment(invoice_id):
+    """Record a partial payment against an invoice."""
+    invoice = Invoice.query.get_or_404(invoice_id)
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+    try:
+        payment_amount = float(request.form.get('payment_amount', 0))
+    except (ValueError, TypeError):
+        msg = 'Invalid payment amount.'
+        if is_ajax:
+            return jsonify({'success': False, 'message': msg}), 400
+        flash(msg, 'danger')
+        return redirect(url_for('admin_commerce.manage_invoices'))
+
+    if payment_amount <= 0:
+        msg = 'Payment amount must be greater than zero.'
+        if is_ajax:
+            return jsonify({'success': False, 'message': msg}), 400
+        flash(msg, 'danger')
+        return redirect(url_for('admin_commerce.manage_invoices'))
+
+    current_pending = float(invoice.total_amount) - float(invoice.amount_paid)
+    if payment_amount > current_pending + 0.01:  # small tolerance for floats
+        msg = f'Payment amount (₹{payment_amount:,.2f}) exceeds pending balance (₹{current_pending:,.2f}).'
+        if is_ajax:
+            return jsonify({'success': False, 'message': msg}), 400
+        flash(msg, 'danger')
+        return redirect(url_for('admin_commerce.manage_invoices'))
+
+    invoice.amount_paid = float(invoice.amount_paid) + payment_amount
+
+    admin_note = request.form.get('admin_note', '').strip()
+
+    payment_record = InvoicePayment(
+        invoice_id=invoice.id,
+        amount=payment_amount,
+        note=admin_note if admin_note else None,
+        recorded_by_id=current_user.id
+    )
+    db.session.add(payment_record)
+
+    # Auto-mark as Paid if fully settled
+    if float(invoice.amount_paid) >= float(invoice.total_amount) - 0.01:
+        invoice.amount_paid = invoice.total_amount
+        invoice.status = InvoiceStatus.PAID.value
+        if invoice.order_id:
+            order = Order.query.filter_by(order_number=invoice.order_id).first()
+            if (
+                order
+                and CommerceService.normalize_order_status(order.status) != OrderStatus.DELIVERED.value
+                and not CommerceService.is_restock_status(order.status)
+            ):
+                order.status = OrderStatus.PAYMENT_RECEIVED.value
+
+    db.session.commit()
+
+    new_pending = float(invoice.total_amount) - float(invoice.amount_paid)
+    log_user_action("Record Payment", f"Recorded ₹{payment_amount:,.2f} for invoice {invoice.invoice_number}. Pending: ₹{new_pending:,.2f}")
+
+    try:
+        send_email(
+            to=invoice.recipient_email,
+            subject=f"Payment Recorded: Partial Payment for Invoice #{invoice.invoice_number}",
+            template="mail/partial_payment_received.html",
+            recipient_name=invoice.recipient_name,
+            invoice_number=invoice.invoice_number,
+            payment_amount=payment_amount,
+            amount_paid=float(invoice.amount_paid),
+            total_amount=float(invoice.total_amount),
+            pending_amount=new_pending,
+            admin_note=admin_note
+        )
+    except Exception as e:
+        print(f"Email error: {e}")
+
+    if is_ajax:
+        return jsonify({
+            'success': True,
+            'message': f'Payment of ₹{payment_amount:,.2f} recorded successfully.',
+            'amount_paid': float(invoice.amount_paid),
+            'pending_amount': new_pending,
+            'status': invoice.status
+        })
+    flash(f'Payment of ₹{payment_amount:,.2f} recorded for {invoice.invoice_number}.', 'success')
     return redirect(url_for('admin_commerce.manage_invoices'))
 
 @admin_commerce_bp.route('/invoices/delete/<int:invoice_id>', methods=['GET', 'POST'])
@@ -1066,7 +1156,21 @@ def send_invoice_reminder(invoice_id):
         generator = InvoiceGenerator(invoice)
         pdf_bytes = generator.generate_pdf()
         attachments = [{'filename': f'Invoice_{invoice.invoice_number}.pdf', 'data': pdf_bytes}]
-        send_email(to=invoice.recipient_email, subject=f"Payment Reminder: Invoice #{invoice.invoice_number}", template="mail/reminder_invoice_email.html", recipient_name=invoice.recipient_name, invoice_number=invoice.invoice_number, created_at=invoice.created_at.strftime('%d %b %Y'), total_amount=invoice.total_amount, due_date=invoice.due_date.strftime('%d %b %Y') if invoice.due_date else "Immediate", invoice=invoice, attachments=attachments)
+        pending = float(invoice.total_amount) - float(invoice.amount_paid)
+        send_email(
+            to=invoice.recipient_email,
+            subject=f"Payment Reminder: Invoice #{invoice.invoice_number}",
+            template="mail/reminder_invoice_email.html",
+            recipient_name=invoice.recipient_name,
+            invoice_number=invoice.invoice_number,
+            created_at=invoice.created_at.strftime('%d %b %Y'),
+            total_amount=float(invoice.total_amount),
+            amount_paid=float(invoice.amount_paid),
+            pending_amount=pending,
+            due_date=invoice.due_date.strftime('%d %b %Y') if invoice.due_date else "Immediate",
+            invoice=invoice,
+            attachments=attachments
+        )
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest': return jsonify({'success': True, 'message': 'Reminder sent.'})
         flash("Reminder sent.", "success")
     except Exception as e:

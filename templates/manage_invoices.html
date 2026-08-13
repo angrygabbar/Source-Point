@@ -3,12 +3,15 @@
 {% block content %}
 
 {% set total_invoiced = invoices | sum(attribute='total_amount') %}
+{% set total_paid_amount = invoices | sum(attribute='amount_paid') %}
+{% set total_pending_amount = total_invoiced - total_paid_amount %}
 {% set paid_count = invoices | selectattr('status', 'equalto', 'Paid') | list | length %}
 {% set unpaid_count = invoices | selectattr('status', 'equalto', 'Unpaid') | list | length %}
+{% set partial_count = invoices | selectattr('status', 'equalto', 'Unpaid') | list | selectattr('amount_paid', 'gt', 0) | list | length %}
 
 <div class="space-y-8 animate-dynamic pb-10">
     
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div class="glass-panel-v2 p-6 rounded-2xl border border-white/5 relative overflow-hidden group">
             <div class="absolute -right-4 -top-4 w-24 h-24 bg-indigo-500/20 rounded-full blur-2xl group-hover:bg-indigo-500/30 transition-all duration-500"></div>
             <p class="text-xs font-bold text-indigo-300 uppercase tracking-widest mb-1">Total Invoiced</p>
@@ -18,16 +21,28 @@
 
         <div class="glass-panel-v2 p-6 rounded-2xl border border-white/5 relative overflow-hidden group">
             <div class="absolute -right-4 -top-4 w-24 h-24 bg-green-500/20 rounded-full blur-2xl group-hover:bg-green-500/30 transition-all duration-500"></div>
-            <p class="text-xs font-bold text-green-300 uppercase tracking-widest mb-1">Settled</p>
-            <h3 class="text-3xl font-extrabold text-white">{{ paid_count }} <span class="text-sm font-medium text-gray-400">Paid</span></h3>
-            <p class="text-xs text-gray-500 mt-2">Successful transactions</p>
+            <p class="text-xs font-bold text-green-300 uppercase tracking-widest mb-1">Collected</p>
+            <h3 class="text-3xl font-extrabold text-white">₹{{ "{:,.2f}".format(total_paid_amount) }}</h3>
+            <p class="text-xs text-gray-500 mt-2">{{ paid_count }} Fully paid{% if partial_count %} · {{ partial_count }} Partial{% endif %}</p>
         </div>
 
         <div class="glass-panel-v2 p-6 rounded-2xl border border-white/5 relative overflow-hidden group">
             <div class="absolute -right-4 -top-4 w-24 h-24 bg-yellow-500/20 rounded-full blur-2xl group-hover:bg-yellow-500/30 transition-all duration-500"></div>
             <p class="text-xs font-bold text-yellow-300 uppercase tracking-widest mb-1">Pending</p>
-            <h3 class="text-3xl font-extrabold text-white">{{ unpaid_count }} <span class="text-sm font-medium text-gray-400">Unpaid</span></h3>
-            <p class="text-xs text-gray-500 mt-2">Awaiting payment</p>
+            <h3 class="text-3xl font-extrabold text-white">₹{{ "{:,.2f}".format(total_pending_amount) }}</h3>
+            <p class="text-xs text-gray-500 mt-2">{{ unpaid_count }} Unpaid invoices</p>
+        </div>
+
+        <div class="glass-panel-v2 p-6 rounded-2xl border border-white/5 relative overflow-hidden group">
+            <div class="absolute -right-4 -top-4 w-24 h-24 bg-cyan-500/20 rounded-full blur-2xl group-hover:bg-cyan-500/30 transition-all duration-500"></div>
+            <p class="text-xs font-bold text-cyan-300 uppercase tracking-widest mb-1">Collection Rate</p>
+            {% if total_invoiced > 0 %}
+                {% set rate = (total_paid_amount / total_invoiced * 100) %}
+                <h3 class="text-3xl font-extrabold text-white">{{ "{:.1f}".format(rate) }}%</h3>
+            {% else %}
+                <h3 class="text-3xl font-extrabold text-white">—</h3>
+            {% endif %}
+            <p class="text-xs text-gray-500 mt-2">Payment recovery</p>
         </div>
     </div>
 
@@ -46,14 +61,20 @@
     <div class="space-y-3">
         <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-2 text-xs font-bold text-gray-500 uppercase tracking-widest">
             <div class="col-span-2">Invoice #</div>
-            <div class="col-span-3">Recipient</div>
+            <div class="col-span-2">Recipient</div>
             <div class="col-span-2 text-right">Amount</div>
-            <div class="col-span-2 text-center">Status</div>
+            <div class="col-span-2 text-center">Payment Progress</div>
+            <div class="col-span-1 text-center">Status</div>
             <div class="col-span-3 text-right">Actions</div>
         </div>
 
         {% for invoice in invoices %}
-        <div class="group relative glass-panel rounded-xl transition-all duration-300 hover:bg-white/[0.07] hover:border-indigo-500/30 hover:shadow-lg border border-white/5 overflow-hidden">
+        {% set inv_pending = invoice.pending_amount %}
+        {% set inv_paid = invoice.amount_paid | float %}
+        {% set inv_total = invoice.total_amount | float %}
+        {% set pay_percent = (inv_paid / inv_total * 100) if inv_total > 0 else 0 %}
+
+        <div id="inv-row-{{ invoice.id }}" class="group relative glass-panel rounded-xl transition-all duration-300 hover:bg-white/[0.07] hover:border-indigo-500/30 hover:shadow-lg border border-white/5 overflow-hidden">
             
             <div class="p-4 grid grid-cols-1 md:grid-cols-12 gap-4 items-center cursor-pointer" onclick="toggleDetails('details-{{ invoice.id }}', this)">
                 
@@ -62,20 +83,57 @@
                     <span class="font-mono text-sm font-bold text-indigo-300">{{ invoice.invoice_number }}</span>
                 </div>
 
-                <div class="col-span-3">
+                <div class="col-span-2">
                     <div class="text-sm font-bold text-white">{{ invoice.recipient_name }}</div>
                     <div class="text-xs text-gray-500 truncate">{{ invoice.recipient_email }}</div>
                 </div>
 
                 <div class="col-span-2 md:text-right">
-                    <span class="text-sm font-bold text-white block">₹{{ "{:,.2f}".format(invoice.total_amount) }}</span>
-                    <span class="text-[10px] text-gray-500">Due: {{ invoice.due_date.strftime('%b %d') if invoice.due_date else 'N/A' }}</span>
+                    <span class="text-sm font-bold text-white block">₹{{ "{:,.2f}".format(inv_total) }}</span>
+                    {% if inv_paid > 0 and invoice.status != 'Paid' %}
+                        <span class="text-[10px] text-yellow-400">Pending: ₹{{ "{:,.2f}".format(inv_pending) }}</span>
+                    {% else %}
+                        <span class="text-[10px] text-gray-500">Due: {{ invoice.due_date.strftime('%b %d') if invoice.due_date else 'N/A' }}</span>
+                    {% endif %}
                 </div>
 
-                <div class="col-span-2 flex justify-center">
+                <!-- Payment Progress -->
+                <div class="col-span-2" onclick="event.stopPropagation();">
+                    {% if invoice.status == 'Paid' %}
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1 h-2 bg-green-500/20 rounded-full overflow-hidden">
+                                <div class="h-full bg-green-500 rounded-full" style="width: 100%"></div>
+                            </div>
+                            <span class="text-[10px] text-green-400 font-bold whitespace-nowrap">100%</span>
+                        </div>
+                        <p class="text-[10px] text-green-400/70 mt-1 text-center">Fully Settled</p>
+                    {% elif inv_paid > 0 %}
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1 h-2 bg-yellow-500/20 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-yellow-500 to-amber-400 rounded-full transition-all duration-500" style="width: {{ pay_percent }}%"></div>
+                            </div>
+                            <span class="text-[10px] text-yellow-400 font-bold whitespace-nowrap">{{ "{:.0f}".format(pay_percent) }}%</span>
+                        </div>
+                        <p class="text-[10px] text-yellow-400/70 mt-1 text-center">₹{{ "{:,.0f}".format(inv_paid) }} of ₹{{ "{:,.0f}".format(inv_total) }}</p>
+                    {% else %}
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1 h-2 bg-red-500/10 rounded-full overflow-hidden">
+                                <div class="h-full bg-red-500/40 rounded-full" style="width: 0%"></div>
+                            </div>
+                            <span class="text-[10px] text-red-400/60 font-bold whitespace-nowrap">0%</span>
+                        </div>
+                        <p class="text-[10px] text-red-400/50 mt-1 text-center">No payment yet</p>
+                    {% endif %}
+                </div>
+
+                <div class="col-span-1 flex justify-center">
                     {% if invoice.status == 'Paid' %}
                         <span class="px-3 py-1 rounded-full text-xs font-bold bg-green-500/10 text-green-400 border border-green-500/20 shadow-[0_0_10px_rgba(34,197,94,0.2)]">
                             <i class="fas fa-check-circle mr-1"></i> Paid
+                        </span>
+                    {% elif inv_paid > 0 %}
+                        <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                            <i class="fas fa-hourglass-half mr-1"></i> Partial
                         </span>
                     {% else %}
                         <span class="px-3 py-1 rounded-full text-xs font-bold bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 animate-pulse">
@@ -86,9 +144,17 @@
 
                 <div class="col-span-3 flex justify-end items-center gap-2">
                     {% if invoice.status != 'Paid' %}
+                        <!-- Record Payment Button -->
+                        <button type="button" 
+                                class="p-2 rounded-lg bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500 hover:text-white transition-all text-xs font-bold uppercase tracking-wide"
+                                title="Record Payment"
+                                onclick="event.stopPropagation(); openPaymentModal({{ invoice.id }}, '{{ invoice.invoice_number }}', {{ inv_total }}, {{ inv_paid }})">
+                            <i class="fas fa-indian-rupee-sign"></i>
+                        </button>
+
                         <button type="button" 
                                 class="p-2 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500 hover:text-white transition-all text-xs font-bold uppercase tracking-wide pay-btn"
-                                title="Mark as Paid"
+                                title="Mark as Fully Paid"
                                 data-url="{{ url_for('admin_commerce.mark_invoice_paid', invoice_id=invoice.id) }}"
                                 onclick="event.stopPropagation(); markInvoiceAsPaid(event, this)">
                             Pay
@@ -139,6 +205,30 @@
                                 <p class="text-gray-300 mt-1 whitespace-pre-wrap leading-relaxed">{{ invoice.ship_to_address }}</p>
                             </div>
                         </div>
+
+                        <!-- Payment Summary Card -->
+                        {% if inv_paid > 0 or invoice.status == 'Paid' %}
+                        <div class="flex gap-4">
+                            <div class="w-8 h-8 rounded bg-cyan-500/10 flex items-center justify-center text-cyan-400 flex-shrink-0"><i class="fas fa-receipt"></i></div>
+                            <div class="flex-1">
+                                <h4 class="text-xs font-bold text-gray-500 uppercase mb-2">Payment Summary</h4>
+                                <div class="bg-white/5 rounded-lg p-3 space-y-2 border border-white/5">
+                                    <div class="flex justify-between text-xs">
+                                        <span class="text-gray-400">Total Invoice</span>
+                                        <span class="text-white font-mono">₹{{ "{:,.2f}".format(inv_total) }}</span>
+                                    </div>
+                                    <div class="flex justify-between text-xs">
+                                        <span class="text-green-400">Amount Paid</span>
+                                        <span class="text-green-400 font-mono font-bold">₹{{ "{:,.2f}".format(inv_paid) }}</span>
+                                    </div>
+                                    <div class="border-t border-white/10 pt-2 flex justify-between text-xs">
+                                        <span class="text-yellow-400 font-bold">Balance Due</span>
+                                        <span class="text-yellow-400 font-mono font-bold">₹{{ "{:,.2f}".format(inv_pending) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
 
                     <div class="bg-white/5 rounded-xl border border-white/5 overflow-hidden">
@@ -168,6 +258,34 @@
                         </table>
                     </div>
 
+                    {% if invoice.payments %}
+                    <div class="mt-6 border-t border-white/5 pt-4">
+                        <h4 class="text-xs font-bold text-gray-500 uppercase mb-3"><i class="fas fa-history text-cyan-500 mr-1"></i> Payment History</h4>
+                        <div class="bg-black/20 rounded-xl border border-white/5 overflow-hidden">
+                            <table class="w-full text-sm">
+                                <thead class="bg-white/5 text-gray-400 text-[10px] font-bold uppercase tracking-wider">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left">Date</th>
+                                        <th class="px-4 py-2 text-left">Admin Note</th>
+                                        <th class="px-4 py-2 text-right">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-white/5">
+                                    {% for payment in invoice.payments %}
+                                    <tr>
+                                        <td class="px-4 py-2.5 text-gray-300 text-xs whitespace-nowrap">{{ payment.recorded_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td class="px-4 py-2.5 text-gray-400 text-xs italic">
+                                            {{ payment.note if payment.note else '<span class="text-gray-600">No note provided</span>'|safe }}
+                                        </td>
+                                        <td class="px-4 py-2.5 text-right text-green-400 font-mono font-bold">₹{{ "{:,.2f}".format(payment.amount) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+
                 </div>
             </div>
         </div>
@@ -183,6 +301,7 @@
     </div>
 </div>
 
+<!-- Resend Invoice Modal -->
 <div id="resendModal" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"></div>
@@ -202,6 +321,84 @@
                 <div class="px-6 py-4 bg-black/20 border-t border-white/10 flex justify-end gap-3">
                     <button type="button" id="cancelResend" class="px-4 py-2 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm font-medium">Cancel</button>
                     <button type="submit" class="px-6 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 transition-all text-sm font-bold">Send Email</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Record Payment Modal -->
+<div id="paymentModal" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="payment-modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onclick="closePaymentModal()"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+        <div class="inline-block align-middle bg-[#0f172a] rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-md sm:w-full border border-white/10">
+            <form id="paymentForm" method="POST">
+                <div class="px-6 py-5 border-b border-white/10 bg-gradient-to-r from-cyan-900/30 to-indigo-900/30">
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2" id="payment-modal-title">
+                        <span class="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-400">
+                            <i class="fas fa-indian-rupee-sign"></i>
+                        </span>
+                        Record Payment
+                    </h3>
+                    <p class="text-xs text-gray-400 mt-1" id="pm_invoice_label">Invoice #---</p>
+                </div>
+
+                <div class="px-6 py-6 space-y-5">
+                    <!-- Invoice Summary -->
+                    <div class="bg-white/5 rounded-xl p-4 border border-white/5 space-y-3">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-400">Total Invoice</span>
+                            <span class="text-white font-mono font-bold" id="pm_total">₹0.00</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-green-400">Already Paid</span>
+                            <span class="text-green-400 font-mono font-bold" id="pm_paid">₹0.00</span>
+                        </div>
+                        <div class="border-t border-white/10 pt-3 flex justify-between text-sm">
+                            <span class="text-yellow-400 font-bold">Pending Balance</span>
+                            <span class="text-yellow-400 font-mono font-bold text-lg" id="pm_pending">₹0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Payment Input -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Payment Amount Received</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-400 font-bold">₹</span>
+                            <input type="number" name="payment_amount" id="pm_amount_input"
+                                   step="0.01" min="0.01" required
+                                   class="w-full pl-10 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white text-lg font-mono focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
+                                   placeholder="0.00">
+                        </div>
+                        <p class="text-[11px] text-gray-500 mt-1.5" id="pm_max_hint">Max: ₹0.00</p>
+                    </div>
+
+                    <!-- Quick Amount Buttons -->
+                    <div>
+                        <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Quick Fill</p>
+                        <div class="flex gap-2 flex-wrap">
+                            <button type="button" class="quick-fill-btn px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-gray-300 hover:bg-cyan-500/20 hover:border-cyan-500/30 hover:text-cyan-300 transition-all" data-percent="25">25%</button>
+                            <button type="button" class="quick-fill-btn px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-gray-300 hover:bg-cyan-500/20 hover:border-cyan-500/30 hover:text-cyan-300 transition-all" data-percent="50">50%</button>
+                            <button type="button" class="quick-fill-btn px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-gray-300 hover:bg-cyan-500/20 hover:border-cyan-500/30 hover:text-cyan-300 transition-all" data-percent="75">75%</button>
+                            <button type="button" class="quick-fill-btn px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-gray-300 hover:bg-cyan-500/20 hover:border-cyan-500/30 hover:text-cyan-300 transition-all" data-percent="100">Full</button>
+                        </div>
+                    </div>
+
+                    <!-- Admin Note Input -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Note (Optional)</label>
+                        <textarea name="admin_note" rows="2"
+                                  class="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-sm text-gray-300 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all placeholder-gray-600"
+                                  placeholder="Add a custom message to the buyer..."></textarea>
+                    </div>
+                </div>
+
+                <div class="px-6 py-4 bg-black/20 border-t border-white/10 flex justify-end gap-3">
+                    <button type="button" onclick="closePaymentModal()" class="px-4 py-2 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm font-medium">Cancel</button>
+                    <button type="submit" id="pm_submit_btn" class="px-6 py-2.5 rounded-lg bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white shadow-lg shadow-cyan-500/20 transition-all text-sm font-bold flex items-center gap-2">
+                        <i class="fas fa-check"></i> Record Payment
+                    </button>
                 </div>
             </form>
         </div>
@@ -241,20 +438,7 @@
 
             if (data.success) {
                 if (window.showToast) window.showToast(data.message, 'success');
-                
-                // Find Row components
-                const container = btn.closest('.group');
-                const statusBadgeContainer = container.querySelector('.col-span-2.flex.justify-center');
-                
-                // Update Badge to Paid
-                statusBadgeContainer.innerHTML = `
-                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-green-500/10 text-green-400 border border-green-500/20 shadow-[0_0_10px_rgba(34,197,94,0.2)]">
-                        <i class="fas fa-check-circle mr-1"></i> Paid
-                    </span>
-                `;
-
-                // Remove Button
-                btn.remove();
+                setTimeout(() => location.reload(), 800);
             } else {
                 if (window.showToast) window.showToast(data.message, 'error');
                 btn.innerHTML = originalContent;
@@ -268,7 +452,91 @@
         }
     }
 
-    // Modal Logic
+    // ── Record Payment Modal Logic ──
+    let currentPaymentPending = 0;
+
+    function openPaymentModal(invoiceId, invoiceNumber, total, paid) {
+        const pending = total - paid;
+        currentPaymentPending = pending;
+
+        document.getElementById('pm_invoice_label').textContent = 'Invoice #' + invoiceNumber;
+        document.getElementById('pm_total').textContent = '\u20b9' + total.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        document.getElementById('pm_paid').textContent = '\u20b9' + paid.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        document.getElementById('pm_pending').textContent = '\u20b9' + pending.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        document.getElementById('pm_max_hint').textContent = 'Max: \u20b9' + pending.toLocaleString('en-IN', {minimumFractionDigits: 2});
+
+        const amountInput = document.getElementById('pm_amount_input');
+        amountInput.value = '';
+        amountInput.max = pending;
+        
+        const noteInput = document.querySelector('textarea[name="admin_note"]');
+        if (noteInput) noteInput.value = '';
+
+        const form = document.getElementById('paymentForm');
+        form.action = '/admin/commerce/invoices/update_payment/' + invoiceId;
+
+        document.getElementById('paymentModal').classList.remove('hidden');
+        setTimeout(() => amountInput.focus(), 100);
+    }
+
+    function closePaymentModal() {
+        document.getElementById('paymentModal').classList.add('hidden');
+    }
+
+    // Quick fill buttons
+    document.querySelectorAll('.quick-fill-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const pct = parseInt(btn.dataset.percent);
+            const val = (currentPaymentPending * pct / 100).toFixed(2);
+            document.getElementById('pm_amount_input').value = val;
+        });
+    });
+
+    // Payment form submission via AJAX
+    document.getElementById('paymentForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const amountInput = document.getElementById('pm_amount_input');
+        const amount = parseFloat(amountInput.value);
+
+        if (!amount || amount <= 0) {
+            if (window.showToast) window.showToast('Enter a valid amount', 'error');
+            return;
+        }
+        if (amount > currentPaymentPending + 0.01) {
+            if (window.showToast) window.showToast('Amount exceeds pending balance', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('pm_submit_btn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch(this.action, {
+                method: 'POST',
+                body: new FormData(this),
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                if (window.showToast) window.showToast(data.message, 'success');
+                closePaymentModal();
+                setTimeout(() => location.reload(), 800);
+            } else {
+                if (window.showToast) window.showToast(data.message || 'Error recording payment', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            if (window.showToast) window.showToast('Network error', 'error');
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    });
+
+    // Modal Logic (Resend)
     document.addEventListener('DOMContentLoaded', () => {
         const resendModal = document.getElementById('resendModal');
         const cancelResendBtn = document.getElementById('cancelResend');

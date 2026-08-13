@@ -92,6 +92,7 @@ class Invoice(db.Model):
     subtotal = db.Column(Numeric(10, 2), nullable=False)
     tax = db.Column(Numeric(10, 2), nullable=False, default=0.00)
     total_amount = db.Column(Numeric(10, 2), nullable=False)
+    amount_paid = db.Column(Numeric(10, 2), nullable=False, default=0.00)
     
     status = db.Column(db.String(20), default=InvoiceStatus.UNPAID.value, nullable=False) 
     
@@ -101,6 +102,22 @@ class Invoice(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     items = db.relationship('InvoiceItem', backref='invoice', lazy=True, cascade="all, delete-orphan")
+    payments = db.relationship('InvoicePayment', backref='invoice', lazy=True, cascade="all, delete-orphan", order_by="desc(InvoicePayment.recorded_at)")
+
+    @property
+    def pending_amount(self):
+        """Returns the remaining unpaid balance."""
+        return float(self.total_amount) - float(self.amount_paid)
+
+class InvoicePayment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoice.id'), nullable=False)
+    amount = db.Column(Numeric(10, 2), nullable=False)
+    note = db.Column(db.Text, nullable=True)
+    recorded_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    recorded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    recorded_by = db.relationship('User', foreign_keys=[recorded_by_id])
 
 class InvoiceItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)

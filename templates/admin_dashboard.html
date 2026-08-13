@@ -3,67 +3,157 @@
 
 {% block content %}
 <style>
-    /* ── Sci-Fi Dashboard Styles ── */
+    /* ── Core Animations ── */
     @keyframes radarSpin   { to { transform: rotate(360deg); } }
     @keyframes radarSpin2  { to { transform: rotate(-360deg); } }
     @keyframes pulseGlow   { 0%,100%{opacity:.5;transform:scale(1)}  50%{opacity:1;transform:scale(1.08)} }
     @keyframes scanLine    { 0%{top:-6%} 100%{top:106%} }
-    @keyframes holoSwipe   { 0%,100%{opacity:0;transform:translateY(-100%)} 40%,60%{opacity:1} 100%{transform:translateY(100%)} }
     @keyframes dotBlink    { 0%,100%{opacity:1} 50%{opacity:.25} }
-    @keyframes dataScroll  { from{background-position:0 0} to{background-position:0 -100px} }
     @keyframes borderFlow  { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
     @keyframes glitchIn    { 0%{opacity:0;clip-path:inset(40% 0 60% 0)} 20%{opacity:.8;clip-path:inset(60% 0 20% 0)} 40%{opacity:1;clip-path:inset(0% 0 0% 0)} 60%{clip-path:inset(10% 0 5% 0)} 80%{clip-path:inset(2% 0 1% 0)} 100%{clip-path:inset(0 0 0 0)} }
-    @keyframes floatUp     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
     @keyframes shimmer     { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-    @keyframes orbit-spin  { to{transform:rotate(360deg)} }
-    @keyframes countUp     {}
+    @keyframes floatUp     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
 
-    .cmd-section-header {
+    /* ── Glassmorphism Accordion ── */
+    .glass-accordion {
+        border-radius: 1.25rem;
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+    .glass-accordion::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        padding: 1px;
+        background: linear-gradient(135deg, var(--accent-color-40, rgba(99,102,241,.4)), transparent 50%, var(--accent-color-20, rgba(99,102,241,.2)));
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+        transition: opacity 0.3s;
+    }
+    .glass-accordion:hover::before {
+        opacity: 1;
+    }
+    .glass-accordion.active::before {
+        background: linear-gradient(135deg, var(--accent-color-60, rgba(99,102,241,.6)), transparent 40%, var(--accent-color-40, rgba(99,102,241,.4)));
+    }
+
+    .glass-accordion-header {
+        position: relative;
+        padding: 1.25rem 1.5rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        background: rgba(8, 8, 24, 0.75);
+        transition: all 0.3s ease;
+        user-select: none;
+        overflow: hidden;
+    }
+    .glass-accordion-header::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.03) 50%, transparent 70%);
+        background-size: 200% 100%;
+        animation: shimmer 5s linear infinite;
+        pointer-events: none;
+    }
+    .glass-accordion-header:hover {
+        background: rgba(12, 12, 32, 0.85);
+    }
+    .glass-accordion.active .glass-accordion-header {
+        background: rgba(10, 10, 28, 0.9);
+    }
+
+    .glass-accordion-header .scan-sweep {
+        position: absolute;
+        left: 0; right: 0;
+        height: 4px;
+        background: linear-gradient(180deg, transparent, var(--accent-color-15, rgba(99,102,241,.15)), transparent);
+        animation: scanLine 5s linear infinite;
+        pointer-events: none;
+    }
+
+    /* Chevron */
+    .accordion-chevron {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 0.625rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 0.75rem;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.06);
+        color: var(--accent-text, #818cf8);
+    }
+    .glass-accordion.active .accordion-chevron {
+        transform: rotate(180deg);
+        background: var(--accent-color-15, rgba(99,102,241,.15));
+        border-color: var(--accent-color-30, rgba(99,102,241,.3));
+    }
+
+    /* Body (collapsed by default) */
+    .glass-accordion-body {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease, padding 0.35s ease;
+        opacity: 0;
+        background: rgba(5, 5, 14, 0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+    }
+    .glass-accordion.active .glass-accordion-body {
+        opacity: 1;
+    }
+
+    .glass-accordion-body .body-inner {
+        padding: 1.25rem 1.5rem 1.5rem;
+    }
+
+    /* Radar icon in header */
+    .radar-ring {
+        position: absolute;
+        border-radius: 50%;
+        border: 1px solid;
+        pointer-events: none;
+    }
+
+    /* Button tiles */
+    .quick-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.9rem 0.5rem;
+        border-radius: 0.875rem;
+        text-align: center;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
         position: relative;
         overflow: hidden;
-        border-radius: 1rem 1rem 0 0;
     }
-    .cmd-section-header::before {
-        content:'';
-        position:absolute;inset:0;
-        background: repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(255,255,255,.025) 28px,rgba(255,255,255,.025) 29px),
-                    repeating-linear-gradient(90deg,transparent,transparent 28px,rgba(255,255,255,.025) 28px,rgba(255,255,255,.025) 29px);
-        pointer-events:none;
-    }
-    .scan-sweep {
-        position:absolute;left:0;right:0;height:6px;
-        background: linear-gradient(180deg,transparent,rgba(255,255,255,.15),transparent);
-        animation: scanLine 4s linear infinite;
-        pointer-events:none;
-    }
-    .holo-card {
-        position:relative;overflow:hidden;
-        transition: transform .25s ease, box-shadow .25s ease;
-    }
-    .holo-card::after {
-        content:'';
-        position:absolute;inset:0;
-        background: linear-gradient(120deg,transparent 30%,rgba(255,255,255,.06) 50%,transparent 70%);
-        background-size:200% 100%;
-        animation: shimmer 4s linear infinite;
-        pointer-events:none;border-radius:inherit;
-    }
-    .holo-card:hover { transform:translateY(-3px); }
-
-    .quick-btn {
-        display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;
-        padding:.9rem .5rem;border-radius:.875rem;
-        text-align:center;cursor:pointer;
-        transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
-        position:relative;overflow:hidden;
-    }
-    .quick-btn:hover { transform:translateY(-4px) scale(1.04); }
+    .quick-btn:hover { transform: translateY(-4px) scale(1.04); }
     .quick-btn .btn-icon {
-        width:2.4rem;height:2.4rem;border-radius:.6rem;
-        display:flex;align-items:center;justify-content:center;font-size:1rem;
-        transition:transform .2s;
+        width: 2.4rem;
+        height: 2.4rem;
+        border-radius: 0.6rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        transition: transform 0.2s;
     }
-    .quick-btn:hover .btn-icon { transform:scale(1.15) rotate(-5deg); }
+    .quick-btn:hover .btn-icon { transform: scale(1.15) rotate(-5deg); }
 
     /* Commerce theme */
     .commerce-btn { background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);color:#6ee7b7; }
@@ -80,40 +170,13 @@
     .system-btn:hover { background:rgba(59,130,246,.14);border-color:rgba(59,130,246,.5);box-shadow:0 0 20px rgba(59,130,246,.2); }
     .system-btn .btn-icon { background:rgba(59,130,246,.12);color:#60a5fa; }
 
-    .radar-ring {
-        position:absolute;border-radius:50%;border:1px solid;
-        pointer-events:none;
-    }
+    /* Neon divider */
     .neon-divider {
-        height:1px;
-        background: linear-gradient(90deg,transparent,currentColor,transparent);
-        opacity:.25;margin:0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, currentColor, transparent);
+        opacity: 0.25;
+        margin: 0;
     }
-    .section-wrap {
-        border-radius:1rem;overflow:hidden;
-    }
-    .section-body { padding: 1rem; }
-    @media (min-width: 640px) { .section-body { padding: 1.5rem; } }
-    .cta-row { padding: 0 1rem 1rem; }
-    @media (min-width: 640px) { .cta-row { padding: 0 1.5rem 1.5rem; } }
-
-    /* Animated border wrapper */
-    .animated-border-wrap {
-        padding:1px;
-        background: linear-gradient(90deg,rgba(16,185,129,.6),rgba(5,150,105,.2),rgba(16,185,129,.6));
-        background-size:200% 100%;
-        animation: borderFlow 5s linear infinite;
-        border-radius:1rem;
-    }
-    .animated-border-wrap.indigo {
-        background: linear-gradient(90deg,rgba(99,102,241,.7),rgba(139,92,246,.2),rgba(99,102,241,.7));
-        background-size:200% 100%;
-    }
-    .animated-border-wrap.blue {
-        background: linear-gradient(90deg,rgba(59,130,246,.5),rgba(99,102,241,.2),rgba(59,130,246,.5));
-        background-size:200% 100%;
-    }
-    .section-inner { background:#05050f;border-radius:calc(1rem - 1px);overflow:hidden; }
 
     /* KPI stat card colour themes */
     .kpi-card-emerald { border-color:rgba(16,185,129,.2) !important; }
@@ -125,6 +188,49 @@
     .kpi-icon-indigo  { background:rgba(99,102,241,.12);  color:#818cf8; }
     .kpi-icon-cyan    { background:rgba(6,182,212,.12);   color:#22d3ee; }
     .kpi-icon-pink    { background:rgba(236,72,153,.12);  color:#f472b6; }
+
+    /* Holo card for KPIs */
+    .holo-card {
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .holo-card::after {
+        content: '';
+        position: absolute; inset: 0;
+        background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.06) 50%, transparent 70%);
+        background-size: 200% 100%;
+        animation: shimmer 4s linear infinite;
+        pointer-events: none;
+        border-radius: inherit;
+    }
+    .holo-card:hover { transform: translateY(-3px); }
+
+    /* Badge counter pulse */
+    .section-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.25rem 0.625rem;
+        border-radius: 9999px;
+        font-size: 0.625rem;
+        font-weight: 700;
+        letter-spacing: 0.025em;
+        flex-shrink: 0;
+    }
+
+    /* Domain item count in header */
+    .domain-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 0.5rem;
+        font-size: 0.625rem;
+        font-weight: 800;
+        flex-shrink: 0;
+    }
 </style>
 
 <div class="space-y-6 pb-12 max-w-7xl mx-auto">
@@ -145,7 +251,7 @@
             <rect width="100%" height="100%" fill="url(#hud-hex)"/>
         </svg>
         <!-- Scan sweep -->
-        <div class="scan-sweep"></div>
+        <div style="position:absolute;left:0;right:0;height:6px;background:linear-gradient(180deg,transparent,rgba(255,255,255,.15),transparent);animation:scanLine 4s linear infinite;pointer-events:none;"></div>
 
         <!-- Orbs -->
         <div style="position:absolute;top:-80px;right:-60px;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,0.18),transparent 70%);pointer-events:none;"></div>
@@ -232,41 +338,47 @@
         {% endfor %}
     </div>
 
-    <!-- ─────────────────────────────────────────────────────────────────
-         DOMAIN SECTIONS GRID (2 per row on lg screens)
-    ───────────────────────────────────────────────────────────────── -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+    <!-- ═══════════════════════════════════════════════════════════════
+         GLASS ACCORDION DOMAIN SECTIONS
+    ═══════════════════════════════════════════════════════════════ -->
+    <div class="space-y-3">
 
     <!-- ══ DOMAIN 1: E-COMMERCE ══ -->
-    <div class="animated-border-wrap">
-        <div class="section-inner">
-            <div class="cmd-section-header px-5 py-4" style="background:linear-gradient(135deg,rgba(10,20,15,.98),rgba(5,12,8,.99));">
-                <div class="scan-sweep" style="background:linear-gradient(180deg,transparent,rgba(16,185,129,.1),transparent);"></div>
-                <div class="relative z-10 flex items-center gap-3">
-                    <div class="relative w-10 h-10 flex-shrink-0">
-                        <div class="radar-ring" style="inset:0;border-color:rgba(16,185,129,.5);animation:radarSpin 7s linear infinite;"></div>
-                        <div class="absolute inset-0 rounded-full bg-emerald-500/15 flex items-center justify-center">
-                            <i class="fas fa-store text-emerald-400"></i>
-                        </div>
-                        <div class="absolute inset-0 rounded-full" style="background:conic-gradient(from 0deg,transparent 75%,rgba(16,185,129,.7) 100%);animation:radarSpin 2s linear infinite;"></div>
+    <div class="glass-accordion" id="domain-ecommerce"
+         style="--accent-color-60:rgba(16,185,129,.6);--accent-color-40:rgba(16,185,129,.4);--accent-color-30:rgba(16,185,129,.3);--accent-color-20:rgba(16,185,129,.2);--accent-color-15:rgba(16,185,129,.15);--accent-text:#34d399;"
+         onclick="toggleDomain('domain-ecommerce')">
+        <div class="glass-accordion-header">
+            <div class="scan-sweep" style="background:linear-gradient(180deg,transparent,rgba(16,185,129,.1),transparent);"></div>
+            <div class="relative z-10 flex items-center gap-3 w-full">
+                <div class="relative w-10 h-10 flex-shrink-0">
+                    <div class="radar-ring" style="inset:0;border-color:rgba(16,185,129,.5);animation:radarSpin 7s linear infinite;"></div>
+                    <div class="absolute inset-0 rounded-full bg-emerald-500/15 flex items-center justify-center">
+                        <i class="fas fa-store text-emerald-400"></i>
                     </div>
-                    <div>
-                        <p class="text-[9px] font-black tracking-[0.25em] uppercase text-emerald-500 mb-0.5">Domain · 01</p>
-                        <h2 class="text-base font-black text-white leading-tight">E-Commerce</h2>
-                        <p class="text-[11px] text-gray-500 mt-0.5">Orders, inventory, invoices, ads & seller ops</p>
-                    </div>
-                    <div class="ml-auto flex items-center gap-2 flex-shrink-0">
-                        {% if pending_orders_count > 0 %}
-                        <span class="px-2 py-1 rounded-full text-[10px] font-bold" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#34d399;">
-                            {{ pending_orders_count }} Orders
-                        </span>
-                        {% endif %}
+                    <div class="absolute inset-0 rounded-full" style="background:conic-gradient(from 0deg,transparent 75%,rgba(16,185,129,.7) 100%);animation:radarSpin 2s linear infinite;"></div>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-[9px] font-black tracking-[0.25em] uppercase text-emerald-500 mb-0.5">Domain · 01</p>
+                    <h2 class="text-base font-black text-white leading-tight">E-Commerce</h2>
+                    <p class="text-[11px] text-gray-500 mt-0.5">Orders, inventory, invoices, ads & seller ops</p>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    {% if pending_orders_count > 0 %}
+                    <span class="section-badge" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#34d399;">
+                        {{ pending_orders_count }} Orders
+                    </span>
+                    {% endif %}
+                    <span class="domain-count" style="background:rgba(16,185,129,.1);color:#34d399;">7</span>
+                    <div class="accordion-chevron">
+                        <i class="fas fa-chevron-down"></i>
                     </div>
                 </div>
             </div>
-            <div class="neon-divider" style="color:#10b981;"></div>
-            <div class="section-body" style="background:rgba(5,14,9,.98);">
-                <div class="grid grid-cols-2 sm:grid-cols-3 quick-grid-3 gap-2.5">
+        </div>
+        <div class="neon-divider" style="color:#10b981;"></div>
+        <div class="glass-accordion-body">
+            <div class="body-inner">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5" onclick="event.stopPropagation()">
                     <a hx-get="{{ url_for('admin_commerce.manage_orders') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true" class="quick-btn commerce-btn cursor-pointer">
                         <div class="btn-icon"><i class="fas fa-shopping-cart"></i></div>
                         <span class="text-xs font-bold leading-tight">Orders</span>
@@ -308,35 +420,41 @@
     </div>
 
     <!-- ══ DOMAIN 2: HIRING & RECRUITMENT ══ -->
-    <div class="animated-border-wrap indigo">
-        <div class="section-inner">
-            <div class="cmd-section-header px-5 py-4" style="background:linear-gradient(135deg,rgba(10,8,22,.98),rgba(5,4,14,.99));">
-                <div class="scan-sweep" style="background:linear-gradient(180deg,transparent,rgba(99,102,241,.1),transparent);"></div>
-                <div class="relative z-10 flex items-center gap-3">
-                    <div class="relative w-10 h-10 flex-shrink-0">
-                        <div class="radar-ring" style="inset:0;border-color:rgba(99,102,241,.5);animation:radarSpin 9s linear infinite;"></div>
-                        <div class="absolute inset-0 rounded-full bg-indigo-500/15 flex items-center justify-center">
-                            <i class="fas fa-briefcase text-indigo-400"></i>
-                        </div>
-                        <div class="absolute inset-0 rounded-full" style="background:conic-gradient(from 0deg,transparent 75%,rgba(99,102,241,.7) 100%);animation:radarSpin 3s linear infinite;"></div>
+    <div class="glass-accordion" id="domain-hiring"
+         style="--accent-color-60:rgba(99,102,241,.6);--accent-color-40:rgba(99,102,241,.4);--accent-color-30:rgba(99,102,241,.3);--accent-color-20:rgba(99,102,241,.2);--accent-color-15:rgba(99,102,241,.15);--accent-text:#818cf8;"
+         onclick="toggleDomain('domain-hiring')">
+        <div class="glass-accordion-header">
+            <div class="scan-sweep" style="background:linear-gradient(180deg,transparent,rgba(99,102,241,.1),transparent);"></div>
+            <div class="relative z-10 flex items-center gap-3 w-full">
+                <div class="relative w-10 h-10 flex-shrink-0">
+                    <div class="radar-ring" style="inset:0;border-color:rgba(99,102,241,.5);animation:radarSpin 9s linear infinite;"></div>
+                    <div class="absolute inset-0 rounded-full bg-indigo-500/15 flex items-center justify-center">
+                        <i class="fas fa-briefcase text-indigo-400"></i>
                     </div>
-                    <div>
-                        <p class="text-[9px] font-black tracking-[0.25em] uppercase text-indigo-400 mb-0.5">Domain · 02</p>
-                        <h2 class="text-base font-black text-white leading-tight">Hiring & Recruitment</h2>
-                        <p class="text-[11px] text-gray-500 mt-0.5">Applications, interviews, jobs & MCQ assessments</p>
-                    </div>
+                    <div class="absolute inset-0 rounded-full" style="background:conic-gradient(from 0deg,transparent 75%,rgba(99,102,241,.7) 100%);animation:radarSpin 3s linear infinite;"></div>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-[9px] font-black tracking-[0.25em] uppercase text-indigo-400 mb-0.5">Domain · 02</p>
+                    <h2 class="text-base font-black text-white leading-tight">Hiring & Recruitment</h2>
+                    <p class="text-[11px] text-gray-500 mt-0.5">Applications, interviews, jobs & MCQ assessments</p>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
                     {% if pending_apps_count > 0 %}
-                    <div class="ml-auto">
-                        <span class="px-2 py-1 rounded-full text-[10px] font-bold" style="background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);color:#818cf8;">
-                            {{ pending_apps_count }} Apps
-                        </span>
-                    </div>
+                    <span class="section-badge" style="background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);color:#818cf8;">
+                        {{ pending_apps_count }} Apps
+                    </span>
                     {% endif %}
+                    <span class="domain-count" style="background:rgba(99,102,241,.1);color:#818cf8;">6</span>
+                    <div class="accordion-chevron">
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
                 </div>
             </div>
-            <div class="neon-divider" style="color:#6366f1;"></div>
-            <div class="section-body" style="background:rgba(4,3,16,.98);">
-                <div class="grid grid-cols-2 sm:grid-cols-3 quick-grid-3 gap-2.5">
+        </div>
+        <div class="neon-divider" style="color:#6366f1;"></div>
+        <div class="glass-accordion-body">
+            <div class="body-inner">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5" onclick="event.stopPropagation()">
                     <a hx-get="{{ url_for('admin_hiring.admin_hiring_dashboard') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true" class="quick-btn recruit-btn cursor-pointer">
                         <div class="btn-icon"><i class="fas fa-tachometer-alt"></i></div>
                         <span class="text-xs font-bold leading-tight">HR Dashboard</span>
@@ -373,28 +491,36 @@
     </div>
 
     <!-- ══ DOMAIN 3: CODING EVENTS ══ -->
-    <div style="padding:1px;background:linear-gradient(90deg,rgba(168,85,247,.7),rgba(139,92,246,.2),rgba(168,85,247,.7));background-size:200% 100%;animation:borderFlow 5s linear infinite;border-radius:1rem;">
-        <div class="section-inner">
-            <div class="cmd-section-header px-5 py-4" style="background:linear-gradient(135deg,rgba(12,6,22,.98),rgba(7,3,14,.99));">
-                <div class="scan-sweep" style="background:linear-gradient(180deg,transparent,rgba(168,85,247,.1),transparent);"></div>
-                <div class="relative z-10 flex items-center gap-3">
-                    <div class="relative w-10 h-10 flex-shrink-0">
-                        <div class="radar-ring" style="inset:0;border-color:rgba(168,85,247,.5);animation:radarSpin 6s linear infinite;"></div>
-                        <div class="absolute inset-0 rounded-full flex items-center justify-center" style="background:rgba(168,85,247,.15);">
-                            <i class="fas fa-code text-purple-400"></i>
-                        </div>
-                        <div class="absolute inset-0 rounded-full" style="background:conic-gradient(from 0deg,transparent 75%,rgba(168,85,247,.7) 100%);animation:radarSpin 2.5s linear infinite;"></div>
+    <div class="glass-accordion" id="domain-coding"
+         style="--accent-color-60:rgba(168,85,247,.6);--accent-color-40:rgba(168,85,247,.4);--accent-color-30:rgba(168,85,247,.3);--accent-color-20:rgba(168,85,247,.2);--accent-color-15:rgba(168,85,247,.15);--accent-text:#c084fc;"
+         onclick="toggleDomain('domain-coding')">
+        <div class="glass-accordion-header">
+            <div class="scan-sweep" style="background:linear-gradient(180deg,transparent,rgba(168,85,247,.1),transparent);"></div>
+            <div class="relative z-10 flex items-center gap-3 w-full">
+                <div class="relative w-10 h-10 flex-shrink-0">
+                    <div class="radar-ring" style="inset:0;border-color:rgba(168,85,247,.5);animation:radarSpin 6s linear infinite;"></div>
+                    <div class="absolute inset-0 rounded-full flex items-center justify-center" style="background:rgba(168,85,247,.15);">
+                        <i class="fas fa-code text-purple-400"></i>
                     </div>
-                    <div>
-                        <p class="text-[9px] font-black tracking-[0.25em] uppercase text-purple-400 mb-0.5">Domain · 03</p>
-                        <h2 class="text-base font-black text-white leading-tight">Coding Events</h2>
-                        <p class="text-[11px] text-gray-500 mt-0.5">Problem library, code tests & live assessments</p>
+                    <div class="absolute inset-0 rounded-full" style="background:conic-gradient(from 0deg,transparent 75%,rgba(168,85,247,.7) 100%);animation:radarSpin 2.5s linear infinite;"></div>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-[9px] font-black tracking-[0.25em] uppercase text-purple-400 mb-0.5">Domain · 03</p>
+                    <h2 class="text-base font-black text-white leading-tight">Coding Events</h2>
+                    <p class="text-[11px] text-gray-500 mt-0.5">Problem library, code tests & live assessments</p>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <span class="domain-count" style="background:rgba(168,85,247,.1);color:#c084fc;">3</span>
+                    <div class="accordion-chevron">
+                        <i class="fas fa-chevron-down"></i>
                     </div>
                 </div>
             </div>
-            <div class="neon-divider" style="color:#a855f7;"></div>
-            <div class="section-body" style="background:rgba(7,3,18,.98);">
-                <div class="grid grid-cols-2 sm:grid-cols-3 quick-grid-3 gap-2.5">
+        </div>
+        <div class="neon-divider" style="color:#a855f7;"></div>
+        <div class="glass-accordion-body">
+            <div class="body-inner">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5" onclick="event.stopPropagation()">
                     <a hx-get="{{ url_for('events.events') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
                        class="quick-btn cursor-pointer" style="background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.2);color:#d8b4fe;">
                         <div class="btn-icon" style="background:rgba(168,85,247,.12);color:#c084fc;"><i class="fas fa-calendar-alt"></i></div>
@@ -419,28 +545,36 @@
     </div>
 
     <!-- ══ DOMAIN 4: FINANCE & SYSTEM ══ -->
-    <div style="padding:1px;background:linear-gradient(90deg,rgba(234,179,8,.6),rgba(245,158,11,.2),rgba(234,179,8,.6));background-size:200% 100%;animation:borderFlow 5s linear infinite;border-radius:1rem;">
-        <div class="section-inner">
-            <div class="cmd-section-header px-5 py-4" style="background:linear-gradient(135deg,rgba(14,12,4,.98),rgba(10,8,2,.99));">
-                <div class="scan-sweep" style="background:linear-gradient(180deg,transparent,rgba(234,179,8,.1),transparent);"></div>
-                <div class="relative z-10 flex items-center gap-3">
-                    <div class="relative w-10 h-10 flex-shrink-0">
-                        <div class="radar-ring" style="inset:0;border-color:rgba(234,179,8,.5);animation:radarSpin 8s linear infinite;"></div>
-                        <div class="absolute inset-0 rounded-full flex items-center justify-center" style="background:rgba(234,179,8,.12);">
-                            <i class="fas fa-coins text-yellow-400"></i>
-                        </div>
-                        <div class="absolute inset-0 rounded-full" style="background:conic-gradient(from 0deg,transparent 75%,rgba(234,179,8,.7) 100%);animation:radarSpin 2s linear infinite;"></div>
+    <div class="glass-accordion" id="domain-finance"
+         style="--accent-color-60:rgba(234,179,8,.6);--accent-color-40:rgba(234,179,8,.4);--accent-color-30:rgba(234,179,8,.3);--accent-color-20:rgba(234,179,8,.2);--accent-color-15:rgba(234,179,8,.15);--accent-text:#fbbf24;"
+         onclick="toggleDomain('domain-finance')">
+        <div class="glass-accordion-header">
+            <div class="scan-sweep" style="background:linear-gradient(180deg,transparent,rgba(234,179,8,.1),transparent);"></div>
+            <div class="relative z-10 flex items-center gap-3 w-full">
+                <div class="relative w-10 h-10 flex-shrink-0">
+                    <div class="radar-ring" style="inset:0;border-color:rgba(234,179,8,.5);animation:radarSpin 8s linear infinite;"></div>
+                    <div class="absolute inset-0 rounded-full flex items-center justify-center" style="background:rgba(234,179,8,.12);">
+                        <i class="fas fa-coins text-yellow-400"></i>
                     </div>
-                    <div>
-                        <p class="text-[9px] font-black tracking-[0.25em] uppercase text-yellow-500 mb-0.5">Domain · 04</p>
-                        <h2 class="text-base font-black text-white leading-tight">Finance & System</h2>
-                        <p class="text-[11px] text-gray-500 mt-0.5">EMI plans, gift cards, analytics & communications</p>
+                    <div class="absolute inset-0 rounded-full" style="background:conic-gradient(from 0deg,transparent 75%,rgba(234,179,8,.7) 100%);animation:radarSpin 2s linear infinite;"></div>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-[9px] font-black tracking-[0.25em] uppercase text-yellow-500 mb-0.5">Domain · 04</p>
+                    <h2 class="text-base font-black text-white leading-tight">Finance & System</h2>
+                    <p class="text-[11px] text-gray-500 mt-0.5">EMI plans, gift cards, analytics & communications</p>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <span class="domain-count" style="background:rgba(234,179,8,.1);color:#fbbf24;">7</span>
+                    <div class="accordion-chevron">
+                        <i class="fas fa-chevron-down"></i>
                     </div>
                 </div>
             </div>
-            <div class="neon-divider" style="color:#eab308;"></div>
-            <div class="section-body" style="background:rgba(10,8,2,.98);">
-                <div class="grid grid-cols-2 sm:grid-cols-3 quick-grid-3 gap-2.5">
+        </div>
+        <div class="neon-divider" style="color:#eab308;"></div>
+        <div class="glass-accordion-body">
+            <div class="body-inner">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5" onclick="event.stopPropagation()">
                     <a hx-get="{{ url_for('admin_core.emi_manager') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
                        class="quick-btn cursor-pointer" style="background:rgba(234,179,8,.06);border:1px solid rgba(234,179,8,.2);color:#fde68a;">
                         <div class="btn-icon" style="background:rgba(234,179,8,.12);color:#fbbf24;"><i class="fas fa-hand-holding-usd"></i></div>
@@ -488,31 +622,37 @@
         </div>
     </div>
 
-    </div><!-- /grid -->
-
-    <!-- ══ DOMAIN 6: APP DISTRIBUTION (full width) ══ -->
-    <div style="padding:1px;background:linear-gradient(90deg,rgba(16,185,129,.5),rgba(5,150,105,.2),rgba(16,185,129,.5));background-size:200% 100%;animation:borderFlow 5s linear infinite;border-radius:1rem;">
-        <div class="section-inner">
-            <div class="cmd-section-header px-5 py-4" style="background:linear-gradient(135deg,rgba(5,14,9,.98),rgba(3,8,5,.99));">
-                <div class="scan-sweep" style="background:linear-gradient(180deg,transparent,rgba(16,185,129,.08),transparent);"></div>
-                <div class="relative z-10 flex items-center gap-3">
-                    <div class="relative w-10 h-10 flex-shrink-0">
-                        <div class="radar-ring" style="inset:0;border-color:rgba(16,185,129,.5);animation:radarSpin 9s linear infinite;"></div>
-                        <div class="absolute inset-0 rounded-full bg-emerald-500/15 flex items-center justify-center">
-                            <i class="fab fa-android text-emerald-400"></i>
-                        </div>
-                        <div class="absolute inset-0 rounded-full" style="background:conic-gradient(from 0deg,transparent 75%,rgba(16,185,129,.7) 100%);animation:radarSpin 2.8s linear infinite;"></div>
+    <!-- ══ DOMAIN 5: APP DISTRIBUTION ══ -->
+    <div class="glass-accordion" id="domain-app"
+         style="--accent-color-60:rgba(16,185,129,.6);--accent-color-40:rgba(16,185,129,.4);--accent-color-30:rgba(16,185,129,.3);--accent-color-20:rgba(16,185,129,.2);--accent-color-15:rgba(16,185,129,.15);--accent-text:#34d399;"
+         onclick="toggleDomain('domain-app')">
+        <div class="glass-accordion-header">
+            <div class="scan-sweep" style="background:linear-gradient(180deg,transparent,rgba(16,185,129,.08),transparent);"></div>
+            <div class="relative z-10 flex items-center gap-3 w-full">
+                <div class="relative w-10 h-10 flex-shrink-0">
+                    <div class="radar-ring" style="inset:0;border-color:rgba(16,185,129,.5);animation:radarSpin 9s linear infinite;"></div>
+                    <div class="absolute inset-0 rounded-full bg-emerald-500/15 flex items-center justify-center">
+                        <i class="fab fa-android text-emerald-400"></i>
                     </div>
-                    <div>
-                        <p class="text-[9px] font-black tracking-[0.25em] uppercase text-emerald-500 mb-0.5">Domain · 06</p>
-                        <h2 class="text-base font-black text-white leading-tight">App Distribution</h2>
-                        <p class="text-[11px] text-gray-500 mt-0.5">Manage & publish the Android application for public download</p>
+                    <div class="absolute inset-0 rounded-full" style="background:conic-gradient(from 0deg,transparent 75%,rgba(16,185,129,.7) 100%);animation:radarSpin 2.8s linear infinite;"></div>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-[9px] font-black tracking-[0.25em] uppercase text-emerald-500 mb-0.5">Domain · 05</p>
+                    <h2 class="text-base font-black text-white leading-tight">App Distribution</h2>
+                    <p class="text-[11px] text-gray-500 mt-0.5">Manage & publish the Android application for public download</p>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <span class="domain-count" style="background:rgba(16,185,129,.1);color:#34d399;">4</span>
+                    <div class="accordion-chevron">
+                        <i class="fas fa-chevron-down"></i>
                     </div>
                 </div>
             </div>
-            <div class="neon-divider" style="color:#10b981;"></div>
-            <div class="section-body" style="background:rgba(3,10,6,.98);">
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+        </div>
+        <div class="neon-divider" style="color:#10b981;"></div>
+        <div class="glass-accordion-body">
+            <div class="body-inner">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5" onclick="event.stopPropagation()">
                     <a href="{{ url_for('app_release.manage_releases') }}" class="quick-btn commerce-btn">
                         <div class="btn-icon"><i class="fas fa-cloud-upload-alt"></i></div>
                         <span class="text-xs font-bold leading-tight">Upload APK</span>
@@ -538,38 +678,42 @@
         </div>
     </div>
 
-
-
-    <!-- ══ DOMAIN 5: USER MANAGEMENT (full width) ══ -->
-    <div style="padding:1px;background:linear-gradient(90deg,rgba(59,130,246,.5),rgba(99,102,241,.2),rgba(59,130,246,.5));background-size:200% 100%;animation:borderFlow 5s linear infinite;border-radius:1rem;">
-        <div class="section-inner">
-            <div class="cmd-section-header px-5 py-4" style="background:linear-gradient(135deg,rgba(5,8,20,.98),rgba(3,5,14,.99));">
-                <div class="scan-sweep" style="background:linear-gradient(180deg,transparent,rgba(59,130,246,.08),transparent);"></div>
-                <div class="relative z-10 flex items-center gap-3">
-                    <div class="relative w-10 h-10 flex-shrink-0">
-                        <div class="radar-ring" style="inset:0;border-color:rgba(59,130,246,.5);animation:radarSpin 10s linear infinite;"></div>
-                        <div class="absolute inset-0 rounded-full bg-blue-500/15 flex items-center justify-center">
-                            <i class="fas fa-users-cog text-blue-400"></i>
-                        </div>
-                        <div class="absolute inset-0 rounded-full" style="background:conic-gradient(from 0deg,transparent 75%,rgba(59,130,246,.7) 100%);animation:radarSpin 2.8s linear infinite;"></div>
+    <!-- ══ DOMAIN 6: USER MANAGEMENT ══ -->
+    <div class="glass-accordion" id="domain-users"
+         style="--accent-color-60:rgba(59,130,246,.6);--accent-color-40:rgba(59,130,246,.4);--accent-color-30:rgba(59,130,246,.3);--accent-color-20:rgba(59,130,246,.2);--accent-color-15:rgba(59,130,246,.15);--accent-text:#60a5fa;"
+         onclick="toggleDomain('domain-users')">
+        <div class="glass-accordion-header">
+            <div class="scan-sweep" style="background:linear-gradient(180deg,transparent,rgba(59,130,246,.08),transparent);"></div>
+            <div class="relative z-10 flex items-center gap-3 w-full">
+                <div class="relative w-10 h-10 flex-shrink-0">
+                    <div class="radar-ring" style="inset:0;border-color:rgba(59,130,246,.5);animation:radarSpin 10s linear infinite;"></div>
+                    <div class="absolute inset-0 rounded-full bg-blue-500/15 flex items-center justify-center">
+                        <i class="fas fa-users-cog text-blue-400"></i>
                     </div>
-                    <div>
-                        <p class="text-[9px] font-black tracking-[0.25em] uppercase text-blue-400 mb-0.5">Domain · 05</p>
-                        <h2 class="text-base font-black text-white leading-tight">User Management</h2>
-                        <p class="text-[11px] text-gray-500 mt-0.5">All users, candidates, moderators & registrations queue</p>
-                    </div>
+                    <div class="absolute inset-0 rounded-full" style="background:conic-gradient(from 0deg,transparent 75%,rgba(59,130,246,.7) 100%);animation:radarSpin 2.8s linear infinite;"></div>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-[9px] font-black tracking-[0.25em] uppercase text-blue-400 mb-0.5">Domain · 06</p>
+                    <h2 class="text-base font-black text-white leading-tight">User Management</h2>
+                    <p class="text-[11px] text-gray-500 mt-0.5">All users, candidates, moderators & registrations queue</p>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
                     {% if pending_users_count > 0 %}
-                    <div class="ml-auto">
-                        <span class="px-2 py-1 rounded-full text-[10px] font-bold" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:#60a5fa;">
-                            {{ pending_users_count }} Pending
-                        </span>
-                    </div>
+                    <span class="section-badge" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:#60a5fa;">
+                        {{ pending_users_count }} Pending
+                    </span>
                     {% endif %}
+                    <span class="domain-count" style="background:rgba(59,130,246,.1);color:#60a5fa;">6</span>
+                    <div class="accordion-chevron">
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
                 </div>
             </div>
-            <div class="neon-divider" style="color:#3b82f6;"></div>
-            <div class="section-body" style="background:rgba(3,5,16,.98);">
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+        </div>
+        <div class="neon-divider" style="color:#3b82f6;"></div>
+        <div class="glass-accordion-body">
+            <div class="body-inner">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5" onclick="event.stopPropagation()">
                     <a hx-get="{{ url_for('admin_users.manage_users') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true" class="quick-btn system-btn cursor-pointer">
                         <div class="btn-icon"><i class="fas fa-users"></i></div>
                         <span class="text-xs font-bold leading-tight">All Users</span>
@@ -604,6 +748,8 @@
             </div>
         </div>
     </div>
+
+    </div><!-- /accordion space -->
 
 
     <!-- ══════════════════════════════════════════
@@ -728,6 +874,54 @@
 </div>
 
 <script>
+    // ── Accordion Toggle ────────────────────────────────────────────────
+    function toggleDomain(id) {
+        const clicked = document.getElementById(id);
+        if (!clicked) return;
+
+        const allAccordions = document.querySelectorAll('.glass-accordion');
+        const isActive = clicked.classList.contains('active');
+
+        // Close all
+        allAccordions.forEach(acc => {
+            acc.classList.remove('active');
+            const body = acc.querySelector('.glass-accordion-body');
+            if (body) {
+                body.style.maxHeight = '0';
+            }
+        });
+
+        // Open clicked if it wasn't already active
+        if (!isActive) {
+            clicked.classList.add('active');
+            const body = clicked.querySelector('.glass-accordion-body');
+            if (body) {
+                body.style.maxHeight = body.scrollHeight + 'px';
+            }
+            // Save to session
+            try { sessionStorage.setItem('activeDomain', id); } catch(e) {}
+        } else {
+            try { sessionStorage.removeItem('activeDomain'); } catch(e) {}
+        }
+    }
+
+    // Restore last active domain on page load
+    function restoreActiveDomain() {
+        try {
+            const saved = sessionStorage.getItem('activeDomain');
+            if (saved) {
+                const el = document.getElementById(saved);
+                if (el) {
+                    el.classList.add('active');
+                    const body = el.querySelector('.glass-accordion-body');
+                    if (body) {
+                        body.style.maxHeight = body.scrollHeight + 'px';
+                    }
+                }
+            }
+        } catch(e) {}
+    }
+
     // Count-Up Animation
     function animateCounters() {
         document.querySelectorAll('.count-up-number[data-target]').forEach(el => {
@@ -758,7 +952,10 @@
         r.addEventListener('animationend', () => r.remove());
     });
 
-    document.addEventListener('DOMContentLoaded', animateCounters);
+    document.addEventListener('DOMContentLoaded', () => {
+        animateCounters();
+        restoreActiveDomain();
+    });
     document.addEventListener('htmx:afterSwap', animateCounters);
 </script>
 

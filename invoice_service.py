@@ -259,14 +259,23 @@ class InvoiceGenerator:
         self.pdf.cell(89, 7, inv_label, 0, 0, 'R')
 
         # Total due highlight
+        amount_paid = float(self.invoice.amount_paid) if hasattr(self.invoice, 'amount_paid') else 0.0
+        pending = float(self.invoice.total_amount) - amount_paid
+        if amount_paid > 0 and pending > 0:
+            due_label = 'BALANCE DUE'
+            due_value = f'Rs.{pending:,.2f}'
+        else:
+            due_label = 'TOTAL DUE'
+            due_value = f'Rs.{float(self.invoice.total_amount):,.2f}'
+
         self.pdf.set_font('helvetica', '', 7.2)
         self._set_text(self.c_brand_pale)
         self.pdf.set_xy(111, 26)
-        self.pdf.cell(89, 4, 'TOTAL DUE', 0, 0, 'R')
+        self.pdf.cell(89, 4, due_label, 0, 0, 'R')
         self.pdf.set_font('helvetica', 'B', 12)
         self._set_text((255, 255, 255))
         self.pdf.set_xy(111, 31)
-        self.pdf.cell(89, 6, f'Rs.{float(self.invoice.total_amount):,.2f}', 0, 0, 'R')
+        self.pdf.cell(89, 6, due_value, 0, 0, 'R')
 
         self.pdf.set_y(hh + 6)
 
@@ -517,11 +526,14 @@ class InvoiceGenerator:
 
     def _draw_totals(self):
         """
-        Right-aligned totals block: Subtotal | Tax | Total.
+        Right-aligned totals block: Subtotal | Tax | Total | Amount Paid | Balance Due.
         """
         sx = 10
         bw = 80   # block width
         bx = 210 - 10 - bw  # aligned right
+
+        amount_paid = float(self.invoice.amount_paid) if hasattr(self.invoice, 'amount_paid') else 0.0
+        pending = float(self.invoice.total_amount) - amount_paid
 
         rows = [
             ('Subtotal',   f'Rs.{float(self.invoice.subtotal):,.2f}',      False),
@@ -530,7 +542,18 @@ class InvoiceGenerator:
 
         rh = 8
         th = 12
+
+        # Add payment rows if partial payment exists
+        has_payment = amount_paid > 0
+        extra_rows = []
+        if has_payment:
+            extra_rows = [
+                ('Amount Paid', f'Rs.{amount_paid:,.2f}', True),
+            ]
+
         total_block_h = len(rows) * rh + th + 8  # rows + total row + spacing
+        if has_payment:
+            total_block_h += len(extra_rows) * rh + th  # payment rows + balance due row
 
         # Page-break check: ensure the totals block fits above the footer
         PAGE_BOTTOM = 266
@@ -539,7 +562,7 @@ class InvoiceGenerator:
             self.pdf.add_page()
             sy = self.pdf.get_y()
 
-        # Light rows
+        # Light rows (Subtotal, Tax)
         self._set_draw(self.c_border)
         self._thin_line()
         for i, (label, value, _) in enumerate(rows):
@@ -569,8 +592,41 @@ class InvoiceGenerator:
         self._set_text((255, 255, 255))
         self.pdf.set_xy(bx + bw / 2, sy + 1)
         self.pdf.cell(bw / 2 - 4, th - 2, f'Rs.{float(self.invoice.total_amount):,.2f}', 0, 0, 'R')
+        sy += th
 
-        self.pdf.set_y(self.pdf.get_y() + th + 8)
+        # Payment info rows (if any payment recorded)
+        if has_payment:
+            sy += 2  # small gap
+            for label, value, _ in extra_rows:
+                self._set_fill((240, 253, 250))  # Teal-50
+                self._set_draw(self.c_brand_border)
+                self._thin_line()
+                self.pdf.rect(bx, sy, bw, rh, 'FD')
+                self.pdf.set_font('helvetica', '', 8)
+                self._set_text(self.c_brand_accent)
+                self.pdf.set_xy(bx + 4, sy + 1)
+                self.pdf.cell(bw / 2, rh - 2, label, 0, 0, 'L')
+                self.pdf.set_font('helvetica', 'B', 8)
+                self._set_text(self.c_brand_accent)
+                self.pdf.set_xy(bx + bw / 2, sy + 1)
+                self.pdf.cell(bw / 2 - 4, rh - 2, value, 0, 0, 'R')
+                sy += rh
+
+            # Balance Due row (highlighted)
+            self._set_fill(self.c_brand_violet)  # Amber accent
+            self._set_draw(self.c_brand_violet)
+            self.pdf.rect(bx, sy, bw, th, 'F')
+            self.pdf.set_font('helvetica', '', 9)
+            self._set_text((255, 255, 255))
+            self.pdf.set_xy(bx + 4, sy + 2)
+            self.pdf.cell(bw / 2, th - 4, 'Balance Due', 0, 0, 'L')
+            self.pdf.set_font('helvetica', 'B', 12)
+            self._set_text((255, 255, 255))
+            self.pdf.set_xy(bx + bw / 2, sy + 1)
+            self.pdf.cell(bw / 2 - 4, th - 2, f'Rs.{pending:,.2f}', 0, 0, 'R')
+            sy += th
+
+        self.pdf.set_y(sy + 8)
 
     def _draw_info_panel(self):
         """

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partial Payment Received — SourcePoint</title>
+</head>
+
+<body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+
+    <!-- Preheader -->
+    <span style="display:none;max-height:0;overflow:hidden;">
+        ✅ Partial payment confirmed! SourcePoint has successfully received your recent payment.
+    </span>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#07070f;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            style="background:linear-gradient(135deg,#0284c7,#0369a1,#0c4a6e);border-radius:20px 20px 0 0;padding:40px 40px 50px;text-align:center;">
+                            <div
+                                style="display:inline-block;background:rgba(255,255,255,0.15);border-radius:16px;padding:14px;margin-bottom:20px;">
+                                <img src="https://img.icons8.com/fluency/48/banknotes.png" alt="Payment" width="48"
+                                    height="48" style="display:block;">
+                            </div>
+                            <h1 style="margin:0;font-size:30px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">
+                                Payment Recorded! 💸
+                            </h1>
+                            <p style="margin:10px 0 0;font-size:15px;color:rgba(255,255,255,0.9);">Your partial payment has
+                                been confirmed</p>
+                        </td>
+                    </tr>
+
+                    <!-- Wave Divider -->
+                    <tr>
+                        <td style="background:linear-gradient(135deg,#0284c7,#0369a1);height:30px;">
+                            <div style="background:#0f0f1e;height:30px;border-radius:30px 30px 0 0;"></div>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="background:#0f0f1e;padding:0 40px 36px;">
+
+                            <p style="font-size:17px;color:#f1f5f9;margin:0 0 6px;">Hello <strong
+                                    style="color:#38bdf8;">{{ recipient_name }}</strong>,</p>
+                            <p style="font-size:15px;color:#94a3b8;line-height:1.7;margin:0 0 28px;">
+                                We've successfully received a partial payment towards your invoice. This email serves as your official payment
+                                confirmation. Please review your updated balance below.
+                            </p>
+
+                            <!-- Amount Card -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:linear-gradient(135deg,rgba(56,189,248,0.15),rgba(2,132,199,0.08));border:2px solid rgba(56,189,248,0.3);border-radius:14px;margin-bottom:20px;">
+                                <tr>
+                                    <td style="padding:28px;text-align:center;">
+                                        <p
+                                            style="margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:2px;color:#94a3b8;font-weight:600;">
+                                            Payment Received</p>
+                                        <p
+                                            style="margin:0;font-size:44px;font-weight:800;color:#38bdf8;letter-spacing:-1px;">
+                                            ₹{{ "{:,.2f}".format(payment_amount) }}</p>
+                                        <div
+                                            style="display:inline-block;background:rgba(56,189,248,0.2);border-radius:20px;padding:5px 16px;margin-top:10px;">
+                                            <span style="color:#38bdf8;font-size:13px;font-weight:700;">✓ CONFIRMED</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Payment Summary Details -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.15);border-radius:14px;margin-bottom:20px;">
+                                <tr>
+                                    <td style="padding:22px 26px;">
+                                        <p
+                                            style="margin:0 0 14px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#38bdf8;font-weight:700;">
+                                            🧾 Payment Summary
+                                        </p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            {% if invoice_number %}
+                                            <tr>
+                                                <td style="padding:7px 0;color:#94a3b8;font-size:13px;width:140px;">
+                                                    Invoice ID</td>
+                                                <td
+                                                    style="padding:7px 0;color:#e0e7ff;font-size:13px;font-weight:700;font-family:'Courier New',monospace;letter-spacing:1px;">
+                                                    {{ invoice_number }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% if total_amount %}
+                                            <tr>
+                                                <td style="padding:7px 0;color:#94a3b8;font-size:13px;">Total Invoice</td>
+                                                <td style="padding:7px 0;color:#f1f5f9;font-size:14px;">₹{{
+                                                    "{:,.2f}".format(total_amount) }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% if amount_paid %}
+                                            <tr>
+                                                <td style="padding:7px 0;color:#94a3b8;font-size:13px;">Total Paid So Far
+                                                </td>
+                                                <td style="padding:7px 0;color:#34d399;font-size:14px;font-weight:600;">₹{{
+                                                    "{:,.2f}".format(amount_paid) }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% if pending_amount is defined %}
+                                            <tr>
+                                                <td style="padding:14px 0 7px;color:#94a3b8;font-size:13px;border-top:1px solid rgba(255,255,255,0.1);">Remaining Balance</td>
+                                                <td style="padding:14px 0 7px;color:#fbbf24;font-size:15px;font-weight:700;border-top:1px solid rgba(255,255,255,0.1);">₹{{ "{:,.2f}".format(pending_amount) }}
+                                                </td>
+                                            </tr>
+                                            {% endif %}
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            {% if admin_note %}
+                            <!-- Admin Note -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(251,191,36,0.08);border-left:4px solid #fbbf24;border-radius:0 12px 12px 0;margin-bottom:28px;">
+                                <tr>
+                                    <td style="padding:16px 20px;">
+                                        <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#fcd34d;text-transform:uppercase;letter-spacing:1px;">
+                                            📝 Note from Admin
+                                        </p>
+                                        <p style="margin:0;font-size:14px;color:#fef3c7;line-height:1.6;font-style:italic;">
+                                            "{{ admin_note }}"
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            <p style="font-size:15px;color:#e2e8f0;margin:0;">
+                                Thank you for your business! 🙏<br>
+                                <strong style="color:#38bdf8;">The Source Point Team</strong>
+                            </p>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background:#07070f;border-top:1px solid #1e1e30;padding:24px 40px;text-align:center;border-radius:0 0 20px 20px;">
+                            <p style="margin:0 0 4px;font-size:13px;color:#64748b;font-weight:600;">⚡ SourcePoint
+                                Finance</p>
+                            <p style="margin:0 0 8px;font-size:12px;color:#334155;">
+                                Payment queries? <a href="mailto:admin@sourcepoint.in"
+                                    style="color:#0ea5e9;text-decoration:none;">admin@sourcepoint.in</a>
+                            </p>
+                            <p style="margin:0;font-size:11px;color:#1e293b;">
+                                © {{ now.year if now is defined else '2025' }} Source Point. All rights reserved. · This
+                                is an automated payment confirmation.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>
