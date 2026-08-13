@@ -1378,6 +1378,7 @@ def send_invoice_reminder(invoice_id):
         template='mail/reminder_invoice_email.html', recipient_name=invoice.recipient_name,
         invoice_number=invoice.invoice_number, created_at=invoice.created_at.strftime('%B %d, %Y'),
         total_amount=invoice.total_amount, due_date=invoice.due_date.strftime('%B %d, %Y') if invoice.due_date else "Immediate",
+        amount_paid=float(invoice.amount_paid), pending_amount=invoice.pending_amount,
         attachments=[attachment]
     )
 
