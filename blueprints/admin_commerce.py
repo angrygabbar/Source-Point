@@ -959,6 +959,100 @@ def create_invoice():
     products_js = [{'id': p.id, 'name': p.name, 'price': float(p.price), 'code': p.product_code} for p in products]
     return render_template('create_invoice.html', products=products_js)
 
+@admin_commerce_bp.route('/invoices/edit/<int:invoice_id>', methods=['GET', 'POST'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def edit_invoice(invoice_id):
+    invoice = Invoice.query.get_or_404(invoice_id)
+
+    if request.method == 'POST':
+        try:
+            recipient_name = request.form.get('recipient_name')
+            recipient_email = request.form.get('recipient_email')
+            due_date_str = request.form.get('due_date')
+            order_id = request.form.get('order_id')
+            bill_to = request.form.get('bill_to_address')
+            ship_to = request.form.get('ship_to_address')
+            notes = request.form.get('notes')
+            payment_details = request.form.get('payment_details')
+            tax_rate = float(request.form.get('tax', 0))
+
+            descriptions = request.form.getlist('item_description[]')
+            quantities = request.form.getlist('item_quantity[]')
+            prices = request.form.getlist('item_price[]')
+
+            subtotal = 0
+            invoice_items_data = []
+
+            for d, q, p in zip(descriptions, quantities, prices):
+                if d and q and p:
+                    qty = int(q)
+                    price = float(p)
+                    subtotal += qty * price
+                    invoice_items_data.append({'description': d, 'quantity': qty, 'price': price})
+
+            tax_amount = subtotal * (tax_rate / 100)
+            total_amount = subtotal + tax_amount
+
+            # Validate: new total must not be less than amount already paid
+            if total_amount < float(invoice.amount_paid) - 0.01:
+                flash(f'Total amount (₹{total_amount:,.2f}) cannot be less than amount already paid (₹{float(invoice.amount_paid):,.2f}).', 'danger')
+                return redirect(url_for('admin_commerce.edit_invoice', invoice_id=invoice_id))
+
+            # Update invoice fields
+            invoice.recipient_name = recipient_name
+            invoice.recipient_email = recipient_email
+            invoice.bill_to_address = bill_to
+            invoice.ship_to_address = ship_to
+            invoice.order_id = order_id
+            invoice.subtotal = subtotal
+            invoice.tax = tax_amount
+            invoice.total_amount = total_amount
+            invoice.due_date = datetime.strptime(due_date_str, '%Y-%m-%d').date() if due_date_str else None
+            invoice.notes = notes
+            invoice.payment_details = payment_details
+
+            # Auto-update status based on new total vs amount_paid
+            if float(invoice.amount_paid) >= total_amount - 0.01:
+                invoice.amount_paid = invoice.total_amount
+                invoice.status = InvoiceStatus.PAID.value
+            elif float(invoice.amount_paid) > 0:
+                invoice.status = InvoiceStatus.UNPAID.value
+
+            # Delete old items and re-create
+            InvoiceItem.query.filter_by(invoice_id=invoice.id).delete()
+            for item in invoice_items_data:
+                db.session.add(InvoiceItem(invoice_id=invoice.id, description=item['description'], quantity=item['quantity'], price=item['price']))
+
+            db.session.commit()
+
+            # Regenerate PDF and send updated invoice email
+            generator = InvoiceGenerator(invoice)
+            pdf_bytes = generator.generate_pdf()
+            attachments = [{'filename': f'Invoice_{invoice.invoice_number}.pdf', 'data': pdf_bytes}]
+
+            send_email(to=recipient_email, subject=f"Updated Invoice #{invoice.invoice_number}", template="mail/ecommerce_invoice_email.html", invoice=invoice, attachments=attachments)
+
+            log_user_action("Edit Invoice", f"Updated invoice {invoice.invoice_number}")
+            flash(f'Invoice {invoice.invoice_number} updated and resent.', 'success')
+            return redirect(url_for('admin_commerce.manage_invoices'))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error updating invoice: {str(e)}", 'danger')
+            return redirect(url_for('admin_commerce.edit_invoice', invoice_id=invoice_id))
+
+    # GET — render form in edit mode
+    products = Product.query.filter(Product.stock > 0).all()
+    products_js = [{'id': p.id, 'name': p.name, 'price': float(p.price), 'code': p.product_code} for p in products]
+
+    # Calculate tax rate from stored values for pre-fill
+    tax_rate = 0
+    if invoice.subtotal and float(invoice.subtotal) > 0:
+        tax_rate = (float(invoice.tax) / float(invoice.subtotal)) * 100
+
+    return render_template('create_invoice.html', products=products_js, invoice=invoice, edit_mode=True, tax_rate=tax_rate)
+
 @admin_commerce_bp.route('/invoices/mark_paid/<int:invoice_id>', methods=['POST'])
 @login_required
 @role_required(UserRole.ADMIN.value)
