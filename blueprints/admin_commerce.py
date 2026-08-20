@@ -1254,6 +1254,21 @@ def process_invoice_refund(invoice_id):
             return redirect(url_for('admin_commerce.view_invoice', invoice_id=invoice.id))
         supercoin_credited = True
 
+        # Send SuperCoin Credit Notification email to the user
+        try:
+            send_email(
+                to=recipient_user.email,
+                subject=f"🪙 {refund_amount:,.2f} SupersCoins Credited to Your Wallet! (Invoice #{invoice.invoice_number} Refund)",
+                template="mail/superscoins_activity_email.html",
+                seller=recipient_user,
+                wallet=wallet,
+                transaction=txn,
+                admin=current_user,
+                now=datetime.utcnow()
+            )
+        except Exception as e:
+            print(f"SuperCoins credit email error: {e}")
+
     refund_record = InvoiceRefund(
         invoice_id=invoice.id,
         amount=refund_amount,

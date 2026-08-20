@@ -1298,3 +1298,60 @@ def server_health_check_task():
 
     except Exception as e:
         logger.error(f"[Health Check] Failed to send health report: {e}")
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 16. DAILY SUPERSCOINS BALANCE & TRAVEL BOOKING REMINDER TASK
+# ═══════════════════════════════════════════════════════════════════════
+
+@celery.task
+def send_daily_superscoins_balance_reminder_task():
+    """
+    Daily morning reminder sent to all users with an active SuperCoins balance (> 0).
+    Encourages them to redeem their coins for hotels, flights, buses & travel bookings.
+    """
+    from models.commerce import SupersCoinWallet
+    from models.auth import User
+    from utils import send_email
+
+    logger.info("[Celery Worker] Starting daily SuperCoins balance reminder job...")
+    sent_count = 0
+    error_count = 0
+
+    try:
+        wallets = SupersCoinWallet.query.filter(SupersCoinWallet.balance > 0).all()
+        logger.info(f"[Celery Worker] Found {len(wallets)} wallet(s) with active SuperCoins balance.")
+
+        for wallet in wallets:
+            try:
+                user = wallet.seller or User.query.get(wallet.seller_id)
+                if not user or not user.email:
+                    continue
+
+                balance_val = float(wallet.balance)
+                if balance_val <= 0:
+                    continue
+
+                subject = f"🪙 You have {balance_val:,.0f} SuperCoins! Redeem on Hotels, Flights & Bus Bookings ✈️🏨"
+
+                send_email(
+                    to=user.email,
+                    subject=subject,
+                    template="mail/superscoins_daily_reminder.html",
+                    user=user,
+                    balance=balance_val,
+                    now=datetime.utcnow()
+                )
+                sent_count += 1
+                logger.info(f"[Celery Worker] Daily SuperCoins reminder sent to {user.email} (Balance: {balance_val})")
+
+            except Exception as item_err:
+                error_count += 1
+                logger.error(f"[Celery Worker] Error sending SuperCoins reminder for wallet {wallet.id}: {item_err}")
+
+        logger.info(f"[Celery Worker] Daily SuperCoins reminder job finished. Sent: {sent_count}, Errors: {error_count}")
+        return {'sent': sent_count, 'errors': error_count}
+
+    except Exception as e:
+        logger.error(f"[Celery Worker] Daily SuperCoins reminder job failed: {e}")
+        return {'error': str(e)}

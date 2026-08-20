@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Available SuperCoins — Redeem on Hotels, Flights & Buses</title>
+</head>
+
+<body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;color:#e2e8f0;">
+
+    <!-- Preheader -->
+    <span style="display:none;max-height:0;overflow:hidden;">
+        ✨ You have {{ "{:,.2f}".format(balance|float) }} SuperCoins available in your wallet! Redeem them for Hotels, Flights & Bus bookings today.
+    </span>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#07070f;padding:40px 16px;">
+        <tr>
+            <td align="center">
+                <table width="620" cellpadding="0" cellspacing="0" style="max-width:620px;width:100%;background:#0f172a;border:1px solid rgba(255,255,255,0.08);border-radius:24px;overflow:hidden;box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
+
+                    <!-- Header Banner -->
+                    <tr>
+                        <td style="background:linear-gradient(135deg,#78350f,#b45309,#d97706,#f59e0b);padding:44px 36px 50px;text-align:center;">
+                            <div style="display:inline-block;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:14px;margin-bottom:16px;box-shadow:0 10px 25px rgba(0,0,0,0.3);">
+                                <span style="font-size:36px;line-height:1;display:block;">🪙</span>
+                            </div>
+                            <p style="margin:0 0 6px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#fef3c7;font-weight:800;">Daily Wallet Digest</p>
+                            <h1 style="margin:0;font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">
+                                Ready for Your Next Trip? ✈️🏨🚌
+                            </h1>
+                            <p style="margin:10px 0 0;font-size:14px;color:#fef3c7;font-weight:500;">
+                                Put your SuperCoins to work with exclusive travel & booking perks!
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding:36px 36px 24px;">
+
+                            <p style="font-size:16px;color:#f8fafc;margin:0 0 6px;">
+                                Good morning, <strong style="color:#fbbf24;">{{ user.username }}</strong>! 👋
+                            </p>
+                            <p style="font-size:14px;color:#94a3b8;line-height:1.7;margin:0 0 26px;">
+                                Here is your daily SuperCoins balance update. You have active SuperCoins in your wallet ready to be redeemed across our travel booking services.
+                            </p>
+
+                            <!-- Balance Showcase Card -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,rgba(251,191,36,0.12),rgba(217,119,6,0.06));border:2px solid rgba(251,191,36,0.3);border-radius:18px;margin-bottom:30px;">
+                                <tr>
+                                    <td style="padding:28px;text-align:center;">
+                                        <p style="margin:0 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#cbd5e1;font-weight:700;">
+                                            Available SuperCoin Balance
+                                        </p>
+                                        <p style="margin:6px 0;font-size:46px;font-weight:900;color:#fbbf24;letter-spacing:-1px;font-family:'Courier New',monospace;">
+                                            🪙 {{ "{:,.2f}".format(balance|float) }}
+                                        </p>
+                                        <p style="margin:0;font-size:12px;color:#94a3b8;">
+                                            1 SuperCoin = ₹1.00 in Booking Value
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Section Title -->
+                            <p style="margin:0 0 16px;font-size:12px;text-transform:uppercase;letter-spacing:2px;color:#fbbf24;font-weight:800;">
+                                🎯 Where You Can Use Your SuperCoins
+                            </p>
+
+                            <!-- Options Grid / Stack -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+
+                                <!-- 1. Hotel Booking -->
+                                <tr>
+                                    <td style="padding:14px 18px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:14px;margin-bottom:10px;">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td width="42" valign="top" style="font-size:26px;padding-right:14px;">🏨</td>
+                                                <td>
+                                                    <p style="margin:0 0 3px;font-size:15px;font-weight:700;color:#ffffff;">Hotel Bookings</p>
+                                                    <p style="margin:0;font-size:13px;color:#94a3b8;line-height:1.5;">
+                                                        Redeem your coins for luxury stays, business hotels & resorts across top domestic & international destinations.
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+
+                                <tr><td height="10"></td></tr>
+
+                                <!-- 2. Flight Booking -->
+                                <tr>
+                                    <td style="padding:14px 18px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:14px;margin-bottom:10px;">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td width="42" valign="top" style="font-size:26px;padding-right:14px;">✈️</td>
+                                                <td>
+                                                    <p style="margin:0 0 3px;font-size:15px;font-weight:700;color:#ffffff;">Flight Tickets</p>
+                                                    <p style="margin:0;font-size:13px;color:#94a3b8;line-height:1.5;">
+                                                        Apply your SuperCoins directly towards airline ticket bookings to save on every journey.
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+
+                                <tr><td height="10"></td></tr>
+
+                                <!-- 3. Bus Booking -->
+                                <tr>
+                                    <td style="padding:14px 18px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:14px;">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td width="42" valign="top" style="font-size:26px;padding-right:14px;">🚌</td>
+                                                <td>
+                                                    <p style="margin:0 0 3px;font-size:15px;font-weight:700;color:#ffffff;">Bus Reservations</p>
+                                                    <p style="margin:0;font-size:13px;color:#94a3b8;line-height:1.5;">
+                                                        Hassle-free intercity bus bookings with top operators, fully payable with your available coins.
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+
+                            </table>
+
+                            <!-- CTA Button -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:30px;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{ app_url or 'https://sourcepoint.in' }}/seller/superscoins"
+                                           style="display:inline-block;padding:16px 36px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#000000;font-weight:800;font-size:15px;text-decoration:none;border-radius:14px;box-shadow:0 10px 25px rgba(245,158,11,0.35);letter-spacing:0.3px;">
+                                            ✨ View Wallet & Redeem SuperCoins →
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Help Box -->
+                            <div style="background:rgba(148,163,184,0.05);border-radius:12px;padding:16px 20px;border:1px solid rgba(148,163,184,0.1);">
+                                <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.6;">
+                                    💡 <strong>Need help with a booking?</strong> Simply reply to this email or reach out to our admin desk at <a href="mailto:admin@sourcepoint.in" style="color:#fbbf24;text-decoration:none;">admin@sourcepoint.in</a> with your travel details and we'll arrange the reservation using your SuperCoin balance!
+                                </p>
+                            </div>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background:#07070f;border-top:1px solid rgba(255,255,255,0.06);padding:24px 36px;text-align:center;">
+                            <p style="margin:0 0 4px;font-size:13px;color:#94a3b8;font-weight:700;">⚡ Source Point Commerce & Travel</p>
+                            <p style="margin:0 0 8px;font-size:12px;color:#64748b;">
+                                Daily morning balance summary for active SuperCoins holders.
+                            </p>
+                            <p style="margin:0;font-size:11px;color:#475569;">
+                                © {{ now.year if now is defined else '2026' }} Source Point. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>
