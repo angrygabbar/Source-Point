@@ -136,6 +136,7 @@ class InvoiceRefund(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     invoice_id = db.Column(db.Integer, db.ForeignKey('invoice.id'), nullable=False)
     amount = db.Column(Numeric(10, 2), nullable=False)
+    refund_type = db.Column(db.String(20), nullable=False, default='rupees')  # 'rupees' or 'supercoins'
     reason = db.Column(db.Text, nullable=True)
     recorded_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     recorded_at = db.Column(db.DateTime, default=datetime.utcnow)

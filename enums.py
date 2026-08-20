@@ -38,6 +38,7 @@ class InvoiceStatus(enum.Enum):
     PAID = "Paid"
     OVERDUE = "Overdue"
     CANCELLED = "Cancelled"
+    REFUNDED = "Refunded"
 
 class SupersCoinTransactionType(enum.Enum):
     CREDIT = "credit"

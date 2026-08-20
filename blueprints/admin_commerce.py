@@ -1178,7 +1178,10 @@ def update_invoice_payment(invoice_id):
 @login_required
 @role_required(UserRole.ADMIN.value)
 def process_invoice_refund(invoice_id):
-    """Record a refund against an invoice."""
+    """Record a refund against an invoice — in Rupees or SuperCoins."""
+    from services.superscoins_service import SupersCoinsService
+    from enums import SupersCoinTransactionType
+
     invoice = Invoice.query.get_or_404(invoice_id)
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
@@ -1198,7 +1201,14 @@ def process_invoice_refund(invoice_id):
         flash(msg, 'danger')
         return redirect(url_for('admin_commerce.view_invoice', invoice_id=invoice.id))
 
-    refundable = float(invoice.amount_paid) - float(invoice.amount_refunded)
+    # Use the model property which handles legacy invoices (Paid but amount_paid=0)
+    paid = float(invoice.amount_paid) if invoice.amount_paid else 0.0
+    if invoice.status == InvoiceStatus.PAID.value and paid == 0.0:
+        # Legacy invoice: was marked Paid before amount_paid tracking existed
+        invoice.amount_paid = float(invoice.total_amount)
+        paid = float(invoice.amount_paid)
+
+    refundable = invoice.refundable_amount
     if refund_amount > refundable + 0.01:
         msg = f'Refund amount (₹{refund_amount:,.2f}) exceeds refundable balance (₹{refundable:,.2f}).'
         if is_ajax:
@@ -1206,11 +1216,48 @@ def process_invoice_refund(invoice_id):
         flash(msg, 'danger')
         return redirect(url_for('admin_commerce.view_invoice', invoice_id=invoice.id))
 
+    refund_type = request.form.get('refund_type', 'rupees').strip().lower()
+    if refund_type not in ('rupees', 'supercoins'):
+        refund_type = 'rupees'
+
     reason = request.form.get('refund_reason', '').strip()
+
+    # ── SuperCoin refund: credit coins to the recipient's wallet ──
+    supercoin_credited = False
+    if refund_type == 'supercoins':
+        recipient_user = User.query.filter_by(email=invoice.recipient_email).first()
+        if not recipient_user:
+            msg = f'Cannot issue SuperCoin refund: no user account found for {invoice.recipient_email}.'
+            if is_ajax:
+                return jsonify({'success': False, 'message': msg}), 400
+            flash(msg, 'danger')
+            return redirect(url_for('admin_commerce.view_invoice', invoice_id=invoice.id))
+
+        note = f'Refund for Invoice #{invoice.invoice_number}'
+        if reason:
+            note += f' — {reason}'
+
+        success, sc_msg, wallet, txn = SupersCoinsService.adjust_wallet(
+            seller_id=recipient_user.id,
+            transaction_type=SupersCoinTransactionType.CREDIT.value,
+            amount_value=refund_amount,
+            admin_id=current_user.id,
+            note=note,
+            reference_type='invoice_refund',
+            reference_id=invoice.id
+        )
+        if not success:
+            msg = f'SuperCoin credit failed: {sc_msg}'
+            if is_ajax:
+                return jsonify({'success': False, 'message': msg}), 400
+            flash(msg, 'danger')
+            return redirect(url_for('admin_commerce.view_invoice', invoice_id=invoice.id))
+        supercoin_credited = True
 
     refund_record = InvoiceRefund(
         invoice_id=invoice.id,
         amount=refund_amount,
+        refund_type=refund_type,
         reason=reason if reason else None,
         recorded_by_id=current_user.id
     )
@@ -1220,14 +1267,18 @@ def process_invoice_refund(invoice_id):
     invoice.amount_paid = float(invoice.amount_paid) - refund_amount
     invoice.amount_refunded = float(invoice.amount_refunded) + refund_amount
 
-    # If invoice was Paid, revert to Unpaid since money was returned
-    if invoice.status == InvoiceStatus.PAID.value and float(invoice.amount_paid) < float(invoice.total_amount) - 0.01:
+    # Update invoice status based on refund
+    if float(invoice.amount_paid) <= 0.01:
+        # Entire paid amount has been refunded
+        invoice.status = InvoiceStatus.REFUNDED.value
+    elif invoice.status == InvoiceStatus.PAID.value and float(invoice.amount_paid) < float(invoice.total_amount) - 0.01:
         invoice.status = InvoiceStatus.UNPAID.value
 
     db.session.commit()
 
     new_pending = float(invoice.total_amount) - float(invoice.amount_paid)
-    log_user_action("Process Refund", f"Refunded ₹{refund_amount:,.2f} for invoice {invoice.invoice_number}. New pending: ₹{new_pending:,.2f}")
+    refund_label = 'SuperCoins' if refund_type == 'supercoins' else '₹'
+    log_user_action("Process Refund", f"Refunded {refund_label}{refund_amount:,.2f} ({refund_type}) for invoice {invoice.invoice_number}. New pending: ₹{new_pending:,.2f}")
 
     try:
         send_email(
@@ -1237,6 +1288,8 @@ def process_invoice_refund(invoice_id):
             recipient_name=invoice.recipient_name,
             invoice_number=invoice.invoice_number,
             refund_amount=refund_amount,
+            refund_type=refund_type,
+            supercoin_credited=supercoin_credited,
             total_refunded=float(invoice.amount_refunded),
             amount_paid=float(invoice.amount_paid),
             total_amount=float(invoice.total_amount),
@@ -1246,16 +1299,21 @@ def process_invoice_refund(invoice_id):
     except Exception as e:
         print(f"Refund email error: {e}")
 
+    type_label = 'SuperCoins' if refund_type == 'supercoins' else 'Rupees'
+    success_msg = f'Refund of ₹{refund_amount:,.2f} ({type_label}) processed successfully.'
+    if supercoin_credited:
+        success_msg += f' {refund_amount:,.2f} SuperCoins credited to {invoice.recipient_email}.'
+
     if is_ajax:
         return jsonify({
             'success': True,
-            'message': f'Refund of ₹{refund_amount:,.2f} processed successfully.',
+            'message': success_msg,
             'amount_paid': float(invoice.amount_paid),
             'amount_refunded': float(invoice.amount_refunded),
             'pending_amount': new_pending,
             'status': invoice.status
         })
-    flash(f'Refund of ₹{refund_amount:,.2f} processed for {invoice.invoice_number}.', 'success')
+    flash(success_msg, 'success')
     return redirect(url_for('admin_commerce.view_invoice', invoice_id=invoice.id))
 
 @admin_commerce_bp.route('/invoices/delete/<int:invoice_id>', methods=['GET', 'POST'])

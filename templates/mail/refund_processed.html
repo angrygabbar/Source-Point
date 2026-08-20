@@ -59,13 +59,13 @@
                                     <td style="padding:28px;text-align:center;">
                                         <p
                                             style="margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:2px;color:#94a3b8;font-weight:600;">
-                                            Refund Amount</p>
+                                            Refund Amount ({{ 'SuperCoins' if refund_type == 'supercoins' else 'Rupees' }})</p>
                                         <p
-                                            style="margin:0;font-size:44px;font-weight:800;color:#a78bfa;letter-spacing:-1px;">
-                                            ₹{{ "{:,.2f}".format(refund_amount) }}</p>
+                                            style="margin:0;font-size:44px;font-weight:800;color:{{ '#fbbf24' if refund_type == 'supercoins' else '#a78bfa' }};letter-spacing:-1px;">
+                                            {{ '🪙 ' if refund_type == 'supercoins' else '₹' }}{{ "{:,.2f}".format(refund_amount) }}</p>
                                         <div
                                             style="display:inline-block;background:rgba(167,139,250,0.2);border-radius:20px;padding:5px 16px;margin-top:10px;">
-                                            <span style="color:#c4b5fd;font-size:13px;font-weight:700;">✓ PROCESSED</span>
+                                            <span style="color:#c4b5fd;font-size:13px;font-weight:700;">✓ {{ 'CREDITED TO WALLET' if supercoin_credited else 'PROCESSED' }}</span>
                                         </div>
                                     </td>
                                 </tr>

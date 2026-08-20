@@ -120,6 +120,21 @@ def ensure_invoice_refund_schema():
 
     InvoiceRefund.__table__.create(db.engine, checkfirst=True)
     db.session.commit()
+
+    # Ensure refund_type column exists on existing invoice_refund table
+    inspector = inspect(db.engine)
+    if InvoiceRefund.__tablename__ in set(inspector.get_table_names()):
+        refund_columns = {column["name"] for column in inspector.get_columns(InvoiceRefund.__tablename__)}
+        if "refund_type" not in refund_columns:
+            dialect = db.engine.dialect.name
+            if dialect == "postgresql":
+                sql = "ALTER TABLE invoice_refund ADD COLUMN IF NOT EXISTS refund_type VARCHAR(20) NOT NULL DEFAULT 'rupees'"
+            else:
+                sql = "ALTER TABLE invoice_refund ADD COLUMN refund_type VARCHAR(20) NOT NULL DEFAULT 'rupees'"
+            db.session.execute(text(sql))
+            db.session.commit()
+            print("[schema] Added invoice_refund.refund_type")
+
     print("[schema] Invoice refund tables ready")
 
 
