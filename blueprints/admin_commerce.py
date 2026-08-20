@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from extensions import db
 from models.auth import User
 from models.commerce import (
-    Product, ProductImage, Order, AffiliateAd, Invoice, InvoiceItem, InvoicePayment,
+    Product, ProductImage, Order, AffiliateAd, Invoice, InvoiceItem, InvoicePayment, InvoiceRefund,
     SellerInventory, StockRequest, InventoryRollbackRequest,
     InventoryRollbackTerms, InventoryRollbackTermsDecision
 )
@@ -888,6 +888,13 @@ def manage_invoices():
     invoices = Invoice.query.order_by(Invoice.created_at.desc()).all()
     return render_template('manage_invoices.html', invoices=invoices)
 
+@admin_commerce_bp.route('/invoices/<int:invoice_id>')
+@login_required
+@role_required(UserRole.ADMIN.value)
+def view_invoice(invoice_id):
+    invoice = Invoice.query.get_or_404(invoice_id)
+    return render_template('invoice_detail.html', invoice=invoice)
+
 @admin_commerce_bp.route('/invoices/create', methods=['GET', 'POST'])
 @login_required
 @role_required(UserRole.ADMIN.value)
@@ -1035,7 +1042,7 @@ def edit_invoice(invoice_id):
 
             log_user_action("Edit Invoice", f"Updated invoice {invoice.invoice_number}")
             flash(f'Invoice {invoice.invoice_number} updated and resent.', 'success')
-            return redirect(url_for('admin_commerce.manage_invoices'))
+            return redirect(url_for('admin_commerce.view_invoice', invoice_id=invoice.id))
 
         except Exception as e:
             db.session.rollback()
@@ -1076,7 +1083,7 @@ def mark_invoice_paid(invoice_id):
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest': return jsonify({'success': True, 'message': 'Invoice marked as Paid.'})
     flash('Invoice marked as Paid.', 'success')
-    return redirect(url_for('admin_commerce.manage_invoices'))
+    return redirect(url_for('admin_commerce.view_invoice', invoice_id=invoice.id))
 
 @admin_commerce_bp.route('/invoices/update_payment/<int:invoice_id>', methods=['POST'])
 @login_required
@@ -1093,14 +1100,14 @@ def update_invoice_payment(invoice_id):
         if is_ajax:
             return jsonify({'success': False, 'message': msg}), 400
         flash(msg, 'danger')
-        return redirect(url_for('admin_commerce.manage_invoices'))
+        return redirect(url_for('admin_commerce.view_invoice', invoice_id=invoice.id))
 
     if payment_amount <= 0:
         msg = 'Payment amount must be greater than zero.'
         if is_ajax:
             return jsonify({'success': False, 'message': msg}), 400
         flash(msg, 'danger')
-        return redirect(url_for('admin_commerce.manage_invoices'))
+        return redirect(url_for('admin_commerce.view_invoice', invoice_id=invoice.id))
 
     current_pending = float(invoice.total_amount) - float(invoice.amount_paid)
     if payment_amount > current_pending + 0.01:  # small tolerance for floats
@@ -1108,7 +1115,7 @@ def update_invoice_payment(invoice_id):
         if is_ajax:
             return jsonify({'success': False, 'message': msg}), 400
         flash(msg, 'danger')
-        return redirect(url_for('admin_commerce.manage_invoices'))
+        return redirect(url_for('admin_commerce.view_invoice', invoice_id=invoice.id))
 
     invoice.amount_paid = float(invoice.amount_paid) + payment_amount
 
@@ -1165,7 +1172,91 @@ def update_invoice_payment(invoice_id):
             'status': invoice.status
         })
     flash(f'Payment of ₹{payment_amount:,.2f} recorded for {invoice.invoice_number}.', 'success')
-    return redirect(url_for('admin_commerce.manage_invoices'))
+    return redirect(url_for('admin_commerce.view_invoice', invoice_id=invoice.id))
+
+@admin_commerce_bp.route('/invoices/refund/<int:invoice_id>', methods=['POST'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def process_invoice_refund(invoice_id):
+    """Record a refund against an invoice."""
+    invoice = Invoice.query.get_or_404(invoice_id)
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+    try:
+        refund_amount = float(request.form.get('refund_amount', 0))
+    except (ValueError, TypeError):
+        msg = 'Invalid refund amount.'
+        if is_ajax:
+            return jsonify({'success': False, 'message': msg}), 400
+        flash(msg, 'danger')
+        return redirect(url_for('admin_commerce.view_invoice', invoice_id=invoice.id))
+
+    if refund_amount <= 0:
+        msg = 'Refund amount must be greater than zero.'
+        if is_ajax:
+            return jsonify({'success': False, 'message': msg}), 400
+        flash(msg, 'danger')
+        return redirect(url_for('admin_commerce.view_invoice', invoice_id=invoice.id))
+
+    refundable = float(invoice.amount_paid) - float(invoice.amount_refunded)
+    if refund_amount > refundable + 0.01:
+        msg = f'Refund amount (₹{refund_amount:,.2f}) exceeds refundable balance (₹{refundable:,.2f}).'
+        if is_ajax:
+            return jsonify({'success': False, 'message': msg}), 400
+        flash(msg, 'danger')
+        return redirect(url_for('admin_commerce.view_invoice', invoice_id=invoice.id))
+
+    reason = request.form.get('refund_reason', '').strip()
+
+    refund_record = InvoiceRefund(
+        invoice_id=invoice.id,
+        amount=refund_amount,
+        reason=reason if reason else None,
+        recorded_by_id=current_user.id
+    )
+    db.session.add(refund_record)
+
+    # Decrement amount_paid and track refunded total
+    invoice.amount_paid = float(invoice.amount_paid) - refund_amount
+    invoice.amount_refunded = float(invoice.amount_refunded) + refund_amount
+
+    # If invoice was Paid, revert to Unpaid since money was returned
+    if invoice.status == InvoiceStatus.PAID.value and float(invoice.amount_paid) < float(invoice.total_amount) - 0.01:
+        invoice.status = InvoiceStatus.UNPAID.value
+
+    db.session.commit()
+
+    new_pending = float(invoice.total_amount) - float(invoice.amount_paid)
+    log_user_action("Process Refund", f"Refunded ₹{refund_amount:,.2f} for invoice {invoice.invoice_number}. New pending: ₹{new_pending:,.2f}")
+
+    try:
+        send_email(
+            to=invoice.recipient_email,
+            subject=f"Refund Processed: ₹{refund_amount:,.2f} for Invoice #{invoice.invoice_number}",
+            template="mail/refund_processed.html",
+            recipient_name=invoice.recipient_name,
+            invoice_number=invoice.invoice_number,
+            refund_amount=refund_amount,
+            total_refunded=float(invoice.amount_refunded),
+            amount_paid=float(invoice.amount_paid),
+            total_amount=float(invoice.total_amount),
+            pending_amount=new_pending,
+            reason=reason
+        )
+    except Exception as e:
+        print(f"Refund email error: {e}")
+
+    if is_ajax:
+        return jsonify({
+            'success': True,
+            'message': f'Refund of ₹{refund_amount:,.2f} processed successfully.',
+            'amount_paid': float(invoice.amount_paid),
+            'amount_refunded': float(invoice.amount_refunded),
+            'pending_amount': new_pending,
+            'status': invoice.status
+        })
+    flash(f'Refund of ₹{refund_amount:,.2f} processed for {invoice.invoice_number}.', 'success')
+    return redirect(url_for('admin_commerce.view_invoice', invoice_id=invoice.id))
 
 @admin_commerce_bp.route('/invoices/delete/<int:invoice_id>', methods=['GET', 'POST'])
 @login_required
@@ -1239,7 +1330,7 @@ def resend_invoice():
             return jsonify({'success': False, 'message': str(e)})
         flash(f"Error: {e}", "danger")
     
-    return redirect(url_for('admin_commerce.manage_invoices'))
+    return redirect(url_for('admin_commerce.view_invoice', invoice_id=invoice.id))
 
 @admin_commerce_bp.route('/invoices/remind/<int:invoice_id>', methods=['POST'])
 @login_required
@@ -1270,7 +1361,7 @@ def send_invoice_reminder(invoice_id):
     except Exception as e:
          if request.headers.get('X-Requested-With') == 'XMLHttpRequest': return jsonify({'success': False, 'message': str(e)})
          flash(f"Error: {e}", "danger")
-    return redirect(url_for('admin_commerce.manage_invoices'))
+    return redirect(url_for('admin_commerce.view_invoice', invoice_id=invoice.id))
 
 # --- VIEW PRODUCT DETAILS ROUTE ---
 @admin_commerce_bp.route('/inventory/view/<int:product_id>')

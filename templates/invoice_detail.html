@@ -3,6 +3,8 @@
 {% block content %}
 
 {% set inv_paid = invoice.amount_paid | float %}
+{% set inv_refunded = (invoice.amount_refunded | float) if invoice.amount_refunded else 0.0 %}
+{% set inv_refundable = invoice.refundable_amount %}
 {% set inv_total = invoice.total_amount | float %}
 {% set inv_pending = invoice.pending_amount %}
 {% set pay_percent = (inv_paid / inv_total * 100) if inv_total > 0 else 0 %}
@@ -37,6 +39,13 @@
                     data-url="{{ url_for('admin_commerce.mark_invoice_paid', invoice_id=invoice.id) }}"
                     onclick="markInvoiceAsPaid(event, this)">
                 <i class="fas fa-check-circle"></i> Mark Paid
+            </button>
+            {% endif %}
+            {% if inv_paid > 0 %}
+            <button type="button"
+                    class="px-4 py-2.5 rounded-xl bg-purple-500/10 text-purple-300 border border-purple-500/20 hover:bg-purple-500 hover:text-white transition-all text-sm font-bold flex items-center gap-2"
+                    onclick="openRefundModal({{ invoice.id }}, '{{ invoice.invoice_number }}', {{ inv_paid }}, {{ inv_refunded }})">
+                <i class="fas fa-rotate-left"></i> Refund
             </button>
             {% endif %}
             <a href="{{ url_for('admin_commerce.edit_invoice', invoice_id=invoice.id) }}"
@@ -217,6 +226,25 @@
                 </div>
             </div>
             {% endif %}
+
+            {% if invoice.refunds %}
+            <div class="glass-panel-v2 rounded-2xl border border-white/5 overflow-hidden">
+                <div class="px-5 py-4 border-b border-white/10 bg-white/[0.03]">
+                    <p class="text-xs font-bold text-purple-400 uppercase tracking-widest"><i class="fas fa-rotate-left mr-1"></i> Refund History</p>
+                </div>
+                <div class="divide-y divide-white/5">
+                    {% for refund in invoice.refunds %}
+                    <div class="p-5">
+                        <div class="flex items-center justify-between gap-4">
+                            <p class="text-purple-300 font-mono font-bold">₹{{ "{:,.2f}".format(refund.amount) }}</p>
+                            <p class="text-[11px] text-gray-500">{{ refund.recorded_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-2 italic">{{ refund.reason or 'No reason provided' }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
         </aside>
     </div>
 </div>
@@ -312,6 +340,80 @@
                     <button type="button" onclick="closePaymentModal()" class="px-4 py-2 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm font-medium">Cancel</button>
                     <button type="submit" id="pm_submit_btn" class="px-6 py-2.5 rounded-lg bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white shadow-lg shadow-cyan-500/20 transition-all text-sm font-bold flex items-center gap-2">
                         <i class="fas fa-check"></i> Record Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Refund Modal -->
+<div id="refundModal" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="refund-modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onclick="closeRefundModal()"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+        <div class="inline-block align-middle bg-[#0f172a] rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-md sm:w-full border border-white/10">
+            <form id="refundForm" method="POST">
+                <div class="px-6 py-5 border-b border-white/10 bg-gradient-to-r from-purple-900/30 to-indigo-900/30">
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2" id="refund-modal-title">
+                        <span class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">
+                            <i class="fas fa-rotate-left"></i>
+                        </span>
+                        Initiate Refund
+                    </h3>
+                    <p class="text-xs text-gray-400 mt-1" id="rm_invoice_label">Invoice #{{ invoice.invoice_number }}</p>
+                </div>
+
+                <div class="px-6 py-6 space-y-5">
+                    <div class="bg-white/5 rounded-xl p-4 border border-white/5 space-y-3">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-400">Total Paid</span>
+                            <span class="text-green-400 font-mono font-bold" id="rm_paid">₹0.00</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-400">Already Refunded</span>
+                            <span class="text-purple-400 font-mono font-bold" id="rm_refunded">₹0.00</span>
+                        </div>
+                        <div class="border-t border-white/10 pt-3 flex justify-between text-sm">
+                            <span class="text-cyan-400 font-bold">Max Refundable</span>
+                            <span class="text-cyan-400 font-mono font-bold text-lg" id="rm_refundable">₹0.00</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Refund Amount</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-purple-400 font-bold">₹</span>
+                            <input type="number" name="refund_amount" id="rm_amount_input"
+                                   step="0.01" min="0.01" required
+                                   class="w-full pl-10 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white text-lg font-mono focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                                   placeholder="0.00">
+                        </div>
+                        <p class="text-[11px] text-gray-500 mt-1.5" id="rm_max_hint">Max: ₹0.00</p>
+                    </div>
+
+                    <div>
+                        <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Quick Fill</p>
+                        <div class="flex gap-2 flex-wrap">
+                            <button type="button" class="refund-quick-fill-btn px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-gray-300 hover:bg-purple-500/20 hover:border-purple-500/30 hover:text-purple-300 transition-all" data-percent="25">25%</button>
+                            <button type="button" class="refund-quick-fill-btn px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-gray-300 hover:bg-purple-500/20 hover:border-purple-500/30 hover:text-purple-300 transition-all" data-percent="50">50%</button>
+                            <button type="button" class="refund-quick-fill-btn px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-gray-300 hover:bg-purple-500/20 hover:border-purple-500/30 hover:text-purple-300 transition-all" data-percent="75">75%</button>
+                            <button type="button" class="refund-quick-fill-btn px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-gray-300 hover:bg-purple-500/20 hover:border-purple-500/30 hover:text-purple-300 transition-all" data-percent="100">Full</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Refund Reason / Note (Optional)</label>
+                        <textarea name="refund_reason" rows="2"
+                                  class="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-sm text-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all placeholder-gray-600"
+                                  placeholder="Specify why this refund is being issued..."></textarea>
+                    </div>
+                </div>
+
+                <div class="px-6 py-4 bg-black/20 border-t border-white/10 flex justify-end gap-3">
+                    <button type="button" onclick="closeRefundModal()" class="px-4 py-2 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all text-sm font-medium">Cancel</button>
+                    <button type="submit" id="rm_submit_btn" class="px-6 py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-500/20 transition-all text-sm font-bold flex items-center gap-2">
+                        <i class="fas fa-rotate-left"></i> Confirm Refund
                     </button>
                 </div>
             </form>
@@ -467,6 +569,85 @@
                 setTimeout(() => location.reload(), 700);
             } else if (window.showToast) {
                 window.showToast(data.message || 'Error recording payment', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            if (window.showToast) window.showToast('Network error', 'error');
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    });
+
+    // ── Refund Modal Logic ──
+    let currentRefundable = 0;
+
+    function openRefundModal(invoiceId, invoiceNumber, paid, refunded) {
+        const refundable = paid - refunded;
+        currentRefundable = refundable > 0 ? refundable : 0;
+
+        document.getElementById('rm_invoice_label').textContent = 'Invoice #' + invoiceNumber;
+        document.getElementById('rm_paid').textContent = '₹' + paid.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        document.getElementById('rm_refunded').textContent = '₹' + refunded.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        document.getElementById('rm_refundable').textContent = '₹' + currentRefundable.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        document.getElementById('rm_max_hint').textContent = 'Max: ₹' + currentRefundable.toLocaleString('en-IN', {minimumFractionDigits: 2});
+
+        const amountInput = document.getElementById('rm_amount_input');
+        amountInput.value = '';
+        amountInput.max = currentRefundable;
+
+        const reasonInput = document.querySelector('textarea[name="refund_reason"]');
+        if (reasonInput) reasonInput.value = '';
+
+        document.getElementById('refundForm').action = '/admin/commerce/invoices/refund/' + invoiceId;
+        document.getElementById('refundModal').classList.remove('hidden');
+        setTimeout(() => amountInput.focus(), 100);
+    }
+
+    function closeRefundModal() {
+        document.getElementById('refundModal').classList.add('hidden');
+    }
+
+    document.querySelectorAll('.refund-quick-fill-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const pct = parseInt(btn.dataset.percent);
+            document.getElementById('rm_amount_input').value = (currentRefundable * pct / 100).toFixed(2);
+        });
+    });
+
+    document.getElementById('refundForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const amountInput = document.getElementById('rm_amount_input');
+        const amount = parseFloat(amountInput.value);
+
+        if (!amount || amount <= 0) {
+            if (window.showToast) window.showToast('Enter a valid refund amount', 'error');
+            return;
+        }
+        if (amount > currentRefundable + 0.01) {
+            if (window.showToast) window.showToast('Refund amount exceeds refundable balance', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('rm_submit_btn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch(this.action, {
+                method: 'POST',
+                body: new FormData(this),
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                if (window.showToast) window.showToast(data.message, 'success');
+                closeRefundModal();
+                setTimeout(() => location.reload(), 700);
+            } else if (window.showToast) {
+                window.showToast(data.message || 'Error processing refund', 'error');
             }
         } catch (err) {
             console.error(err);

@@ -13,6 +13,7 @@ from app import app
 from extensions import db
 from models.auth import User
 from models.commerce import (
+    Invoice, InvoiceRefund,
     SupersCoinWallet, SupersCoinTransaction, SupersCoinInvoice,
     InventoryRollbackTerms, InventoryRollbackTermsDecision
 )
@@ -99,12 +100,36 @@ def ensure_rollback_terms_tables():
     print("[schema] Rollback terms tables ready")
 
 
+def ensure_invoice_refund_schema():
+    inspector = inspect(db.engine)
+    table_names = set(inspector.get_table_names())
+
+    if Invoice.__tablename__ in table_names:
+        invoice_columns = {column["name"] for column in inspector.get_columns(Invoice.__tablename__)}
+        if "amount_refunded" not in invoice_columns:
+            dialect = db.engine.dialect.name
+            if dialect == "postgresql":
+                sql = 'ALTER TABLE invoice ADD COLUMN IF NOT EXISTS amount_refunded NUMERIC(10, 2) NOT NULL DEFAULT 0.00'
+            elif dialect == "sqlite":
+                sql = 'ALTER TABLE invoice ADD COLUMN amount_refunded NUMERIC(10, 2) NOT NULL DEFAULT 0.00'
+            else:
+                sql = 'ALTER TABLE invoice ADD COLUMN amount_refunded NUMERIC(10, 2) NOT NULL DEFAULT 0.00'
+            db.session.execute(text(sql))
+            db.session.commit()
+            print("[schema] Added invoice.amount_refunded")
+
+    InvoiceRefund.__table__.create(db.engine, checkfirst=True)
+    db.session.commit()
+    print("[schema] Invoice refund tables ready")
+
+
 def main():
     wait_for_database(app)
     with app.app_context():
         ensure_user_columns()
         ensure_superscoins_tables()
         ensure_rollback_terms_tables()
+        ensure_invoice_refund_schema()
 
 
 if __name__ == "__main__":

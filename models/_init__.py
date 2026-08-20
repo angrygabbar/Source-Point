@@ -1,6 +1,6 @@
 from .auth import User, Message, ActivityUpdate, ActivityLog, candidate_contacts
 from .commerce import (Product, ProductImage, Order, OrderItem, Cart, CartItem,
-                       Invoice, InvoiceItem, StockRequest, SellerInventory, AffiliateAd,
+                       Invoice, InvoiceItem, InvoiceRefund, StockRequest, SellerInventory, AffiliateAd,
                        ShareableLink, SupersCoinWallet, SupersCoinTransaction,
                        SupersCoinInvoice, InventoryRollbackRequest, InventoryRollbackTerms,
                        InventoryRollbackTermsDecision)
