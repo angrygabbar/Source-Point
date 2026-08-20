@@ -391,6 +391,13 @@ def manage_invoices():
     invoices = Invoice.query.filter_by(admin_id=current_user.id).order_by(Invoice.created_at.desc()).all()
     return render_template('seller/manage_invoices.html', invoices=invoices)
 
+@seller_bp.route('/invoices/<int:invoice_id>')
+@login_required
+@role_required(UserRole.SELLER.value)
+def view_invoice(invoice_id):
+    invoice = Invoice.query.filter_by(id=invoice_id, admin_id=current_user.id).first_or_404()
+    return render_template('seller/invoice_detail.html', invoice=invoice)
+
 @seller_bp.route('/invoices/create', methods=['GET', 'POST'])
 @login_required
 @role_required(UserRole.SELLER.value)
@@ -485,11 +492,12 @@ def mark_invoice_paid(invoice_id):
         
     if invoice.status != InvoiceStatus.PAID.value:
         invoice.status = InvoiceStatus.PAID.value
+        invoice.amount_paid = invoice.total_amount
         db.session.commit()
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({'success': True, 'message': 'Invoice marked as Paid.'})
         flash('Invoice marked as Paid.', 'success')
-    return redirect(url_for('seller.manage_invoices'))
+    return redirect(url_for('seller.view_invoice', invoice_id=invoice.id))
 
 @seller_bp.route('/invoices/resend', methods=['POST'])
 @login_required
@@ -532,7 +540,7 @@ def resend_invoice():
             return jsonify({'success': False, 'message': f'Error: {str(e)}'})
         flash(f'Error resending email: {str(e)}', 'danger')
 
-    return redirect(url_for('seller.manage_invoices'))
+    return redirect(url_for('seller.view_invoice', invoice_id=invoice.id))
 
 @seller_bp.route('/invoices/remind/<int:invoice_id>', methods=['POST'])
 @login_required
@@ -546,7 +554,7 @@ def send_invoice_reminder(invoice_id):
         return jsonify({'success': True, 'message': 'Reminder sent.'})
         
     flash('Payment reminder sent.', 'success')
-    return redirect(url_for('seller.manage_invoices'))
+    return redirect(url_for('seller.view_invoice', invoice_id=invoice.id))
 
 # =========================================================
 # 5. SUPERSCOINS WALLET (READ-ONLY)
