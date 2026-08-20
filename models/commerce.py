@@ -109,12 +109,18 @@ class Invoice(db.Model):
     @property
     def pending_amount(self):
         """Returns the remaining unpaid balance."""
-        return float(self.total_amount) - float(self.amount_paid)
+        paid = float(self.amount_paid) if self.amount_paid else 0.0
+        if self.status == InvoiceStatus.PAID.value and paid == 0.0:
+            paid = float(self.total_amount) if self.total_amount else 0.0
+        return max(0.0, float(self.total_amount) - paid)
 
     @property
     def refundable_amount(self):
-        """Returns the maximum amount that can still be refunded."""
-        return float(self.amount_paid) - float(self.amount_refunded)
+        paid = float(self.amount_paid) if self.amount_paid else 0.0
+        if self.status == InvoiceStatus.PAID.value and paid == 0.0:
+            paid = float(self.total_amount) if self.total_amount else 0.0
+        refunded = float(self.amount_refunded) if self.amount_refunded else 0.0
+        return max(0.0, paid - refunded)
 
 class InvoicePayment(db.Model):
     id = db.Column(db.Integer, primary_key=True)

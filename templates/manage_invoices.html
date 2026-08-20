@@ -70,7 +70,7 @@
 
         {% for invoice in invoices %}
         {% set inv_pending = invoice.pending_amount %}
-        {% set inv_paid = invoice.amount_paid | float %}
+        {% set inv_paid = (invoice.total_amount | float) if (invoice.status == 'Paid' and not invoice.amount_paid) else (invoice.amount_paid | float) %}
         {% set inv_total = invoice.total_amount | float %}
         {% set pay_percent = (inv_paid / inv_total * 100) if inv_total > 0 else 0 %}
 

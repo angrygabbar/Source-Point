@@ -2,7 +2,7 @@
 {% block title %}Invoice {{ invoice.invoice_number }}{% endblock %}
 {% block content %}
 
-{% set inv_paid = invoice.amount_paid | float %}
+{% set inv_paid = (invoice.total_amount | float) if (invoice.status == 'Paid' and not invoice.amount_paid) else (invoice.amount_paid | float) %}
 {% set inv_refunded = (invoice.amount_refunded | float) if invoice.amount_refunded else 0.0 %}
 {% set inv_refundable = invoice.refundable_amount %}
 {% set inv_total = invoice.total_amount | float %}
