@@ -1,0 +1,320 @@
+{% extends "layout.html" %}
+{% block title %}{{ seller.username }} — SupersCoins{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6 pb-10">
+
+    <!-- ─── HEADER ─── -->
+    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+        <div class="flex items-start gap-4">
+            <!-- Back Button -->
+            <a href="{{ url_for('admin_superscoins.dashboard') }}"
+               class="mt-1 w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:border-amber-500/30 transition-all flex-shrink-0">
+                <i class="fas fa-arrow-left text-sm text-gray-400"></i>
+            </a>
+            <div>
+                <div class="text-[10px] font-black tracking-[0.28em] uppercase text-amber-400 mb-2">Seller Wallet Profile</div>
+                <h1 class="text-3xl font-black text-white flex items-center gap-3">
+                    <span class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
+                        <span class="text-lg font-black text-amber-400">{{ seller.username[0]|upper }}</span>
+                    </span>
+                    {{ seller.username }}
+                </h1>
+                <p class="text-sm text-gray-500 mt-1">{{ seller.email }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── BALANCE & STATS ─── -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Current Balance -->
+        <div class="glass-panel-v2 rounded-2xl border border-amber-500/20 p-5 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-amber-500/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+            <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                    <i class="fas fa-wallet text-amber-400 text-xs"></i>
+                </div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-amber-300">Current Balance</p>
+            </div>
+            <p class="text-2xl font-black text-white font-mono">SC {{ "{:,.2f}".format((wallet.balance if wallet else 0)|float) }}</p>
+        </div>
+        <!-- Total Credited -->
+        <div class="glass-panel-v2 rounded-2xl border border-emerald-500/20 p-5 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-emerald-500/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+            <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                    <i class="fas fa-arrow-trend-up text-emerald-400 text-xs"></i>
+                </div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-emerald-300">Total Credited</p>
+            </div>
+            <p class="text-2xl font-black text-emerald-300 font-mono">SC {{ "{:,.2f}".format(seller_credited|float) }}</p>
+        </div>
+        <!-- Total Debited -->
+        <div class="glass-panel-v2 rounded-2xl border border-red-500/20 p-5 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-red-500/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+            <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
+                    <i class="fas fa-arrow-trend-down text-red-400 text-xs"></i>
+                </div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-red-300">Total Debited</p>
+            </div>
+            <p class="text-2xl font-black text-red-300 font-mono">SC {{ "{:,.2f}".format(seller_debited|float) }}</p>
+        </div>
+        <!-- Invoices Summary -->
+        <div class="glass-panel-v2 rounded-2xl border border-cyan-500/20 p-5 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-cyan-500/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+            <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                    <i class="fas fa-file-invoice text-cyan-400 text-xs"></i>
+                </div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-cyan-300">Invoices</p>
+            </div>
+            <p class="text-2xl font-black text-white">{{ total_invoices }}</p>
+            <div class="flex gap-3 mt-1">
+                <span class="text-[10px] text-emerald-400 font-bold">{{ paid_invoices }} Paid</span>
+                <span class="text-[10px] text-amber-400 font-bold">{{ unpaid_invoices }} Unpaid</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── TWO-COLUMN LAYOUT ─── -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- ════════ LEFT COLUMN — ACTION FORMS ════════ -->
+        <section class="lg:col-span-1 space-y-4">
+
+            <!-- Wallet Operation -->
+            <div class="glass-panel-v2 rounded-2xl border border-white/10 p-5">
+                <h2 class="text-lg font-black text-white flex items-center gap-2">
+                    <i class="fas fa-bolt text-amber-400"></i> Wallet Operation
+                </h2>
+                <form method="POST" action="{{ url_for('admin_superscoins.adjust_wallet') }}" class="mt-5 space-y-4">
+                    <input type="hidden" name="seller_id" value="{{ seller.id }}">
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="transaction_type" value="{{ transaction_types.CREDIT.value }}" checked class="sr-only peer">
+                            <span class="block rounded-xl border border-emerald-500/20 bg-emerald-500/8 px-4 py-3 text-center text-sm font-black text-emerald-300 peer-checked:bg-emerald-500 peer-checked:text-white transition-colors">
+                                <i class="fas fa-plus mr-1"></i> Credit
+                            </span>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="transaction_type" value="{{ transaction_types.DEBIT.value }}" class="sr-only peer">
+                            <span class="block rounded-xl border border-red-500/20 bg-red-500/8 px-4 py-3 text-center text-sm font-black text-red-300 peer-checked:bg-red-500 peer-checked:text-white transition-colors">
+                                <i class="fas fa-minus mr-1"></i> Deduct
+                            </span>
+                        </label>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Coins</label>
+                        <input type="number" name="amount" min="0.01" step="0.01" required placeholder="500"
+                               class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-500/40 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Reason</label>
+                        <textarea name="note" rows="2" placeholder="Adjustment reason"
+                                  class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-500/40 transition-colors"></textarea>
+                    </div>
+                    <button class="w-full rounded-xl bg-amber-500 px-4 py-3 text-sm font-black text-black hover:bg-amber-400 transition-colors">
+                        <i class="fas fa-bolt mr-2"></i>Apply Wallet Update
+                    </button>
+                </form>
+            </div>
+
+            <!-- Coin Invoice -->
+            <div class="glass-panel-v2 rounded-2xl border border-white/10 p-5">
+                <h2 class="text-lg font-black text-white flex items-center gap-2">
+                    <i class="fas fa-file-invoice text-cyan-400"></i> Create Invoice
+                </h2>
+                <form method="POST" action="{{ url_for('admin_superscoins.create_invoice') }}" class="mt-5 space-y-4">
+                    <input type="hidden" name="seller_id" value="{{ seller.id }}">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Coins</label>
+                            <input type="number" name="amount" min="0.01" step="0.01" required
+                                   class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500/40 transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Due Date</label>
+                            <input type="date" name="due_date"
+                                   class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500/40 transition-colors">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Description</label>
+                        <input type="text" name="description" value="SupersCoins allocation"
+                               class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500/40 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Spent On</label>
+                        <select name="spending_category"
+                                class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500/40 transition-colors">
+                            <option value="">Select category (optional)</option>
+                            {% for cat in spending_categories %}
+                            <option value="{{ cat.value }}">{{ cat.value }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Booking Details</label>
+                        <textarea name="booking_details" rows="2" placeholder="e.g. Hotel name, dates, PNR, traveller name..."
+                                  class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500/40 transition-colors"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Notes</label>
+                        <textarea name="notes" rows="2"
+                                  class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500/40 transition-colors"></textarea>
+                    </div>
+                    <button class="w-full rounded-xl bg-cyan-500 px-4 py-3 text-sm font-black text-black hover:bg-cyan-400 transition-colors">
+                        <i class="fas fa-paper-plane mr-2"></i>Create & Notify
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- ════════ RIGHT COLUMN — HISTORY ════════ -->
+        <section class="lg:col-span-2 space-y-6">
+
+            <!-- ─── TRANSACTION HISTORY ─── -->
+            <div class="glass-panel-v2 rounded-2xl border border-white/10 overflow-hidden">
+                <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-black text-white flex items-center gap-2">
+                            <i class="fas fa-clock-rotate-left text-amber-400"></i> Transaction History
+                        </h2>
+                        <p class="text-xs text-gray-500 mt-0.5">{{ transactions|length }} transaction{{ 's' if transactions|length != 1 else '' }}</p>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-white/5 text-[10px] uppercase tracking-widest text-gray-500">
+                            <tr>
+                                <th class="px-5 py-3 text-left">Date</th>
+                                <th class="px-5 py-3 text-left">Type</th>
+                                <th class="px-5 py-3 text-right">Amount</th>
+                                <th class="px-5 py-3 text-right">Balance After</th>
+                                <th class="px-5 py-3 text-left">Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5">
+                            {% for tx in transactions %}
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="px-5 py-4 text-gray-400 whitespace-nowrap">{{ tx.created_at.strftime('%d %b %Y %H:%M') }}</td>
+                                <td class="px-5 py-4">
+                                    <span class="px-2 py-1 rounded-lg text-[10px] font-black uppercase {{ 'bg-emerald-500/10 text-emerald-300' if tx.transaction_type == transaction_types.CREDIT.value else 'bg-red-500/10 text-red-300' }}">
+                                        {{ tx.transaction_type }}
+                                    </span>
+                                </td>
+                                <td class="px-5 py-4 text-right font-mono font-bold {{ 'text-emerald-300' if tx.transaction_type == transaction_types.CREDIT.value else 'text-red-300' }}">
+                                    {{ '+' if tx.transaction_type == transaction_types.CREDIT.value else '-' }} SC {{ "{:,.2f}".format(tx.amount|float) }}
+                                </td>
+                                <td class="px-5 py-4 text-right font-mono text-amber-300">SC {{ "{:,.2f}".format(tx.balance_after|float) }}</td>
+                                <td class="px-5 py-4 text-gray-500 max-w-xs truncate" title="{{ tx.note or '' }}">{{ tx.note or '—' }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="px-5 py-10 text-center text-gray-500">
+                                    <div class="flex flex-col items-center gap-2">
+                                        <i class="fas fa-inbox text-2xl text-gray-700"></i>
+                                        <span>No transactions yet. Use the wallet operation form to credit or debit coins.</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ─── INVOICES ─── -->
+            <div class="glass-panel-v2 rounded-2xl border border-white/10 overflow-hidden">
+                <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-black text-white flex items-center gap-2">
+                            <i class="fas fa-file-invoice-dollar text-cyan-400"></i> Invoices
+                        </h2>
+                        <p class="text-xs text-gray-500 mt-0.5">{{ total_invoices }} invoice{{ 's' if total_invoices != 1 else '' }} · Currency: Super Coins</p>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-white/5 text-[10px] uppercase tracking-widest text-gray-500">
+                            <tr>
+                                <th class="px-5 py-3 text-left">Invoice</th>
+                                <th class="px-5 py-3 text-right">Amount</th>
+                                <th class="px-5 py-3 text-left">Category</th>
+                                <th class="px-5 py-3 text-left">Status</th>
+                                <th class="px-5 py-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5">
+                            {% for invoice in invoices %}
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="px-5 py-4">
+                                    <div class="font-mono text-cyan-300 font-black text-xs">{{ invoice.invoice_number }}</div>
+                                    <div class="text-xs text-gray-500 mt-0.5">{{ invoice.created_at.strftime('%d %b %Y') }}</div>
+                                </td>
+                                <td class="px-5 py-4 text-right font-mono text-amber-300 font-black">SC {{ "{:,.2f}".format(invoice.amount|float) }}</td>
+                                <td class="px-5 py-4">
+                                    {% if invoice.spending_category %}
+                                    <div class="text-xs font-bold text-purple-300">{{ invoice.spending_category }}</div>
+                                    {% if invoice.booking_details %}
+                                    <div class="text-[10px] text-gray-500 mt-0.5 max-w-[160px] truncate" title="{{ invoice.booking_details }}">{{ invoice.booking_details }}</div>
+                                    {% endif %}
+                                    {% else %}
+                                    <span class="text-xs text-gray-600">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-5 py-4">
+                                    {% if invoice.status|string|lower in ['paid', 'superscoininvoicestatus.paid'] %}
+                                    <span class="px-2 py-1 rounded-lg text-[10px] font-black bg-emerald-500/10 text-emerald-300">✅ Paid</span>
+                                    {% elif invoice.status|string|lower in ['cancelled', 'superscoininvoicestatus.cancelled'] %}
+                                    <span class="px-2 py-1 rounded-lg text-[10px] font-black bg-gray-500/10 text-gray-400">Cancelled</span>
+                                    {% else %}
+                                    <span class="px-2 py-1 rounded-lg text-[10px] font-black bg-amber-500/10 text-amber-300">Unpaid</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-5 py-4 text-right">
+                                    <div class="flex justify-end gap-2">
+                                        <a href="{{ url_for('admin_superscoins.download_invoice', invoice_id=invoice.id) }}"
+                                           class="px-3 py-1.5 rounded-lg bg-white/5 text-xs font-bold text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
+                                           title="Download PDF">
+                                            <i class="fas fa-download mr-1"></i>PDF
+                                        </a>
+                                        <form method="POST" action="{{ url_for('admin_superscoins.send_invoice', invoice_id=invoice.id) }}">
+                                            <button class="px-3 py-1.5 rounded-lg bg-cyan-500/10 text-xs font-bold text-cyan-300 hover:bg-cyan-500/20 transition-colors"
+                                                    title="Send to seller">
+                                                <i class="fas fa-paper-plane mr-1"></i>Send
+                                            </button>
+                                        </form>
+                                        {% if invoice.status|string|lower in ['unpaid', 'superscoininvoicestatus.unpaid'] %}
+                                        <form method="POST" action="{{ url_for('admin_superscoins.mark_invoice_paid', invoice_id=invoice.id) }}"
+                                              onsubmit="return confirm('Mark invoice {{ invoice.invoice_number }} as Paid? The seller will be notified via email.')">
+                                            <button class="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-xs font-bold text-emerald-300 hover:bg-emerald-500/20 transition-colors"
+                                                    title="Mark as paid">
+                                                <i class="fas fa-check mr-1"></i>Mark Paid
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="px-5 py-10 text-center text-gray-500">
+                                    <div class="flex flex-col items-center gap-2">
+                                        <i class="fas fa-file-circle-plus text-2xl text-gray-700"></i>
+                                        <span>No invoices yet. Create one using the form on the left.</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+    </div>
+
+</div>
+{% endblock %}
