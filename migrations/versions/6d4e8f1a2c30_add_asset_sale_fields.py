@@ -17,13 +17,24 @@ depends_on = None
 
 
 def upgrade():
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    columns = {column['name'] for column in inspector.get_columns('asset')}
+    indexes = {index['name'] for index in inspector.get_indexes('asset')}
+
     with op.batch_alter_table('asset', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('asset_action', sa.String(length=20), nullable=True))
-        batch_op.add_column(sa.Column('sold_to_name', sa.String(length=150), nullable=True))
-        batch_op.add_column(sa.Column('sold_to_email', sa.String(length=120), nullable=True))
-        batch_op.add_column(sa.Column('sold_date', sa.Date(), nullable=True))
-        batch_op.add_column(sa.Column('sale_price', sa.Numeric(precision=12, scale=2), nullable=True))
-        batch_op.create_index(batch_op.f('ix_asset_asset_action'), ['asset_action'], unique=False)
+        if 'asset_action' not in columns:
+            batch_op.add_column(sa.Column('asset_action', sa.String(length=20), nullable=True))
+        if 'sold_to_name' not in columns:
+            batch_op.add_column(sa.Column('sold_to_name', sa.String(length=150), nullable=True))
+        if 'sold_to_email' not in columns:
+            batch_op.add_column(sa.Column('sold_to_email', sa.String(length=120), nullable=True))
+        if 'sold_date' not in columns:
+            batch_op.add_column(sa.Column('sold_date', sa.Date(), nullable=True))
+        if 'sale_price' not in columns:
+            batch_op.add_column(sa.Column('sale_price', sa.Numeric(precision=12, scale=2), nullable=True))
+        if batch_op.f('ix_asset_asset_action') not in indexes:
+            batch_op.create_index(batch_op.f('ix_asset_asset_action'), ['asset_action'], unique=False)
 
 
 def downgrade():

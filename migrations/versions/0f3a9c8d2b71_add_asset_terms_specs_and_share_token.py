@@ -17,18 +17,34 @@ depends_on = None
 
 
 def upgrade():
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    columns = {column['name'] for column in inspector.get_columns('asset')}
+    indexes = {index['name'] for index in inspector.get_indexes('asset')}
+
     with op.batch_alter_table('asset', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('processor', sa.String(length=200), nullable=True))
-        batch_op.add_column(sa.Column('ram', sa.String(length=100), nullable=True))
-        batch_op.add_column(sa.Column('storage_spec', sa.String(length=200), nullable=True))
-        batch_op.add_column(sa.Column('display', sa.String(length=200), nullable=True))
-        batch_op.add_column(sa.Column('graphics', sa.String(length=200), nullable=True))
-        batch_op.add_column(sa.Column('operating_system', sa.String(length=100), nullable=True))
-        batch_op.add_column(sa.Column('battery', sa.String(length=100), nullable=True))
-        batch_op.add_column(sa.Column('color', sa.String(length=50), nullable=True))
-        batch_op.add_column(sa.Column('terms_and_conditions', sa.Text(), nullable=True))
-        batch_op.add_column(sa.Column('share_token', sa.String(length=64), nullable=True))
-        batch_op.create_index(batch_op.f('ix_asset_share_token'), ['share_token'], unique=True)
+        if 'processor' not in columns:
+            batch_op.add_column(sa.Column('processor', sa.String(length=200), nullable=True))
+        if 'ram' not in columns:
+            batch_op.add_column(sa.Column('ram', sa.String(length=100), nullable=True))
+        if 'storage_spec' not in columns:
+            batch_op.add_column(sa.Column('storage_spec', sa.String(length=200), nullable=True))
+        if 'display' not in columns:
+            batch_op.add_column(sa.Column('display', sa.String(length=200), nullable=True))
+        if 'graphics' not in columns:
+            batch_op.add_column(sa.Column('graphics', sa.String(length=200), nullable=True))
+        if 'operating_system' not in columns:
+            batch_op.add_column(sa.Column('operating_system', sa.String(length=100), nullable=True))
+        if 'battery' not in columns:
+            batch_op.add_column(sa.Column('battery', sa.String(length=100), nullable=True))
+        if 'color' not in columns:
+            batch_op.add_column(sa.Column('color', sa.String(length=50), nullable=True))
+        if 'terms_and_conditions' not in columns:
+            batch_op.add_column(sa.Column('terms_and_conditions', sa.Text(), nullable=True))
+        if 'share_token' not in columns:
+            batch_op.add_column(sa.Column('share_token', sa.String(length=64), nullable=True))
+        if batch_op.f('ix_asset_share_token') not in indexes:
+            batch_op.create_index(batch_op.f('ix_asset_share_token'), ['share_token'], unique=True)
 
 
 def downgrade():

@@ -17,12 +17,21 @@ depends_on = None
 
 
 def upgrade():
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    columns = {column['name'] for column in inspector.get_columns('asset')}
+
     with op.batch_alter_table('asset', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('sale_terms_email_sent_at', sa.DateTime(), nullable=True))
-        batch_op.add_column(sa.Column('sale_terms_accepted_at', sa.DateTime(), nullable=True))
-        batch_op.add_column(sa.Column('sale_terms_accepted_ip', sa.String(length=64), nullable=True))
-        batch_op.add_column(sa.Column('sale_terms_acceptance_user_agent', sa.String(length=255), nullable=True))
-        batch_op.add_column(sa.Column('delivery_receipt_sent_at', sa.DateTime(), nullable=True))
+        if 'sale_terms_email_sent_at' not in columns:
+            batch_op.add_column(sa.Column('sale_terms_email_sent_at', sa.DateTime(), nullable=True))
+        if 'sale_terms_accepted_at' not in columns:
+            batch_op.add_column(sa.Column('sale_terms_accepted_at', sa.DateTime(), nullable=True))
+        if 'sale_terms_accepted_ip' not in columns:
+            batch_op.add_column(sa.Column('sale_terms_accepted_ip', sa.String(length=64), nullable=True))
+        if 'sale_terms_acceptance_user_agent' not in columns:
+            batch_op.add_column(sa.Column('sale_terms_acceptance_user_agent', sa.String(length=255), nullable=True))
+        if 'delivery_receipt_sent_at' not in columns:
+            batch_op.add_column(sa.Column('delivery_receipt_sent_at', sa.DateTime(), nullable=True))
 
 
 def downgrade():

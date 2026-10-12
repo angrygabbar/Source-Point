@@ -25,34 +25,67 @@ jobs:
           # --exclude: protect local environments and configs
           rsync -av --exclude='.git' --exclude='venv' --exclude='__pycache__' ./ /Users/gaurav/Developer/Source-Point/
 
-      # 3. Rebuild Docker (Updated to include Celery workers and scheduler)
-      - name: Rebuild Application
+      # 3. Build Docker images without touching the currently running app yet.
+      - name: Build Application Images
         run: |
           cd /Users/gaurav/Developer/Source-Point
-          # We rebuild web, worker, and scheduler so background tasks get the new code too
-          docker compose up -d --build web worker scheduler
+          docker compose up -d db redis
+          # Build web, worker, and scheduler so background tasks get the new code too.
+          # We start/recreate them only after database migrations succeed.
+          docker compose build web worker scheduler
 
       # 4. Database Migrations
       - name: Run Database Migrations
         run: |
+          set -euo pipefail
           cd /Users/gaurav/Developer/Source-Point
 
-          # Get the current migration revision in the DB
-          CURRENT=$(docker compose exec -T web flask db current 2>/dev/null | grep -oE '[a-f0-9]{12}' | head -1)
+          # Run migration commands in a short-lived container. This avoids
+          # docker exec failures when the long-running web container is starting
+          # or restarting during deployment.
+          WEB_RUN="docker compose run --rm -T -e RUN_SCHEMA_ENSURE=0 web"
+
+          # Get the current migration revision in the DB. If this command fails,
+          # the deploy should fail instead of treating the revision as empty.
+          CURRENT_OUTPUT=$($WEB_RUN flask db current)
+          CURRENT=$(printf '%s\n' "$CURRENT_OUTPUT" | grep -oE '[a-f0-9]{12}' | head -1 || true)
           echo "Current DB revision: $CURRENT"
 
-          # Production DB already has all SupersCoins columns applied manually,
-          # but Alembic revision history is behind. Stamp the full current head
-          # so that upgrade is a no-op (all migrations already reflected in DB).
+          # Production DB already has older SupersCoins columns applied manually,
+          # but Alembic revision history can be behind. Stamp the known baseline
+          # so later migrations can run normally.
           if [ -z "$CURRENT" ] || [ "$CURRENT" = "a3f7c8d91e2b" ] || [ "$CURRENT" = "f4b2c8d9e101" ] || [ "$CURRENT" = "94a166a29dc3" ]; then
-            echo "Stamping to full head 021c53394a8c (all columns already exist in prod DB)..."
-            docker compose exec -T web flask db stamp 021c53394a8c
+            echo "Stamping to baseline 021c53394a8c (older columns already exist in prod DB)..."
+            $WEB_RUN flask db stamp 021c53394a8c
           fi
 
-          # Now safely upgrade — will be a no-op if already at head
-          docker compose exec -T web flask db upgrade
+          # Now safely upgrade to the repository head.
+          $WEB_RUN flask db upgrade
 
-      # 5. Cleanup
+      # 5. Start/Recreate Application
+      - name: Start Application
+        run: |
+          set -euo pipefail
+          cd /Users/gaurav/Developer/Source-Point
+          docker compose up -d --no-build web worker scheduler
+
+          echo "Waiting for web container health..."
+          for attempt in {1..30}; do
+            STATUS=$(docker inspect -f '{{.State.Health.Status}}' sourcepoint_app 2>/dev/null || echo "starting")
+            echo "Health status: $STATUS"
+            if [ "$STATUS" = "healthy" ]; then
+              docker compose ps
+              exit 0
+            fi
+            sleep 5
+          done
+
+          echo "Web container did not become healthy."
+          docker compose ps
+          docker logs --tail 160 sourcepoint_app || true
+          exit 1
+
+      # 6. Cleanup
       - name: Cleanup Old Images
         run: |
           docker image prune -f
