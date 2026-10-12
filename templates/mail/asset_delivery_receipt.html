@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Delivery Receipt &mdash; SourcePoint</title>
+</head>
+
+<body style="margin:0;padding:0;background-color:#07110d;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+    <span style="display:none;max-height:0;overflow:hidden;">
+        Delivery receipt for {{ asset.name }} ({{ asset.asset_code }}) after terms acceptance.
+    </span>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#07110d;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="620" cellpadding="0" cellspacing="0" style="max-width:620px;width:100%;">
+                    <tr>
+                        <td style="background:linear-gradient(135deg,#059669,#10b981,#22d3ee);border-radius:20px 20px 0 0;padding:38px 36px;text-align:center;">
+                            <h1 style="margin:0;font-size:28px;font-weight:800;color:#ffffff;">Asset Delivery Receipt</h1>
+                            <p style="margin:10px 0 0;font-size:15px;color:rgba(255,255,255,0.92);">Terms accepted and delivery receipt generated</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background:#0f1e19;padding:34px 36px;">
+                            <p style="font-size:17px;color:#f1f5f9;margin:0 0 6px;">Hello <strong style="color:#6ee7b7;">{{ recipient_name }}</strong>,</p>
+                            <p style="font-size:15px;color:#a7b8ad;line-height:1.7;margin:0 0 24px;">
+                                Your acceptance for the asset sale terms has been recorded. Please keep this email as your delivery receipt.
+                            </p>
+
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.24);border-radius:14px;margin-bottom:20px;">
+                                <tr>
+                                    <td style="padding:20px;">
+                                        <p style="margin:0 0 14px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#6ee7b7;">Receipt Details</p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding:8px 0;color:#789186;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05);">Receipt Reference</td>
+                                                <td style="padding:8px 0;color:#6ee7b7;font-size:13px;font-weight:800;text-align:right;border-bottom:1px solid rgba(255,255,255,0.05);font-family:monospace;">DLV-{{ asset.asset_code }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:8px 0;color:#789186;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05);">Accepted On</td>
+                                                <td style="padding:8px 0;color:#f1f5f9;font-size:13px;text-align:right;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    {{ asset.sale_terms_accepted_at.strftime('%d %b %Y, %I:%M %p') if asset.sale_terms_accepted_at else '&mdash;' }}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:8px 0;color:#789186;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05);">Buyer</td>
+                                                <td style="padding:8px 0;color:#f1f5f9;font-size:13px;text-align:right;border-bottom:1px solid rgba(255,255,255,0.05);">{{ asset.sold_to_name or asset.sold_to_email }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:8px 0;color:#789186;font-size:13px;">Sale Price</td>
+                                                <td style="padding:8px 0;color:#10b981;font-size:15px;font-weight:800;text-align:right;">{% if asset.sale_price %}&#8377;{{ "{:,.2f}".format(asset.sale_price) }}{% else %}&mdash;{% endif %}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(34,211,238,0.07);border:1px solid rgba(34,211,238,0.18);border-radius:14px;margin-bottom:20px;">
+                                <tr>
+                                    <td style="padding:20px;">
+                                        <p style="margin:0 0 14px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#22d3ee;">Delivered Asset</p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding:7px 0;color:#789186;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05);">Asset Code</td>
+                                                <td style="padding:7px 0;color:#22d3ee;font-size:13px;font-weight:800;text-align:right;border-bottom:1px solid rgba(255,255,255,0.05);font-family:monospace;">{{ asset.asset_code }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:7px 0;color:#789186;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05);">Asset Name</td>
+                                                <td style="padding:7px 0;color:#f1f5f9;font-size:13px;font-weight:700;text-align:right;border-bottom:1px solid rgba(255,255,255,0.05);">{{ asset.name }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:7px 0;color:#789186;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05);">Type / Condition</td>
+                                                <td style="padding:7px 0;color:#f1f5f9;font-size:13px;text-align:right;border-bottom:1px solid rgba(255,255,255,0.05);">{{ asset.asset_type }} / {{ asset.condition }}</td>
+                                            </tr>
+                                            {% if asset.brand or asset.model_number %}
+                                            <tr>
+                                                <td style="padding:7px 0;color:#789186;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05);">Brand / Model</td>
+                                                <td style="padding:7px 0;color:#f1f5f9;font-size:13px;text-align:right;border-bottom:1px solid rgba(255,255,255,0.05);">{{ asset.brand or '&mdash;' }}{% if asset.model_number %} / {{ asset.model_number }}{% endif %}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% if asset.serial_number %}
+                                            <tr>
+                                                <td style="padding:7px 0;color:#789186;font-size:13px;">Serial Number</td>
+                                                <td style="padding:7px 0;color:#f1f5f9;font-size:13px;text-align:right;font-family:monospace;">{{ asset.serial_number }}</td>
+                                            </tr>
+                                            {% endif %}
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            {% if asset.processor or asset.ram or asset.storage_spec or asset.display or asset.graphics or asset.operating_system or asset.battery or asset.color %}
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.08);border-radius:14px;margin-bottom:20px;">
+                                <tr>
+                                    <td style="padding:18px 20px;">
+                                        <p style="margin:0 0 12px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#cbd5e1;">Device Specifications</p>
+                                        <p style="margin:0;font-size:13px;color:#cbd5e1;line-height:1.7;">
+                                            {% if asset.processor %}<strong>Processor:</strong> {{ asset.processor }}<br>{% endif %}
+                                            {% if asset.ram %}<strong>RAM:</strong> {{ asset.ram }}<br>{% endif %}
+                                            {% if asset.storage_spec %}<strong>Storage:</strong> {{ asset.storage_spec }}<br>{% endif %}
+                                            {% if asset.display %}<strong>Display:</strong> {{ asset.display }}<br>{% endif %}
+                                            {% if asset.graphics %}<strong>Graphics:</strong> {{ asset.graphics }}<br>{% endif %}
+                                            {% if asset.operating_system %}<strong>Operating System:</strong> {{ asset.operating_system }}<br>{% endif %}
+                                            {% if asset.battery %}<strong>Battery:</strong> {{ asset.battery }}<br>{% endif %}
+                                            {% if asset.color %}<strong>Color:</strong> {{ asset.color }}{% endif %}
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            {% if asset.terms_and_conditions %}
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:14px;">
+                                <tr>
+                                    <td style="padding:18px 20px;">
+                                        <p style="margin:0 0 10px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#fbbf24;">Accepted Terms</p>
+                                        <p style="margin:0;font-size:13px;color:#a7b8ad;line-height:1.7;white-space:pre-line;">{{ asset.terms_and_conditions }}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background:#08150f;border-top:1px solid rgba(255,255,255,0.05);border-radius:0 0 20px 20px;padding:26px 36px;text-align:center;">
+                            <p style="margin:0 0 6px;font-size:13px;color:#789186;">This is an automated receipt from</p>
+                            <p style="margin:0;font-size:15px;font-weight:700;color:#6ee7b7;">SourcePoint Asset Management</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

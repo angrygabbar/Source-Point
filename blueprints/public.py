@@ -1,10 +1,14 @@
+from datetime import date, datetime
+
 from flask import Blueprint, render_template, request, abort
 from extensions import db
 from models.auth import User
+from models.asset import Asset
 from models.commerce import Product, SellerInventory, ShareableLink
 from models.gift_card import GiftCard
 from sqlalchemy import or_
 from enums import UserRole, GiftCardStatus
+from services.asset_email_service import ASSET_ACTION_SOLD, send_asset_delivery_receipt_email
 
 public_bp = Blueprint('public', __name__)
 
@@ -106,3 +110,53 @@ def shared_product_detail(token, product_id):
                            product=product,
                            seller=seller,
                            token=token)
+
+
+@public_bp.route('/asset/<token>')
+def public_asset_detail(token):
+    """Public asset details page — no login required.
+    Accessible via a unique token sent in the assignment email.
+    """
+    asset = Asset.query.filter_by(share_token=token).first()
+
+    if not asset or (not asset.assigned_to and not asset.sold_to_email):
+        return render_template('shared_link_expired.html'), 404
+
+    return render_template('public_asset_detail.html', asset=asset, today=date.today())
+
+
+@public_bp.route('/asset/<token>/accept', methods=['POST'])
+def accept_asset_terms(token):
+    """Record sold asset terms acceptance and send the delivery receipt."""
+    asset = Asset.query.filter_by(share_token=token).first()
+
+    if not asset or asset.asset_action != ASSET_ACTION_SOLD or not asset.sold_to_email:
+        return render_template('shared_link_expired.html'), 404
+
+    if request.form.get('accept_terms') != 'yes':
+        return render_template(
+            'public_asset_detail.html',
+            asset=asset,
+            today=date.today(),
+            acceptance_error='Please confirm that you accept the terms and conditions.',
+        ), 400
+
+    if not asset.sale_terms_accepted_at:
+        forwarded_for = request.headers.get('X-Forwarded-For', request.remote_addr) or ''
+        user_agent = request.headers.get('User-Agent', '') or ''
+        asset.sale_terms_accepted_at = datetime.utcnow()
+        asset.sale_terms_accepted_ip = forwarded_for.split(',')[0].strip()[:64]
+        asset.sale_terms_acceptance_user_agent = user_agent[:255]
+        db.session.commit()
+
+    receipt_sent = bool(asset.delivery_receipt_sent_at)
+    if not receipt_sent:
+        receipt_sent = send_asset_delivery_receipt_email(asset)
+
+    return render_template(
+        'public_asset_detail.html',
+        asset=asset,
+        today=date.today(),
+        acceptance_success=True,
+        receipt_sent=receipt_sent,
+    )

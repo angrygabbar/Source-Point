@@ -24,6 +24,7 @@
                 {% if asset.status == 'Active' %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30
                 {% elif asset.status == 'In Storage' %}bg-amber-500/20 text-amber-300 border border-amber-500/30
                 {% elif asset.status == 'Under Repair' %}bg-orange-500/20 text-orange-300 border border-orange-500/30
+                {% elif asset.status == 'Sold' %}bg-purple-500/20 text-purple-300 border border-purple-500/30
                 {% elif asset.status == 'Retired' %}bg-red-500/20 text-red-300 border border-red-500/30
                 {% elif asset.status == 'Lost' %}bg-red-700/20 text-red-400 border border-red-700/30
                 {% else %}bg-gray-500/20 text-gray-300 border border-gray-500/30{% endif %}">
@@ -86,6 +87,65 @@
                 </div>
             </div>
 
+            <!-- Hardware Specifications Card -->
+            {% if asset.processor or asset.ram or asset.storage_spec or asset.display or asset.graphics or asset.operating_system or asset.battery or asset.color %}
+            <div class="glass-panel-v2 rounded-2xl border border-purple-500/20 p-6">
+                <h2 class="text-xs font-black uppercase tracking-widest text-purple-400 mb-4">
+                    <i class="fas fa-microchip mr-2"></i>Hardware Specifications
+                </h2>
+                <div class="grid grid-cols-2 gap-4">
+                    {% if asset.processor %}
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Processor</p>
+                        <p class="text-sm font-bold text-white mt-1">{{ asset.processor }}</p>
+                    </div>
+                    {% endif %}
+                    {% if asset.ram %}
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">RAM</p>
+                        <p class="text-sm font-bold text-white mt-1">{{ asset.ram }}</p>
+                    </div>
+                    {% endif %}
+                    {% if asset.storage_spec %}
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Storage</p>
+                        <p class="text-sm font-bold text-white mt-1">{{ asset.storage_spec }}</p>
+                    </div>
+                    {% endif %}
+                    {% if asset.display %}
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Display</p>
+                        <p class="text-sm font-bold text-white mt-1">{{ asset.display }}</p>
+                    </div>
+                    {% endif %}
+                    {% if asset.graphics %}
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Graphics</p>
+                        <p class="text-sm font-bold text-white mt-1">{{ asset.graphics }}</p>
+                    </div>
+                    {% endif %}
+                    {% if asset.operating_system %}
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Operating System</p>
+                        <p class="text-sm font-bold text-white mt-1">{{ asset.operating_system }}</p>
+                    </div>
+                    {% endif %}
+                    {% if asset.battery %}
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Battery</p>
+                        <p class="text-sm font-bold text-white mt-1">{{ asset.battery }}</p>
+                    </div>
+                    {% endif %}
+                    {% if asset.color %}
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Color</p>
+                        <p class="text-sm font-bold text-white mt-1">{{ asset.color }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Purchase Details Card -->
             <div class="glass-panel-v2 rounded-2xl border border-white/10 p-6">
                 <h2 class="text-xs font-black uppercase tracking-widest text-cyan-400 mb-4">
@@ -123,10 +183,11 @@
                 </div>
             </div>
 
-            <!-- Assignment Card -->
-            <div class="glass-panel-v2 rounded-2xl border border-white/10 p-6">
-                <h2 class="text-xs font-black uppercase tracking-widest text-cyan-400 mb-4">
-                    <i class="fas fa-user-check mr-2"></i>Assignment
+            <!-- Assignment Card (shown when asset_action is assigned or has assigned_to) -->
+            {% if asset.asset_action == 'assigned' or asset.assigned_to %}
+            <div class="glass-panel-v2 rounded-2xl border border-blue-500/20 p-6">
+                <h2 class="text-xs font-black uppercase tracking-widest text-blue-400 mb-4">
+                    <i class="fas fa-user-check mr-2"></i>Assignment Details
                 </h2>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -177,6 +238,82 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
+
+            <!-- Sale Details Card (shown when asset_action is sold) -->
+            {% if asset.asset_action == 'sold' %}
+            <div class="glass-panel-v2 rounded-2xl border border-purple-500/20 p-6">
+                <h2 class="text-xs font-black uppercase tracking-widest text-purple-400 mb-4">
+                    <i class="fas fa-hand-holding-dollar mr-2"></i>Sale Details
+                </h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Sold To</p>
+                        <div class="flex items-center gap-2 mt-1">
+                            <div class="w-7 h-7 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400 text-xs font-black">
+                                {% if asset.sold_to_name %}{{ asset.sold_to_name[0].upper() }}{% else %}<i class="fas fa-user text-[10px]"></i>{% endif %}
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-white">{{ asset.sold_to_name or 'External Buyer' }}</p>
+                                <p class="text-[10px] text-purple-300">{{ asset.sold_to_email }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Authorized By</p>
+                        {% if asset.authorized_by %}
+                        <div class="flex items-center gap-2 mt-1">
+                            <div class="w-7 h-7 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-400 text-xs font-black">
+                                {{ asset.authorized_by.username[0].upper() }}
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-white">{{ asset.authorized_by.username }}</p>
+                                <p class="text-[10px] text-gray-500">Admin</p>
+                            </div>
+                        </div>
+                        {% else %}
+                        <p class="text-sm font-bold text-gray-600 mt-1">—</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Sold Date</p>
+                        <p class="text-sm font-bold text-white mt-1">
+                            {{ asset.sold_date.strftime('%d %b %Y') if asset.sold_date else '—' }}
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Sale Price</p>
+                        <p class="text-sm font-bold text-emerald-300 mt-1">
+                            {% if asset.sale_price %}
+                                ₹{{ "{:,.2f}".format(asset.sale_price) }}
+                            {% else %}—{% endif %}
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Terms Acceptance</p>
+                        {% if asset.sale_terms_accepted_at %}
+                        <p class="text-sm font-bold text-emerald-300 mt-1">
+                            Accepted · {{ asset.sale_terms_accepted_at.strftime('%d %b %Y') }}
+                        </p>
+                        {% else %}
+                        <p class="text-sm font-bold text-amber-300 mt-1">Pending buyer acceptance</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Delivery Receipt</p>
+                        {% if asset.delivery_receipt_sent_at %}
+                        <p class="text-sm font-bold text-emerald-300 mt-1">
+                            Sent · {{ asset.delivery_receipt_sent_at.strftime('%d %b %Y') }}
+                        </p>
+                        {% elif asset.sale_terms_accepted_at %}
+                        <p class="text-sm font-bold text-amber-300 mt-1">Pending email send</p>
+                        {% else %}
+                        <p class="text-sm font-bold text-gray-500 mt-1">Waiting for acceptance</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
 
             <!-- Notes Card -->
             {% if asset.notes %}
@@ -185,6 +322,18 @@
                     <i class="fas fa-note-sticky mr-2"></i>Notes
                 </h2>
                 <p class="text-sm text-gray-300 leading-relaxed">{{ asset.notes }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Terms & Conditions Card -->
+            {% if asset.terms_and_conditions %}
+            <div class="glass-panel-v2 rounded-2xl border border-red-500/20 p-6">
+                <h2 class="text-xs font-black uppercase tracking-widest text-red-400 mb-4">
+                    <i class="fas fa-file-contract mr-2"></i>Terms & Conditions
+                </h2>
+                <div class="bg-red-500/[0.04] rounded-xl border border-red-500/10 p-5">
+                    <p class="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{{ asset.terms_and_conditions }}</p>
+                </div>
             </div>
             {% endif %}
         </div>
@@ -205,6 +354,21 @@
                         <p class="text-sm font-bold text-white mt-0.5">{{ asset.condition }}</p>
                     </div>
                     <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Action</p>
+                        <p class="text-sm font-bold mt-0.5
+                            {% if asset.asset_action == 'assigned' %}text-blue-300
+                            {% elif asset.asset_action == 'sold' %}text-purple-300
+                            {% else %}text-gray-500{% endif %}">
+                            {% if asset.asset_action == 'assigned' %}
+                                <i class="fas fa-user-check mr-1"></i>Assigned
+                            {% elif asset.asset_action == 'sold' %}
+                                <i class="fas fa-hand-holding-dollar mr-1"></i>Sold
+                            {% else %}
+                                <i class="fas fa-box mr-1"></i>In Inventory
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div>
                         <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Added On</p>
                         <p class="text-sm font-bold text-white mt-0.5">
                             {{ asset.created_at.strftime('%d %b %Y') if asset.created_at else '—' }}
@@ -219,6 +383,32 @@
                 </div>
             </div>
 
+            <!-- Public Page Link (for both assigned and sold assets) -->
+            {% if asset.share_token and (asset.assigned_to or asset.sold_to_email) %}
+            <div class="glass-panel-v2 rounded-2xl border border-emerald-500/20 p-5">
+                <h2 class="text-xs font-black uppercase tracking-widest text-emerald-400 mb-3">
+                    <i class="fas fa-link mr-1"></i> Public Page
+                </h2>
+                <p class="text-[10px] text-gray-500 mb-3">
+                    {% if asset.asset_action == 'sold' %}
+                    Buyer acceptance page with asset details, price, and T&C
+                    {% else %}
+                    Shareable link with asset details & T&C (no login required)
+                    {% endif %}
+                </p>
+                <div class="flex gap-2">
+                    <input type="text" readonly id="publicLink"
+                        value="{{ url_for('public.public_asset_detail', token=asset.share_token, _external=True) }}"
+                        class="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-emerald-300 font-mono truncate">
+                    <button onclick="copyLink()" id="copyBtn"
+                        class="px-3 py-2 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs font-bold hover:bg-emerald-500/30 transition-colors"
+                        title="Copy Link">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Actions Card -->
             <div class="glass-panel-v2 rounded-2xl border border-white/10 p-5 space-y-3">
                 <h2 class="text-xs font-black uppercase tracking-widest text-cyan-400 mb-2">Actions</h2>
@@ -232,6 +422,27 @@
                     class="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-cyan-500/10 text-cyan-300 text-sm font-bold hover:bg-cyan-500/20 hover:text-cyan-200 transition-all">
                     <i class="fas fa-pen-to-square text-cyan-400 w-4 text-center"></i> Edit this Asset
                 </a>
+                {% if asset.assigned_to or (asset.asset_action == 'sold' and asset.sold_to_email) %}
+                <form method="POST" action="{{ url_for('admin_assets.resend_assignment_email', asset_id=asset.id) }}">
+                    <button type="submit"
+                        class="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-emerald-500/10 text-emerald-300 text-sm font-bold hover:bg-emerald-500/20 transition-all">
+                        <i class="fas fa-envelope text-emerald-400 w-4 text-center"></i>
+                        {% if asset.asset_action == 'sold' and asset.sale_terms_accepted_at %}
+                        Resend Delivery Receipt
+                        {% elif asset.asset_action == 'sold' %}
+                        Resend Terms Email
+                        {% else %}
+                        Resend Assignment Email
+                        {% endif %}
+                    </button>
+                </form>
+                {% endif %}
+                {% if asset.share_token and (asset.assigned_to or asset.sold_to_email) %}
+                <a href="{{ url_for('public.public_asset_detail', token=asset.share_token) }}" target="_blank"
+                    class="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-purple-500/10 text-purple-300 text-sm font-bold hover:bg-purple-500/20 hover:text-purple-200 transition-all">
+                    <i class="fas fa-external-link text-purple-400 w-4 text-center"></i> View Public Page
+                </a>
+                {% endif %}
                 <form method="POST" action="{{ url_for('admin_assets.delete_asset', asset_id=asset.id) }}"
                     onsubmit="return confirm('Are you sure you want to delete {{ asset.name }} ({{ asset.asset_code }})? This action cannot be undone.')">
                     <button type="submit"
@@ -243,16 +454,19 @@
         </div>
     </div>
 </div>
-{% endblock %}
 
 <script>
-// If the user clicks "Edit" from the view page, we store the asset ID so that
-// when the dashboard loads it can auto-open the edit modal.
-document.addEventListener('DOMContentLoaded', function () {
-    const pending = sessionStorage.getItem('pendingEdit');
-    if (pending && typeof openEditModal === 'function') {
-        sessionStorage.removeItem('pendingEdit');
-        openEditModal(parseInt(pending));
-    }
-});
+function copyLink() {
+    const linkInput = document.getElementById('publicLink');
+    navigator.clipboard.writeText(linkInput.value).then(() => {
+        const btn = document.getElementById('copyBtn');
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        btn.classList.add('bg-emerald-500/40');
+        setTimeout(() => {
+            btn.innerHTML = '<i class="fas fa-copy"></i>';
+            btn.classList.remove('bg-emerald-500/40');
+        }, 2000);
+    });
+}
 </script>
+{% endblock %}

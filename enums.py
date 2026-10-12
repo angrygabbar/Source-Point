@@ -182,6 +182,7 @@ class AssetStatus(enum.Enum):
     ACTIVE = "Active"
     IN_STORAGE = "In Storage"
     UNDER_REPAIR = "Under Repair"
+    SOLD = "Sold"
     RETIRED = "Retired"
     LOST = "Lost"
 

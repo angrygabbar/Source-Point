@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ asset.name }} — Asset Details | SourcePoint</title>
+    <meta name="description"
+        content="Asset details and terms & conditions for {{ asset.name }} ({{ asset.asset_code }}) — SourcePoint Asset Management">
+    <meta name="robots" content="noindex, nofollow">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: #07070f;
+            min-height: 100vh;
+        }
+
+        .glass-card {
+            background: rgba(15, 15, 30, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .gradient-border {
+            position: relative;
+        }
+
+        .gradient-border::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.3), rgba(168, 85, 247, 0.3));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+        }
+
+        .spec-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .terms-list {
+            counter-reset: terms;
+        }
+
+        .terms-item {
+            counter-increment: terms;
+            position: relative;
+            padding-left: 0;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+
+        .animate-delay-1 {
+            animation-delay: 0.1s;
+            opacity: 0;
+        }
+
+        .animate-delay-2 {
+            animation-delay: 0.2s;
+            opacity: 0;
+        }
+
+        .animate-delay-3 {
+            animation-delay: 0.3s;
+            opacity: 0;
+        }
+
+        .animate-delay-4 {
+            animation-delay: 0.4s;
+            opacity: 0;
+        }
+
+        .animate-delay-5 {
+            animation-delay: 0.5s;
+            opacity: 0;
+        }
+
+        @media print {
+            body {
+                background: #fff !important;
+                color: #000 !important;
+            }
+
+            .glass-card {
+                background: #f8f8f8 !important;
+                border-color: #ddd !important;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            * {
+                color: #000 !important;
+            }
+        }
+    </style>
+</head>
+
+<body class="text-white antialiased">
+
+    <!-- Top Bar -->
+    <div class="bg-gradient-to-r from-cyan-600 via-cyan-500 to-teal-500 py-3 px-6 text-center">
+        <p class="text-sm font-bold text-black tracking-wide">
+            <i class="fas fa-shield-halved mr-2"></i>
+            {% if asset.asset_action == 'sold' %}
+            SourcePoint — Asset Sale Terms & Delivery Receipt
+            {% else %}
+            SourcePoint — Official Asset Assignment Document
+            {% endif %}
+        </p>
+    </div>
+
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 py-10 space-y-8">
+
+        <!-- Header -->
+        <div class="text-center animate-in">
+            <div
+                class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 mb-5">
+                <i class="fas fa-laptop text-2xl text-cyan-400"></i>
+            </div>
+            <h1 class="text-3xl sm:text-4xl font-black text-white tracking-tight">{{ asset.name }}</h1>
+            <div class="flex items-center justify-center gap-3 mt-3 flex-wrap">
+                <span
+                    class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-black bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-mono">
+                    {{ asset.asset_code }}
+                </span>
+                <span class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-bold
+                    {% if asset.status == 'Active' %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30
+                    {% elif asset.status == 'In Storage' %}bg-amber-500/20 text-amber-300 border border-amber-500/30
+                    {% elif asset.status == 'Under Repair' %}bg-orange-500/20 text-orange-300 border border-orange-500/30
+                    {% elif asset.status == 'Sold' %}bg-purple-500/20 text-purple-300 border border-purple-500/30
+                    {% elif asset.status == 'Retired' %}bg-red-500/20 text-red-300 border border-red-500/30
+                    {% else %}bg-gray-500/20 text-gray-300 border border-gray-500/30{% endif %}">
+                    <i class="fas fa-circle text-[5px] mr-1.5"></i>{{ asset.status }}
+                </span>
+                <span
+                    class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-bold bg-white/5 text-gray-400 border border-white/10">
+                    {{ asset.condition }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Assignment / Sale Info Banner -->
+        {% if asset.asset_action == 'sold' and asset.sold_to_email %}
+        <div class="glass-card rounded-2xl p-5 animate-in animate-delay-1 border border-purple-500/20">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400 text-sm font-black">
+                        {% if asset.sold_to_name %}{{ asset.sold_to_name[0].upper() }}{% else %}<i class="fas fa-user text-xs"></i>{% endif %}
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 font-bold uppercase tracking-widest">Sold To</p>
+                        <p class="text-sm font-bold text-white">{{ asset.sold_to_name or 'External Buyer' }}</p>
+                        <p class="text-[10px] text-purple-300">{{ asset.sold_to_email }}</p>
+                    </div>
+                </div>
+                <div class="flex gap-6 text-center">
+                    <div>
+                        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Sold On</p>
+                        <p class="text-sm font-bold text-white mt-0.5">
+                            {{ asset.sold_date.strftime('%d %b %Y') if asset.sold_date else '—' }}
+                        </p>
+                    </div>
+                    {% if asset.sale_price %}
+                    <div>
+                        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Sale Price</p>
+                        <p class="text-sm font-bold text-emerald-300 mt-0.5">₹{{ "{:,.2f}".format(asset.sale_price) }}</p>
+                    </div>
+                    {% endif %}
+                    {% if asset.authorized_by %}
+                    <div>
+                        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Authorized By</p>
+                        <p class="text-sm font-bold text-white mt-0.5">{{ asset.authorized_by.username }}</p>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Acceptance</p>
+                        {% if asset.sale_terms_accepted_at %}
+                        <p class="text-sm font-bold text-emerald-300 mt-0.5">Accepted</p>
+                        {% else %}
+                        <p class="text-sm font-bold text-amber-300 mt-0.5">Pending</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% elif asset.assigned_to %}
+        <div class="glass-card gradient-border rounded-2xl p-5 animate-in animate-delay-1">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center text-cyan-400 text-sm font-black">
+                        {{ asset.assigned_to.username[0].upper() }}
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 font-bold uppercase tracking-widest">Assigned To</p>
+                        <p class="text-sm font-bold text-white">{{ asset.assigned_to.username }}</p>
+                    </div>
+                </div>
+                <div class="flex gap-6 text-center">
+                    <div>
+                        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Allocated On</p>
+                        <p class="text-sm font-bold text-white mt-0.5">
+                            {{ asset.allocation_date.strftime('%d %b %Y') if asset.allocation_date else '—' }}
+                        </p>
+                    </div>
+                    {% if asset.authorized_by %}
+                    <div>
+                        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Authorized By</p>
+                        <p class="text-sm font-bold text-white mt-0.5">{{ asset.authorized_by.username }}</p>
+                    </div>
+                    {% endif %}
+                    {% if asset.location %}
+                    <div>
+                        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Location</p>
+                        <p class="text-sm font-bold text-white mt-0.5">
+                            <i class="fas fa-location-dot text-cyan-400 text-xs mr-1"></i>{{ asset.location }}
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            <!-- Basic Information -->
+            <div class="glass-card rounded-2xl border border-white/10 p-6 animate-in animate-delay-2">
+                <h2 class="text-xs font-black uppercase tracking-widest text-cyan-400 mb-5">
+                    <i class="fas fa-info-circle mr-2"></i>Basic Information
+                </h2>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center border-b border-white/5 pb-3">
+                        <span class="text-xs text-gray-500 font-bold uppercase">Asset Type</span>
+                        <span class="text-sm font-bold text-white inline-flex items-center px-2.5 py-1 rounded-lg
+                            {% if asset.asset_type == 'Laptop' %}bg-blue-500/20 text-blue-300
+                            {% elif asset.asset_type == 'Server' %}bg-purple-500/20 text-purple-300
+                            {% elif asset.asset_type == 'Monitor' %}bg-indigo-500/20 text-indigo-300
+                            {% elif asset.asset_type == 'Mobile' %}bg-pink-500/20 text-pink-300
+                            {% else %}bg-gray-500/20 text-gray-300{% endif %}">
+                            {{ asset.asset_type }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-white/5 pb-3">
+                        <span class="text-xs text-gray-500 font-bold uppercase">Brand</span>
+                        <span class="text-sm font-bold text-white">{{ asset.brand or '—' }}</span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-white/5 pb-3">
+                        <span class="text-xs text-gray-500 font-bold uppercase">Model</span>
+                        <span class="text-sm font-bold text-white">{{ asset.model_number or '—' }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-gray-500 font-bold uppercase">Serial Number</span>
+                        <span
+                            class="text-sm font-bold text-white font-mono">{{ asset.serial_number or '—' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Purchase Details -->
+            <div class="glass-card rounded-2xl border border-white/10 p-6 animate-in animate-delay-2">
+                <h2 class="text-xs font-black uppercase tracking-widest text-cyan-400 mb-5">
+                    <i class="fas fa-receipt mr-2"></i>Purchase Details
+                </h2>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center border-b border-white/5 pb-3">
+                        <span class="text-xs text-gray-500 font-bold uppercase">Purchase Date</span>
+                        <span class="text-sm font-bold text-white">
+                            {{ asset.purchase_date.strftime('%d %b %Y') if asset.purchase_date else '—' }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-white/5 pb-3">
+                        <span class="text-xs text-gray-500 font-bold uppercase">Purchase Price</span>
+                        <span class="text-sm font-bold text-white">
+                            {% if asset.purchase_price %}₹{{ "{:,.2f}".format(asset.purchase_price) }}{% else %}—{%
+                            endif %}
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-white/5 pb-3">
+                        <span class="text-xs text-gray-500 font-bold uppercase">Warranty Expiry</span>
+                        <span class="text-sm font-bold
+                            {% if asset.warranty_expiry and asset.warranty_expiry < today %}text-red-400
+                            {% elif asset.warranty_expiry %}text-emerald-300
+                            {% else %}text-white{% endif %}">
+                            {% if asset.warranty_expiry %}
+                            {{ asset.warranty_expiry.strftime('%d %b %Y') }}
+                            {% if asset.warranty_expiry < today %}
+                            <span class="text-[9px] ml-1">(Expired)</span>
+                            {% endif %}
+                            {% else %}—{% endif %}
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-gray-500 font-bold uppercase">Condition</span>
+                        <span class="text-sm font-bold text-white">{{ asset.condition }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hardware Specifications -->
+        {% if asset.processor or asset.ram or asset.storage_spec or asset.display or asset.graphics or asset.operating_system or asset.battery or asset.color %}
+        <div class="glass-card rounded-2xl border border-purple-500/20 p-6 animate-in animate-delay-3">
+            <h2 class="text-xs font-black uppercase tracking-widest text-purple-400 mb-5">
+                <i class="fas fa-microchip mr-2"></i>Hardware Specifications
+            </h2>
+            <div class="spec-grid">
+                {% if asset.processor %}
+                <div class="bg-white/[0.03] rounded-xl p-4 border border-white/5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="fas fa-microchip text-purple-400 text-xs"></i>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-gray-500">Processor</span>
+                    </div>
+                    <p class="text-sm font-bold text-white">{{ asset.processor }}</p>
+                </div>
+                {% endif %}
+                {% if asset.ram %}
+                <div class="bg-white/[0.03] rounded-xl p-4 border border-white/5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="fas fa-memory text-blue-400 text-xs"></i>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-gray-500">RAM</span>
+                    </div>
+                    <p class="text-sm font-bold text-white">{{ asset.ram }}</p>
+                </div>
+                {% endif %}
+                {% if asset.storage_spec %}
+                <div class="bg-white/[0.03] rounded-xl p-4 border border-white/5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="fas fa-hard-drive text-cyan-400 text-xs"></i>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-gray-500">Storage</span>
+                    </div>
+                    <p class="text-sm font-bold text-white">{{ asset.storage_spec }}</p>
+                </div>
+                {% endif %}
+                {% if asset.display %}
+                <div class="bg-white/[0.03] rounded-xl p-4 border border-white/5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="fas fa-desktop text-indigo-400 text-xs"></i>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-gray-500">Display</span>
+                    </div>
+                    <p class="text-sm font-bold text-white">{{ asset.display }}</p>
+                </div>
+                {% endif %}
+                {% if asset.graphics %}
+                <div class="bg-white/[0.03] rounded-xl p-4 border border-white/5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="fas fa-gpu-card text-green-400 text-xs"></i>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-gray-500">Graphics</span>
+                    </div>
+                    <p class="text-sm font-bold text-white">{{ asset.graphics }}</p>
+                </div>
+                {% endif %}
+                {% if asset.operating_system %}
+                <div class="bg-white/[0.03] rounded-xl p-4 border border-white/5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="fas fa-window-maximize text-amber-400 text-xs"></i>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-gray-500">Operating
+                            System</span>
+                    </div>
+                    <p class="text-sm font-bold text-white">{{ asset.operating_system }}</p>
+                </div>
+                {% endif %}
+                {% if asset.battery %}
+                <div class="bg-white/[0.03] rounded-xl p-4 border border-white/5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="fas fa-battery-full text-emerald-400 text-xs"></i>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-gray-500">Battery</span>
+                    </div>
+                    <p class="text-sm font-bold text-white">{{ asset.battery }}</p>
+                </div>
+                {% endif %}
+                {% if asset.color %}
+                <div class="bg-white/[0.03] rounded-xl p-4 border border-white/5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="fas fa-palette text-pink-400 text-xs"></i>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-gray-500">Color</span>
+                    </div>
+                    <p class="text-sm font-bold text-white">{{ asset.color }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Notes -->
+        {% if asset.notes %}
+        <div class="glass-card rounded-2xl border border-white/10 p-6 animate-in animate-delay-4">
+            <h2 class="text-xs font-black uppercase tracking-widest text-cyan-400 mb-3">
+                <i class="fas fa-note-sticky mr-2"></i>Notes
+            </h2>
+            <p class="text-sm text-gray-300 leading-relaxed">{{ asset.notes }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Terms & Conditions -->
+        {% if asset.terms_and_conditions %}
+        <div class="glass-card rounded-2xl border border-red-500/20 p-6 animate-in animate-delay-5">
+            <div class="flex items-center gap-3 mb-6">
+                <div
+                    class="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center text-red-400 text-sm">
+                    <i class="fas fa-file-contract"></i>
+                </div>
+                <div>
+                    <h2 class="text-sm font-black uppercase tracking-widest text-red-400">Terms & Conditions</h2>
+                    <p class="text-[10px] text-gray-500 mt-0.5">Please read carefully before accepting the asset</p>
+                </div>
+            </div>
+
+            <div class="bg-red-500/[0.04] rounded-xl border border-red-500/10 p-5">
+                <div class="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{{ asset.terms_and_conditions }}</div>
+            </div>
+
+            <div class="mt-5 p-4 bg-amber-500/10 rounded-xl border border-amber-500/20">
+                <p class="text-xs font-bold text-amber-300 flex items-start gap-2">
+                    <i class="fas fa-triangle-exclamation mt-0.5"></i>
+                    <span>
+                        {% if asset.asset_action == 'sold' %}
+                        By accepting this sold asset, you acknowledge that you have read, understood, and agreed to all
+                        terms and conditions stated above. The delivery receipt is issued only after acceptance.
+                        {% else %}
+                        By accepting this asset, you acknowledge that you have read, understood, and agreed to all the
+                        terms and conditions stated above. This acknowledgment is binding from the date of asset
+                        allocation.
+                        {% endif %}
+                    </span>
+                </p>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if asset.asset_action == 'sold' %}
+        <div id="acceptance" class="glass-card rounded-2xl border {% if asset.sale_terms_accepted_at %}border-emerald-500/25{% else %}border-amber-500/25{% endif %} p-6 animate-in animate-delay-5">
+            <div class="flex items-center gap-3 mb-5">
+                <div class="w-10 h-10 rounded-xl {% if asset.sale_terms_accepted_at %}bg-emerald-500/20 text-emerald-300{% else %}bg-amber-500/20 text-amber-300{% endif %} flex items-center justify-center text-sm">
+                    {% if asset.sale_terms_accepted_at %}
+                    <i class="fas fa-circle-check"></i>
+                    {% else %}
+                    <i class="fas fa-signature"></i>
+                    {% endif %}
+                </div>
+                <div>
+                    <h2 class="text-sm font-black uppercase tracking-widest {% if asset.sale_terms_accepted_at %}text-emerald-300{% else %}text-amber-300{% endif %}">Terms Acceptance</h2>
+                    <p class="text-[10px] text-gray-500 mt-0.5">Required before the delivery receipt email is sent</p>
+                </div>
+            </div>
+
+            {% if acceptance_error %}
+            <div class="mb-4 p-4 bg-red-500/10 rounded-xl border border-red-500/20 text-sm font-bold text-red-300">
+                {{ acceptance_error }}
+            </div>
+            {% endif %}
+
+            {% if asset.sale_terms_accepted_at %}
+            <div class="space-y-3">
+                <div class="p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                    <p class="text-sm font-bold text-emerald-300">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        Terms accepted on {{ asset.sale_terms_accepted_at.strftime('%d %b %Y, %I:%M %p') }}.
+                    </p>
+                    {% if asset.delivery_receipt_sent_at %}
+                    <p class="text-xs text-gray-400 mt-2">
+                        Delivery receipt emailed on {{ asset.delivery_receipt_sent_at.strftime('%d %b %Y, %I:%M %p') }}.
+                    </p>
+                    {% elif receipt_sent is defined and not receipt_sent %}
+                    <p class="text-xs text-amber-300 mt-2">
+                        Acceptance is saved, but the receipt email could not be sent. Please contact SourcePoint administration.
+                    </p>
+                    {% else %}
+                    <p class="text-xs text-gray-400 mt-2">
+                        Delivery receipt email is queued.
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <form method="POST" action="{{ url_for('public.accept_asset_terms', token=asset.share_token) }}" class="space-y-4">
+                <label class="flex items-start gap-3 p-4 rounded-xl bg-white/[0.03] border border-white/10 cursor-pointer">
+                    <input type="checkbox" name="accept_terms" value="yes" required
+                        class="mt-0.5 h-4 w-4 rounded border-white/20 bg-black/40 text-emerald-500 focus:ring-emerald-500">
+                    <span class="text-sm text-gray-300 leading-relaxed">
+                        I confirm that I have reviewed the asset details, sale price, device specifications, and all terms
+                        and conditions. I accept the asset in its current condition and agree that the delivery receipt can
+                        be issued to my email address.
+                    </span>
+                </label>
+                <button type="submit"
+                    class="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-500 text-black text-sm font-black hover:bg-emerald-400 transition-all">
+                    <i class="fas fa-check mr-2"></i>Accept Terms & Send Delivery Receipt
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Footer -->
+        <div class="text-center pt-6 pb-4 border-t border-white/5">
+            <p class="text-xs text-gray-600">
+                <i class="fas fa-shield-halved text-cyan-600 mr-1"></i>
+                This page is an official SourcePoint asset document. Unauthorized distribution is prohibited.
+            </p>
+            <p class="text-[10px] text-gray-700 mt-2">
+                © SourcePoint Technologies. All rights reserved.
+            </p>
+        </div>
+
+        <!-- Print Button (No Print class) -->
+        <div class="text-center no-print">
+            <button onclick="window.print()"
+                class="px-6 py-3 rounded-xl bg-white/5 text-gray-400 text-sm font-bold hover:bg-white/10 hover:text-white transition-all border border-white/10">
+                <i class="fas fa-print mr-2"></i>Print / Save as PDF
+            </button>
+        </div>
+    </div>
+
+</body>
+
+</html>

@@ -73,6 +73,57 @@
 
             <hr class="border-white/5">
 
+            <!-- Section: Hardware Specifications -->
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-purple-400 mb-4">
+                    <i class="fas fa-microchip mr-1"></i> Hardware Specifications
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Processor</label>
+                        <input type="text" name="processor" placeholder="e.g. Apple M3 Pro 12-Core"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:border-cyan-500/50 focus:outline-none transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">RAM</label>
+                        <input type="text" name="ram" placeholder="e.g. 16 GB DDR5"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:border-cyan-500/50 focus:outline-none transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Storage</label>
+                        <input type="text" name="storage_spec" placeholder="e.g. 512 GB SSD NVMe"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:border-cyan-500/50 focus:outline-none transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Display</label>
+                        <input type="text" name="display" placeholder="e.g. 16.2-inch Liquid Retina XDR"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:border-cyan-500/50 focus:outline-none transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Graphics</label>
+                        <input type="text" name="graphics" placeholder="e.g. NVIDIA RTX 4060, Integrated"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:border-cyan-500/50 focus:outline-none transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Operating System</label>
+                        <input type="text" name="operating_system" placeholder="e.g. macOS Sonoma, Windows 11 Pro"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:border-cyan-500/50 focus:outline-none transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Battery</label>
+                        <input type="text" name="battery" placeholder="e.g. 70 Wh Lithium-Ion"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:border-cyan-500/50 focus:outline-none transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Color</label>
+                        <input type="text" name="color" placeholder="e.g. Space Black, Silver"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:border-cyan-500/50 focus:outline-none transition-colors">
+                    </div>
+                </div>
+            </div>
+
+            <hr class="border-white/5">
+
             <!-- Section: Status & Condition -->
             <div>
                 <p class="text-[10px] font-black uppercase tracking-widest text-cyan-400 mb-4">Status & Condition</p>
@@ -124,13 +175,30 @@
 
             <hr class="border-white/5">
 
-            <!-- Section: Assignment -->
+            <!-- Section: Assignment / Sale -->
             <div>
-                <p class="text-[10px] font-black uppercase tracking-widest text-cyan-400 mb-4">Assignment Details</p>
+                <p class="text-[10px] font-black uppercase tracking-widest text-cyan-400 mb-4">Assignment / Sale Details</p>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Assign To</label>
-                        <select name="assigned_to_id"
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Action</label>
+                        <select name="asset_action" id="assetAction" onchange="toggleAssetActionFields()"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-cyan-500/50 focus:outline-none transition-colors">
+                            <option value="">— Keep in Inventory —</option>
+                            <option value="assigned">Assign to User</option>
+                            <option value="sold">Sell to Buyer</option>
+                        </select>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Location</label>
+                        <input type="text" name="location" placeholder="e.g. Mumbai Office, Remote"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:border-cyan-500/50 focus:outline-none transition-colors">
+                    </div>
+                </div>
+
+                <div id="assignFields" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 hidden">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Assigned To</label>
+                        <select name="assigned_to_id" id="assignedToField"
                             class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-cyan-500/50 focus:outline-none transition-colors">
                             <option value="">— Unassigned —</option>
                             {% for user in all_users %}
@@ -143,11 +211,35 @@
                         <input type="date" name="allocation_date"
                             class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-cyan-500/50 focus:outline-none transition-colors">
                     </div>
+                </div>
+
+                <div id="soldFields" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 hidden">
                     <div>
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Location</label>
-                        <input type="text" name="location" placeholder="e.g. Mumbai Office, Remote"
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Sold To Name</label>
+                        <input type="text" name="sold_to_name" placeholder="Buyer name or organization"
                             class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:border-cyan-500/50 focus:outline-none transition-colors">
                     </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Sold To Email *</label>
+                        <input type="email" name="sold_to_email" id="soldToEmailField" placeholder="buyer@example.com"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:border-cyan-500/50 focus:outline-none transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Sold Date</label>
+                        <input type="date" name="sold_date"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-cyan-500/50 focus:outline-none transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Sale Price (₹)</label>
+                        <input type="number" name="sale_price" step="0.01" placeholder="0.00"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:border-cyan-500/50 focus:outline-none transition-colors">
+                    </div>
+                </div>
+                <div class="mt-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                    <p class="text-xs text-blue-300">
+                        <i class="fas fa-envelope mr-1"></i>
+                        <strong>Note:</strong> Assigned users receive the asset details email. Sold-to buyers receive a terms acceptance email first; the delivery receipt is emailed only after they accept on the public page.
+                    </p>
                 </div>
             </div>
 
@@ -158,6 +250,27 @@
                 <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Notes / Remarks</label>
                 <textarea name="notes" rows="3" placeholder="Any additional details or remarks..."
                     class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 resize-none focus:border-cyan-500/50 focus:outline-none transition-colors"></textarea>
+            </div>
+
+            <hr class="border-white/5">
+
+            <!-- Section: Terms & Conditions -->
+            <div>
+                <div class="flex items-center justify-between mb-3">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-red-400">
+                        <i class="fas fa-file-contract mr-1"></i> Terms & Conditions
+                    </p>
+                    <button type="button" onclick="resetTerms()"
+                        class="text-[10px] font-bold text-gray-500 hover:text-cyan-400 transition-colors">
+                        <i class="fas fa-rotate-left mr-1"></i>Reset to Default
+                    </button>
+                </div>
+                <textarea name="terms_and_conditions" id="termsField" rows="10"
+                    class="w-full bg-black/40 border border-red-500/20 rounded-xl px-4 py-3 text-sm text-gray-300 placeholder-gray-600 resize-y focus:border-red-500/40 focus:outline-none transition-colors leading-relaxed">{{ default_terms }}</textarea>
+                <p class="text-[10px] text-gray-600 mt-1.5">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    These terms will be included in the assignment email or sale acceptance email and displayed on the asset's public page.
+                </p>
             </div>
 
             <!-- Actions -->
@@ -175,4 +288,26 @@
         </form>
     </div>
 </div>
+
+<script>
+const defaultTerms = {{ default_terms | tojson }};
+function resetTerms() {
+    document.getElementById('termsField').value = defaultTerms;
+}
+
+function toggleAssetActionFields() {
+    const action = document.getElementById('assetAction').value;
+    const assignFields = document.getElementById('assignFields');
+    const soldFields = document.getElementById('soldFields');
+    const assignedToField = document.getElementById('assignedToField');
+    const soldToEmailField = document.getElementById('soldToEmailField');
+
+    assignFields.classList.toggle('hidden', action !== 'assigned');
+    soldFields.classList.toggle('hidden', action !== 'sold');
+    assignedToField.required = action === 'assigned';
+    soldToEmailField.required = action === 'sold';
+}
+
+document.addEventListener('DOMContentLoaded', toggleAssetActionFields);
+</script>
 {% endblock %}

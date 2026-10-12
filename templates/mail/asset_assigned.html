@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if asset.asset_action == 'sold' %}Asset Sold{% else %}Asset Assigned{% endif %} — SourcePoint</title>
+</head>
+
+<body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+
+    <!-- Preheader -->
+    <span style="display:none;max-height:0;overflow:hidden;">
+        {% if asset.asset_action == 'sold' %}
+        🛒 An asset has been sold to you — {{ asset.name }} ({{ asset.asset_code }})
+        {% else %}
+        🖥️ An asset has been assigned to you on SourcePoint — {{ asset.name }} ({{ asset.asset_code }})
+        {% endif %}
+    </span>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#07070f;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            style="background:linear-gradient(135deg,{% if asset.asset_action == 'sold' %}#7c3aed,#a855f7,#c084fc{% else %}#0e7490,#06b6d4,#22d3ee{% endif %});border-radius:20px 20px 0 0;padding:40px 40px 50px;text-align:center;">
+                            <div
+                                style="display:inline-block;background:rgba(255,255,255,0.15);border-radius:16px;padding:14px;margin-bottom:20px;">
+                                <img src="https://img.icons8.com/fluency/48/laptop.png" alt="Asset" width="48"
+                                    height="48" style="display:block;">
+                            </div>
+                            <h1 style="margin:0;font-size:28px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">
+                                {% if asset.asset_action == 'sold' %}
+                                🛒 Asset Sold to You
+                                {% else %}
+                                🖥️ Asset Assigned to You
+                                {% endif %}
+                            </h1>
+                            <p style="margin:10px 0 0;font-size:15px;color:rgba(255,255,255,0.9);">
+                                {% if asset.asset_action == 'sold' %}
+                                An asset has been sold and transferred to you
+                                {% else %}
+                                A new asset has been allocated to your account
+                                {% endif %}
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Wave Divider -->
+                    <tr>
+                        <td style="background:linear-gradient(135deg,{% if asset.asset_action == 'sold' %}#7c3aed,#a855f7{% else %}#0e7490,#06b6d4{% endif %});height:30px;">
+                            <div style="background:#0f0f1e;height:30px;border-radius:30px 30px 0 0;"></div>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="background:#0f0f1e;padding:0 40px 36px;">
+
+                            <p style="font-size:17px;color:#f1f5f9;margin:0 0 6px;">Hello <strong
+                                    style="color:{% if asset.asset_action == 'sold' %}#c084fc{% else %}#22d3ee{% endif %};">{% if user is defined and user %}{{ user.username }}{% elif recipient_name is defined %}{{ recipient_name }}{% else %}there{% endif %}</strong>,</p>
+                            <p style="font-size:15px;color:#94a3b8;line-height:1.7;margin:0 0 28px;">
+                                {% if asset.asset_action == 'sold' %}
+                                An asset has been sold and transferred to you by the SourcePoint administration team. Please review
+                                the complete asset details and terms & conditions below.
+                                {% else %}
+                                An asset has been assigned to you by the SourcePoint administration team. Please review
+                                the complete asset details and terms & conditions below.
+                                {% endif %}
+                            </p>
+
+                            <!-- Asset Details Card -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba({% if asset.asset_action == 'sold' %}168,85,247{% else %}6,182,212{% endif %},0.08);border:1px solid rgba({% if asset.asset_action == 'sold' %}168,85,247{% else %}6,182,212{% endif %},0.2);border-radius:14px;margin-bottom:20px;">
+                                <tr>
+                                    <td style="padding:20px;">
+                                        <p
+                                            style="margin:0 0 14px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:{% if asset.asset_action == 'sold' %}#a855f7{% else %}#22d3ee{% endif %};">
+                                            📋 Asset Details
+                                        </p>
+
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td width="40%"
+                                                    style="padding:8px 0;font-size:13px;color:#64748b;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    Asset Code</td>
+                                                <td
+                                                    style="padding:8px 0;font-size:13px;color:{% if asset.asset_action == 'sold' %}#a855f7{% else %}#22d3ee{% endif %};font-weight:700;font-family:monospace;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    {{ asset.asset_code }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td
+                                                    style="padding:8px 0;font-size:13px;color:#64748b;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    Asset Name</td>
+                                                <td
+                                                    style="padding:8px 0;font-size:13px;color:#f1f5f9;font-weight:700;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    {{ asset.name }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td
+                                                    style="padding:8px 0;font-size:13px;color:#64748b;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    Type</td>
+                                                <td
+                                                    style="padding:8px 0;font-size:13px;color:#f1f5f9;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    {{ asset.asset_type }}</td>
+                                            </tr>
+                                            {% if asset.brand %}
+                                            <tr>
+                                                <td
+                                                    style="padding:8px 0;font-size:13px;color:#64748b;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    Brand</td>
+                                                <td
+                                                    style="padding:8px 0;font-size:13px;color:#f1f5f9;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    {{ asset.brand }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% if asset.model_number %}
+                                            <tr>
+                                                <td
+                                                    style="padding:8px 0;font-size:13px;color:#64748b;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    Model</td>
+                                                <td
+                                                    style="padding:8px 0;font-size:13px;color:#f1f5f9;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    {{ asset.model_number }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% if asset.serial_number %}
+                                            <tr>
+                                                <td
+                                                    style="padding:8px 0;font-size:13px;color:#64748b;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    Serial Number</td>
+                                                <td
+                                                    style="padding:8px 0;font-size:13px;color:#f1f5f9;font-family:monospace;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    {{ asset.serial_number }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            <tr>
+                                                <td
+                                                    style="padding:8px 0;font-size:13px;color:#64748b;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    Condition</td>
+                                                <td
+                                                    style="padding:8px 0;font-size:13px;color:#f1f5f9;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    {{ asset.condition }}</td>
+                                            </tr>
+                                            {% if asset.asset_action == 'sold' %}
+                                            {% if asset.sold_date %}
+                                            <tr>
+                                                <td
+                                                    style="padding:8px 0;font-size:13px;color:#64748b;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    Sold Date</td>
+                                                <td
+                                                    style="padding:8px 0;font-size:13px;color:#f1f5f9;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    {{ asset.sold_date.strftime('%d %b %Y') }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% if asset.sale_price %}
+                                            <tr>
+                                                <td style="padding:8px 0;font-size:13px;color:#64748b;">
+                                                    Sale Price</td>
+                                                <td style="padding:8px 0;font-size:13px;color:#10b981;font-weight:700;">
+                                                    ₹{{ "{:,.2f}".format(asset.sale_price) }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% else %}
+                                            {% if asset.allocation_date %}
+                                            <tr>
+                                                <td
+                                                    style="padding:8px 0;font-size:13px;color:#64748b;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    Allocation Date</td>
+                                                <td
+                                                    style="padding:8px 0;font-size:13px;color:#f1f5f9;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    {{ asset.allocation_date.strftime('%d %b %Y') }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% if asset.location %}
+                                            <tr>
+                                                <td style="padding:8px 0;font-size:13px;color:#64748b;">Location</td>
+                                                <td style="padding:8px 0;font-size:13px;color:#f1f5f9;">
+                                                    {{ asset.location }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% endif %}
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Hardware Specifications (if any) -->
+                            {% if asset.processor or asset.ram or asset.storage_spec or asset.display or asset.graphics or asset.operating_system or asset.battery or asset.color %}
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.2);border-radius:14px;margin-bottom:20px;">
+                                <tr>
+                                    <td style="padding:20px;">
+                                        <p
+                                            style="margin:0 0 14px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#a855f7;">
+                                            ⚙️ Hardware Specifications
+                                        </p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            {% if asset.processor %}
+                                            <tr>
+                                                <td width="40%"
+                                                    style="padding:6px 0;font-size:13px;color:#64748b;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    Processor</td>
+                                                <td
+                                                    style="padding:6px 0;font-size:13px;color:#f1f5f9;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    {{ asset.processor }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% if asset.ram %}
+                                            <tr>
+                                                <td
+                                                    style="padding:6px 0;font-size:13px;color:#64748b;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    RAM</td>
+                                                <td
+                                                    style="padding:6px 0;font-size:13px;color:#f1f5f9;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    {{ asset.ram }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% if asset.storage_spec %}
+                                            <tr>
+                                                <td
+                                                    style="padding:6px 0;font-size:13px;color:#64748b;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    Storage</td>
+                                                <td
+                                                    style="padding:6px 0;font-size:13px;color:#f1f5f9;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    {{ asset.storage_spec }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% if asset.display %}
+                                            <tr>
+                                                <td
+                                                    style="padding:6px 0;font-size:13px;color:#64748b;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    Display</td>
+                                                <td
+                                                    style="padding:6px 0;font-size:13px;color:#f1f5f9;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    {{ asset.display }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% if asset.graphics %}
+                                            <tr>
+                                                <td
+                                                    style="padding:6px 0;font-size:13px;color:#64748b;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    Graphics</td>
+                                                <td
+                                                    style="padding:6px 0;font-size:13px;color:#f1f5f9;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    {{ asset.graphics }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% if asset.operating_system %}
+                                            <tr>
+                                                <td
+                                                    style="padding:6px 0;font-size:13px;color:#64748b;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    Operating System</td>
+                                                <td
+                                                    style="padding:6px 0;font-size:13px;color:#f1f5f9;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    {{ asset.operating_system }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% if asset.battery %}
+                                            <tr>
+                                                <td
+                                                    style="padding:6px 0;font-size:13px;color:#64748b;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    Battery</td>
+                                                <td
+                                                    style="padding:6px 0;font-size:13px;color:#f1f5f9;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                                    {{ asset.battery }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% if asset.color %}
+                                            <tr>
+                                                <td style="padding:6px 0;font-size:13px;color:#64748b;">Color</td>
+                                                <td style="padding:6px 0;font-size:13px;color:#f1f5f9;">
+                                                    {{ asset.color }}</td>
+                                            </tr>
+                                            {% endif %}
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            {% if authorized_by %}
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(34,211,238,0.06);border:1px solid rgba(34,211,238,0.15);border-radius:14px;margin-bottom:20px;">
+                                <tr>
+                                    <td style="padding:16px 20px;">
+                                        <p style="margin:0;font-size:13px;color:#94a3b8;">
+                                            <strong style="color:#22d3ee;">Authorized By:</strong>
+                                            {{ authorized_by.username }}
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            <!-- View Full Details Button -->
+                            {% if asset.share_token %}
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+                                <tr>
+                                    <td align="center" style="padding:10px 0;">
+                                        <a href="{{ url_for('public.public_asset_detail', token=asset.share_token, _external=True) }}"
+                                            style="display:inline-block;background:linear-gradient(135deg,{% if asset.asset_action == 'sold' %}#7c3aed,#a855f7{% else %}#0e7490,#06b6d4{% endif %});color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:14px;font-size:15px;font-weight:700;letter-spacing:0.5px;">
+                                            🔗 View Complete Asset Details & Terms
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center" style="padding:0;">
+                                        <p style="margin:0;font-size:12px;color:#64748b;">
+                                            Click above to view your complete asset details, specifications, and terms &
+                                            conditions on a dedicated page.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            <!-- Terms & Conditions Preview -->
+                            {% if asset.terms_and_conditions %}
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:14px;margin-bottom:20px;">
+                                <tr>
+                                    <td style="padding:20px;">
+                                        <p
+                                            style="margin:0 0 12px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#ef4444;">
+                                            ⚠️ Terms & Conditions
+                                        </p>
+                                        <p
+                                            style="margin:0;font-size:13px;color:#94a3b8;line-height:1.7;white-space:pre-line;">{{ asset.terms_and_conditions }}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            <!-- Important Notice -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:14px;">
+                                <tr>
+                                    <td style="padding:16px 20px;">
+                                        <p
+                                            style="margin:0 0 6px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#f59e0b;">
+                                            ⚡ Important
+                                        </p>
+                                        <p style="margin:0;font-size:13px;color:#94a3b8;line-height:1.6;">
+                                            {% if asset.asset_action == 'sold' %}
+                                            By accepting this asset, you acknowledge and agree to all the terms &
+                                            conditions mentioned above. The asset has been sold and transferred to you as-is.
+                                            Please review them carefully. If you have any queries, contact the SourcePoint administration team.
+                                            {% else %}
+                                            By accepting this asset, you acknowledge and agree to all the terms &
+                                            conditions mentioned above. Please review them carefully. If you have any
+                                            queries, contact the SourcePoint administration team.
+                                            {% endif %}
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background:#0a0a18;border-top:1px solid rgba(255,255,255,0.05);border-radius:0 0 20px 20px;padding:28px 40px;text-align:center;">
+                            <p style="margin:0 0 6px;font-size:13px;color:#64748b;">This is an automated notification
+                                from</p>
+                            <p style="margin:0 0 16px;font-size:15px;font-weight:700;color:{% if asset.asset_action == 'sold' %}#a855f7{% else %}#22d3ee{% endif %};">SourcePoint Asset
+                                Management</p>
+                            <p style="margin:0;font-size:11px;color:#475569;">
+                                © {{ now.year if now is defined else '2026' }} SourcePoint Technologies. All rights
+                                reserved.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>
