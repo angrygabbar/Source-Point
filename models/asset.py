@@ -57,6 +57,10 @@ class Asset(db.Model):
     sale_terms_acceptance_user_agent = db.Column(db.String(255), nullable=True)
     delivery_receipt_sent_at = db.Column(db.DateTime, nullable=True)
 
+    # Cancellation
+    cancelled_at = db.Column(db.DateTime, nullable=True)
+    cancellation_reason = db.Column(db.Text, nullable=True)
+
     # Shareable public page token (auto-generated)
     share_token = db.Column(db.String(64), unique=True, nullable=True, index=True)
 

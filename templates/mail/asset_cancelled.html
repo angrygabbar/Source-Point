@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Cancelled &mdash; SourcePoint</title>
+</head>
+
+<body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+    <span style="display:none;max-height:0;overflow:hidden;">
+        The asset {{ asset.name }} ({{ asset.asset_code }}) has been cancelled by SourcePoint administration.
+    </span>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#07070f;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="620" cellpadding="0" cellspacing="0" style="max-width:620px;width:100%;">
+                    <tr>
+                        <td style="background:linear-gradient(135deg,#dc2626,#ef4444,#f97316);border-radius:20px 20px 0 0;padding:38px 36px;text-align:center;">
+                            <h1 style="margin:0;font-size:27px;font-weight:800;color:#ffffff;">Asset Sale Cancelled</h1>
+                            <p style="margin:10px 0 0;font-size:15px;color:rgba(255,255,255,0.9);">This asset transaction has been cancelled by administration</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background:#0f0f1e;padding:34px 36px;">
+                            <p style="font-size:17px;color:#f1f5f9;margin:0 0 6px;">Hello <strong style="color:#f87171;">{{ recipient_name }}</strong>,</p>
+                            <p style="font-size:15px;color:#94a3b8;line-height:1.7;margin:0 0 24px;">
+                                We are writing to inform you that the following asset, previously marked as sold to you, has been <strong style="color:#f87171;">cancelled</strong> by SourcePoint administration. Any pending terms acceptance or delivery receipt for this asset is no longer valid.
+                            </p>
+
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.22);border-radius:14px;margin-bottom:20px;">
+                                <tr>
+                                    <td style="padding:20px;">
+                                        <p style="margin:0 0 14px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#f87171;">Cancelled Asset Details</p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding:8px 0;color:#64748b;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05);">Asset Code</td>
+                                                <td style="padding:8px 0;color:#f87171;font-size:13px;font-weight:800;font-family:monospace;text-align:right;border-bottom:1px solid rgba(255,255,255,0.05);">{{ asset.asset_code }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:8px 0;color:#64748b;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05);">Asset Name</td>
+                                                <td style="padding:8px 0;color:#f1f5f9;font-size:13px;font-weight:700;text-align:right;border-bottom:1px solid rgba(255,255,255,0.05);">{{ asset.name }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:8px 0;color:#64748b;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05);">Type / Condition</td>
+                                                <td style="padding:8px 0;color:#f1f5f9;font-size:13px;text-align:right;border-bottom:1px solid rgba(255,255,255,0.05);">{{ asset.asset_type }} / {{ asset.condition }}</td>
+                                            </tr>
+                                            {% if asset.brand or asset.model_number %}
+                                            <tr>
+                                                <td style="padding:8px 0;color:#64748b;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05);">Brand / Model</td>
+                                                <td style="padding:8px 0;color:#f1f5f9;font-size:13px;text-align:right;border-bottom:1px solid rgba(255,255,255,0.05);">{{ asset.brand or '&mdash;' }}{% if asset.model_number %} / {{ asset.model_number }}{% endif %}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% if asset.serial_number %}
+                                            <tr>
+                                                <td style="padding:8px 0;color:#64748b;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05);">Serial Number</td>
+                                                <td style="padding:8px 0;color:#f1f5f9;font-size:13px;font-family:monospace;text-align:right;border-bottom:1px solid rgba(255,255,255,0.05);">{{ asset.serial_number }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            <tr>
+                                                <td style="padding:8px 0;color:#64748b;font-size:13px;">Status</td>
+                                                <td style="padding:8px 0;color:#f87171;font-size:15px;font-weight:800;text-align:right;">Cancelled</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            {% if asset.cancellation_reason %}
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.22);border-radius:14px;margin-bottom:20px;">
+                                <tr>
+                                    <td style="padding:18px 20px;">
+                                        <p style="margin:0 0 10px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#fbbf24;">Cancellation Reason</p>
+                                        <p style="margin:0;font-size:14px;color:#cbd5e1;line-height:1.7;">{{ asset.cancellation_reason }}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(100,116,139,0.08);border:1px solid rgba(100,116,139,0.18);border-radius:14px;">
+                                <tr>
+                                    <td style="padding:18px 20px;">
+                                        <p style="margin:0;font-size:13px;color:#94a3b8;line-height:1.7;">
+                                            If you have any questions regarding this cancellation, please contact SourcePoint administration directly. Any previously shared asset links are no longer valid.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background:#0a0a18;border-top:1px solid rgba(255,255,255,0.05);border-radius:0 0 20px 20px;padding:26px 36px;text-align:center;">
+                            <p style="margin:0 0 6px;font-size:13px;color:#64748b;">This is an automated notification from</p>
+                            <p style="margin:0;font-size:15px;font-weight:700;color:#f87171;">SourcePoint Asset Management</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

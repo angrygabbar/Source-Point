@@ -27,6 +27,7 @@
                 {% elif asset.status == 'Sold' %}bg-purple-500/20 text-purple-300 border border-purple-500/30
                 {% elif asset.status == 'Retired' %}bg-red-500/20 text-red-300 border border-red-500/30
                 {% elif asset.status == 'Lost' %}bg-red-700/20 text-red-400 border border-red-700/30
+                {% elif asset.status == 'Cancelled' %}bg-rose-500/20 text-rose-300 border border-rose-500/30
                 {% else %}bg-gray-500/20 text-gray-300 border border-gray-500/30{% endif %}">
                 <i class="fas fa-circle text-[5px] mr-1.5"></i>{{ asset.status }}
             </span>
@@ -315,6 +316,27 @@
             </div>
             {% endif %}
 
+            <!-- Cancellation Details Card (shown when status is Cancelled) -->
+            {% if asset.status == 'Cancelled' %}
+            <div class="glass-panel-v2 rounded-2xl border border-rose-500/20 p-6">
+                <h2 class="text-xs font-black uppercase tracking-widest text-rose-400 mb-4">
+                    <i class="fas fa-ban mr-2"></i>Cancellation Details
+                </h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Cancelled On</p>
+                        <p class="text-sm font-bold text-rose-300 mt-1">
+                            {{ asset.cancelled_at.strftime('%d %b %Y, %I:%M %p') if asset.cancelled_at else '—' }}
+                        </p>
+                    </div>
+                    <div class="col-span-2">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-600">Reason</p>
+                        <p class="text-sm font-bold text-white mt-1">{{ asset.cancellation_reason or 'No reason provided' }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Notes Card -->
             {% if asset.notes %}
             <div class="glass-panel-v2 rounded-2xl border border-white/10 p-6">
@@ -450,10 +472,56 @@
                         <i class="fas fa-trash w-4 text-center"></i> Delete this Asset
                     </button>
                 </form>
+                {% if asset.status != 'Cancelled' and (asset.asset_action == 'sold' or asset.assigned_to) %}
+                <button onclick="document.getElementById('cancelAssetViewModal').classList.remove('hidden')"
+                    class="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-rose-500/10 text-rose-300 text-sm font-bold hover:bg-rose-500/20 transition-all">
+                    <i class="fas fa-ban text-rose-400 w-4 text-center"></i> Cancel this Asset
+                </button>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
+
+<!-- Cancel Asset Modal (View Page) -->
+{% if asset.status != 'Cancelled' and (asset.asset_action == 'sold' or asset.assigned_to) %}
+<div id="cancelAssetViewModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="document.getElementById('cancelAssetViewModal').classList.add('hidden')"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg">
+        <div class="glass-panel-v2 rounded-2xl border border-rose-500/30 p-6 mx-4">
+            <div class="flex items-center justify-between mb-5">
+                <h2 class="text-lg font-black text-white"><i class="fas fa-ban text-rose-400 mr-2"></i>Cancel Asset</h2>
+                <button onclick="document.getElementById('cancelAssetViewModal').classList.add('hidden')" class="text-gray-500 hover:text-white transition-colors">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+
+            <div class="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl mb-5">
+                <p class="text-sm text-rose-300 font-bold">
+                    <i class="fas fa-triangle-exclamation mr-1"></i>
+                    You are about to cancel asset <span class="font-mono">{{ asset.asset_code }}</span>: {{ asset.name }}
+                </p>
+                <p class="text-xs text-gray-400 mt-2">
+                    This will set the status to &ldquo;Cancelled&rdquo;, invalidate the public link, and send a cancellation notification to the buyer/assignee.
+                </p>
+            </div>
+
+            <form method="POST" action="{{ url_for('admin_assets.cancel_asset', asset_id=asset.id) }}" class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">
+                        Cancellation Reason (Optional)
+                    </label>
+                    <textarea name="cancellation_reason" rows="3" placeholder="e.g. Buyer did not respond, asset reallocated..."
+                        class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white resize-none placeholder-gray-700"></textarea>
+                </div>
+                <button type="submit" class="w-full py-3 rounded-xl bg-rose-500 text-white text-sm font-black hover:bg-rose-400 transition-colors">
+                    <i class="fas fa-ban mr-2"></i>Confirm Cancellation
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <script>
 function copyLink() {
@@ -468,5 +536,12 @@ function copyLink() {
         }, 2000);
     });
 }
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('cancelAssetViewModal');
+        if (modal) modal.classList.add('hidden');
+    }
+});
 </script>
 {% endblock %}

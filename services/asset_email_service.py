@@ -86,3 +86,24 @@ def send_asset_delivery_receipt_email(asset):
     except Exception as exc:
         print(f"Failed to send asset delivery receipt email: {exc}")
         return False
+
+
+def send_asset_cancellation_email(asset, recipient_email, recipient_name):
+    """Send a cancellation notification email to the buyer/assignee."""
+    if not recipient_email:
+        return False
+
+    try:
+        send_email(
+            to=recipient_email,
+            subject=f"Asset Cancelled: {asset.name} ({asset.asset_code})",
+            template='mail/asset_cancelled.html',
+            asset=asset,
+            recipient_name=recipient_name or recipient_email,
+            authorized_by=asset.authorized_by,
+            now=datetime.utcnow(),
+        )
+        return True
+    except Exception as exc:
+        print(f"Failed to send asset cancellation email: {exc}")
+        return False

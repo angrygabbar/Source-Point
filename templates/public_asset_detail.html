@@ -158,6 +158,7 @@
                     {% elif asset.status == 'Under Repair' %}bg-orange-500/20 text-orange-300 border border-orange-500/30
                     {% elif asset.status == 'Sold' %}bg-purple-500/20 text-purple-300 border border-purple-500/30
                     {% elif asset.status == 'Retired' %}bg-red-500/20 text-red-300 border border-red-500/30
+                    {% elif asset.status == 'Cancelled' %}bg-rose-500/20 text-rose-300 border border-rose-500/30
                     {% else %}bg-gray-500/20 text-gray-300 border border-gray-500/30{% endif %}">
                     <i class="fas fa-circle text-[5px] mr-1.5"></i>{{ asset.status }}
                 </span>
@@ -167,6 +168,27 @@
                 </span>
             </div>
         </div>
+
+        <!-- Cancellation Banner (shown when asset is cancelled) -->
+        {% if asset.status == 'Cancelled' %}
+        <div class="glass-card rounded-2xl p-5 animate-in animate-delay-1 border border-rose-500/30">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-rose-500/20 flex items-center justify-center text-rose-400 text-sm font-black">
+                    <i class="fas fa-ban"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-black text-rose-300 uppercase tracking-widest">Asset Sale Cancelled</p>
+                    <p class="text-xs text-gray-400 mt-0.5">This asset transaction has been cancelled by SourcePoint administration.</p>
+                    {% if asset.cancellation_reason %}
+                    <p class="text-xs text-gray-300 mt-2"><strong>Reason:</strong> {{ asset.cancellation_reason }}</p>
+                    {% endif %}
+                    {% if asset.cancelled_at %}
+                    <p class="text-[10px] text-gray-500 mt-1">Cancelled on {{ asset.cancelled_at.strftime('%d %b %Y, %I:%M %p') }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- Assignment / Sale Info Banner -->
         {% if asset.asset_action == 'sold' and asset.sold_to_email %}

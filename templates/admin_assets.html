@@ -27,7 +27,7 @@
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
         <div class="glass-panel-v2 rounded-2xl border border-cyan-500/20 p-4">
             <p class="text-[9px] font-black uppercase tracking-widest text-cyan-300">Total Assets</p>
             <p class="text-2xl font-black text-white mt-1">{{ total_assets }}</p>
@@ -55,6 +55,10 @@
         <div class="glass-panel-v2 rounded-2xl border border-red-500/20 p-4">
             <p class="text-[9px] font-black uppercase tracking-widest text-red-300">Retired</p>
             <p class="text-2xl font-black text-red-300 mt-1">{{ retired_count }}</p>
+        </div>
+        <div class="glass-panel-v2 rounded-2xl border border-rose-500/20 p-4">
+            <p class="text-[9px] font-black uppercase tracking-widest text-rose-300">Cancelled</p>
+            <p class="text-2xl font-black text-rose-300 mt-1">{{ cancelled_count }}</p>
         </div>
     </div>
 
@@ -156,6 +160,7 @@
                                 {% elif asset.status == 'Sold' %}bg-purple-500/20 text-purple-300
                                 {% elif asset.status == 'Retired' %}bg-red-500/20 text-red-300
                                 {% elif asset.status == 'Lost' %}bg-red-700/20 text-red-400
+                                {% elif asset.status == 'Cancelled' %}bg-rose-500/20 text-rose-300
                                 {% else %}bg-gray-500/20 text-gray-300{% endif %}">
                                 <i class="fas fa-circle text-[5px] mr-1.5"></i>{{ asset.status }}
                             </span>
@@ -196,6 +201,14 @@
                                     title="Edit">
                                     <i class="fas fa-pen-to-square"></i>
                                 </button>
+                                <!-- Cancel — only for sold/assigned assets that are not already cancelled -->
+                                {% if asset.status != 'Cancelled' and (asset.asset_action == 'sold' or asset.assigned_to) %}
+                                <button onclick="openCancelModal({{ asset.id }}, '{{ asset.asset_code }}', '{{ asset.name | e }}')"
+                                    class="p-1.5 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors text-xs"
+                                    title="Cancel Asset">
+                                    <i class="fas fa-ban"></i>
+                                </button>
+                                {% endif %}
                                 <!-- Delete -->
                                 <form method="POST" action="{{ url_for('admin_assets.delete_asset', asset_id=asset.id) }}"
                                     onsubmit="return confirm('Delete asset {{ asset.asset_code }}?')" class="inline">
@@ -453,6 +466,44 @@
     </div>
 </div>
 
+<!-- Cancel Asset Modal -->
+<div id="cancelAssetModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeCancelModal()"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg">
+        <div class="glass-panel-v2 rounded-2xl border border-rose-500/30 p-6 mx-4">
+            <div class="flex items-center justify-between mb-5">
+                <h2 class="text-lg font-black text-white"><i class="fas fa-ban text-rose-400 mr-2"></i>Cancel Asset</h2>
+                <button onclick="closeCancelModal()" class="text-gray-500 hover:text-white transition-colors">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+
+            <div class="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl mb-5">
+                <p class="text-sm text-rose-300 font-bold">
+                    <i class="fas fa-triangle-exclamation mr-1"></i>
+                    You are about to cancel asset <span id="cancelAssetCode" class="font-mono"></span>: <span id="cancelAssetName"></span>
+                </p>
+                <p class="text-xs text-gray-400 mt-2">
+                    This will set the status to "Cancelled", invalidate the public link, and send a cancellation notification to the buyer/assignee.
+                </p>
+            </div>
+
+            <form id="cancelAssetForm" method="POST" class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">
+                        Cancellation Reason (Optional)
+                    </label>
+                    <textarea name="cancellation_reason" rows="3" placeholder="e.g. Buyer did not respond, asset reallocated..."
+                        class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white resize-none placeholder-gray-700"></textarea>
+                </div>
+                <button type="submit" class="w-full py-3 rounded-xl bg-rose-500 text-white text-sm font-black hover:bg-rose-400 transition-colors">
+                    <i class="fas fa-ban mr-2"></i>Confirm Cancellation
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 function toggleEditActionFields() {
     const action = document.getElementById('edit_asset_action').value;
@@ -511,8 +562,22 @@ function closeEditModal() {
     document.getElementById('editAssetModal').classList.add('hidden');
 }
 
+function openCancelModal(assetId, assetCode, assetName) {
+    document.getElementById('cancelAssetForm').action = `/admin/assets/cancel/${assetId}`;
+    document.getElementById('cancelAssetCode').textContent = assetCode;
+    document.getElementById('cancelAssetName').textContent = assetName;
+    document.getElementById('cancelAssetModal').classList.remove('hidden');
+}
+
+function closeCancelModal() {
+    document.getElementById('cancelAssetModal').classList.add('hidden');
+}
+
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeEditModal();
+    if (e.key === 'Escape') {
+        closeEditModal();
+        closeCancelModal();
+    }
 });
 
 // Auto-open edit modal if triggered from the view page

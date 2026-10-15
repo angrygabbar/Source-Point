@@ -185,6 +185,7 @@ class AssetStatus(enum.Enum):
     SOLD = "Sold"
     RETIRED = "Retired"
     LOST = "Lost"
+    CANCELLED = "Cancelled"
 
 class AssetCondition(enum.Enum):
     NEW = "New"

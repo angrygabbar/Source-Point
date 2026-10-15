@@ -12,6 +12,7 @@ from services.asset_email_service import (
     ASSET_ACTION_ASSIGNED,
     ASSET_ACTION_SOLD,
     send_asset_assignment_email,
+    send_asset_cancellation_email,
     send_asset_delivery_receipt_email,
     send_asset_sale_terms_email,
 )
@@ -158,6 +159,7 @@ def dashboard():
     sold_count = Asset.query.filter_by(asset_action=ASSET_ACTION_SOLD).count()
     retired_count = Asset.query.filter_by(status=AssetStatus.RETIRED.value).count()
     assigned_count = Asset.query.filter(Asset.assigned_to_id.isnot(None), Asset.status == AssetStatus.ACTIVE.value).count()
+    cancelled_count = Asset.query.filter_by(status=AssetStatus.CANCELLED.value).count()
 
     # Get unique locations for filter dropdown
     locations = db.session.query(Asset.location).filter(Asset.location.isnot(None)).distinct().all()
@@ -175,6 +177,7 @@ def dashboard():
         sold_count=sold_count,
         retired_count=retired_count,
         assigned_count=assigned_count,
+        cancelled_count=cancelled_count,
         locations=locations,
         filter_type=filter_type,
         filter_status=filter_status,
@@ -595,6 +598,54 @@ def resend_assignment_email(asset_id):
         flash(f'{asset.assigned_to.username} has no email address for the assignment email.', 'warning')
     else:
         flash('Assignment email could not be sent. Please check the mail service.', 'warning')
+    return redirect(url_for('admin_assets.view_asset', asset_id=asset.id))
+
+
+@admin_assets_bp.route('/cancel/<int:asset_id>', methods=['POST'])
+@login_required
+@role_required(UserRole.ADMIN.value)
+def cancel_asset(asset_id):
+    """Cancel an asset sale/assignment and notify the buyer."""
+    asset = Asset.query.get_or_404(asset_id)
+    cancellation_reason = request.form.get('cancellation_reason', '').strip()
+
+    if asset.status == AssetStatus.CANCELLED.value:
+        flash(f'Asset "{asset.name}" is already cancelled.', 'warning')
+        return redirect(url_for('admin_assets.view_asset', asset_id=asset.id))
+
+    # Capture recipient before clearing fields
+    recipient_email = None
+    recipient_name = None
+    if asset.asset_action == ASSET_ACTION_SOLD and asset.sold_to_email:
+        recipient_email = asset.sold_to_email
+        recipient_name = asset.sold_to_name or asset.sold_to_email
+    elif asset.assigned_to:
+        recipient_email = asset.assigned_to.email if asset.assigned_to.email else None
+        recipient_name = asset.assigned_to.username
+
+    # Update asset status
+    asset.status = AssetStatus.CANCELLED.value
+    asset.cancelled_at = datetime.utcnow()
+    asset.cancellation_reason = cancellation_reason or None
+    # Invalidate the share token so old public links stop working
+    asset.share_token = None
+    # Reset sale acceptance tracking
+    _reset_sale_acceptance(asset)
+    asset.updated_at = datetime.utcnow()
+    db.session.commit()
+
+    log_user_action("Cancel Asset", f"Cancelled asset {asset.asset_code}: {asset.name}")
+
+    # Send cancellation email to buyer/assignee
+    if recipient_email:
+        email_sent = send_asset_cancellation_email(asset, recipient_email, recipient_name)
+        if email_sent:
+            flash(f'Asset "{asset.name}" has been cancelled. Cancellation notification sent to {recipient_name}.', 'success')
+        else:
+            flash(f'Asset "{asset.name}" has been cancelled, but the notification email could not be sent.', 'warning')
+    else:
+        flash(f'Asset "{asset.name}" has been cancelled.', 'success')
+
     return redirect(url_for('admin_assets.view_asset', asset_id=asset.id))
 
 
