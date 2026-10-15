@@ -9,6 +9,10 @@ from models.commerce import (
 )
 from utils import role_required, log_user_action, send_email
 from invoice_service import InvoiceGenerator
+from travel_invoice_service import (
+    INVOICE_TYPE_LABELS, TRAVEL_BOOKING_FIELDS, invoice_email_template,
+    normalize_invoice_type,
+)
 from services.commerce_service import CommerceService
 from services.rollback_terms_service import RollbackTermsService
 from datetime import datetime
@@ -888,6 +892,15 @@ def manage_invoices():
     invoices = Invoice.query.order_by(Invoice.created_at.desc()).all()
     return render_template('manage_invoices.html', invoices=invoices)
 
+
+def _booking_details_from_form(invoice_type, form):
+    fields = TRAVEL_BOOKING_FIELDS.get(invoice_type, [])
+    details = {
+        field['name']: form.get(f"booking_{field['name']}", '').strip()
+        for field in fields
+    }
+    return {key: value for key, value in details.items() if value}
+
 @admin_commerce_bp.route('/invoices/<int:invoice_id>')
 @login_required
 @role_required(UserRole.ADMIN.value)
@@ -901,12 +914,17 @@ def view_invoice(invoice_id):
 def create_invoice():
     if request.method == 'POST':
         try:
+            invoice_type = request.form.get('invoice_type', '').strip().lower()
+            if invoice_type not in INVOICE_TYPE_LABELS:
+                flash('Choose a valid invoice template before creating an invoice.', 'danger')
+                return redirect(url_for('admin_commerce.create_invoice'))
+
             recipient_name = request.form.get('recipient_name')
             recipient_email = request.form.get('recipient_email')
             due_date_str = request.form.get('due_date')
-            order_id = request.form.get('order_id')
+            order_id = request.form.get('order_id') if invoice_type == 'ecommerce' else request.form.get('booking_reference')
             bill_to = request.form.get('bill_to_address')
-            ship_to = request.form.get('ship_to_address')
+            ship_to = request.form.get('ship_to_address') if invoice_type == 'ecommerce' else None
             notes = request.form.get('notes')
             payment_details = request.form.get('payment_details')
             tax_rate = float(request.form.get('tax', 0))
@@ -933,6 +951,8 @@ def create_invoice():
             
             new_invoice = Invoice(
                 invoice_number=invoice_num, recipient_name=recipient_name, recipient_email=recipient_email,
+                invoice_type=invoice_type,
+                booking_details=_booking_details_from_form(invoice_type, request.form),
                 bill_to_address=bill_to, ship_to_address=ship_to, order_id=order_id,
                 subtotal=subtotal, tax=tax_amount, total_amount=total_amount,
                 status=InvoiceStatus.UNPAID.value,
@@ -951,10 +971,10 @@ def create_invoice():
             pdf_bytes = generator.generate_pdf()
             attachments = [{'filename': f'Invoice_{new_invoice.invoice_number}.pdf', 'data': pdf_bytes}]
             
-            send_email(to=recipient_email, subject=f"New Invoice #{new_invoice.invoice_number}", template="mail/ecommerce_invoice_email.html", invoice=new_invoice, attachments=attachments)
+            send_email(to=recipient_email, subject=f"New {INVOICE_TYPE_LABELS[invoice_type]} Invoice #{new_invoice.invoice_number}", template=invoice_email_template(invoice_type), invoice=new_invoice, attachments=attachments)
 
             log_user_action("Create Invoice", f"Created invoice {invoice_num}")
-            flash(f'Invoice {new_invoice.invoice_number} created and sent.', 'success')
+            flash(f'Invoice {new_invoice.invoice_number} created; email queued for delivery.', 'success')
             return redirect(url_for('admin_commerce.manage_invoices'))
 
         except Exception as e:
@@ -962,9 +982,23 @@ def create_invoice():
             flash(f"Error creating invoice: {str(e)}", 'danger')
             return redirect(url_for('admin_commerce.create_invoice'))
 
-    products = Product.query.filter(Product.stock > 0).all()
-    products_js = [{'id': p.id, 'name': p.name, 'price': float(p.price), 'code': p.product_code} for p in products]
-    return render_template('create_invoice.html', products=products_js)
+    invoice_type = request.args.get('type', '').strip().lower()
+    if not invoice_type:
+        return render_template('select_invoice_template.html')
+    if invoice_type not in INVOICE_TYPE_LABELS:
+        flash('Choose a valid invoice template.', 'danger')
+        return redirect(url_for('admin_commerce.create_invoice'))
+
+    products_js = []
+    if invoice_type == 'ecommerce':
+        products = Product.query.filter(Product.stock > 0).all()
+        products_js = [{'id': p.id, 'name': p.name, 'price': float(p.price), 'code': p.product_code} for p in products]
+    return render_template(
+        'create_invoice.html', products=products_js, invoice_type=invoice_type,
+        invoice_type_label=INVOICE_TYPE_LABELS[invoice_type],
+        booking_fields=TRAVEL_BOOKING_FIELDS.get(invoice_type, []),
+        booking_details={},
+    )
 
 @admin_commerce_bp.route('/invoices/edit/<int:invoice_id>', methods=['GET', 'POST'])
 @login_required
@@ -1009,9 +1043,10 @@ def edit_invoice(invoice_id):
             # Update invoice fields
             invoice.recipient_name = recipient_name
             invoice.recipient_email = recipient_email
+            invoice.booking_details = _booking_details_from_form(invoice.invoice_type, request.form)
             invoice.bill_to_address = bill_to
-            invoice.ship_to_address = ship_to
-            invoice.order_id = order_id
+            invoice.ship_to_address = ship_to if invoice.invoice_type == 'ecommerce' else None
+            invoice.order_id = order_id if invoice.invoice_type == 'ecommerce' else request.form.get('booking_reference')
             invoice.subtotal = subtotal
             invoice.tax = tax_amount
             invoice.total_amount = total_amount
@@ -1038,10 +1073,10 @@ def edit_invoice(invoice_id):
             pdf_bytes = generator.generate_pdf()
             attachments = [{'filename': f'Invoice_{invoice.invoice_number}.pdf', 'data': pdf_bytes}]
 
-            send_email(to=recipient_email, subject=f"Updated Invoice #{invoice.invoice_number}", template="mail/ecommerce_invoice_email.html", invoice=invoice, attachments=attachments)
+            send_email(to=recipient_email, subject=f"Updated {INVOICE_TYPE_LABELS.get(invoice.invoice_type, 'E-commerce')} Invoice #{invoice.invoice_number}", template=invoice_email_template(invoice.invoice_type), invoice=invoice, attachments=attachments)
 
             log_user_action("Edit Invoice", f"Updated invoice {invoice.invoice_number}")
-            flash(f'Invoice {invoice.invoice_number} updated and resent.', 'success')
+            flash(f'Invoice {invoice.invoice_number} updated; email queued for delivery.', 'success')
             return redirect(url_for('admin_commerce.view_invoice', invoice_id=invoice.id))
 
         except Exception as e:
@@ -1058,7 +1093,14 @@ def edit_invoice(invoice_id):
     if invoice.subtotal and float(invoice.subtotal) > 0:
         tax_rate = (float(invoice.tax) / float(invoice.subtotal)) * 100
 
-    return render_template('create_invoice.html', products=products_js, invoice=invoice, edit_mode=True, tax_rate=tax_rate)
+    invoice_type = normalize_invoice_type(getattr(invoice, 'invoice_type', 'ecommerce'))
+    return render_template(
+        'create_invoice.html', products=products_js if invoice_type == 'ecommerce' else [],
+        invoice=invoice, edit_mode=True, tax_rate=tax_rate,
+        invoice_type=invoice_type, invoice_type_label=INVOICE_TYPE_LABELS[invoice_type],
+        booking_fields=TRAVEL_BOOKING_FIELDS.get(invoice_type, []),
+        booking_details=invoice.booking_details or {},
+    )
 
 @admin_commerce_bp.route('/invoices/mark_paid/<int:invoice_id>', methods=['POST'])
 @login_required
@@ -1389,14 +1431,14 @@ def resend_invoice():
         send_email(
             to=recipient_list,
             subject=f"Invoice #{invoice.invoice_number}",
-            template="mail/ecommerce_invoice_email.html",
+            template=invoice_email_template(invoice.invoice_type),
             invoice=invoice,
             attachments=attachments
         )
         
         if is_ajax:
             return jsonify({'success': True, 'message': 'Invoice resend queued successfully.'})
-        flash("Invoice resent.", "success")
+        flash("Invoice resend queued for delivery.", "success")
     except Exception as e:
         traceback.print_exc()
         if is_ajax:

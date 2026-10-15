@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{ invoice_title }}</title>
+</head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;color:#172033">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f1f5f9;padding:28px 12px">
+    <tr><td align="center">
+      <table role="presentation" width="660" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:660px;background:#ffffff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden">
+        <tr><td style="padding:26px 30px;background:#111c32;border-bottom:4px solid {{ accent }}">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+            <tr>
+              <td valign="middle">
+                <div style="display:inline-block;padding:8px 10px;border:1px solid {{ accent }};border-radius:8px;color:#ffffff;font-size:15px;font-weight:bold;letter-spacing:.5px">SP</div>
+                <span style="margin-left:8px;color:#ffffff;font-size:14px;font-weight:bold;letter-spacing:.3px">SOURCE POINT</span>
+                <div style="margin-top:9px;color:{{ accent_soft }};font-size:11px;font-weight:bold;letter-spacing:1.4px;text-transform:uppercase">{{ invoice_kicker }}</div>
+              </td>
+              <td align="right" valign="middle" style="color:#ffffff">
+                <div style="font-size:21px;line-height:1.3;font-weight:bold">{{ invoice_title }}</div>
+                <div style="margin-top:6px;color:#cbd5e1;font-size:12px">Invoice #{{ invoice.invoice_number }}</div>
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:30px 30px 12px">
+          <p style="margin:0 0 10px;font-size:16px;line-height:1.5">Hello <strong>{{ invoice.recipient_name }}</strong>,</p>
+          <p style="margin:0;color:#526176;font-size:14px;line-height:1.7">{{ invoice_intro }} Your invoice is attached for your records.</p>
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:22px;background:{{ accent_tint }};border:1px solid {{ accent_border }};border-radius:10px">
+            <tr><td style="padding:17px 18px">
+              <div style="margin-bottom:12px;color:{{ accent }};font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase">{{ booking_section_title }}</div>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                {% for key, value in (invoice.booking_details or {}).items() if value %}
+                <tr>
+                  <td valign="top" style="padding:5px 12px 5px 0;color:#64748b;font-size:12px;width:38%">{{ key|replace('_', ' ')|title }}</td>
+                  <td valign="top" style="padding:5px 0;color:#172033;font-size:13px;font-weight:bold">{{ value }}</td>
+                </tr>
+                {% endfor %}
+                <tr>
+                  <td valign="top" style="padding:5px 12px 5px 0;color:#64748b;font-size:12px">Booking reference</td>
+                  <td valign="top" style="padding:5px 0;color:#172033;font-size:13px;font-weight:bold">{{ invoice.order_id or '—' }}</td>
+                </tr>
+              </table>
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:14px 30px 8px">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+            <tr>
+              <td valign="top" style="width:50%;padding:12px 14px 12px 0">
+                <div style="margin-bottom:7px;color:#7b8798;font-size:10px;font-weight:bold;letter-spacing:1px;text-transform:uppercase">Billed to</div>
+                <div style="color:#172033;font-size:13px;font-weight:bold;line-height:1.6">{{ invoice.recipient_name }}</div>
+                <div style="color:#526176;font-size:12px;line-height:1.6">{{ invoice.recipient_email }}</div>
+                {% if invoice.bill_to_address %}<div style="color:#526176;font-size:12px;line-height:1.6">{{ invoice.bill_to_address }}</div>{% endif %}
+              </td>
+              <td valign="top" style="width:50%;padding:12px 0 12px 14px">
+                <div style="margin-bottom:7px;color:#7b8798;font-size:10px;font-weight:bold;letter-spacing:1px;text-transform:uppercase">Invoice summary</div>
+                <div style="padding:3px 0;color:#526176;font-size:12px">Invoice date: <strong style="color:#172033">{{ invoice.created_at.strftime('%d %b %Y') if invoice.created_at else '—' }}</strong></div>
+                <div style="padding:3px 0;color:#526176;font-size:12px">Due date: <strong style="color:#172033">{{ invoice.due_date.strftime('%d %b %Y') if invoice.due_date else 'On receipt' }}</strong></div>
+                <div style="padding:3px 0;color:#526176;font-size:12px">Status: <strong style="color:{{ accent }}">{{ invoice.status|title }}</strong></div>
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:12px 30px 8px">
+          <div style="margin-bottom:10px;color:#172033;font-size:14px;font-weight:bold">Fare and charges</div>
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse">
+            <tr style="background:#f8fafc">
+              <th align="left" style="padding:11px 10px;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;color:#64748b;font-size:10px;letter-spacing:.6px;text-transform:uppercase">Description</th>
+              <th align="center" style="padding:11px 8px;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;color:#64748b;font-size:10px;letter-spacing:.6px;text-transform:uppercase">Qty</th>
+              <th align="right" style="padding:11px 10px;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;color:#64748b;font-size:10px;letter-spacing:.6px;text-transform:uppercase">Amount</th>
+            </tr>
+            {% for item in invoice.items %}
+            <tr>
+              <td style="padding:12px 10px;border-bottom:1px solid #e8edf3;color:#263248;font-size:13px">{{ item.description }}</td>
+              <td align="center" style="padding:12px 8px;border-bottom:1px solid #e8edf3;color:#526176;font-size:13px">{{ item.quantity }}</td>
+              <td align="right" style="padding:12px 10px;border-bottom:1px solid #e8edf3;color:#263248;font-size:13px">₹{{ '{:,.2f}'.format(item.price * item.quantity) }}</td>
+            </tr>
+            {% endfor %}
+          </table>
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:12px">
+            <tr><td align="right" style="padding:4px 10px;color:#64748b;font-size:12px">Subtotal</td><td align="right" width="125" style="padding:4px 10px;color:#263248;font-size:12px">₹{{ '{:,.2f}'.format(invoice.subtotal) }}</td></tr>
+            <tr><td align="right" style="padding:4px 10px;color:#64748b;font-size:12px">Tax</td><td align="right" width="125" style="padding:4px 10px;color:#263248;font-size:12px">₹{{ '{:,.2f}'.format(invoice.tax) }}</td></tr>
+            {% if invoice.amount_paid and invoice.amount_paid > 0 %}
+            <tr><td align="right" style="padding:4px 10px;color:#64748b;font-size:12px">Amount paid</td><td align="right" width="125" style="padding:4px 10px;color:#13805b;font-size:12px">− ₹{{ '{:,.2f}'.format(invoice.amount_paid) }}</td></tr>
+            {% endif %}
+            <tr><td align="right" style="padding:12px 10px 4px;border-top:1px solid #dbe3ed;color:#172033;font-size:14px;font-weight:bold">Balance due</td><td align="right" width="125" style="padding:12px 10px 4px;border-top:1px solid #dbe3ed;color:{{ accent }};font-size:18px;font-weight:bold">₹{{ '{:,.2f}'.format(invoice.pending_amount) }}</td></tr>
+            <tr><td align="right" style="padding:4px 10px;color:#8793a3;font-size:11px">Invoice total</td><td align="right" width="125" style="padding:4px 10px;color:#8793a3;font-size:11px">₹{{ '{:,.2f}'.format(invoice.total_amount) }}</td></tr>
+          </table>
+        </td></tr>
+        {% if invoice.payment_details or invoice.notes %}
+        <tr><td style="padding:16px 30px 4px">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f8fafc;border:1px solid #e8edf3;border-radius:8px">
+            <tr><td style="padding:14px 16px">
+              {% if invoice.payment_details %}<div style="margin-bottom:6px;color:#263248;font-size:12px;line-height:1.6"><strong>Payment details</strong><br>{{ invoice.payment_details }}</div>{% endif %}
+              {% if invoice.notes %}<div style="color:#526176;font-size:12px;line-height:1.6"><strong>Note</strong><br>{{ invoice.notes }}</div>{% endif %}
+            </td></tr>
+          </table>
+        </td></tr>
+        {% endif %}
+        <tr><td style="padding:24px 30px 28px">
+          <p style="margin:0 0 12px;color:#526176;font-size:13px;line-height:1.6">{{ thank_you_message }}</p>
+          <p style="margin:0;color:#7b8798;font-size:11px;line-height:1.6">Need help with your booking or invoice? Reply to this email and our team will assist you.</p>
+        </td></tr>
+        <tr><td align="center" style="padding:16px 20px;background:#f8fafc;border-top:1px solid #e8edf3;color:#8994a3;font-size:10px;line-height:1.6">Source Point · Booking confirmation and invoice<br>Please keep this email for your records.</td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>

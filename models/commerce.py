@@ -1,6 +1,7 @@
 # Source Point/models/commerce.py
 from extensions import db
 from datetime import datetime
+from decimal import Decimal
 from sqlalchemy import Numeric
 from enums import (
     OrderStatus, InvoiceStatus, VoucherOrderStatus, SupersCoinInvoiceStatus,
@@ -86,6 +87,8 @@ class Invoice(db.Model):
     invoice_number = db.Column(db.String(50), unique=True, nullable=False)
     recipient_name = db.Column(db.String(100), nullable=False)
     recipient_email = db.Column(db.String(120), nullable=False)
+    invoice_type = db.Column(db.String(20), nullable=False, default='ecommerce', server_default='ecommerce')
+    booking_details = db.Column(db.JSON, nullable=True)
     bill_to_address = db.Column(db.Text, nullable=True)
     ship_to_address = db.Column(db.Text, nullable=True)
     order_id = db.Column(db.String(50), nullable=True)
@@ -107,12 +110,27 @@ class Invoice(db.Model):
     refunds = db.relationship('InvoiceRefund', backref='invoice', lazy=True, cascade="all, delete-orphan", order_by="desc(InvoiceRefund.recorded_at)")
 
     @property
+    def net_collected_amount(self):
+        """Return net collected funds, including legacy invoices marked Paid."""
+        total = Decimal(str(self.total_amount or 0))
+        if self.status == InvoiceStatus.PAID.value:
+            # Older invoices may have a Paid status without amount_paid populated.
+            return total
+        paid = Decimal(str(self.amount_paid or 0))
+        return max(Decimal('0.00'), paid)
+
+    @property
+    def pending_amount_decimal(self):
+        """Return the outstanding balance with currency-safe decimal arithmetic."""
+        if self.status in (InvoiceStatus.PAID.value, InvoiceStatus.REFUNDED.value, InvoiceStatus.CANCELLED.value):
+            return Decimal('0.00')
+        total = Decimal(str(self.total_amount or 0))
+        return max(Decimal('0.00'), total - self.net_collected_amount)
+
+    @property
     def pending_amount(self):
-        """Returns the remaining unpaid balance."""
-        paid = float(self.amount_paid) if self.amount_paid else 0.0
-        if self.status == InvoiceStatus.PAID.value and paid == 0.0:
-            paid = float(self.total_amount) if self.total_amount else 0.0
-        return max(0.0, float(self.total_amount) - paid)
+        """Return the outstanding balance as a float for existing callers."""
+        return float(self.pending_amount_decimal)
 
     @property
     def refundable_amount(self):

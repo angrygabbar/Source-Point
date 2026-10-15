@@ -201,6 +201,40 @@ def ensure_invoice_refund_schema():
     print("[schema] Invoice refund tables ready")
 
 
+def ensure_invoice_template_schema():
+    inspector = inspect(db.engine)
+    table_names = set(inspector.get_table_names())
+    if Invoice.__tablename__ not in table_names:
+        return
+
+    invoice_columns = {
+        column["name"] for column in inspector.get_columns(Invoice.__tablename__)
+    }
+    dialect = db.engine.dialect.name
+    table_name = f'"{Invoice.__tablename__}"' if dialect == "postgresql" else Invoice.__tablename__
+    added_columns = []
+
+    for column in (Invoice.__table__.c.invoice_type, Invoice.__table__.c.booking_details):
+        if column.name in invoice_columns:
+            continue
+
+        column_sql = str(CreateColumn(column).compile(dialect=db.engine.dialect))
+        if dialect == "postgresql":
+            sql = f"ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS {column_sql}"
+        else:
+            sql = f"ALTER TABLE {table_name} ADD COLUMN {column_sql}"
+
+        db.session.execute(text(sql))
+        db.session.commit()
+        invoice_columns.add(column.name)
+        added_columns.append(column.name)
+
+    if added_columns:
+        print(f"[schema] Added invoice columns: {', '.join(added_columns)}")
+    else:
+        print("[schema] Invoice template columns ready")
+
+
 def main():
     wait_for_database(app)
     with app.app_context():
@@ -209,6 +243,7 @@ def main():
         ensure_superscoins_tables()
         ensure_rollback_terms_tables()
         ensure_invoice_refund_schema()
+        ensure_invoice_template_schema()
 
 
 if __name__ == "__main__":

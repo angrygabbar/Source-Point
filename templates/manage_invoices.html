@@ -2,12 +2,14 @@
 {% block title %}Financial Records{% endblock %}
 {% block content %}
 
-{% set total_invoiced = invoices | sum(attribute='total_amount') %}
-{% set total_paid_amount = invoices | sum(attribute='amount_paid') %}
-{% set total_pending_amount = total_invoiced - total_paid_amount %}
+{% set financial_invoices = invoices | rejectattr('status', 'equalto', 'Cancelled') | list %}
+{% set total_invoiced = financial_invoices | sum(attribute='total_amount') %}
+{% set total_paid_amount = financial_invoices | sum(attribute='net_collected_amount') %}
+{% set total_pending_amount = financial_invoices | sum(attribute='pending_amount_decimal') %}
 {% set paid_count = invoices | selectattr('status', 'equalto', 'Paid') | list | length %}
-{% set unpaid_count = invoices | selectattr('status', 'equalto', 'Unpaid') | list | length %}
-{% set partial_count = invoices | selectattr('status', 'equalto', 'Unpaid') | list | selectattr('amount_paid', 'gt', 0) | list | length %}
+{% set open_invoices = invoices | selectattr('pending_amount_decimal', 'gt', 0) | list %}
+{% set unpaid_count = open_invoices | selectattr('net_collected_amount', 'equalto', 0) | list | length %}
+{% set partial_count = open_invoices | selectattr('net_collected_amount', 'gt', 0) | list | length %}
 
 <div class="space-y-8 animate-dynamic pb-10">
     
@@ -30,7 +32,7 @@
             <div class="absolute -right-4 -top-4 w-24 h-24 bg-yellow-500/20 rounded-full blur-2xl group-hover:bg-yellow-500/30 transition-all duration-500"></div>
             <p class="text-xs font-bold text-yellow-300 uppercase tracking-widest mb-1">Pending</p>
             <h3 class="text-3xl font-extrabold text-white">₹{{ "{:,.2f}".format(total_pending_amount) }}</h3>
-            <p class="text-xs text-gray-500 mt-2">{{ unpaid_count }} Unpaid invoices</p>
+            <p class="text-xs text-gray-500 mt-2">{{ unpaid_count }} unpaid{% if partial_count %} · {{ partial_count }} partially paid{% endif %}</p>
         </div>
 
         <div class="glass-panel-v2 p-6 rounded-2xl border border-white/5 relative overflow-hidden group">
@@ -42,7 +44,7 @@
             {% else %}
                 <h3 class="text-3xl font-extrabold text-white">—</h3>
             {% endif %}
-            <p class="text-xs text-gray-500 mt-2">Payment recovery</p>
+            <p class="text-xs text-gray-500 mt-2">Net collected ÷ total invoiced</p>
         </div>
     </div>
 
@@ -70,7 +72,7 @@
 
         {% for invoice in invoices %}
         {% set inv_pending = invoice.pending_amount %}
-        {% set inv_paid = (invoice.total_amount | float) if (invoice.status == 'Paid' and not invoice.amount_paid) else (invoice.amount_paid | float) %}
+        {% set inv_paid = invoice.net_collected_amount | float %}
         {% set inv_total = invoice.total_amount | float %}
         {% set pay_percent = (inv_paid / inv_total * 100) if inv_total > 0 else 0 %}
 
@@ -80,7 +82,11 @@
                 
                 <div class="col-span-2 flex items-center gap-3">
                     <div class="w-1 h-8 bg-indigo-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <span class="font-mono text-sm font-bold text-indigo-300">{{ invoice.invoice_number }}</span>
+                    <div>
+                        <span class="font-mono text-sm font-bold text-indigo-300">{{ invoice.invoice_number }}</span>
+                        {% set type_labels = {'ecommerce': 'E-commerce', 'bus': 'Bus Booking', 'hotel': 'Hotel Booking', 'flight': 'Flight Booking'} %}
+                        <span class="block mt-1 text-[10px] font-bold uppercase tracking-wider text-gray-500">{{ type_labels.get(invoice.invoice_type or 'ecommerce', 'E-commerce') }}</span>
+                    </div>
                 </div>
 
                 <div class="col-span-2">
@@ -217,8 +223,19 @@
                         <div class="flex gap-4">
                             <div class="w-8 h-8 rounded bg-white/5 flex items-center justify-center text-gray-400 flex-shrink-0"><i class="fas fa-truck"></i></div>
                             <div>
+                                {% if (invoice.invoice_type or 'ecommerce') == 'ecommerce' %}
                                 <h4 class="text-xs font-bold text-gray-500 uppercase">Ship To</h4>
-                                <p class="text-gray-300 mt-1 whitespace-pre-wrap leading-relaxed">{{ invoice.ship_to_address }}</p>
+                                <p class="text-gray-300 mt-1 whitespace-pre-wrap leading-relaxed">{{ invoice.ship_to_address or invoice.bill_to_address or 'Same as billing address' }}</p>
+                                {% else %}
+                                {% set type_labels = {'bus': 'Bus Booking Details', 'hotel': 'Hotel Booking Details', 'flight': 'Flight Booking Details'} %}
+                                <h4 class="text-xs font-bold text-gray-500 uppercase">{{ type_labels.get(invoice.invoice_type, 'Booking Details') }}</h4>
+                                {% set booking_details = invoice.booking_details or {} %}
+                                {% for key, value in booking_details.items() if value %}
+                                <p class="text-gray-300 mt-1"><span class="text-gray-500">{{ key|replace('_', ' ')|title }}:</span> {{ value }}</p>
+                                {% else %}
+                                <p class="text-gray-500 mt-1">No booking details provided.</p>
+                                {% endfor %}
+                                {% endif %}
                             </div>
                         </div>
 

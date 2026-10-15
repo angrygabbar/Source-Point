@@ -140,6 +140,11 @@ class InvoiceGenerator:
     # ──────────────────────────────────────────────────────────────────────────
 
     def generate_pdf(self):
+        invoice_type = str(getattr(self.invoice, 'invoice_type', 'ecommerce') or 'ecommerce').lower()
+        if invoice_type in {'bus', 'hotel', 'flight'}:
+            from travel_invoice_service import TravelInvoiceGenerator
+            return TravelInvoiceGenerator(self.invoice).generate_pdf()
+
         self._draw_page_background()
         self._draw_header()
         self._draw_meta_strip()

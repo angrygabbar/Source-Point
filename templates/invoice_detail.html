@@ -16,6 +16,10 @@
 {% set pay_percent = (inv_paid / inv_total * 100) if inv_total > 0 else 0 %}
 {% set tax_amount = invoice.tax | float %}
 {% set subtotal_amount = invoice.subtotal | float %}
+{% set invoice_type = invoice.invoice_type or 'ecommerce' %}
+{% set invoice_type_labels = {'ecommerce': 'E-commerce', 'bus': 'Bus Booking', 'hotel': 'Hotel Booking', 'flight': 'Flight Booking'} %}
+{% set invoice_type_label = invoice_type_labels.get(invoice_type, 'E-commerce') %}
+{% set booking_details = invoice.booking_details or {} %}
 
 <div class="space-y-6 animate-dynamic pb-10">
     <div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
@@ -29,6 +33,7 @@
                     <i class="fas fa-file-invoice text-sm text-white"></i>
                 </span>
                 Invoice {{ invoice.invoice_number }}
+                <span class="px-2.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-bold uppercase tracking-wider">{{ invoice_type_label }}</span>
             </h1>
             <p class="text-gray-500 text-sm mt-1 pl-[52px]">{{ invoice.recipient_name }} · {{ invoice.recipient_email }}</p>
         </div>
@@ -121,7 +126,7 @@
                         <p class="text-gray-300">{{ invoice.due_date.strftime('%d %b %Y') if invoice.due_date else 'Immediate' }}</p>
                     </div>
                     <div>
-                        <p class="text-[10px] text-gray-500 uppercase tracking-widest">Order ID</p>
+                        <p class="text-[10px] text-gray-500 uppercase tracking-widest">{% if invoice_type == 'ecommerce' %}Order ID{% else %}Booking Reference{% endif %}</p>
                         <p class="text-gray-300">{{ invoice.order_id or 'N/A' }}</p>
                     </div>
                     <div>
@@ -139,10 +144,28 @@
                         <p class="text-indigo-300 text-sm mt-1 break-all">{{ invoice.recipient_email }}</p>
                         <p class="text-gray-300 text-sm mt-4 whitespace-pre-wrap leading-relaxed">{{ invoice.bill_to_address or 'N/A' }}</p>
                     </div>
+                    {% if invoice_type == 'ecommerce' %}
                     <div class="rounded-xl bg-white/[0.03] border border-white/5 p-5">
                         <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Ship To</p>
                         <p class="text-gray-300 text-sm whitespace-pre-wrap leading-relaxed">{{ invoice.ship_to_address or invoice.bill_to_address or 'N/A' }}</p>
                     </div>
+                    {% else %}
+                    <div class="rounded-xl bg-white/[0.03] border border-white/5 p-5">
+                        <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">{{ invoice_type_label }} Details</p>
+                        {% if booking_details is mapping and booking_details %}
+                        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3">
+                            {% for key, value in booking_details.items() if value %}
+                            <div>
+                                <dt class="text-[10px] text-gray-500 uppercase tracking-wider">{{ key|replace('_', ' ')|title }}</dt>
+                                <dd class="text-gray-200 text-sm mt-1">{{ value }}</dd>
+                            </div>
+                            {% endfor %}
+                        </dl>
+                        {% else %}
+                        <p class="text-gray-500 text-sm">No booking details provided.</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
                 </div>
 
                 <div class="overflow-hidden rounded-xl border border-white/5 bg-white/[0.03]">

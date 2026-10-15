@@ -1,0 +1,71 @@
+{% extends "layout.html" %}
+{% block title %}Choose Invoice Template{% endblock %}
+{% block content %}
+
+<div class="max-w-6xl mx-auto space-y-7 animate-dynamic pb-12">
+    <div>
+        <a href="{{ url_for('admin_commerce.manage_invoices') }}"
+           class="inline-flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-indigo-300 uppercase tracking-widest transition-colors mb-4">
+            <i class="fas fa-arrow-left"></i> Back to Invoices
+        </a>
+        <h1 class="text-2xl font-extrabold text-white flex items-center gap-3">
+            <span class="w-11 h-11 rounded-xl bg-indigo-500/15 text-indigo-300 flex items-center justify-center">
+                <i class="fas fa-file-invoice-dollar"></i>
+            </span>
+            Choose an Invoice Template
+        </h1>
+        <p class="text-sm text-gray-400 mt-2 ml-14">Select the invoice type. The matching invoice form and customer document will open.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <a href="{{ url_for('admin_commerce.create_invoice', type='ecommerce') }}"
+           class="group glass-panel-v2 rounded-2xl border border-emerald-500/20 hover:border-emerald-400/50 p-6 transition-all hover:-translate-y-1">
+            <div class="flex items-start gap-4">
+                <span class="w-12 h-12 rounded-xl bg-emerald-500/15 text-emerald-300 flex items-center justify-center text-lg"><i class="fas fa-box-open"></i></span>
+                <div class="flex-1">
+                    <h2 class="text-lg font-extrabold text-white">E-commerce Invoice</h2>
+                    <p class="text-sm text-gray-400 mt-1">Products, shipping addresses, tax, and order details.</p>
+                </div>
+                <i class="fas fa-arrow-right text-gray-600 group-hover:text-emerald-300 transition-colors mt-2"></i>
+            </div>
+        </a>
+
+        <a href="{{ url_for('admin_commerce.create_invoice', type='bus') }}"
+           class="group glass-panel-v2 rounded-2xl border border-blue-500/20 hover:border-blue-400/50 p-6 transition-all hover:-translate-y-1">
+            <div class="flex items-start gap-4">
+                <span class="w-12 h-12 rounded-xl bg-blue-500/15 text-blue-300 flex items-center justify-center text-lg"><i class="fas fa-bus"></i></span>
+                <div class="flex-1">
+                    <h2 class="text-lg font-extrabold text-white">Bus Booking Invoice</h2>
+                    <p class="text-sm text-gray-400 mt-1">Operator, route, travel date, passengers, and seats.</p>
+                </div>
+                <i class="fas fa-arrow-right text-gray-600 group-hover:text-blue-300 transition-colors mt-2"></i>
+            </div>
+        </a>
+
+        <a href="{{ url_for('admin_commerce.create_invoice', type='hotel') }}"
+           class="group glass-panel-v2 rounded-2xl border border-purple-500/20 hover:border-purple-400/50 p-6 transition-all hover:-translate-y-1">
+            <div class="flex items-start gap-4">
+                <span class="w-12 h-12 rounded-xl bg-purple-500/15 text-purple-300 flex items-center justify-center text-lg"><i class="fas fa-hotel"></i></span>
+                <div class="flex-1">
+                    <h2 class="text-lg font-extrabold text-white">Hotel Booking Invoice</h2>
+                    <p class="text-sm text-gray-400 mt-1">Property, location, stay dates, guests, and rooms.</p>
+                </div>
+                <i class="fas fa-arrow-right text-gray-600 group-hover:text-purple-300 transition-colors mt-2"></i>
+            </div>
+        </a>
+
+        <a href="{{ url_for('admin_commerce.create_invoice', type='flight') }}"
+           class="group glass-panel-v2 rounded-2xl border border-cyan-500/20 hover:border-cyan-400/50 p-6 transition-all hover:-translate-y-1">
+            <div class="flex items-start gap-4">
+                <span class="w-12 h-12 rounded-xl bg-cyan-500/15 text-cyan-300 flex items-center justify-center text-lg"><i class="fas fa-plane"></i></span>
+                <div class="flex-1">
+                    <h2 class="text-lg font-extrabold text-white">Flight Booking Invoice</h2>
+                    <p class="text-sm text-gray-400 mt-1">Airline, route, flight, dates, passengers, and cabin.</p>
+                </div>
+                <i class="fas fa-arrow-right text-gray-600 group-hover:text-cyan-300 transition-colors mt-2"></i>
+            </div>
+        </a>
+    </div>
+</div>
+
+{% endblock %}

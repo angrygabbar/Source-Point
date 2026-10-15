@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import func, or_
 from werkzeug.utils import secure_filename
 from invoice_service import InvoiceGenerator, BrdGenerator
+from travel_invoice_service import invoice_email_template
 from services.commerce_service import CommerceService
 import os
 import cloudinary.uploader
@@ -1235,79 +1236,8 @@ def manage_invoices():
 @role_required('admin')
 def create_invoice():
     if request.method == 'POST':
-        last_invoice = Invoice.query.order_by(Invoice.id.desc()).first()
-        invoice_number = f"INV{datetime.utcnow().year}{last_invoice.id + 1 if last_invoice else 1:03d}"
-
-        due_date_str = request.form.get('due_date')
-        due_date = datetime.strptime(due_date_str, '%Y-%m-%d').date() if due_date_str else None
-
-        recipient_name = request.form.get('recipient_name')
-        recipient_email = request.form.get('recipient_email')
-        bill_to_address = request.form.get('bill_to_address')
-        ship_to_address = request.form.get('ship_to_address')
-        order_id = request.form.get('order_id')
-        notes = request.form.get('notes')
-        payment_details = request.form.get('payment_details')
-        tax = float(request.form.get('tax', 0.0))
-
-        item_descriptions = request.form.getlist('item_description[]')
-        item_quantities = request.form.getlist('item_quantity[]')
-        item_prices = request.form.getlist('item_price[]')
-        item_product_ids = request.form.getlist('item_product_id[]')
-
-        subtotal = 0
-        invoice_items = []
-        
-        for i in range(len(item_descriptions)):
-            if item_descriptions[i] and item_quantities[i] and item_prices[i]:
-                quantity = int(item_quantities[i])
-                price = float(item_prices[i])
-                amount = quantity * price
-                subtotal += amount
-                
-                invoice_items.append(InvoiceItem(description=item_descriptions[i], quantity=quantity, price=price))
-
-                if i < len(item_product_ids) and item_product_ids[i]:
-                    product = Product.query.get(item_product_ids[i])
-                    if product:
-                        product.stock -= quantity
-        
-        total_amount = subtotal * (1 + tax / 100)
-
-        invoice = Invoice(
-            invoice_number=invoice_number, recipient_name=recipient_name, recipient_email=recipient_email,
-            bill_to_address=bill_to_address, ship_to_address=ship_to_address, order_id=order_id,
-            subtotal=subtotal, tax=tax, total_amount=total_amount, due_date=due_date,
-            notes=notes, payment_details=payment_details, admin_id=current_user.id
-        )
-
-        invoice.items = invoice_items
-        db.session.add(invoice)
-        db.session.commit()
-
-        try:
-            invoice_generator = InvoiceGenerator(invoice)
-            pdf_data = invoice_generator.generate_pdf()
-            attachment = {'filename': f'{invoice.invoice_number}.pdf', 'content_type': 'application/pdf', 'data': pdf_data}
-
-            send_email(
-                to=recipient_email, subject=f'Your Invoice ({invoice.invoice_number}) from Source Point',
-                template='mail/ecommerce_invoice_email.html', invoice=invoice,
-                attachments=[attachment]
-            )
-        except Exception as e:
-            print(f"Error generating/sending invoice: {e}")
-
-        log_user_action("Create Invoice", f"Created invoice {invoice.invoice_number} for {recipient_name}")
-        flash('Invoice created and sent successfully! Inventory updated.', 'success')
-        return redirect(url_for('admin.manage_invoices'))
-    
-    products = Product.query.filter(Product.stock > 0).order_by(Product.name).all()
-    
-    products_js = [
-        {'id': p.id, 'name': p.name, 'price': p.price, 'code': p.product_code} for p in products
-    ]
-    return render_template('create_invoice.html', products=products_js)
+        return redirect(url_for('admin_commerce.create_invoice'), code=307)
+    return redirect(url_for('admin_commerce.create_invoice'))
 
 @admin_bp.route('/invoices/delete/<int:invoice_id>')
 @login_required
@@ -1348,11 +1278,11 @@ def resend_invoice():
     try:
         send_email(
             to=recipient_list, subject=f'Invoice ({invoice.invoice_number}) from Source Point',
-            template='mail/ecommerce_invoice_email.html', invoice=invoice,
+            template=invoice_email_template(invoice.invoice_type), invoice=invoice,
             attachments=[attachment],
             sync=True
         )
-        message = f'Invoice {invoice.invoice_number} has been resent!'
+        message = f'Invoice {invoice.invoice_number} resend attempted; provider delivery is not confirmed.'
         success = True
     except Exception as e:
         message = f'Failed to resend invoice: {str(e)}'

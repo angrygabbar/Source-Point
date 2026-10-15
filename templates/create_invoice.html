@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}Invoice Builder{% endblock %}
+{% block title %}{{ invoice_type_label or 'Invoice' }} Builder{% endblock %}
 {% block content %}
 
 <div class="animate-dynamic pb-20 space-y-6">
@@ -16,9 +16,9 @@
                     class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 flex-shrink-0">
                     <i class="fas fa-file-invoice text-sm text-white"></i>
                 </span>
-                {% if edit_mode %}Edit Invoice #{{ invoice.invoice_number }}{% else %}Invoice Generator{% endif %}
+                {% if edit_mode %}Edit {{ invoice_type_label }} Invoice #{{ invoice.invoice_number }}{% else %}{{ invoice_type_label }} Invoice{% endif %}
             </h1>
-            <p class="text-gray-500 text-sm mt-1 pl-[52px]">{% if edit_mode %}Modify and resend this invoice.{% else %}Create and send a new invoice document.{% endif %}</p>
+            <p class="text-gray-500 text-sm mt-1 pl-[52px]">{% if edit_mode %}Modify and resend this {{ invoice_type_label|lower }} invoice.{% else %}Enter the details for this {{ invoice_type_label|lower }} invoice.{% endif %}</p>
         </div>
         <button type="submit" form="invoice-form" id="submit-btn"
             class="flex-shrink-0 px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 transition-all transform hover:scale-[1.02] flex items-center gap-2 text-sm">
@@ -27,6 +27,7 @@
     </div>
 
     <form action="{% if edit_mode %}{{ url_for('admin_commerce.edit_invoice', invoice_id=invoice.id) }}{% else %}{{ url_for('admin_commerce.create_invoice') }}{% endif %}" method="POST" id="invoice-form" class="space-y-6">
+        <input type="hidden" name="invoice_type" value="{{ invoice_type }}">
 
         {# ═══ INVOICE DETAILS ═══ #}
         <div class="glass-panel-v2 rounded-2xl border border-white/5 p-6">
@@ -42,8 +43,8 @@
                         class="w-full px-4 py-2.5 bg-black/30 border border-white/10 rounded-xl text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none [color-scheme:dark]">
                 </div>
                 <div class="space-y-1.5">
-                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Order ID</label>
-                    <input type="text" name="order_id" placeholder="Optional"
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">{% if invoice_type == 'ecommerce' %}Order ID{% else %}Booking / PNR / Reservation Ref{% endif %}</label>
+                    <input type="text" name="{% if invoice_type == 'ecommerce' %}order_id{% else %}booking_reference{% endif %}" placeholder="Optional"
                         value="{% if edit_mode %}{{ invoice.order_id or '' }}{% endif %}"
                         class="w-full px-4 py-2.5 bg-black/30 border border-white/10 rounded-xl text-white text-sm placeholder-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none">
                 </div>
@@ -58,8 +59,8 @@
             </div>
         </div>
 
-        {# ═══ BILL TO / SHIP TO ═══ #}
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {# ═══ BILL TO / BOOKING DETAILS ═══ #}
+        <div class="grid grid-cols-1 {% if invoice_type == 'ecommerce' %}lg:grid-cols-2{% endif %} gap-6">
 
             <div class="glass-panel-v2 rounded-2xl border border-white/5 p-6 space-y-4">
                 <h2 class="text-xs font-bold text-indigo-400 uppercase tracking-widest flex items-center gap-2">
@@ -80,13 +81,13 @@
                         class="w-full px-4 py-2.5 bg-black/30 border border-white/10 rounded-xl text-white text-sm placeholder-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none">
                 </div>
                 <div class="space-y-1.5">
-                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Billing Address <span
-                            class="text-red-400">*</span></label>
-                    <textarea name="bill_to_address" rows="3" required placeholder="Street, City, State, ZIP..."
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Billing Address{% if invoice_type == 'ecommerce' %} <span class="text-red-400">*</span>{% endif %}</label>
+                    <textarea name="bill_to_address" rows="3" {% if invoice_type == 'ecommerce' %}required{% endif %} placeholder="Street, City, State, ZIP..."
                         class="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-xl text-white text-sm placeholder-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none resize-none">{% if edit_mode %}{{ invoice.bill_to_address or '' }}{% endif %}</textarea>
                 </div>
             </div>
 
+            {% if invoice_type == 'ecommerce' %}
             <div class="glass-panel-v2 rounded-2xl border border-white/5 p-6 space-y-4">
                 <h2
                     class="text-xs font-bold text-violet-400 uppercase tracking-widest flex items-center justify-between gap-2">
@@ -106,6 +107,24 @@
                         class="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-xl text-white text-sm placeholder-gray-600 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all outline-none resize-none">{% if edit_mode %}{{ invoice.ship_to_address or '' }}{% endif %}</textarea>
                 </div>
             </div>
+            {% else %}
+            <div class="glass-panel-v2 rounded-2xl border border-white/5 p-6 space-y-4">
+                <h2 class="text-xs font-bold text-indigo-300 uppercase tracking-widest flex items-center gap-2">
+                    <i class="fas fa-ticket-alt"></i> {{ invoice_type_label }} Details
+                </h2>
+                <p class="text-xs text-gray-500">Add the booking information that should appear on the invoice.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {% for field in booking_fields %}
+                    <div class="space-y-1.5">
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">{{ field.label }}</label>
+                        <input type="{{ field.type }}" name="booking_{{ field.name }}"
+                            value="{{ booking_details.get(field.name, '') }}"
+                            class="w-full px-4 py-2.5 bg-black/30 border border-white/10 rounded-xl text-white text-sm placeholder-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none [color-scheme:dark]">
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
         </div>
 
         {# ═══ LINE ITEMS ═══ #}
@@ -132,7 +151,8 @@
                         <tr class="item-row group">
                             <td class="py-3 px-2">
                                 <input type="hidden" name="item_product_id[]" class="item-product-id">
-                                <!-- Searchable product picker -->
+                                {% if invoice_type == 'ecommerce' %}
+                                <div class="mb-2">
                                 <div class="product-picker relative" style="position:relative;">
                                     <div class="product-search-wrap flex items-center gap-1.5
                                                 bg-black/20 border border-white/5 rounded-lg px-2 py-1.5
@@ -162,12 +182,12 @@
                                     <input type="hidden" class="product-selected-price">
                                     <input type="hidden" class="product-selected-name">
                                 </div>
-
-                                    <input type="text" name="item_description[]" placeholder="Item description..."
-                                        required
-                                        value="{% if item %}{{ item.description }}{% endif %}"
-                                        class="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-white text-sm placeholder-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none">
                                 </div>
+                                {% endif %}
+
+                                <input type="text" name="item_description[]" placeholder="{% if invoice_type == 'ecommerce' %}Item description...{% else %}Booking charge description...{% endif %}"
+                                    required value="{% if item %}{{ item.description }}{% endif %}"
+                                    class="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-lg text-white text-sm placeholder-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none">
                             </td>
                             <td class="py-3 px-2 align-top pt-[52px]">
                                 <input type="number" name="item_quantity[]" required value="{% if item %}{{ item.quantity }}{% else %}1{% endif %}" min="1"
@@ -387,6 +407,7 @@
             const priceInput   = row.querySelector('input[name="item_price[]"]');
             const productIdIn  = row.querySelector('.item-product-id');
 
+            if (!picker) return;
             initPicker(picker);
 
             picker.addEventListener('product-selected', e => {
@@ -446,19 +467,21 @@
         const billTo = document.querySelector('textarea[name="bill_to_address"]');
         const shipTo = document.getElementById('ship_to_address');
 
-        function syncAddresses() {
-            if (sameAsBilling.checked) {
-                shipTo.value = billTo.value;
-                shipTo.readOnly = true;
-                shipTo.classList.add('opacity-50', 'cursor-not-allowed');
-            } else {
-                shipTo.readOnly = false;
-                shipTo.classList.remove('opacity-50', 'cursor-not-allowed');
+        if (sameAsBilling && billTo && shipTo) {
+            function syncAddresses() {
+                if (sameAsBilling.checked) {
+                    shipTo.value = billTo.value;
+                    shipTo.readOnly = true;
+                    shipTo.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    shipTo.readOnly = false;
+                    shipTo.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
             }
-        }
 
-        sameAsBilling.addEventListener('change', syncAddresses);
-        billTo.addEventListener('input', syncAddresses);
+            sameAsBilling.addEventListener('change', syncAddresses);
+            billTo.addEventListener('input', syncAddresses);
+        }
         document.getElementById('tax').addEventListener('input', calculateTotals);
 
         document.querySelectorAll('.item-row').forEach(row => {
