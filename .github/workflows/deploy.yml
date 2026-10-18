@@ -71,16 +71,26 @@ jobs:
 
           echo "Waiting for web container health..."
           for attempt in {1..30}; do
-            STATUS=$(docker inspect -f '{{.State.Health.Status}}' sourcepoint_app 2>/dev/null || echo "starting")
-            echo "Health status: $STATUS"
-            if [ "$STATUS" = "healthy" ]; then
+            STATE=$(docker inspect -f '{{.State.Status}}|{{if .State.Health}}{{.State.Health.Status}}{{else}}unconfigured{{end}}' sourcepoint_app 2>/dev/null || echo "missing|unavailable")
+            CONTAINER_STATUS=${STATE%%|*}
+            HEALTH_STATUS=${STATE#*|}
+            APP_STATUS="not-checked"
+
+            # The production Compose file may not define a Docker healthcheck.
+            # In that case, probe the app directly from inside the container.
+            if [ "$CONTAINER_STATUS" = "running" ] && [ "$HEALTH_STATUS" = "unconfigured" ]; then
+              APP_STATUS=$(docker exec sourcepoint_app python -c 'import urllib.request; print(urllib.request.urlopen("http://127.0.0.1:5000/health", timeout=3).status)' 2>/dev/null || echo "unavailable")
+            fi
+
+            echo "Container: $CONTAINER_STATUS; Docker health: $HEALTH_STATUS; app health: $APP_STATUS"
+            if [ "$CONTAINER_STATUS" = "running" ] && { [ "$HEALTH_STATUS" = "healthy" ] || [ "$APP_STATUS" = "200" ]; }; then
               docker compose ps
               exit 0
             fi
             sleep 5
           done
 
-          echo "Web container did not become healthy."
+          echo "Web container did not pass its health check."
           docker compose ps
           docker logs --tail 160 sourcepoint_app || true
           exit 1
