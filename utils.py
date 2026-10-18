@@ -1,3 +1,4 @@
+import base64
 import os
 from functools import wraps
 from flask import request, redirect, url_for, flash, render_template, current_app
@@ -36,6 +37,23 @@ def role_required(roles):
             return fn(*args, **kwargs)
         return decorated_view
     return wrapper
+
+
+def _json_safe_attachments(attachments):
+    """Encode binary attachments so they can be sent through Celery's JSON queue."""
+    if not attachments:
+        return attachments
+
+    queue_attachments = []
+    for attachment in attachments:
+        queued_attachment = dict(attachment)
+        data = queued_attachment.pop('data', None)
+        if isinstance(data, (bytes, bytearray, memoryview)):
+            queued_attachment['data_base64'] = base64.b64encode(data).decode('ascii')
+        elif data is not None:
+            queued_attachment['data'] = data
+        queue_attachments.append(queued_attachment)
+    return queue_attachments
 
 # --- EMAIL SERVICE (UPDATED) ---
 
@@ -90,6 +108,9 @@ def send_email(to, subject, template, cc=None, bcc=None, attachments=None, sync=
         send_email_task(to_list, subject, html_content, cc_list, bcc_list, attachments)
     else:
         # Send to Queue
-        send_email_task.delay(to_list, subject, html_content, cc_list, bcc_list, attachments)
+        send_email_task.delay(
+            to_list, subject, html_content, cc_list, bcc_list,
+            _json_safe_attachments(attachments),
+        )
 
     return True

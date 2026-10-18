@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SupersCoins Daily Summary — SourcePoint</title>
+</head>
+
+<body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;color:#e2e8f0;">
+
+    <!-- Preheader -->
+    <span style="display:none;max-height:0;overflow:hidden;">
+        Your daily SupersCoins statement is ready. Balance: SC {{ "{:,.2f}".format(balance|float) }} | {{ total_transactions }} transaction(s) on record. Full PDF attached.
+    </span>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#07070f;padding:40px 16px;">
+        <tr>
+            <td align="center">
+                <table width="620" cellpadding="0" cellspacing="0" style="max-width:620px;width:100%;background:#0f172a;border:1px solid rgba(255,255,255,0.08);border-radius:24px;overflow:hidden;box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
+
+                    <!-- Hero Header -->
+                    <tr>
+                        <td style="background:linear-gradient(135deg,#78350f,#b45309,#d97706,#f59e0b);padding:44px 36px 50px;text-align:center;">
+                            <div style="display:inline-block;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:14px;margin-bottom:16px;box-shadow:0 10px 25px rgba(0,0,0,0.3);">
+                                <span style="font-size:36px;line-height:1;display:block;">📊</span>
+                            </div>
+                            <p style="margin:0 0 6px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#fef3c7;font-weight:800;">Daily Statement</p>
+                            <h1 style="margin:0;font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">
+                                SupersCoins Summary
+                            </h1>
+                            <p style="margin:10px 0 0;font-size:14px;color:#fef3c7;font-weight:500;">
+                                Your complete wallet overview with PDF statement attached
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding:36px 36px 24px;">
+
+                            <p style="font-size:16px;color:#f8fafc;margin:0 0 6px;">
+                                Good morning, <strong style="color:#fbbf24;">{{ user.username }}</strong>! 👋
+                            </p>
+                            <p style="font-size:14px;color:#94a3b8;line-height:1.7;margin:0 0 26px;">
+                                Here is your daily SupersCoins wallet summary. A detailed PDF statement with your complete transaction history is attached to this email.
+                            </p>
+
+                            <!-- Balance Showcase Card -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,rgba(251,191,36,0.12),rgba(217,119,6,0.06));border:2px solid rgba(251,191,36,0.3);border-radius:18px;margin-bottom:24px;">
+                                <tr>
+                                    <td style="padding:28px;text-align:center;">
+                                        <p style="margin:0 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#cbd5e1;font-weight:700;">
+                                            Current SuperCoin Balance
+                                        </p>
+                                        <p style="margin:6px 0;font-size:46px;font-weight:900;color:#fbbf24;letter-spacing:-1px;font-family:'Courier New',monospace;">
+                                            🪙 {{ "{:,.2f}".format(balance|float) }}
+                                        </p>
+                                        <p style="margin:0;font-size:12px;color:#94a3b8;">
+                                            1 SuperCoin = ₹1.00 in Booking Value
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Quick Stats -->
+                            <p style="margin:0 0 14px;font-size:12px;text-transform:uppercase;letter-spacing:2px;color:#fbbf24;font-weight:800;">
+                                📈 Quick Overview
+                            </p>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                                <!-- Total Credits -->
+                                <tr>
+                                    <td style="padding:12px 16px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:12px 12px 0 0;">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="color:#94a3b8;font-size:13px;font-weight:600;">Total Credits</td>
+                                                <td style="text-align:right;color:#10b981;font-size:16px;font-weight:800;">
+                                                    + SC {{ "{:,.2f}".format(total_credits|float) }}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr><td height="2"></td></tr>
+                                <!-- Total Debits -->
+                                <tr>
+                                    <td style="padding:12px 16px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="color:#94a3b8;font-size:13px;font-weight:600;">Total Debits</td>
+                                                <td style="text-align:right;color:#ef4444;font-size:16px;font-weight:800;">
+                                                    - SC {{ "{:,.2f}".format(total_debits|float) }}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr><td height="2"></td></tr>
+                                <!-- Transactions Count -->
+                                <tr>
+                                    <td style="padding:12px 16px;background:rgba(148,163,184,0.05);border:1px solid rgba(148,163,184,0.15);border-radius:0 0 12px 12px;">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="color:#94a3b8;font-size:13px;font-weight:600;">Total Transactions</td>
+                                                <td style="text-align:right;color:#f8fafc;font-size:16px;font-weight:800;">
+                                                    {{ total_transactions }}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Recent Transactions Preview (Last 5) -->
+                            {% if recent_transactions %}
+                            <p style="margin:0 0 14px;font-size:12px;text-transform:uppercase;letter-spacing:2px;color:#fbbf24;font-weight:800;">
+                                🕐 Recent Transactions
+                            </p>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:14px;overflow:hidden;margin-bottom:24px;">
+                                <!-- Table header -->
+                                <tr>
+                                    <td style="padding:10px 14px;background:rgba(255,255,255,0.05);border-bottom:1px solid rgba(255,255,255,0.06);">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="color:#64748b;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;" width="28%">Date</td>
+                                                <td style="color:#64748b;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;" width="18%">Type</td>
+                                                <td style="color:#64748b;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;text-align:right;" width="24%">Amount</td>
+                                                <td style="color:#64748b;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;text-align:right;" width="30%">Balance</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                {% for txn in recent_transactions %}
+                                <tr>
+                                    <td style="padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.04);">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="color:#cbd5e1;font-size:12px;" width="28%">
+                                                    {{ txn.created_at.strftime('%d %b %Y') if txn.created_at else '—' }}
+                                                </td>
+                                                <td width="18%">
+                                                    {% if txn.transaction_type == 'credit' %}
+                                                    <span style="color:#10b981;font-size:11px;font-weight:700;">↑ Credit</span>
+                                                    {% else %}
+                                                    <span style="color:#ef4444;font-size:11px;font-weight:700;">↓ Debit</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td style="text-align:right;font-size:13px;font-weight:700;" width="24%">
+                                                    {% if txn.transaction_type == 'credit' %}
+                                                    <span style="color:#10b981;">+{{ "{:,.2f}".format(txn.amount|float) }}</span>
+                                                    {% else %}
+                                                    <span style="color:#ef4444;">-{{ "{:,.2f}".format(txn.amount|float) }}</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td style="text-align:right;color:#fbbf24;font-size:12px;font-weight:700;" width="30%">
+                                                    SC {{ "{:,.2f}".format(txn.balance_after|float) }}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                            {% endif %}
+
+                            <!-- PDF Attachment Notice -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,rgba(124,58,237,0.1),rgba(139,92,246,0.05));border:1px solid rgba(139,92,246,0.25);border-radius:14px;margin-bottom:24px;">
+                                <tr>
+                                    <td style="padding:18px 20px;">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td width="44" valign="top" style="font-size:28px;padding-right:14px;">📎</td>
+                                                <td>
+                                                    <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#c4b5fd;">PDF Statement Attached</p>
+                                                    <p style="margin:0;font-size:13px;color:#94a3b8;line-height:1.5;">
+                                                        A detailed SupersCoins statement PDF is attached to this email. It includes your complete transaction history, invoice records, and account summary with full amounts.
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- CTA Button -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{ app_url or 'https://sourcepoint.in' }}/seller/superscoins"
+                                           style="display:inline-block;padding:16px 36px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#000000;font-weight:800;font-size:15px;text-decoration:none;border-radius:14px;box-shadow:0 10px 25px rgba(245,158,11,0.35);letter-spacing:0.3px;">
+                                            ✨ View Wallet & Redeem SuperCoins →
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Help Box -->
+                            <div style="background:rgba(148,163,184,0.05);border-radius:12px;padding:16px 20px;border:1px solid rgba(148,163,184,0.1);">
+                                <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.6;">
+                                    💡 <strong>Need help with a booking?</strong> Simply reply to this email or reach out to our admin desk at <a href="mailto:admin@sourcepoint.in" style="color:#fbbf24;text-decoration:none;">admin@sourcepoint.in</a> with your travel details and we'll arrange the reservation using your SuperCoin balance!
+                                </p>
+                            </div>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background:#07070f;border-top:1px solid rgba(255,255,255,0.06);padding:24px 36px;text-align:center;">
+                            <p style="margin:0 0 4px;font-size:13px;color:#94a3b8;font-weight:700;">⚡ Source Point Commerce & Travel</p>
+                            <p style="margin:0 0 8px;font-size:12px;color:#64748b;">
+                                Daily SupersCoins wallet statement with PDF attachment.
+                            </p>
+                            <p style="margin:0;font-size:11px;color:#475569;">
+                                © {{ now.year if now is defined else '2026' }} Source Point. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>

@@ -42,7 +42,11 @@ def _send_via_brevo_api(to_list, subject, html_content, cc_list=None, bcc_list=N
     email_attachments = []
     if attachments:
         for attachment_data in attachments:
-            encoded_content = base64.b64encode(attachment_data['data']).decode()
+            # utils.send_email base64-encodes binary files before placing them
+            # on Celery's JSON queue. Keep accepting raw bytes for sync callers.
+            encoded_content = attachment_data.get('data_base64')
+            if encoded_content is None:
+                encoded_content = base64.b64encode(attachment_data['data']).decode('ascii')
             email_attachments.append({
                 "content": encoded_content,
                 "name": attachment_data['filename']
@@ -1301,26 +1305,41 @@ def server_health_check_task():
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# 16. DAILY SUPERSCOINS BALANCE & TRAVEL BOOKING REMINDER TASK
+# 16. DAILY SUPERSCOINS SUMMARY WITH PDF STATEMENT TASK
 # ═══════════════════════════════════════════════════════════════════════
 
 @celery.task
 def send_daily_superscoins_balance_reminder_task():
     """
-    Daily morning reminder sent to all users with an active SuperCoins balance (> 0).
-    Encourages them to redeem their coins for hotels, flights, buses & travel bookings.
+    Daily morning summary sent to current balance holders and past holders
+    with transaction history.
+    Generates a professional PDF statement with complete transaction + invoice history
+    and attaches it to the summary email.
     """
-    from models.commerce import SupersCoinWallet
+    from sqlalchemy import or_
+    from models.commerce import SupersCoinWallet, SupersCoinTransaction, SupersCoinInvoice
     from models.auth import User
+    from enums import SupersCoinTransactionType
+    from services.superscoins_summary_service import generate_superscoins_summary_pdf
     from utils import send_email
 
-    logger.info("[Celery Worker] Starting daily SuperCoins balance reminder job...")
+    logger.info("[Celery Worker] Starting daily SuperCoins summary + PDF job...")
     sent_count = 0
     error_count = 0
 
     try:
-        wallets = SupersCoinWallet.query.filter(SupersCoinWallet.balance > 0).all()
-        logger.info(f"[Celery Worker] Found {len(wallets)} wallet(s) with active SuperCoins balance.")
+        # Include current holders and users with past activity even if they
+        # have since spent their balance. Exclude empty wallets with no history.
+        wallets = (
+            SupersCoinWallet.query
+            .filter(or_(
+                SupersCoinWallet.balance > 0,
+                SupersCoinWallet.transactions.any(),
+            ))
+            .order_by(SupersCoinWallet.id.asc())
+            .all()
+        )
+        logger.info(f"[Celery Worker] Found {len(wallets)} current or past SuperCoins holder(s).")
 
         for wallet in wallets:
             try:
@@ -1329,29 +1348,85 @@ def send_daily_superscoins_balance_reminder_task():
                     continue
 
                 balance_val = float(wallet.balance)
-                if balance_val <= 0:
-                    continue
 
-                subject = f"🪙 You have {balance_val:,.0f} SuperCoins! Redeem on Hotels, Flights & Bus Bookings ✈️🏨"
+                # Fetch all transactions for this wallet (ordered newest-first)
+                transactions = (
+                    SupersCoinTransaction.query
+                    .filter_by(wallet_id=wallet.id)
+                    .order_by(SupersCoinTransaction.created_at.desc())
+                    .all()
+                )
+
+                # Fetch all invoices for this seller
+                invoices = (
+                    SupersCoinInvoice.query
+                    .filter_by(seller_id=wallet.seller_id)
+                    .order_by(SupersCoinInvoice.created_at.desc())
+                    .all()
+                )
+
+                # Calculate summary stats
+                total_credits = sum(
+                    float(t.amount) for t in transactions
+                    if t.transaction_type == SupersCoinTransactionType.CREDIT.value
+                )
+                total_debits = sum(
+                    float(t.amount) for t in transactions
+                    if t.transaction_type == SupersCoinTransactionType.DEBIT.value
+                )
+                total_transactions = len(transactions)
+                recent_transactions = transactions[:5]  # Last 5 for the email preview
+
+                # The PDF is required for this message. Skip this recipient if
+                # generation fails instead of sending a summary without it.
+                pdf_bytes = generate_superscoins_summary_pdf(
+                    user=user,
+                    wallet=wallet,
+                    transactions=transactions,
+                    invoices=invoices,
+                )
+                if not pdf_bytes:
+                    raise ValueError("PDF generation returned an empty statement")
+
+                safe_username = ''.join(
+                    char if char.isascii() and (char.isalnum() or char in ('-', '_')) else '_'
+                    for char in (user.username or f'user_{user.id}')
+                ).strip('_') or f'user_{user.id}'
+                pdf_filename = f"SupersCoins_Statement_{safe_username}_{datetime.utcnow().strftime('%Y%m%d')}.pdf"
+                attachments = [{
+                    'data': pdf_bytes,
+                    'filename': pdf_filename,
+                    'content_type': 'application/pdf',
+                }]
+                logger.info(f"[Celery Worker] PDF generated for {user.username}: {len(pdf_bytes)} bytes")
+
+                # Send summary email with PDF attached
+                subject = f"📊 Daily SupersCoins Statement — Balance: SC {balance_val:,.2f} | {total_transactions} Transaction(s)"
 
                 send_email(
                     to=user.email,
                     subject=subject,
-                    template="mail/superscoins_daily_reminder.html",
+                    template="mail/superscoins_summary.html",
+                    attachments=attachments,
                     user=user,
                     balance=balance_val,
-                    now=datetime.utcnow()
+                    total_credits=total_credits,
+                    total_debits=total_debits,
+                    total_transactions=total_transactions,
+                    recent_transactions=recent_transactions,
+                    now=datetime.utcnow(),
                 )
                 sent_count += 1
-                logger.info(f"[Celery Worker] Daily SuperCoins reminder sent to {user.email} (Balance: {balance_val})")
+                logger.info(f"[Celery Worker] SupersCoins summary queued for {user.email} (Balance: {balance_val}, Txns: {total_transactions})")
 
             except Exception as item_err:
                 error_count += 1
-                logger.error(f"[Celery Worker] Error sending SuperCoins reminder for wallet {wallet.id}: {item_err}")
+                logger.error(f"[Celery Worker] Error sending SupersCoins summary for wallet {wallet.id}: {item_err}")
+                db.session.rollback()
 
-        logger.info(f"[Celery Worker] Daily SuperCoins reminder job finished. Sent: {sent_count}, Errors: {error_count}")
+        logger.info(f"[Celery Worker] Daily SupersCoins summary job finished. Queued: {sent_count}, Errors: {error_count}")
         return {'sent': sent_count, 'errors': error_count}
 
     except Exception as e:
-        logger.error(f"[Celery Worker] Daily SuperCoins reminder job failed: {e}")
+        logger.error(f"[Celery Worker] Daily SupersCoins summary job failed: {e}")
         return {'error': str(e)}

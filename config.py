@@ -92,10 +92,10 @@ class Config:
             'task': 'worker.server_health_check_task',
             'schedule': crontab(minute=0, hour='*/2'),
         },
-        # 11. Daily Morning SuperCoins Balance & Travel Booking Reminder (8:30 AM IST Daily)
+        # 11. Daily Morning SuperCoins Summary + PDF Statement (8:00 AM IST Daily)
         'daily-superscoins-balance-reminder': {
             'task': 'worker.send_daily_superscoins_balance_reminder_task',
-            'schedule': crontab(hour=8, minute=30),
+            'schedule': crontab(hour=8, minute=0),
         },
     }
 
