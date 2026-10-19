@@ -749,6 +749,60 @@
         </div>
     </div>
 
+    <!-- ══ DOMAIN 7: TEACHING MANAGEMENT ══ -->
+    <div class="glass-accordion" id="domain-teaching"
+         style="--accent-color-60:rgba(6,182,212,.6);--accent-color-40:rgba(6,182,212,.4);--accent-color-30:rgba(6,182,212,.3);--accent-color-20:rgba(6,182,212,.2);--accent-color-15:rgba(6,182,212,.15);--accent-text:#22d3ee;"
+         onclick="toggleDomain('domain-teaching')">
+        <div class="glass-accordion-header">
+            <div class="scan-sweep" style="background:linear-gradient(180deg,transparent,rgba(6,182,212,.1),transparent);"></div>
+            <div class="relative z-10 flex items-center gap-3 w-full">
+                <div class="relative w-10 h-10 flex-shrink-0">
+                    <div class="radar-ring" style="inset:0;border-color:rgba(6,182,212,.5);animation:radarSpin 8s linear infinite;"></div>
+                    <div class="absolute inset-0 rounded-full bg-cyan-500/15 flex items-center justify-center">
+                        <i class="fas fa-chalkboard-user text-cyan-300"></i>
+                    </div>
+                    <div class="absolute inset-0 rounded-full" style="background:conic-gradient(from 0deg,transparent 75%,rgba(6,182,212,.7) 100%);animation:radarSpin 2.6s linear infinite;"></div>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-[9px] font-black tracking-[0.25em] uppercase text-cyan-400 mb-0.5">Domain · 07</p>
+                    <h2 class="text-base font-black text-white leading-tight">Teaching Management</h2>
+                    <p class="text-[11px] text-gray-500 mt-0.5">Classes, teachers, students, sessions, assignments & tests</p>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <span class="domain-count" style="background:rgba(6,182,212,.1);color:#22d3ee;">3</span>
+                    <div class="accordion-chevron">
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="neon-divider" style="color:#06b6d4;"></div>
+        <div class="glass-accordion-body">
+            <div class="body-inner">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5" onclick="event.stopPropagation()">
+                    <a hx-get="{{ url_for('teaching.home') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                       class="quick-btn cursor-pointer" style="background:rgba(6,182,212,.06);border:1px solid rgba(6,182,212,.2);color:#a5f3fc;">
+                        <div class="btn-icon" style="background:rgba(6,182,212,.12);color:#22d3ee;"><i class="fas fa-chalkboard"></i></div>
+                        <span class="text-xs font-bold leading-tight">Teaching Workspace</span>
+                        <span class="text-[9px] text-gray-600">Manage every class</span>
+                    </a>
+                    <a hx-get="{{ url_for('admin_users.manage_users', role='teacher') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                       class="quick-btn cursor-pointer" style="background:rgba(6,182,212,.06);border:1px solid rgba(6,182,212,.2);color:#a5f3fc;">
+                        <div class="btn-icon" style="background:rgba(6,182,212,.12);color:#22d3ee;"><i class="fas fa-person-chalkboard"></i></div>
+                        <span class="text-xs font-bold leading-tight">Teacher Accounts</span>
+                        <span class="text-[9px] text-gray-600">Find & create teachers</span>
+                    </a>
+                    <a hx-get="{{ url_for('admin_users.manage_users', role='student') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
+                       class="quick-btn cursor-pointer" style="background:rgba(6,182,212,.06);border:1px solid rgba(6,182,212,.2);color:#a5f3fc;">
+                        <div class="btn-icon" style="background:rgba(6,182,212,.12);color:#22d3ee;"><i class="fas fa-user-graduate"></i></div>
+                        <span class="text-xs font-bold leading-tight">Student Accounts</span>
+                        <span class="text-[9px] text-gray-600">Find & create students</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     </div><!-- /accordion space -->
 
 
