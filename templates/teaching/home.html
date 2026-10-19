@@ -1,0 +1,170 @@
+{% extends "layout.html" %}
+{% block title %}Teaching · SourcePoint{% endblock %}
+{% block content %}
+<main id="main-content" class="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+    <header class="rounded-2xl border border-indigo-400/20 bg-indigo-950/30 p-6 sm:p-8">
+        <p class="text-sm font-semibold tracking-wide text-cyan-300">SOURCEPOINT · ONLINE LEARNING</p>
+        <h1 class="mt-2 text-3xl font-bold text-white">{% if current_user.role == 'admin' %}Teaching administration{% elif is_teacher %}Teaching workspace{% else %}My learning{% endif %}</h1>
+        <p class="mt-2 max-w-3xl text-gray-300">
+            {% if current_user.role == 'admin' %}Manage all classes and perform teacher actions across the Teaching module.{% elif is_teacher %}Manage your classes, schedule live sessions, share materials, and track your teaching effort.{% else %}See your classes, join live sessions, work on assignments, and keep a private record of your study effort.{% endif %}
+        </p>
+    </header>
+
+    {% if is_teacher %}
+    <section aria-labelledby="create-class-heading" class="rounded-2xl border border-white/10 bg-white/[0.04] p-5 sm:p-6">
+        <h2 id="create-class-heading" class="text-xl font-semibold text-white">Create a class</h2>
+        <form action="{{ url_for('teaching.create_class') }}" method="post" class="mt-5 grid gap-4 sm:grid-cols-2">
+            <div>
+                <label for="class-title" class="block text-sm font-medium text-gray-200">Class name</label>
+                <input id="class-title" name="title" maxlength="140" required class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400">
+            </div>
+            {% if current_user.role == 'admin' %}
+            <div>
+                <label for="class-teacher" class="block text-sm font-medium text-gray-200">Assign teacher</label>
+                <select id="class-teacher" name="teacher_id" required {% if not available_teachers %}disabled{% endif %} class="mt-1 w-full rounded-lg border border-white/15 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400">
+                    <option value="" selected disabled>Select a teacher</option>
+                    {% for teacher in available_teachers %}<option value="{{ teacher.id }}">{{ teacher.username }} · {{ teacher.email }}</option>{% endfor %}
+                </select>
+                {% if not available_teachers %}<p class="mt-1 text-xs text-amber-200">Create or activate a Teacher account in <a href="{{ url_for('admin_users.manage_users') }}" class="underline focus:outline-none focus:ring-2 focus:ring-cyan-300">User Management</a> before creating a class.</p>{% endif %}
+            </div>
+            {% endif %}
+            <div>
+                <label for="class-subject" class="block text-sm font-medium text-gray-200">Subject</label>
+                <input id="class-subject" name="subject" maxlength="100" class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400">
+            </div>
+            <div>
+                <label for="class-level" class="block text-sm font-medium text-gray-200">Level or cohort</label>
+                <input id="class-level" name="level" maxlength="80" placeholder="For example, Beginner or Grade 8" class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400">
+            </div>
+            <div>
+                <label for="class-timezone" class="block text-sm font-medium text-gray-200">Class time zone</label>
+                <input id="class-timezone" name="timezone_name" value="Asia/Kolkata" maxlength="64" required aria-describedby="timezone-help" class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400">
+                <p id="timezone-help" class="mt-1 text-xs text-gray-400">Use an IANA zone, such as Asia/Kolkata or Europe/London.</p>
+            </div>
+            <div class="sm:col-span-2">
+                <label for="class-description" class="block text-sm font-medium text-gray-200">Description</label>
+                <textarea id="class-description" name="description" rows="3" maxlength="4000" class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></textarea>
+            </div>
+            <div class="sm:col-span-2">
+                <button {% if current_user.role == 'admin' and not available_teachers %}disabled{% endif %} class="rounded-lg bg-indigo-600 px-5 py-2.5 font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-cyan-300">Create class</button>
+            </div>
+        </form>
+    </section>
+    {% else %}
+    <section aria-labelledby="join-class-heading" class="rounded-2xl border border-white/10 bg-white/[0.04] p-5 sm:p-6">
+        <h2 id="join-class-heading" class="text-xl font-semibold text-white">Join a class</h2>
+        <form action="{{ url_for('teaching.join_class') }}" method="post" class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div class="w-full max-w-sm">
+                <label for="invite-code" class="block text-sm font-medium text-gray-200">Invite code</label>
+                <input id="invite-code" name="invite_code" required maxlength="20" autocomplete="off" class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 uppercase text-white focus:outline-none focus:ring-2 focus:ring-cyan-400">
+            </div>
+            <button class="rounded-lg bg-cyan-700 px-5 py-2.5 font-semibold text-white hover:bg-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-300">Join class</button>
+        </form>
+    </section>
+    {% endif %}
+
+    <section aria-labelledby="classes-heading">
+        <div class="flex flex-wrap items-end justify-between gap-3">
+            <div>
+                <h2 id="classes-heading" class="text-2xl font-semibold text-white">{% if current_user.role == 'admin' %}All classes{% elif is_teacher %}Your classes{% else %}Enrolled classes{% endif %}</h2>
+                <p class="mt-1 text-sm text-gray-400">{{ classes|length }} {{ 'class' if classes|length == 1 else 'classes' }}</p>
+            </div>
+        </div>
+        {% if classes %}
+        <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {% for teaching_class in classes %}
+            <article class="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+                <h3 class="text-lg font-semibold text-white">{{ teaching_class.title }}</h3>
+                {% if not teaching_class.is_active %}<span class="mt-2 inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-xs font-semibold text-amber-200">Archived</span>{% endif %}
+                <p class="mt-1 text-sm text-gray-300">{{ teaching_class.subject or 'Course' }}{% if teaching_class.level %} · {{ teaching_class.level }}{% endif %}</p>
+                {% if teaching_class.description %}<p class="mt-3 line-clamp-3 text-sm text-gray-400">{{ teaching_class.description }}</p>{% endif %}
+                <p class="mt-4 text-xs text-gray-400">{{ teaching_class.sessions|length }} sessions · {{ teaching_class.materials|length }} materials · {{ teaching_class.assignments|length }} assignments · {{ teaching_class.announcements|length }} updates</p>
+                {% if current_user.role == 'admin' %}<p class="mt-2 text-sm text-gray-400">Teacher: {{ teaching_class.teacher.username }}</p>{% endif %}
+                {% if is_teacher %}
+                <p class="mt-2 text-sm text-gray-300">Invite code: <code class="rounded bg-black/30 px-2 py-1 font-mono text-cyan-200">{{ teaching_class.invite_code }}</code></p>
+                {% else %}
+                <p class="mt-2 text-sm text-gray-400">Teacher: {{ teaching_class.teacher.username }}</p>
+                {% endif %}
+                <a href="{{ url_for('teaching.class_detail', class_id=teaching_class.id) }}" class="mt-4 inline-flex min-h-11 items-center rounded-lg border border-cyan-400/30 px-4 py-2 font-semibold text-cyan-200 hover:bg-cyan-400/10 focus:outline-none focus:ring-2 focus:ring-cyan-300">Open class</a>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="mt-4 rounded-xl border border-dashed border-white/15 p-6 text-gray-400">{{ 'Create your first class to get started.' if is_teacher else 'Join a class with the invite code from your teacher.' }}</p>
+        {% endif %}
+    </section>
+
+    <div class="grid gap-6 lg:grid-cols-2">
+        <section aria-labelledby="schedule-heading" class="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+            <h2 id="schedule-heading" class="text-xl font-semibold text-white">Upcoming sessions</h2>
+            {% if upcoming_sessions %}
+            <ul class="mt-4 divide-y divide-white/10">
+                {% for session in upcoming_sessions %}
+                <li class="py-3">
+                    <a href="{{ url_for('teaching.class_detail', class_id=session.teaching_class.id) }}" class="font-semibold text-cyan-200 hover:underline focus:outline-none focus:ring-2 focus:ring-cyan-300">{{ session.title }}</a>
+                    <p class="mt-1 text-sm text-gray-300">{{ session.teaching_class.title }} · {{ session.starts_at|teaching_local(session.teaching_class.timezone_name) }}</p>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}<p class="mt-3 text-sm text-gray-400">No upcoming sessions scheduled.</p>{% endif %}
+        </section>
+
+        {% if not is_teacher %}
+        <section aria-labelledby="assignments-heading" class="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+            <h2 id="assignments-heading" class="text-xl font-semibold text-white">Assignments to complete</h2>
+            {% if pending_assignments %}
+            <ul class="mt-4 space-y-3">
+                {% for assignment in pending_assignments[:8] %}
+                <li class="rounded-lg border border-white/10 p-3">
+                    <a href="{{ url_for('teaching.class_detail', class_id=assignment.teaching_class.id) }}" class="font-semibold text-cyan-200 hover:underline focus:outline-none focus:ring-2 focus:ring-cyan-300">{{ assignment.title }}</a>
+                    <p class="mt-1 text-sm text-gray-400">{{ assignment.teaching_class.title }}{% if assignment.due_at %} · Due {{ assignment.due_at|teaching_local(assignment.teaching_class.timezone_name) }}{% endif %}</p>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}<p class="mt-3 text-sm text-gray-400">You are up to date on assignments.</p>{% endif %}
+        </section>
+        <section aria-labelledby="tests-heading" class="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+            <h2 id="tests-heading" class="text-xl font-semibold text-white">Tests to take</h2>
+            {% if pending_test_assignments %}
+            <ul class="mt-4 space-y-3">
+                {% for test_assignment in pending_test_assignments[:8] %}
+                {% set test = test_assignment.test %}
+                <li class="rounded-lg border border-white/10 p-3">
+                    <a href="{{ url_for('teaching.class_detail', class_id=test.class_id) }}" class="font-semibold text-cyan-200 hover:underline focus:outline-none focus:ring-2 focus:ring-cyan-300">{{ test.title }}</a>
+                    <p class="mt-1 text-sm text-gray-400">{{ test.teaching_class.title }} · {{ 'Multiple choice' if test.question_type == 'mcq' else 'Short answer' }}{% if test.due_at %} · Due {{ test.due_at|teaching_local(test.teaching_class.timezone_name) }}{% endif %}</p>
+                    {% if test.opens_at and test.opens_at > now %}<p class="mt-1 text-xs text-gray-400">Opens {{ test.opens_at|teaching_local(test.teaching_class.timezone_name) }}</p>{% else %}<p class="mt-1 text-xs text-emerald-200">Ready to take</p>{% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}<p class="mt-3 text-sm text-gray-400">No pending tests right now.</p>{% endif %}
+        </section>
+        {% else %}
+        <section aria-labelledby="effort-heading" class="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+            <h2 id="effort-heading" class="text-xl font-semibold text-white">Log teaching effort</h2>
+            {% include 'teaching/_effort_form.html' %}
+        </section>
+        {% endif %}
+    </div>
+
+    {% if not is_teacher %}
+    <section aria-labelledby="student-effort-heading" class="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+        <h2 id="student-effort-heading" class="text-xl font-semibold text-white">Log study effort</h2>
+        {% include 'teaching/_effort_form.html' %}
+    </section>
+    {% endif %}
+
+    {% if own_effort_logs %}
+    <section aria-labelledby="effort-history-heading" class="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+        <h2 id="effort-history-heading" class="text-xl font-semibold text-white">Your recent effort logs</h2>
+        <ul class="mt-3 divide-y divide-white/10">
+            {% for log in own_effort_logs %}
+            <li class="flex flex-wrap justify-between gap-2 py-3 text-sm">
+                <span class="text-gray-200">{{ log.category|title }}{% if log.teaching_class %} · {{ log.teaching_class.title }}{% endif %}{% if log.note %} · {{ log.note }}{% endif %}</span>
+                <span class="text-gray-400">{{ log.minutes }} min{% if current_user.role == 'student' %} · {{ 'Shared with teacher' if log.visible_to_teacher else 'Private' }}{% endif %}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+</main>
+{% endblock %}

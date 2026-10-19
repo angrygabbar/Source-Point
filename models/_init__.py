@@ -14,4 +14,10 @@ from .mcq import MCQQuestion, Test, TestAssignment, TestResult
 from .gift_card import GiftCard
 from .newsletter import NewsArticle
 from .asset import Asset
+from .teaching import (TeachingClass, TeachingEnrollment, TeachingSession,
+                       TeachingMaterial, TeachingAssignment,
+                       TeachingSubmission, TeachingEffortLog, TeachingAttendance,
+                       TeachingAnnouncement, TeachingSessionFeedback, TeachingTest,
+                       TeachingTestQuestion, TeachingTestAssignment,
+                       TeachingTestSubmission, TeachingTestAnswer)
 #from .payment import EMIPayment

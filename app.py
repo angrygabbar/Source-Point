@@ -13,6 +13,7 @@ from models.learning import LearningContent
 from models.interview import Interview, InterviewParticipant
 from models.app_release import AndroidAppRelease
 from models.newsletter import NewsArticle
+from models import teaching as teaching_models
 from bs4 import BeautifulSoup
 from flask_login import current_user
 from config import DevelopmentConfig, ProductionConfig
@@ -139,6 +140,7 @@ def create_app():
     from blueprints.app_release import app_release_bp
     from blueprints.newsletter import newsletter_bp
     from blueprints.admin_assets import admin_assets_bp
+    from blueprints.teaching import teaching_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -162,6 +164,7 @@ def create_app():
     app.register_blueprint(app_release_bp)
     app.register_blueprint(newsletter_bp)
     app.register_blueprint(admin_assets_bp)
+    app.register_blueprint(teaching_bp)
 
     # --- 8. CONTEXT PROCESSORS (FIXED) ---
     @app.context_processor

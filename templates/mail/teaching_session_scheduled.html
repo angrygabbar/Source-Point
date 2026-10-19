@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Online class scheduled</title></head>
+<body style="margin:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;color:#172033">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:28px 12px;background:#f1f5f9"><tr><td align="center">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#fff;border-radius:14px;overflow:hidden">
+      <tr><td style="padding:26px 30px;background:#0e7490;color:#fff"><p style="margin:0;font-size:13px;letter-spacing:1px;text-transform:uppercase">{{ teaching_class.title }}</p><h1 style="margin:10px 0 0;font-size:25px">Online session scheduled</h1></td></tr>
+      <tr><td style="padding:28px 30px"><p style="margin:0 0 18px">Hello,</p><p style="margin:0 0 22px;line-height:1.6">{{ actor.username }} scheduled a new online class session for this class.</p>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:10px"><tr><td style="padding:18px"><h2 style="margin:0 0 12px;font-size:19px">{{ session.title }}</h2><p style="margin:6px 0;color:#334155">When: {{ session.starts_at|teaching_local(teaching_class.timezone_name) }}</p><p style="margin:6px 0;color:#334155">Duration: {{ session.duration_minutes }} minutes</p>{% if session.notes %}<p style="margin:12px 0 0;white-space:pre-line;color:#475569">{{ session.notes }}</p>{% endif %}{% if session.meeting_url %}<p style="margin:16px 0 0"><a href="{{ session.meeting_url }}" style="color:#0e7490;font-weight:bold">Join online session</a></p>{% endif %}</td></tr></table>
+        <p style="margin:24px 0;text-align:center"><a href="{{ class_url }}" style="display:inline-block;padding:12px 20px;border-radius:8px;background:#0e7490;color:#fff;text-decoration:none;font-weight:bold">View class details</a></p><p style="margin:0;color:#64748b;font-size:12px">Student addresses are hidden from other recipients.</p></td></tr>
+      <tr><td style="padding:18px 30px;background:#0f172a;color:#94a3b8;font-size:12px">Automated Teaching notification · SourcePoint</td></tr>
+    </table>
+  </td></tr></table>
+</body>
+</html>

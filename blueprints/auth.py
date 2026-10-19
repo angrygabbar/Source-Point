@@ -51,7 +51,9 @@ def login():
             UserRole.CANDIDATE.value: 'candidate.candidate_dashboard',
             UserRole.BUYER.value: 'buyer.buyer_dashboard',
             UserRole.SELLER.value: 'seller.seller_dashboard',
-            UserRole.RECRUITER.value: 'recruiter.recruiter_dashboard'
+            UserRole.RECRUITER.value: 'recruiter.recruiter_dashboard',
+            UserRole.TEACHER.value: 'teaching.home',
+            UserRole.STUDENT.value: 'teaching.home'
         }
         
         target = role_map.get(user.role, 'main.dashboard')
@@ -77,6 +79,14 @@ def register():
     password = request.form.get('password')
     confirm_password = request.form.get('confirm_password')
     role = request.form.get('role', UserRole.CANDIDATE.value)
+    allowed_roles = {
+        UserRole.BUYER.value, UserRole.SELLER.value, UserRole.CANDIDATE.value,
+        UserRole.DEVELOPER.value, UserRole.RECRUITER.value, UserRole.MODERATOR.value,
+        UserRole.TEACHER.value, UserRole.STUDENT.value
+    }
+    if role not in allowed_roles:
+        flash('Please choose a valid account type.', 'danger')
+        return redirect(url_for('auth.login_register'))
     
     mobile_number = request.form.get('mobile_number')
     secret_question = request.form.get('secret_question')

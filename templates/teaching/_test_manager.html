@@ -1,0 +1,178 @@
+<section aria-labelledby="tests-heading" class="rounded-2xl border border-indigo-400/15 bg-indigo-950/10 p-5 sm:p-6">
+    <h2 id="tests-heading" class="text-2xl font-semibold text-white">Tests and submissions</h2>
+    {% if teaching_class.tests %}
+    <div class="mt-4 space-y-4">
+        {% for test in teaching_class.tests %}
+        {% set max_score = test.questions|sum(attribute='points') %}
+        <article class="rounded-xl border border-white/10 bg-black/10 p-4">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h3 class="text-lg font-semibold text-cyan-100">{{ test.title }}</h3>
+                    <p class="mt-1 text-sm text-gray-400">{{ 'Multiple choice' if test.question_type == 'mcq' else 'Short answer' }} · {{ test.questions|length }} questions · {{ max_score }} points</p>
+                    {% if test.opens_at %}<p class="mt-1 text-sm text-gray-400">Opens {{ test.opens_at|teaching_local(teaching_class.timezone_name) }}</p>{% else %}<p class="mt-1 text-sm text-gray-400">Available immediately</p>{% endif %}
+                    {% if test.due_at %}<p class="mt-1 text-sm text-gray-400">Due {{ test.due_at|teaching_local(teaching_class.timezone_name) }}</p>{% endif %}
+                </div>
+                <span class="rounded-full border border-white/10 px-3 py-1 text-xs text-gray-300">{{ test.assignments|length }} assigned</span>
+            </div>
+            {% if test.instructions %}<p class="mt-3 whitespace-pre-line text-sm text-gray-300">{{ test.instructions }}</p>{% endif %}
+            <ul class="mt-4 divide-y divide-white/10">
+                {% for test_assignment in test.assignments %}
+                <li class="py-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <p class="font-semibold text-gray-100">{{ test_assignment.student.username }}</p>
+                        {% if test_assignment.submission %}
+                        <p class="text-sm text-emerald-200">Submitted {{ test_assignment.submission.submitted_at|teaching_local(teaching_class.timezone_name) }}{% if test_assignment.submission.score is not none %} · {{ test_assignment.submission.score|round(2) }} / {{ max_score }} points{% endif %}</p>
+                        {% else %}
+                        <p class="text-sm text-amber-200">Awaiting submission</p>
+                        {% endif %}
+                    </div>
+                    {% if test_assignment.submission %}
+                    <div class="mt-3 space-y-3">
+                        {% for answer in test_assignment.submission.answers %}
+                        <div class="rounded-lg border border-white/10 bg-white/[0.03] p-3">
+                            <p class="text-sm font-medium text-gray-200">{{ loop.index }}. {{ answer.question.prompt }}</p>
+                            {% if test.question_type == 'mcq' %}
+                            <p class="mt-1 text-xs text-gray-400">Options: {% for choice in answer.question.choices %}{{ loop.index }}. {{ choice }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+                            <p class="mt-1 text-xs text-cyan-200">Correct option: {{ answer.question.correct_option }}</p>
+                            {% endif %}
+                            <p class="mt-2 whitespace-pre-line text-sm text-gray-300">Response: {{ answer.response }}</p>
+                            {% if test.question_type == 'mcq' %}<p class="mt-1 text-xs {{ 'text-emerald-300' if answer.is_correct else 'text-rose-300' }}">{{ 'Correct' if answer.is_correct else 'Incorrect' }}</p>{% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if test.question_type == 'short_answer' %}
+                    <form action="{{ url_for('teaching.grade_test_submission', submission_id=test_assignment.submission.id) }}" method="post" class="mt-3 grid gap-3 sm:grid-cols-[10rem_1fr_auto] sm:items-end">
+                        <div><label for="test-score-{{ test_assignment.submission.id }}" class="block text-xs font-medium text-gray-300">Score (of {{ max_score }})</label><input id="test-score-{{ test_assignment.submission.id }}" name="score" type="number" min="0" max="{{ max_score }}" step="0.01" value="{{ test_assignment.submission.score if test_assignment.submission.score is not none else '' }}" required class="mt-1 w-full rounded-lg border border-white/15 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div>
+                        <div><label for="test-feedback-{{ test_assignment.submission.id }}" class="block text-xs font-medium text-gray-300">Feedback (optional)</label><textarea id="test-feedback-{{ test_assignment.submission.id }}" name="feedback" rows="2" maxlength="5000" class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400">{{ test_assignment.submission.feedback or '' }}</textarea></div>
+                        <button class="min-h-10 rounded-lg border border-cyan-400/30 px-4 py-2 font-semibold text-cyan-200 hover:bg-cyan-400/10 focus:outline-none focus:ring-2 focus:ring-cyan-300">Save grade</button>
+                    </form>
+                    {% elif test_assignment.submission.score is not none %}
+                    {% if test_assignment.submission.feedback %}<p class="mt-2 text-sm text-gray-300">{{ test_assignment.submission.feedback }}</p>{% endif %}
+                    {% endif %}
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}<p class="mt-3 text-sm text-gray-400">No tests have been created for this class.</p>{% endif %}
+
+    {% if teaching_class.is_active %}
+    <details class="mt-5 rounded-xl border border-white/10 p-4">
+        <summary class="cursor-pointer font-semibold text-cyan-200 focus:outline-none focus:ring-2 focus:ring-cyan-300">Create and assign a test</summary>
+        <form id="create-teaching-test" action="{{ url_for('teaching.create_test', class_id=teaching_class.id) }}" method="post" class="mt-4 space-y-5">
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div><label for="test-title" class="block text-sm font-medium text-gray-200">Test title</label><input id="test-title" name="title" maxlength="160" required class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div>
+                <div><label for="test-type" class="block text-sm font-medium text-gray-200">Question type</label><select id="test-type" name="question_type" required class="mt-1 w-full rounded-lg border border-white/15 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"><option value="mcq">Multiple choice (MCQ)</option><option value="short_answer">Short answer</option></select></div>
+                <div><label for="test-opens" class="block text-sm font-medium text-gray-200">Open date and time ({{ teaching_class.timezone_name }}, optional)</label><input id="test-opens" name="opens_at" type="datetime-local" class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"><p class="mt-1 text-xs text-gray-400">Leave blank to make it available immediately.</p></div>
+                <div><label for="test-due" class="block text-sm font-medium text-gray-200">Deadline (optional)</label><input id="test-due" name="due_at" type="datetime-local" class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div>
+                <div class="sm:col-span-2"><label for="test-instructions" class="block text-sm font-medium text-gray-200">Instructions (optional)</label><textarea id="test-instructions" name="instructions" rows="2" maxlength="4000" class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></textarea></div>
+            </div>
+
+            <fieldset>
+                <legend class="text-sm font-semibold text-gray-200">Assign to students</legend>
+                {% if test_students %}
+                <details class="mt-2 rounded-lg border border-white/15 bg-black/20">
+                    <summary class="cursor-pointer px-3 py-3 text-sm font-medium text-cyan-200 focus:outline-none focus:ring-2 focus:ring-cyan-300">Choose one or more students</summary>
+                    <div class="max-h-56 space-y-1 overflow-y-auto border-t border-white/10 p-3">
+                        {% for student in test_students %}
+                        <label for="test-student-{{ student.id }}" class="flex min-h-11 cursor-pointer items-center gap-3 rounded px-2 py-2 text-sm text-gray-200 hover:bg-white/5"><input id="test-student-{{ student.id }}" name="student_ids" type="checkbox" value="{{ student.id }}" class="h-4 w-4 rounded border-white/30 bg-slate-950 text-cyan-500 focus:ring-2 focus:ring-cyan-300">{{ student.username }}{% if student.email %}<span class="text-xs text-gray-400">{{ student.email }}</span>{% endif %}</label>
+                        {% else %}<p class="text-sm text-gray-400">No active, approved students are enrolled in this class.</p>{% endfor %}
+                    </div>
+                </details>
+                <p class="mt-1 text-xs text-gray-400">Select each student who should receive this test. A notification email will be queued for them.</p>
+                {% else %}<p class="mt-2 text-sm text-gray-400">Students must join this class before you can assign a test.</p>{% endif %}
+            </fieldset>
+
+            <fieldset>
+                <legend class="text-sm font-semibold text-gray-200">Questions</legend>
+                <p class="mt-1 text-xs text-gray-400">Add up to 20 questions. Each is worth 1 to 1,000 points; MCQs are scored automatically.</p>
+                <div id="test-question-list" class="mt-3 space-y-3">
+                    <article class="test-question-card rounded-lg border border-white/10 bg-black/15 p-4">
+                        <div class="flex items-start justify-between gap-3"><h3 class="font-medium text-gray-200">Question <span class="question-number">1</span></h3><button type="button" class="remove-test-question text-sm text-rose-300 underline focus:outline-none focus:ring-2 focus:ring-rose-300">Remove</button></div>
+                        <label for="test-question-1" class="mt-3 block text-sm font-medium text-gray-300">Question text</label><textarea id="test-question-1" name="question_text[]" rows="2" maxlength="1000" required class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></textarea>
+                        <label for="test-question-points-1" class="mt-3 block text-sm font-medium text-gray-300">Points</label><input id="test-question-points-1" name="question_points[]" type="number" min="1" max="1000" value="1" required class="mt-1 w-28 rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400">
+                        <div class="mcq-fields mt-3 grid gap-3 sm:grid-cols-2">
+                            <div><label for="test-option-a-1" class="block text-sm text-gray-300">Option A</label><input id="test-option-a-1" name="question_option_a[]" maxlength="250" required class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div>
+                            <div><label for="test-option-b-1" class="block text-sm text-gray-300">Option B</label><input id="test-option-b-1" name="question_option_b[]" maxlength="250" required class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div>
+                            <div><label for="test-option-c-1" class="block text-sm text-gray-300">Option C</label><input id="test-option-c-1" name="question_option_c[]" maxlength="250" required class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div>
+                            <div><label for="test-option-d-1" class="block text-sm text-gray-300">Option D</label><input id="test-option-d-1" name="question_option_d[]" maxlength="250" required class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div>
+                            <div><label for="test-correct-1" class="block text-sm text-gray-300">Correct answer</label><select id="test-correct-1" name="question_correct[]" required class="mt-1 w-full rounded-lg border border-white/15 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"><option value="A">Option A</option><option value="B">Option B</option><option value="C">Option C</option><option value="D">Option D</option></select></div>
+                        </div>
+                    </article>
+                </div>
+                <template id="test-question-template">
+                    <article class="test-question-card rounded-lg border border-white/10 bg-black/15 p-4">
+                        <div class="flex items-start justify-between gap-3"><h3 class="font-medium text-gray-200">Question <span class="question-number"></span></h3><button type="button" class="remove-test-question text-sm text-rose-300 underline focus:outline-none focus:ring-2 focus:ring-rose-300">Remove</button></div>
+                        <label for="test-question-__index__" class="mt-3 block text-sm font-medium text-gray-300">Question text</label><textarea id="test-question-__index__" name="question_text[]" rows="2" maxlength="1000" required class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></textarea>
+                        <label for="test-question-points-__index__" class="mt-3 block text-sm font-medium text-gray-300">Points</label><input id="test-question-points-__index__" name="question_points[]" type="number" min="1" max="1000" value="1" required class="mt-1 w-28 rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400">
+                        <div class="mcq-fields mt-3 grid gap-3 sm:grid-cols-2">
+                            <div><label for="test-option-a-__index__" class="block text-sm text-gray-300">Option A</label><input id="test-option-a-__index__" name="question_option_a[]" maxlength="250" required class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div>
+                            <div><label for="test-option-b-__index__" class="block text-sm text-gray-300">Option B</label><input id="test-option-b-__index__" name="question_option_b[]" maxlength="250" required class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div>
+                            <div><label for="test-option-c-__index__" class="block text-sm text-gray-300">Option C</label><input id="test-option-c-__index__" name="question_option_c[]" maxlength="250" required class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div>
+                            <div><label for="test-option-d-__index__" class="block text-sm text-gray-300">Option D</label><input id="test-option-d-__index__" name="question_option_d[]" maxlength="250" required class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div>
+                            <div><label for="test-correct-__index__" class="block text-sm text-gray-300">Correct answer</label><select id="test-correct-__index__" name="question_correct[]" required class="mt-1 w-full rounded-lg border border-white/15 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"><option value="A">Option A</option><option value="B">Option B</option><option value="C">Option C</option><option value="D">Option D</option></select></div>
+                        </div>
+                    </article>
+                </template>
+                <button id="add-test-question" type="button" class="mt-3 rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-gray-200 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-cyan-300">Add another question</button>
+            </fieldset>
+            <button {% if not test_students %}disabled{% endif %} class="rounded-lg bg-indigo-600 px-5 py-2.5 font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-cyan-300">Create test and notify students</button>
+        </form>
+    </details>
+    {% endif %}
+</section>
+
+<script>
+(() => {
+    const form = document.getElementById('create-teaching-test');
+    if (!form) return;
+    const questionList = form.querySelector('#test-question-list');
+    const questionTemplate = form.querySelector('#test-question-template');
+    const addQuestionButton = form.querySelector('#add-test-question');
+    const typeSelect = form.querySelector('#test-type');
+
+    function syncQuestionFields() {
+        const isMcq = typeSelect.value === 'mcq';
+        questionList.querySelectorAll('.test-question-card').forEach((card) => {
+            const fields = card.querySelector('.mcq-fields');
+            fields.hidden = !isMcq;
+            fields.querySelectorAll('input, select').forEach((field) => {
+                field.disabled = !isMcq;
+                field.required = isMcq;
+            });
+        });
+    }
+
+    function renumberQuestions() {
+        questionList.querySelectorAll('.test-question-card').forEach((card, index) => {
+            card.querySelector('.question-number').textContent = String(index + 1);
+        });
+        addQuestionButton.disabled = questionList.children.length >= 20;
+    }
+
+    addQuestionButton.addEventListener('click', () => {
+        if (questionList.children.length >= 20) return;
+        const index = Date.now() + questionList.children.length;
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = questionTemplate.innerHTML.replaceAll('__index__', String(index));
+        const card = wrapper.firstElementChild;
+        questionList.appendChild(card);
+        syncQuestionFields();
+        renumberQuestions();
+        card.querySelector('textarea').focus();
+    });
+
+    questionList.addEventListener('click', (event) => {
+        const removeButton = event.target.closest('.remove-test-question');
+        if (!removeButton || questionList.children.length <= 1) return;
+        removeButton.closest('.test-question-card').remove();
+        renumberQuestions();
+    });
+
+    typeSelect.addEventListener('change', syncQuestionFields);
+    syncQuestionFields();
+    renumberQuestions();
+})();
+</script>

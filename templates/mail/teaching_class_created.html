@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>New class created</title></head>
+<body style="margin:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;color:#172033">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:28px 12px;background:#f1f5f9"><tr><td align="center">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#fff;border-radius:14px;overflow:hidden">
+      <tr><td style="padding:26px 30px;background:#4338ca;color:#fff"><p style="margin:0;font-size:13px;letter-spacing:1px;text-transform:uppercase">SourcePoint Teaching</p><h1 style="margin:10px 0 0;font-size:25px">{% if class_action == 'reassigned' %}Class teacher updated{% else %}A new class is ready{% endif %}</h1></td></tr>
+      <tr><td style="padding:28px 30px"><p style="margin:0 0 18px">Hello,</p><p style="margin:0 0 22px;line-height:1.6">{% if class_action == 'reassigned' %}{{ actor.username }} updated the teacher assignment for this class to{% else %}{{ actor.username }} created this class and assigned it to{% endif %} <strong>{{ teacher.username }}</strong>. The class teacher and administrators are receiving this notice.</p>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px"><tr><td style="padding:18px"><h2 style="margin:0 0 12px;font-size:19px">{{ teaching_class.title }}</h2><p style="margin:6px 0;color:#475569">Subject: {{ teaching_class.subject or 'Not specified' }}</p><p style="margin:6px 0;color:#475569">Level: {{ teaching_class.level or 'Not specified' }}</p><p style="margin:6px 0;color:#475569">Time zone: {{ teaching_class.timezone_name }}</p>{% if teaching_class.description %}<p style="margin:12px 0 0;white-space:pre-line;color:#475569">{{ teaching_class.description }}</p>{% endif %}<p style="margin:14px 0 0;color:#475569">Student invite code: <strong>{{ teaching_class.invite_code }}</strong></p></td></tr></table>
+        <p style="margin:24px 0;text-align:center"><a href="{{ class_url }}" style="display:inline-block;padding:12px 20px;border-radius:8px;background:#4338ca;color:#fff;text-decoration:none;font-weight:bold">Open class</a></p><p style="margin:0;color:#64748b;font-size:12px;line-height:1.5">Class members are added when students join with the invite code. Student addresses are hidden from other recipients.</p></td></tr>
+      <tr><td style="padding:18px 30px;background:#0f172a;color:#94a3b8;font-size:12px">Automated Teaching notification · SourcePoint</td></tr>
+    </table>
+  </td></tr></table>
+</body>
+</html>

@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+{% block title %}{{ test_assignment.test.title }} · Take test{% endblock %}
+{% block content %}
+{% set test = test_assignment.test %}
+{% set max_score = test.questions|sum(attribute='points') %}
+<main id="main-content" class="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6">
+    <a href="{{ url_for('teaching.class_detail', class_id=test.class_id) }}" class="inline-flex min-h-11 items-center text-sm font-medium text-cyan-200 hover:underline focus:outline-none focus:ring-2 focus:ring-cyan-300">&larr; Back to class</a>
+    <header class="rounded-2xl border border-indigo-400/20 bg-indigo-950/30 p-6 sm:p-8">
+        <p class="text-sm font-semibold tracking-wide text-cyan-300">{{ test.teaching_class.title }}</p>
+        <h1 class="mt-2 text-3xl font-bold text-white">{{ test.title }}</h1>
+        <p class="mt-2 text-sm text-gray-300">{{ 'Multiple choice' if test.question_type == 'mcq' else 'Short answer' }} · {{ test.questions|length }} questions · {{ max_score }} points</p>
+        {% if test.due_at %}<p class="mt-1 text-sm text-gray-300">Submit by {{ test.due_at|teaching_local(test.teaching_class.timezone_name) }}</p>{% endif %}
+        {% if test.instructions %}<p class="mt-4 whitespace-pre-line text-gray-200">{{ test.instructions }}</p>{% endif %}
+    </header>
+    <form action="{{ url_for('teaching.submit_test', assignment_id=test_assignment.id) }}" method="post" class="space-y-4">
+        {% for question in test.questions %}
+        <fieldset class="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+            <legend class="sr-only">Question {{ loop.index }}</legend>
+            <p class="font-semibold text-white"><span class="text-cyan-200">{{ loop.index }}.</span> {{ question.prompt }}</p>
+            <p class="mt-1 text-xs text-gray-400">{{ question.points }} {{ 'point' if question.points == 1 else 'points' }}</p>
+            {% if test.question_type == 'mcq' %}
+            <div class="mt-4 space-y-2">
+                {% for letter in ['A', 'B', 'C', 'D'] %}
+                {% set choice_index = loop.index0 %}
+                <label for="answer-{{ question.id }}-{{ letter }}" class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-white/10 px-3 py-2 text-sm text-gray-200 hover:bg-white/5">
+                    <input id="answer-{{ question.id }}-{{ letter }}" type="radio" name="answer_{{ question.id }}" value="{{ letter }}" required class="h-4 w-4 border-white/30 bg-slate-950 text-cyan-500 focus:ring-2 focus:ring-cyan-300">
+                    <span><span class="mr-2 font-semibold text-cyan-200">{{ letter }}.</span>{{ question.choices[choice_index] }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            {% else %}
+            <label for="answer-{{ question.id }}" class="mt-4 block text-sm font-medium text-gray-200">Your answer</label>
+            <textarea id="answer-{{ question.id }}" name="answer_{{ question.id }}" rows="5" maxlength="5000" required class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></textarea>
+            {% endif %}
+        </fieldset>
+        {% endfor %}
+        <div class="rounded-xl border border-amber-400/20 bg-amber-950/10 p-4 text-sm text-amber-100" role="note">You can submit this test once. Check your answers before submitting.</div>
+        <button class="min-h-11 rounded-lg bg-indigo-600 px-5 py-2.5 font-semibold text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-cyan-300">Submit test</button>
+    </form>
+</main>
+{% endblock %}

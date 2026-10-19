@@ -4,7 +4,7 @@ from extensions import db, bcrypt
 from models.auth import User
 from utils import role_required, log_user_action, send_email
 from datetime import datetime
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 import cloudinary.uploader
 from enums import UserRole
 
@@ -46,16 +46,21 @@ def manage_users():
 @login_required
 @role_required(UserRole.ADMIN.value)
 def create_user():
-    username = request.form.get('username')
-    email = request.form.get('email')
-    password = request.form.get('password')
-    role = request.form.get('role')
+    username = request.form.get('username', '').strip()
+    email = request.form.get('email', '').strip().lower()
+    password = request.form.get('password', '')
+    role = request.form.get('role', '').strip().lower()
+    allowed_roles = {user_role.value for user_role in UserRole}
 
     if not all([username, email, password, role]):
         flash('All fields are required.', 'danger')
         return redirect(url_for('admin_users.manage_users'))
 
-    if User.query.filter_by(email=email).first() or User.query.filter_by(username=username).first():
+    if len(username) > 100 or len(email) > 120 or role not in allowed_roles:
+        flash('Enter a valid username, email, and user role.', 'danger')
+        return redirect(url_for('admin_users.manage_users'))
+
+    if User.query.filter(func.lower(User.email) == email).first() or User.query.filter_by(username=username).first():
         flash('Username or email already exists.', 'danger')
         return redirect(url_for('admin_users.manage_users'))
 

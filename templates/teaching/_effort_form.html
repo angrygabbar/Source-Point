@@ -1,0 +1,34 @@
+<form action="{{ url_for('teaching.log_effort') }}" method="post" class="mt-4 grid gap-4 sm:grid-cols-2">
+    <div>
+        <label for="effort-class-{{ 'teacher' if current_user.role in ['admin', 'teacher'] else 'student' }}" class="block text-sm font-medium text-gray-200">Class (optional)</label>
+        <select id="effort-class-{{ 'teacher' if current_user.role in ['admin', 'teacher'] else 'student' }}" name="class_id" class="mt-1 w-full rounded-lg border border-white/15 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400">
+            <option value="">Personal log</option>
+            {% for teaching_class in classes %}<option value="{{ teaching_class.id }}">{{ teaching_class.title }}</option>{% endfor %}
+        </select>
+    </div>
+    <div>
+        <label for="effort-category-{{ 'teacher' if current_user.role in ['admin', 'teacher'] else 'student' }}" class="block text-sm font-medium text-gray-200">Activity</label>
+        <select id="effort-category-{{ 'teacher' if current_user.role in ['admin', 'teacher'] else 'student' }}" name="category" required class="mt-1 w-full rounded-lg border border-white/15 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400">
+            {% for category in teacher_categories if current_user.role in ['admin', 'teacher'] %}<option value="{{ category }}">{{ category|title }}</option>{% endfor %}
+            {% for category in student_categories if current_user.role == 'student' %}<option value="{{ category }}">{{ category|title }}</option>{% endfor %}
+        </select>
+    </div>
+    <div>
+        <label for="effort-minutes-{{ 'teacher' if current_user.role in ['admin', 'teacher'] else 'student' }}" class="block text-sm font-medium text-gray-200">Time in minutes</label>
+        <input id="effort-minutes-{{ 'teacher' if current_user.role in ['admin', 'teacher'] else 'student' }}" name="minutes" type="number" min="1" max="1440" required class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400">
+    </div>
+    <div>
+        <label for="effort-note-{{ 'teacher' if current_user.role in ['admin', 'teacher'] else 'student' }}" class="block text-sm font-medium text-gray-200">Note (optional)</label>
+        <input id="effort-note-{{ 'teacher' if current_user.role in ['admin', 'teacher'] else 'student' }}" name="note" maxlength="500" class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400">
+    </div>
+    {% if current_user.role == 'student' %}
+    <div class="sm:col-span-2">
+        <label class="inline-flex min-h-11 items-center gap-3 text-sm text-gray-200">
+            <input type="checkbox" name="visible_to_teacher" value="yes" class="h-5 w-5 rounded border-white/30 bg-black/30 text-cyan-500 focus:ring-2 focus:ring-cyan-300">
+            Share this effort log with the class teacher
+        </label>
+        <p class="mt-1 text-xs text-gray-400">Choose a class above to share this log with that class's teacher. Otherwise it stays private.</p>
+    </div>
+    {% endif %}
+    <div class="sm:col-span-2"><button class="rounded-lg bg-indigo-600 px-5 py-2.5 font-semibold text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-cyan-300">Save effort log</button></div>
+</form>

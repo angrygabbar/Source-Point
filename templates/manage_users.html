@@ -7,7 +7,7 @@
     <div class="flex flex-col md:flex-row justify-between items-end gap-4">
         <div>
             <h1 class="text-3xl font-bold text-white tracking-tight">User Management</h1>
-            <p class="text-gray-400 text-sm mt-1">Oversee platform access and role assignments.</p>
+            <p class="text-gray-400 text-sm mt-1">Search by username or email, or filter by role and account status.</p>
         </div>
         <div class="flex items-center gap-3">
             <button id="maintenanceNotifyBtn"
@@ -41,6 +41,8 @@
                 <option value="seller" {% if current_role=='seller' %}selected{% endif %}>Seller</option>
                 <option value="buyer" {% if current_role=='buyer' %}selected{% endif %}>Buyer</option>
                 <option value="recruiter" {% if current_role=='recruiter' %}selected{% endif %}>Recruiter</option>
+                <option value="teacher" {% if current_role=='teacher' %}selected{% endif %}>Teacher</option>
+                <option value="student" {% if current_role=='student' %}selected{% endif %}>Student</option>
             </select>
             <select name="status"
                 class="bg-black/20 border border-white/5 rounded-lg px-4 py-3 text-sm text-gray-300 focus:ring-1 focus:ring-indigo-500 focus:bg-black/40 transition-all cursor-pointer min-w-[140px]">
@@ -103,6 +105,8 @@
                             {% elif user.role == 'seller' %} bg-pink-500/10 text-pink-400 border-pink-500/20
                             {% elif user.role == 'buyer' %} bg-teal-500/10 text-teal-400 border-teal-500/20
                             {% elif user.role == 'recruiter' %} bg-cyan-500/10 text-cyan-400 border-cyan-500/20
+                            {% elif user.role == 'teacher' %} bg-indigo-500/10 text-indigo-300 border-indigo-500/20
+                            {% elif user.role == 'student' %} bg-amber-500/10 text-amber-300 border-amber-500/20
                             {% else %} bg-gray-700/30 text-gray-400 border-gray-600/30 {% endif %}">
                             {{ user.role }}
                         </span>
@@ -209,6 +213,8 @@
                                 <option value="buyer">Buyer</option>
                                 <option value="seller">Seller</option>
                                 <option value="recruiter">Recruiter</option>
+                                <option value="teacher">Teacher</option>
+                                <option value="student">Student</option>
                                 <option value="admin">Admin</option>
                             </select>
                         </div>

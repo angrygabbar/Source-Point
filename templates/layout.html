@@ -142,6 +142,14 @@
                         News
                     </a>
 
+                    {% if current_user.role in ['admin', 'teacher', 'student'] %}
+                    <a href="{{ url_for('teaching.home') }}"
+                        class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 mb-1 {{ 'bg-white/10 text-white shadow-md border border-white/5' if request.endpoint and request.endpoint.startswith('teaching.') else 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
+                        <i class="fas fa-chalkboard-user w-6 text-center mr-2" aria-hidden="true"></i>
+                        Teaching
+                    </a>
+                    {% endif %}
+
                     {% if current_user.role == 'admin' %}
                     <div class="pt-6 pb-2">
                         <p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Admin Controls</p>

@@ -37,6 +37,7 @@ def home():
         elif current_user.role == UserRole.RECRUITER.value: return redirect(url_for('recruiter.recruiter_dashboard'))
         elif current_user.role == UserRole.BUYER.value: return redirect(url_for('buyer.buyer_dashboard'))
         elif current_user.role == UserRole.CANDIDATE.value: return redirect(url_for('candidate.candidate_dashboard'))
+        elif current_user.role in [UserRole.TEACHER.value, UserRole.STUDENT.value]: return redirect(url_for('teaching.home'))
     return render_template('home.html')
 
 @main_bp.route('/offers')
@@ -93,6 +94,7 @@ def dashboard():
     elif current_user.role == UserRole.RECRUITER.value: return redirect(url_for('recruiter.recruiter_dashboard'))
     elif current_user.role == UserRole.BUYER.value: return redirect(url_for('buyer.buyer_dashboard'))
     elif current_user.role == UserRole.CANDIDATE.value: return redirect(url_for('candidate.candidate_dashboard'))
+    elif current_user.role in [UserRole.TEACHER.value, UserRole.STUDENT.value]: return redirect(url_for('teaching.home'))
     else: return redirect(url_for('main.home'))
 
 @main_bp.route('/messages')

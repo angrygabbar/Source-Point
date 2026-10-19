@@ -1,0 +1,258 @@
+{% extends "layout.html" %}
+{% block title %}{{ teaching_class.title }} · Teaching{% endblock %}
+{% block content %}
+<main id="main-content" class="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+    <a href="{{ url_for('teaching.home') }}" class="inline-flex min-h-11 items-center text-sm font-medium text-cyan-200 hover:underline focus:outline-none focus:ring-2 focus:ring-cyan-300">&larr; Back to teaching</a>
+    <header class="rounded-2xl border border-indigo-400/20 bg-indigo-950/30 p-6 sm:p-8">
+        <p class="text-sm font-semibold tracking-wide text-cyan-300">{{ teaching_class.subject or 'ONLINE CLASS' }}{% if teaching_class.level %} · {{ teaching_class.level }}{% endif %}</p>
+        <h1 class="mt-2 text-3xl font-bold text-white">{{ teaching_class.title }}</h1>
+        {% if not teaching_class.is_active %}<p class="mt-3 inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-sm font-semibold text-amber-200">Archived class · history retained</p>{% endif %}
+        {% if teaching_class.description %}<p class="mt-3 max-w-3xl whitespace-pre-line text-gray-300">{{ teaching_class.description }}</p>{% endif %}
+        <p class="mt-3 text-sm text-gray-400">All session times are shown in {{ teaching_class.timezone_name }}.</p>
+        {% if current_user.role == 'admin' %}<p class="mt-4 text-sm text-gray-300">Class teacher: {{ teaching_class.teacher.username }}</p>{% endif %}
+        {% if is_teacher %}
+        <p class="mt-4 text-sm text-gray-200">Student invite code: <code class="rounded bg-black/30 px-2 py-1 font-mono text-cyan-200">{{ teaching_class.invite_code }}</code></p>
+        {% else %}<p class="mt-4 text-sm text-gray-300">Teacher: {{ teaching_class.teacher.username }}</p>{% endif %}
+        {% if is_teacher %}
+        <details class="mt-5 rounded-xl border border-white/10 bg-black/10 p-4">
+            <summary class="cursor-pointer font-semibold text-cyan-200 focus:outline-none focus:ring-2 focus:ring-cyan-300">Manage class details</summary>
+            <form action="{{ url_for('teaching.update_class', class_id=teaching_class.id) }}" method="post" class="mt-4 grid gap-4 sm:grid-cols-2">
+                <div><label for="class-title" class="block text-sm font-medium text-gray-200">Class name</label><input id="class-title" name="title" value="{{ teaching_class.title }}" maxlength="140" required class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div>
+                <div><label for="class-subject" class="block text-sm font-medium text-gray-200">Subject</label><input id="class-subject" name="subject" value="{{ teaching_class.subject or '' }}" maxlength="100" class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div>
+                <div><label for="class-level" class="block text-sm font-medium text-gray-200">Level</label><input id="class-level" name="level" value="{{ teaching_class.level or '' }}" maxlength="80" class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div>
+                {% if current_user.role == 'admin' %}
+                <div><label for="class-teacher-edit" class="block text-sm font-medium text-gray-200">Assigned teacher</label><select id="class-teacher-edit" name="teacher_id" class="mt-1 w-full rounded-lg border border-white/15 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400">{% if teaching_class.teacher.role != 'teacher' %}<option value="{{ teaching_class.teacher_id }}" selected>{{ teaching_class.teacher.username }} · current assignment</option>{% endif %}{% for teacher in available_teachers %}<option value="{{ teacher.id }}" {% if teacher.id == teaching_class.teacher_id %}selected{% endif %} {% if (not teacher.is_active or not teacher.is_approved) and teacher.id != teaching_class.teacher_id %}disabled{% endif %}>{{ teacher.username }}{% if not teacher.is_active or not teacher.is_approved %} · inactive{% endif %}</option>{% endfor %}</select><p class="mt-1 text-xs text-gray-400">New assignments require an active, approved Teacher account.</p></div>
+                {% endif %}
+                <div class="sm:col-span-2"><label for="class-description" class="block text-sm font-medium text-gray-200">Description</label><textarea id="class-description" name="description" rows="3" maxlength="4000" class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400">{{ teaching_class.description or '' }}</textarea></div>
+                <div class="sm:col-span-2"><button class="rounded-lg bg-indigo-600 px-5 py-2.5 font-semibold text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-cyan-300">Save class details</button></div>
+            </form>
+            <form action="{{ url_for('teaching.update_class_status', class_id=teaching_class.id) }}" method="post" class="mt-4 border-t border-white/10 pt-4">
+                {% if teaching_class.is_active %}
+                <input type="hidden" name="action" value="archive">
+                <p class="mb-3 text-sm text-gray-400">Archiving pauses new enrollments, sessions, tests, materials, assignments, submissions, and announcements. Existing class history stays available.</p>
+                <button class="rounded-lg border border-amber-400/30 px-4 py-2 font-semibold text-amber-200 hover:bg-amber-400/10 focus:outline-none focus:ring-2 focus:ring-amber-300">Archive class</button>
+                {% else %}
+                <input type="hidden" name="action" value="restore">
+                <p class="mb-3 text-sm text-gray-400">Reopening lets students join and resumes new class work.</p>
+                <button class="rounded-lg border border-emerald-400/30 px-4 py-2 font-semibold text-emerald-200 hover:bg-emerald-400/10 focus:outline-none focus:ring-2 focus:ring-emerald-300">Reopen class</button>
+                {% endif %}
+            </form>
+        </details>
+        {% endif %}
+    </header>
+
+    <section aria-labelledby="announcements-heading" class="rounded-2xl border border-cyan-400/15 bg-cyan-950/10 p-5 sm:p-6">
+        <h2 id="announcements-heading" class="text-2xl font-semibold text-white">Class announcements</h2>
+        {% if announcements %}
+        <ul class="mt-4 space-y-3">
+            {% for announcement in announcements %}
+            <li class="rounded-xl border border-white/10 bg-black/15 p-4">
+                <div class="flex flex-wrap items-start justify-between gap-2"><h3 class="font-semibold text-cyan-100">{{ announcement.title }}</h3><time class="text-xs text-gray-400">{{ announcement.created_at|teaching_local(teaching_class.timezone_name) }}</time></div>
+                <p class="mt-2 whitespace-pre-line text-sm text-gray-300">{{ announcement.body }}</p>
+                <p class="mt-2 text-xs text-gray-500">Posted by {{ announcement.author.username }}</p>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}<p class="mt-3 text-sm text-gray-400">Class updates from the teacher will appear here.</p>{% endif %}
+        {% if is_teacher and teaching_class.is_active %}
+        <details class="mt-5 rounded-xl border border-white/10 p-4">
+            <summary class="cursor-pointer font-semibold text-cyan-200 focus:outline-none focus:ring-2 focus:ring-cyan-300">Post an announcement</summary>
+            <form action="{{ url_for('teaching.add_announcement', class_id=teaching_class.id) }}" method="post" class="mt-4 space-y-3">
+                <div><label for="announcement-title" class="block text-sm font-medium text-gray-200">Title</label><input id="announcement-title" name="title" maxlength="140" required class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div>
+                <div><label for="announcement-body" class="block text-sm font-medium text-gray-200">Message</label><textarea id="announcement-body" name="body" rows="4" maxlength="5000" required aria-describedby="announcement-help" class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></textarea><p id="announcement-help" class="mt-1 text-xs text-gray-400">Up to 5,000 characters. Students enrolled in this class can read it.</p></div>
+                <button class="rounded-lg bg-indigo-600 px-5 py-2.5 font-semibold text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-cyan-300">Post announcement</button>
+            </form>
+        </details>
+        {% endif %}
+    </section>
+
+    {% if is_teacher %}
+        {% include 'teaching/_test_manager.html' %}
+    {% else %}
+        {% include 'teaching/_student_tests.html' %}
+    {% endif %}
+
+    <section aria-labelledby="sessions-heading" class="rounded-2xl border border-white/10 bg-white/[0.04] p-5 sm:p-6">
+        <h2 id="sessions-heading" class="text-2xl font-semibold text-white">Online sessions</h2>
+        {% if teaching_class.sessions %}
+        <ul class="mt-4 divide-y divide-white/10">
+            {% for session in teaching_class.sessions %}
+            <li class="py-4">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <h3 class="font-semibold text-white">{{ session.title }}</h3>
+                        <p class="mt-1 text-sm text-gray-300">{{ session.starts_at|teaching_local(teaching_class.timezone_name) }} · {{ session.duration_minutes }} minutes</p>
+                        {% if session.notes %}<p class="mt-2 whitespace-pre-line text-sm text-gray-400">{{ session.notes }}</p>{% endif %}
+                    </div>
+                    {% if session.meeting_url %}<a href="{{ session.meeting_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-11 items-center rounded-lg bg-cyan-800 px-4 py-2 font-semibold text-white hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-300">Join online session <span class="sr-only">(opens in a new tab)</span></a>{% endif %}
+                </div>
+                {% if is_teacher %}
+                    {% set session_attendance = attendance_by_session.get(session.id, {}) %}
+                    <details class="mt-4 rounded-xl border border-white/10 p-4">
+                        <summary class="cursor-pointer font-semibold text-cyan-200 focus:outline-none focus:ring-2 focus:ring-cyan-300">Record attendance</summary>
+                        {% if students %}
+                        <form action="{{ url_for('teaching.update_attendance', session_id=session.id) }}" method="post" class="mt-4 space-y-3">
+                            <p class="text-xs text-gray-400">Choose a status for students you want to update. Blank entries keep existing records unchanged.</p>
+                            <div class="divide-y divide-white/10">
+                                {% for student in students %}
+                                {% set existing_attendance = session_attendance.get(student.id) %}
+                                <div class="grid gap-2 py-3 sm:grid-cols-2 sm:items-center">
+                                    <label for="attendance-{{ session.id }}-{{ student.id }}" class="text-sm font-medium text-gray-200">{{ student.username }}</label>
+                                    <select id="attendance-{{ session.id }}-{{ student.id }}" name="student_{{ student.id }}" class="w-full rounded-lg border border-white/15 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400">
+                                        <option value="" {% if not existing_attendance %}selected{% endif %}>{{ 'Leave unchanged' if existing_attendance else 'Not recorded' }}</option>
+                                        {% for status in ['present', 'absent', 'late', 'excused'] %}
+                                        <option value="{{ status }}" {% if existing_attendance and existing_attendance.status == status %}selected{% endif %}>{{ status|title }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <button class="rounded-lg border border-cyan-400/30 px-4 py-2 font-semibold text-cyan-200 hover:bg-cyan-400/10 focus:outline-none focus:ring-2 focus:ring-cyan-300">Save attendance</button>
+                        </form>
+                        {% else %}<p class="mt-3 text-sm text-gray-400">Students need to join this class before attendance can be recorded.</p>{% endif %}
+                    </details>
+                    {% set session_feedback = feedback_by_session.get(session.id, []) %}
+                    <details class="mt-3 rounded-xl border border-white/10 p-4">
+                        <summary class="cursor-pointer font-semibold text-cyan-200 focus:outline-none focus:ring-2 focus:ring-cyan-300">Student feedback ({{ session_feedback|length }})</summary>
+                        {% if session_feedback %}
+                        <ul class="mt-3 divide-y divide-white/10">
+                            {% for entry in session_feedback %}
+                            <li class="py-3">
+                                <p class="text-sm font-semibold text-gray-200">{{ entry.student.username }} · {{ entry.rating }} / 5</p>
+                                {% if entry.comments %}<p class="mt-1 whitespace-pre-line text-sm text-gray-300">{{ entry.comments }}</p>{% else %}<p class="mt-1 text-sm text-gray-500">No written comment.</p>{% endif %}
+                                <p class="mt-1 text-xs text-gray-500">{{ entry.updated_at|teaching_local(teaching_class.timezone_name) }}</p>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}<p class="mt-3 text-sm text-gray-400">No student feedback yet.</p>{% endif %}
+                    </details>
+                {% else %}
+                    {% set my_session_attendance = my_attendance.get(session.id) %}
+                    <p class="mt-3 text-sm text-gray-300">Your attendance: <span class="font-semibold text-cyan-200">{{ my_session_attendance.status|title if my_session_attendance else 'Not recorded' }}</span></p>
+                    {% if session.id in completed_session_ids %}
+                    {% set my_feedback = feedback_by_session.get(session.id) %}
+                    <form action="{{ url_for('teaching.submit_session_feedback', session_id=session.id) }}" method="post" class="mt-4 rounded-xl border border-cyan-400/20 bg-cyan-950/10 p-4">
+                        <h4 class="font-semibold text-white">{% if my_feedback %}Update your session feedback{% else %}How was this session?{% endif %}</h4>
+                        <div class="mt-3 grid gap-3 sm:grid-cols-[12rem_1fr] sm:items-end">
+                            <div><label for="session-rating-{{ session.id }}" class="block text-sm font-medium text-gray-200">Your rating</label><select id="session-rating-{{ session.id }}" name="rating" required class="mt-1 w-full rounded-lg border border-white/15 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"><option value="" disabled {% if not my_feedback %}selected{% endif %}>Choose 1–5</option>{% for value in range(1, 6) %}<option value="{{ value }}" {% if my_feedback and my_feedback.rating == value %}selected{% endif %}>{{ value }} · {{ 'Excellent' if value == 5 else 'Very good' if value == 4 else 'Okay' if value == 3 else 'Could be better' if value == 2 else 'Needs improvement' }}</option>{% endfor %}</select></div>
+                            <div><label for="session-comments-{{ session.id }}" class="block text-sm font-medium text-gray-200">Comment (optional)</label><textarea id="session-comments-{{ session.id }}" name="comments" rows="2" maxlength="3000" class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400">{{ my_feedback.comments if my_feedback and my_feedback.comments else '' }}</textarea></div>
+                        </div>
+                        <button class="mt-3 rounded-lg border border-cyan-400/30 px-4 py-2 font-semibold text-cyan-200 hover:bg-cyan-400/10 focus:outline-none focus:ring-2 focus:ring-cyan-300">{{ 'Update feedback' if my_feedback else 'Send feedback' }}</button>
+                    </form>
+                    {% else %}<p class="mt-3 text-sm text-gray-400">You can leave feedback after this session ends.</p>{% endif %}
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}<p class="mt-3 text-sm text-gray-400">No sessions scheduled yet.</p>{% endif %}
+        {% if is_teacher and teaching_class.is_active %}
+        <details class="mt-5 rounded-xl border border-white/10 p-4">
+            <summary class="cursor-pointer font-semibold text-cyan-200 focus:outline-none focus:ring-2 focus:ring-cyan-300">Schedule a session</summary>
+            <form action="{{ url_for('teaching.add_session', class_id=teaching_class.id) }}" method="post" class="mt-4 grid gap-4 sm:grid-cols-2">
+                <div><label for="session-title" class="block text-sm font-medium text-gray-200">Session title</label><input id="session-title" name="title" maxlength="160" required class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div>
+                <div><label for="session-start" class="block text-sm font-medium text-gray-200">Start date and time ({{ teaching_class.timezone_name }})</label><input id="session-start" name="starts_at" type="datetime-local" required class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div>
+                <div><label for="session-duration" class="block text-sm font-medium text-gray-200">Duration in minutes</label><input id="session-duration" name="duration_minutes" type="number" min="1" max="480" value="60" required class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div>
+                <div><label for="session-link" class="block text-sm font-medium text-gray-200">Online meeting link (optional)</label><input id="session-link" name="meeting_url" type="url" placeholder="https://..." class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div>
+                <div class="sm:col-span-2"><label for="session-notes" class="block text-sm font-medium text-gray-200">Notes (optional)</label><textarea id="session-notes" name="notes" rows="2" maxlength="4000" class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></textarea></div>
+                <div class="sm:col-span-2"><button class="rounded-lg bg-indigo-600 px-5 py-2.5 font-semibold text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-cyan-300">Schedule session</button></div>
+            </form>
+        </details>
+        {% endif %}
+    </section>
+
+    <div class="grid gap-6 lg:grid-cols-2">
+        <section aria-labelledby="materials-heading" class="rounded-2xl border border-white/10 bg-white/[0.04] p-5 sm:p-6">
+            <h2 id="materials-heading" class="text-2xl font-semibold text-white">Learning materials</h2>
+            {% if teaching_class.materials %}<ul class="mt-4 space-y-3">{% for material in teaching_class.materials %}<li class="rounded-lg border border-white/10 p-3"><a href="{{ material.resource_url }}" target="_blank" rel="noopener noreferrer" class="font-semibold text-cyan-200 hover:underline focus:outline-none focus:ring-2 focus:ring-cyan-300">{{ material.title }} <span class="sr-only">(opens in a new tab)</span></a>{% if material.description %}<p class="mt-1 whitespace-pre-line text-sm text-gray-400">{{ material.description }}</p>{% endif %}</li>{% endfor %}</ul>{% else %}<p class="mt-3 text-sm text-gray-400">No materials shared yet.</p>{% endif %}
+            {% if is_teacher and teaching_class.is_active %}
+            <details class="mt-5 rounded-xl border border-white/10 p-4"><summary class="cursor-pointer font-semibold text-cyan-200 focus:outline-none focus:ring-2 focus:ring-cyan-300">Add a material link</summary>
+                <form action="{{ url_for('teaching.add_material', class_id=teaching_class.id) }}" method="post" class="mt-4 space-y-3">
+                    <div><label for="material-title" class="block text-sm font-medium text-gray-200">Title</label><input id="material-title" name="title" maxlength="160" required class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div>
+                    <div><label for="material-url" class="block text-sm font-medium text-gray-200">Resource URL</label><input id="material-url" name="resource_url" type="url" required placeholder="https://..." class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div>
+                    <div><label for="material-description" class="block text-sm font-medium text-gray-200">Description (optional)</label><textarea id="material-description" name="description" rows="2" maxlength="2000" class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></textarea></div>
+                    <button class="rounded-lg bg-indigo-600 px-5 py-2.5 font-semibold text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-cyan-300">Add material</button>
+                </form>
+            </details>
+            {% endif %}
+        </section>
+
+        <section aria-labelledby="assignments-heading" class="rounded-2xl border border-white/10 bg-white/[0.04] p-5 sm:p-6">
+            <h2 id="assignments-heading" class="text-2xl font-semibold text-white">Assignments</h2>
+            {% if teaching_class.assignments %}
+            <div class="mt-4 space-y-4">
+                {% for assignment in teaching_class.assignments %}
+                <article class="rounded-xl border border-white/10 p-4">
+                    <h3 class="font-semibold text-white">{{ assignment.title }}</h3>
+                    {% if assignment.due_at %}<p class="mt-1 text-sm text-gray-400">Due {{ assignment.due_at|teaching_local(teaching_class.timezone_name) }}</p>{% else %}<p class="mt-1 text-sm text-gray-400">No due date</p>{% endif %}
+                    {% if assignment.points %}<p class="mt-1 text-sm text-gray-400">{{ assignment.points }} points</p>{% endif %}
+                    <p class="mt-3 whitespace-pre-line text-sm text-gray-300">{{ assignment.instructions }}</p>
+                    {% if is_teacher %}
+                        {% set assignment_submissions = submissions|selectattr('assignment_id', 'equalto', assignment.id)|list %}
+                        <h4 class="mt-4 text-sm font-semibold text-gray-200">Submissions ({{ assignment_submissions|length }})</h4>
+                        {% if assignment_submissions %}
+                        <ul class="mt-2 space-y-3">{% for submission in assignment_submissions %}<li class="rounded-lg bg-black/20 p-3">
+                            <p class="text-sm font-semibold text-white">{{ submission.student.username }} <span class="font-normal text-gray-400">· submitted {{ submission.submitted_at|teaching_local(teaching_class.timezone_name) }}</span></p>
+                            <p class="mt-2 whitespace-pre-line text-sm text-gray-300">{{ submission.response }}</p>
+                            <form action="{{ url_for('teaching.grade_submission', submission_id=submission.id) }}" method="post" class="mt-3 grid gap-3 sm:grid-cols-3">
+                                <div><label for="grade-{{ submission.id }}" class="block text-xs font-medium text-gray-300">Grade{% if assignment.points %} (of {{ assignment.points }}){% endif %}</label><input id="grade-{{ submission.id }}" name="grade" type="number" min="0"{% if assignment.points %} max="{{ assignment.points }}"{% endif %} step="0.01" value="{{ submission.grade if submission.grade is not none else '' }}" class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-2 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div>
+                                <div class="sm:col-span-2"><label for="feedback-{{ submission.id }}" class="block text-xs font-medium text-gray-300">Feedback</label><textarea id="feedback-{{ submission.id }}" name="feedback" rows="2" maxlength="5000" class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-2 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400">{{ submission.feedback or '' }}</textarea></div>
+                                <div class="sm:col-span-3"><button class="rounded-lg border border-cyan-400/30 px-4 py-2 font-semibold text-cyan-200 hover:bg-cyan-400/10 focus:outline-none focus:ring-2 focus:ring-cyan-300">Save feedback</button></div>
+                            </form>
+                        </li>{% endfor %}</ul>
+                        {% else %}<p class="mt-1 text-sm text-gray-400">No student submissions yet.</p>{% endif %}
+                    {% else %}
+                        {% set submission = my_submissions.get(assignment.id) %}
+                        {% if submission %}
+                        <div class="mt-4 rounded-lg border border-emerald-500/20 bg-emerald-950/20 p-3" role="status">
+                            <p class="font-semibold text-emerald-200">Submitted {{ submission.submitted_at|teaching_local(teaching_class.timezone_name) }}</p>
+                            <p class="mt-2 whitespace-pre-line text-sm text-gray-200">{{ submission.response }}</p>
+                            {% if submission.grade is not none or submission.feedback %}<div class="mt-3 border-t border-white/10 pt-3"><p class="text-sm font-semibold text-cyan-200">Teacher feedback{% if submission.grade is not none %} · {{ submission.grade }}{% if assignment.points %} / {{ assignment.points }}{% endif %}{% endif %}</p>{% if submission.feedback %}<p class="mt-1 whitespace-pre-line text-sm text-gray-300">{{ submission.feedback }}</p>{% endif %}</div>{% endif %}
+                        </div>
+                        {% endif %}
+                        {% if teaching_class.is_active and (not assignment.due_at or assignment.due_at >= now) %}
+                        <form action="{{ url_for('teaching.submit_assignment', assignment_id=assignment.id) }}" method="post" class="mt-4">
+                            <label for="response-{{ assignment.id }}" class="block text-sm font-medium text-gray-200">{{ 'Update your response' if submission else 'Your response' }}</label>
+                            <textarea id="response-{{ assignment.id }}" name="response" rows="5" maxlength="20000" required aria-describedby="response-help-{{ assignment.id }}" class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400">{{ submission.response if submission else '' }}</textarea>
+                            <p id="response-help-{{ assignment.id }}" class="mt-1 text-xs text-gray-400">Up to 20,000 characters. You can update this until the due date.</p>
+                            <button class="mt-3 rounded-lg bg-indigo-600 px-5 py-2.5 font-semibold text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-cyan-300">{{ 'Update submission' if submission else 'Submit assignment' }}</button>
+                        </form>
+                        {% elif not teaching_class.is_active and not submission %}<p class="mt-3 text-sm text-amber-200">This class is archived, so new submissions are paused.</p>
+                        {% elif not submission %}<p class="mt-3 text-sm text-amber-200">The due date has passed.</p>{% endif %}
+                    {% endif %}
+                </article>
+                {% endfor %}
+            </div>
+            {% else %}<p class="mt-3 text-sm text-gray-400">No assignments published yet.</p>{% endif %}
+            {% if is_teacher and teaching_class.is_active %}
+            <details class="mt-5 rounded-xl border border-white/10 p-4"><summary class="cursor-pointer font-semibold text-cyan-200 focus:outline-none focus:ring-2 focus:ring-cyan-300">Create an assignment</summary>
+                <form action="{{ url_for('teaching.add_assignment', class_id=teaching_class.id) }}" method="post" class="mt-4 space-y-3">
+                    <div><label for="assignment-title" class="block text-sm font-medium text-gray-200">Title</label><input id="assignment-title" name="title" maxlength="160" required class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div>
+                    <div><label for="assignment-instructions" class="block text-sm font-medium text-gray-200">Instructions</label><textarea id="assignment-instructions" name="instructions" rows="4" maxlength="10000" required class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></textarea></div>
+                    <div class="grid gap-3 sm:grid-cols-2"><div><label for="assignment-due" class="block text-sm font-medium text-gray-200">Due date and time (optional)</label><input id="assignment-due" name="due_at" type="datetime-local" class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div><div><label for="assignment-points" class="block text-sm font-medium text-gray-200">Points (optional)</label><input id="assignment-points" name="points" type="number" min="1" max="10000" class="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"></div></div>
+                    <button class="rounded-lg bg-indigo-600 px-5 py-2.5 font-semibold text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-cyan-300">Publish assignment</button>
+                </form>
+            </details>
+            {% endif %}
+        </section>
+    </div>
+
+    <div class="grid gap-6 lg:grid-cols-2">
+        {% if is_teacher %}
+        <section aria-labelledby="roster-heading" class="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+            <h2 id="roster-heading" class="text-xl font-semibold text-white">Class roster <span class="text-sm font-normal text-gray-400">({{ students|length }})</span></h2>
+            {% if students %}<ul class="mt-3 divide-y divide-white/10">{% for student in students %}<li class="py-3 text-sm text-gray-200">{{ student.username }}</li>{% endfor %}</ul>{% else %}<p class="mt-3 text-sm text-gray-400">Students who join with the invite code will appear here.</p>{% endif %}
+        </section>
+        <section aria-labelledby="shared-effort-heading" class="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+            <h2 id="shared-effort-heading" class="text-xl font-semibold text-white">Student effort shared with you</h2>
+            {% if effort_logs %}<ul class="mt-3 divide-y divide-white/10">{% for log in effort_logs %}<li class="py-3"><p class="text-sm font-semibold text-gray-200">{{ log.user.username }} · {{ log.category|title }} · {{ log.minutes }} min</p>{% if log.note %}<p class="mt-1 text-sm text-gray-400">{{ log.note }}</p>{% endif %}<p class="mt-1 text-xs text-gray-500">{{ log.logged_at|teaching_local(teaching_class.timezone_name) }}</p></li>{% endfor %}</ul>{% else %}<p class="mt-3 text-sm text-gray-400">Students decide whether to share an effort log.</p>{% endif %}
+        </section>
+        {% else %}
+        <section aria-labelledby="student-effort-class-heading" class="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+            <h2 id="student-effort-class-heading" class="text-xl font-semibold text-white">Log effort for this class</h2>
+            {% include 'teaching/_effort_form.html' %}
+        </section>
+        {% if effort_logs %}<section aria-labelledby="class-effort-history-heading" class="rounded-2xl border border-white/10 bg-white/[0.04] p-5"><h2 id="class-effort-history-heading" class="text-xl font-semibold text-white">Your class effort history</h2><ul class="mt-3 divide-y divide-white/10">{% for log in effort_logs %}<li class="py-3 text-sm text-gray-200">{{ log.category|title }} · {{ log.minutes }} min{% if log.note %} · {{ log.note }}{% endif %}<span class="block text-xs text-gray-500">{{ 'Shared with teacher' if log.visible_to_teacher else 'Private' }}</span></li>{% endfor %}</ul></section>{% endif %}
+        {% endif %}
+    </div>
+</main>
+{% endblock %}

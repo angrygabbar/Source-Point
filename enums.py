@@ -8,6 +8,8 @@ class UserRole(enum.Enum):
     DEVELOPER = "developer"
     RECRUITER = "recruiter"
     MODERATOR = "moderator"
+    TEACHER = "teacher"
+    STUDENT = "student"
 
 class RollbackRequestStatus(enum.Enum):
     PENDING = "Pending"
