@@ -1,9 +1,11 @@
 # --- USE FULL IMAGE (Pre-includes gcc & build tools to save RAM) ---
-FROM python:3.11
+FROM python:3.11-bookworm
 
 # 1. Install runtime dependencies only
 # (gcc and libpq-dev are already in this image, so we only need libmagic)
-RUN apt-get update && apt-get install -y \
+RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list.d/debian.sources \
+    && apt-get -o Acquire::Retries=5 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update \
+    && apt-get install -y --no-install-recommends \
     libmagic1 \
     && rm -rf /var/lib/apt/lists/*
 
