@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from services.auth_service import AuthService
 from extensions import db, bcrypt
@@ -70,32 +70,48 @@ def login():
         return redirect(url_for('auth.login_register'))
 
 @auth_bp.route('/register', methods=['POST'])
+@auth_bp.route('/api/v1/auth/register', methods=['POST'])
 def register():
+    is_mobile_request = request.is_json
+    form_data = (request.get_json(silent=True) or {}) if is_mobile_request else request.form
     if current_user.is_authenticated:
+        if is_mobile_request:
+            return jsonify({'success': False, 'message': 'You are already signed in.'}), 409
         return redirect(url_for('main.dashboard'))
 
-    username = request.form.get('username')
-    email = request.form.get('email')
-    password = request.form.get('password')
-    confirm_password = request.form.get('confirm_password')
-    role = request.form.get('role', UserRole.CANDIDATE.value)
+    username = str(form_data.get('username', '')).strip()
+    email = str(form_data.get('email', '')).strip()
+    password = form_data.get('password')
+    confirm_password = form_data.get('confirm_password')
+    role = form_data.get('role', UserRole.CANDIDATE.value)
+    if is_mobile_request and not isinstance(role, str):
+        return jsonify({'success': False, 'message': 'Please choose a valid account type.'}), 400
     allowed_roles = {
         UserRole.BUYER.value, UserRole.SELLER.value, UserRole.CANDIDATE.value,
         UserRole.DEVELOPER.value, UserRole.RECRUITER.value, UserRole.MODERATOR.value,
         UserRole.TEACHER.value, UserRole.STUDENT.value
     }
     if role not in allowed_roles:
+        if is_mobile_request:
+            return jsonify({'success': False, 'message': 'Please choose a valid account type.'}), 400
         flash('Please choose a valid account type.', 'danger')
         return redirect(url_for('auth.login_register'))
     
-    mobile_number = request.form.get('mobile_number')
-    secret_question = request.form.get('secret_question')
-    secret_answer = request.form.get('secret_answer')
+    mobile_number = form_data.get('mobile_number')
+    secret_question = form_data.get('secret_question')
+    secret_answer = form_data.get('secret_answer')
     
-    primary_skill = request.form.get('primary_skill')
-    primary_skill_experience = request.form.get('primary_skill_experience')
+    primary_skill = form_data.get('primary_skill')
+    primary_skill_experience = form_data.get('primary_skill_experience')
+
+    if is_mobile_request:
+        required_values = (username, email, password, confirm_password, secret_question, secret_answer)
+        if not all(isinstance(value, str) and value.strip() for value in required_values):
+            return jsonify({'success': False, 'message': 'Complete all required registration fields.'}), 400
 
     if password != confirm_password:
+        if is_mobile_request:
+            return jsonify({'success': False, 'message': 'Passwords do not match.'}), 400
         flash('Passwords do not match.', 'danger')
         return redirect(url_for('auth.login_register'))
 
@@ -141,18 +157,29 @@ def register():
                     current_app.logger.error(f"Failed to send registration notification email: {e}")
 
             if user.is_approved:
+                if is_mobile_request:
+                    return jsonify({'success': True, 'message': message, 'approved': True}), 201
                 flash(message, 'success')
             else:
+                if is_mobile_request:
+                    return jsonify({'success': True, 'message': message, 'approved': False}), 201
                 flash(message, 'info')
 
         except Exception as e:
             db.session.rollback()
+            if is_mobile_request:
+                current_app.logger.exception('Mobile account registration profile update failed')
+                return jsonify({'success': False, 'message': 'Account details could not be saved.'}), 500
             flash(f"Error updating profile details: {e}", 'danger')
             return redirect(url_for('auth.login_register'))
 
     else:
+        if is_mobile_request:
+            return jsonify({'success': False, 'message': message}), 409
         flash(message, 'danger')
 
+    if is_mobile_request:
+        return jsonify({'success': True, 'message': message, 'approved': bool(user and user.is_approved)}), 201
     return redirect(url_for('auth.login_register'))
 
 @auth_bp.route('/logout')

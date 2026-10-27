@@ -119,6 +119,7 @@ def create_app():
     
     # --- 7. BLUEPRINTS ---
     from blueprints.auth import auth_bp
+    from blueprints.mobile_api import mobile_api_bp
     from blueprints.main import main_bp
     from blueprints.admin import admin_bp
     from blueprints.admin_core import admin_core_bp
@@ -143,6 +144,7 @@ def create_app():
     from blueprints.teaching import teaching_bp
 
     app.register_blueprint(auth_bp)
+    app.register_blueprint(mobile_api_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(admin_core_bp)
