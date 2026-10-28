@@ -28,11 +28,29 @@ jobs:
       # 3. Build Docker images without touching the currently running app yet.
       - name: Build Application Images
         run: |
+          set -euo pipefail
           cd /Users/gaurav/Developer/Source-Point
           docker compose up -d db redis
+
+          # Fetch and build wheels in a regular container; BuildKit's network
+          # cannot reliably reach package indexes on this Mac mini.
+          WHEELHOUSE="$PWD/.docker-wheelhouse"
+          rm -rf "$WHEELHOUSE"
+          mkdir -p "$WHEELHOUSE"
+          trap 'rm -rf "$WHEELHOUSE"' EXIT
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            --mount "type=bind,source=$PWD/requirements.txt,target=/tmp/requirements.txt,readonly" \
+            --mount "type=bind,source=$WHEELHOUSE,target=/wheelhouse" \
+            python:3.11-bookworm \
+            python -m pip wheel --disable-pip-version-check --no-cache-dir \
+              --index-url https://pypi.org/simple \
+              --wheel-dir /wheelhouse --timeout 300 --retries 5 \
+              -r /tmp/requirements.txt
+
           # Build web, worker, and scheduler so background tasks get the new code too.
           # We start/recreate them only after database migrations succeed.
-          docker compose build web worker scheduler
+          docker compose build --build-arg PREBUILT_WHEELS=1 web worker scheduler
 
       # 4. Database Migrations
       - name: Run Database Migrations

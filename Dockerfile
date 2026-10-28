@@ -11,11 +11,16 @@ WORKDIR /app
 # Copy requirements file
 COPY requirements.txt .
 
-# Install Python dependencies
-# Upgrade pip first to avoid JSONDecodeError with old pip
-RUN pip install --upgrade pip
-# Increased timeout to prevent network hangups on slow connections
-RUN pip install --no-cache-dir --default-timeout=300 --retries=5 -r requirements.txt
+# Install prebuilt Python wheels in production without requiring network access
+# in BuildKit. Local builds can install directly from PyPI.
+ARG PREBUILT_WHEELS=0
+COPY .docker-wheelhouse /wheelhouse
+RUN if [ "$PREBUILT_WHEELS" = "1" ]; then \
+        python -m pip install --no-index --find-links=/wheelhouse -r requirements.txt; \
+    else \
+        python -m pip install --no-cache-dir --default-timeout=300 --retries=5 -r requirements.txt; \
+    fi \
+    && rm -rf /wheelhouse
 
 # Copy the rest of the application code
 COPY . .
