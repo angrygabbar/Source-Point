@@ -13,10 +13,7 @@ from services.commerce_service import CommerceService
 from datetime import datetime, timedelta
 from sqlalchemy import func
 from werkzeug.utils import secure_filename
-import csv
-from io import TextIOWrapper
-import re
-import pypdf
+from services.emi_schedule_extractor import ScheduleExtractionError, extract_emi_schedule
 from enums import UserRole, ApplicationStatus
 
 admin_core_bp = Blueprint('admin_core', __name__, url_prefix='/admin')
@@ -702,13 +699,13 @@ def emi_manager():
 @login_required
 @role_required(UserRole.ADMIN.value)
 def import_emi_schedule():
-    borrower_id = request.form.get('borrower_id')
-    lender_id = request.form.get('lender_id')
-    title = request.form.get('title')
-    reminder_days = int(request.form.get('reminder_days', 3))
+    borrower_id = request.form.get('borrower_id', type=int)
+    lender_id = request.form.get('lender_id', type=int)
+    title = (request.form.get('title') or '').strip()
+    reminder_days = request.form.get('reminder_days', default=3, type=int)
     file = request.files.get('schedule_file')
 
-    if not borrower_id or not lender_id or not title or not file:
+    if not borrower_id or not lender_id or not title or not file or not file.filename:
         flash('All fields are required.', 'danger')
         return redirect(url_for('admin_core.emi_manager'))
 
@@ -716,113 +713,51 @@ def import_emi_schedule():
         flash('Borrower and Lender cannot be the same user.', 'danger')
         return redirect(url_for('admin_core.emi_manager'))
 
+    if reminder_days < 0 or reminder_days > 30:
+        flash('Reminder days must be between 0 and 30.', 'danger')
+        return redirect(url_for('admin_core.emi_manager'))
+
+    borrower = User.query.get(borrower_id)
+    lender = User.query.get(lender_id)
+    if not borrower or not lender:
+        flash('Select valid borrower and lender accounts.', 'danger')
+        return redirect(url_for('admin_core.emi_manager'))
+
     filename = secure_filename(file.filename)
-    payments_to_add = []
-    total_amount = 0.0
-    processing_fee = 0.0
 
     try:
-        if filename.endswith('.csv'):
-            csv_file = TextIOWrapper(file, encoding='utf-8')
-            csv_reader = csv.DictReader(csv_file)
-            for row in csv_reader:
-                try:
-                    amount = float(row.get('Amount', 0).replace(',', ''))
-                    description = row.get('Description', f'Installment for {title}')
-                    if 'processing fee' in description.lower():
-                        processing_fee += amount
-                        continue
-
-                    date_str = row.get('Date', '')
-                    try:
-                        due_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-                    except ValueError:
-                        due_date = datetime.strptime(date_str, '%d/%m/%Y').date()
-                    
-                    if amount > 0 and due_date:
-                        total_amount += amount
-                        payments_to_add.append({'due_date': due_date, 'amount': amount, 'description': description})
-                except Exception: continue
-        
-        elif filename.endswith('.pdf'):
-            try:
-                pdf_reader = pypdf.PdfReader(file)
-                text = ""
-                for page in pdf_reader.pages: text += page.extract_text() + "\n"
-                
-                lines = text.split('\n')
-                date_pattern_num = re.compile(r'\b(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})\b')
-                date_pattern_text = re.compile(r'\b(\d{1,2})[\s/-]*([A-Za-z]{3})[\s/-]*(\d{4})\b')
-                fee_pattern = re.compile(r'Processing\s*Fee\s*[:\-]?\s*(\d{1,3}(?:,\d{3})*\.?\d*)', re.IGNORECASE)
-
-                for line in lines:
-                    line = line.strip()
-                    if not line or 'txn date' in line.lower() or 'transaction date' in line.lower(): continue
-                    fee_match = fee_pattern.search(line)
-                    if fee_match:
-                        try:
-                            processing_fee += float(fee_match.group(1).replace(',', ''))
-                        except ValueError: pass
-                        continue
-                    
-                    due_date = None
-                    end_idx = 0
-                    text_match = date_pattern_text.search(line)
-                    if text_match:
-                        try:
-                            d, m, y = text_match.groups()
-                            due_date = datetime.strptime(f"{d}-{m}-{y}", '%d-%b-%Y').date()
-                            end_idx = text_match.end()
-                        except ValueError: pass
-                    
-                    if not due_date:
-                        num_match = date_pattern_num.search(line)
-                        if num_match:
-                            try:
-                                d, m, y = num_match.groups()
-                                if len(y) == 2: y = "20" + y
-                                due_date = datetime(int(y), int(m), int(d)).date()
-                                end_idx = num_match.end()
-                            except ValueError: pass
-                    
-                    if due_date:
-                        rem = line[end_idx:]
-                        amts = re.findall(r'(\d{1,3}(?:,\d{3})*\.\d{2})', rem)
-                        if amts:
-                            try:
-                                a = float(amts[0].replace(',', ''))
-                                if a > 0:
-                                    payments_to_add.append({'due_date': due_date, 'amount': a, 'description': f'Installment for {title}'})
-                                    total_amount += a
-                            except ValueError: continue
-            except Exception:
-                flash('Error reading PDF file.', 'danger')
-                return redirect(url_for('admin_core.emi_manager'))
-
-        if not payments_to_add:
-            flash('No valid payment records found.', 'warning')
-            return redirect(url_for('admin_core.emi_manager'))
-
-        payments_to_add.sort(key=lambda x: x['due_date'])
-        if processing_fee > 0 and payments_to_add:
-            payments_to_add[0]['amount'] += processing_fee
-            payments_to_add[0]['description'] += f" + Proc. Fee ({processing_fee})"
-            total_amount += processing_fee
-
-        new_plan = EMIPlan(borrower_id=borrower_id, lender_id=lender_id, title=title, total_principal=total_amount)
+        provider, installments = extract_emi_schedule(file, filename, title)
+        total_amount = sum((item.amount for item in installments), start=0)
+        new_plan = EMIPlan(
+            borrower_id=borrower.id,
+            lender_id=lender.id,
+            title=title[:150],
+            total_principal=total_amount,
+        )
         db.session.add(new_plan)
-        db.session.commit()
+        db.session.flush()
 
-        for i, pay in enumerate(payments_to_add, start=1):
-            payment = EMIPayment(plan_id=new_plan.id, installment_number=i, due_date=pay['due_date'], amount=pay['amount'], description=pay['description'], reminder_days_before=reminder_days)
+        for i, item in enumerate(installments, start=1):
+            payment = EMIPayment(
+                plan_id=new_plan.id,
+                installment_number=i,
+                due_date=item.due_date,
+                amount=item.amount,
+                description=item.description[:200],
+                reminder_days_before=reminder_days,
+            )
             db.session.add(payment)
         
         db.session.commit()
         log_user_action("Create EMI Plan", f"Created plan '{title}' for Borrower {borrower_id}")
-        flash(f'EMI Schedule imported successfully ({len(payments_to_add)} installments).', 'success')
-    except Exception as e:
+        flash(f'{provider} EMI schedule imported successfully ({len(installments)} installments).', 'success')
+    except ScheduleExtractionError as e:
         db.session.rollback()
-        flash(f'Failed to process file: {str(e)}', 'danger')
+        flash(str(e), 'warning')
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception('Failed to import an EMI schedule')
+        flash('The EMI schedule could not be imported. Check the file and try again.', 'danger')
     return redirect(url_for('admin_core.emi_manager'))
 
 @admin_core_bp.route('/emi_manager/update_payment', methods=['POST'])
