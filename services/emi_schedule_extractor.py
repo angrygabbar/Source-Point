@@ -1,6 +1,7 @@
 """Local extraction helpers for CSV and credit-card EMI schedule PDFs."""
 
 import csv
+import calendar
 import re
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -191,6 +192,193 @@ def _date_rows(lines, full_text, title):
     return installments
 
 
+def _period_rows(lines):
+    """Read date-free amortization tables with Period and EMI Amount columns."""
+    compact_text = re.sub(r"[^a-z]", "", " ".join(lines).lower())
+    amount_heading = any(term in compact_text for term in (
+        "emiamount", "installmentamount", "instalmentamount", "monthlyrepaymentamount",
+    ))
+    if "period" not in compact_text or not amount_heading:
+        return []
+
+    periods = {}
+    for line in lines:
+        row_match = re.match(r"^\s*(?:period\s+)?(\d{1,3})\s+(.+)$", line, re.IGNORECASE)
+        if not row_match:
+            continue
+        period_number = int(row_match.group(1))
+        if not 1 <= period_number <= 360:
+            continue
+        values = _amounts(row_match.group(2))
+        if not values:
+            continue
+        # Amortization tables commonly list outstanding balance, principal,
+        # interest, then EMI amount. The EMI column is identified by the table
+        # heading and is the final amount in those rows.
+        periods[period_number] = values[-1] if len(values) > 1 else values[0]
+    return sorted(periods.items())
+
+
+def _add_months(value, months):
+    month_index = value.month - 1 + months
+    year = value.year + month_index // 12
+    month = month_index % 12 + 1
+    day = min(value.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)
+
+
+def _extract_from_pdf_text(text, title, first_due_date):
+    lines = [re.sub(r"\s+", " ", line).strip() for line in text.splitlines()]
+    try:
+        return _detect_bank(text), _date_rows(lines, text, title)
+    except ScheduleExtractionError as date_error:
+        periods = _period_rows(lines)
+        if not periods:
+            raise date_error
+        if not first_due_date:
+            raise ScheduleExtractionError(
+                "This schedule has EMI periods and amounts but no payment dates. Enter the first installment due date to generate the monthly schedule."
+            )
+        installments = [
+            ExtractedInstallment(
+                due_date=_add_months(first_due_date, period_number - 1),
+                amount=amount,
+                description=f"Installment for {title[:100]} (period {period_number}; monthly date generated)",
+            )
+            for period_number, amount in periods
+        ]
+        return _detect_bank(text), installments
+
+
+def _ocr_pdf(pdf_bytes, page_count):
+    try:
+        from pdf2image import convert_from_bytes
+        import pytesseract
+    except ImportError as exc:
+        raise ScheduleExtractionError(
+            "This PDF is image-based and OCR is unavailable on the server. Upload a text-searchable PDF or CSV."
+        ) from exc
+
+    try:
+        last_page = min(page_count, 25)
+        images = convert_from_bytes(
+            pdf_bytes,
+            dpi=250,
+            first_page=1,
+            last_page=last_page,
+            fmt="png",
+            thread_count=1,
+            timeout=90,
+        )
+        text_pages = []
+        for image in images:
+            try:
+                grid_text = _ocr_grid_table(image, pytesseract)
+                if grid_text:
+                    text_pages.append(grid_text)
+                else:
+                    text_pages.append(pytesseract.image_to_string(image, lang="eng", config="--psm 6"))
+            finally:
+                image.close()
+        return "\n".join(text_pages)
+    except Exception as exc:
+        raise ScheduleExtractionError(
+            "The scanned PDF could not be read. Try a clearer scan or upload the bank's CSV/text PDF."
+        ) from exc
+
+
+def _ocr_grid_table(image, pytesseract):
+    """OCR ruled schedule tables cell-by-cell to avoid gridline noise."""
+    from PIL import Image, ImageOps
+
+    gray = ImageOps.grayscale(image)
+    pixels = gray.load()
+    width, height = gray.size
+
+    def group_lines(indices, minimum=2):
+        groups = []
+        for coordinate in indices:
+            if not groups or coordinate > groups[-1][-1] + 3:
+                groups.append([coordinate])
+            else:
+                groups[-1].append(coordinate)
+        return [round(sum(group) / len(group)) for group in groups if len(group) >= minimum]
+
+    horizontal = group_lines(
+        y for y in range(height)
+        if sum(1 for x in range(width) if pixels[x, y] < 100) > width * 0.5
+    )
+    sections = []
+    for y in horizontal:
+        if not sections or y - sections[-1][-1] > 220:
+            sections.append([y])
+        else:
+            sections[-1].append(y)
+
+    def read_cell(x0, x1, y0, y1):
+        inset_x = max(4, round((x1 - x0) * 0.012))
+        inset_y = max(3, round((y1 - y0) * 0.06))
+        if x1 - x0 <= inset_x * 2 or y1 - y0 <= inset_y * 2:
+            return ""
+        cell = gray.crop((x0 + inset_x, y0 + inset_y, x1 - inset_x, y1 - inset_y))
+        cell = cell.resize((cell.width * 3, cell.height * 3), Image.Resampling.LANCZOS)
+        try:
+            return pytesseract.image_to_string(cell, lang="eng", config="--psm 7 --oem 1").strip()
+        finally:
+            cell.close()
+
+    for boundaries in sections:
+        if len(boundaries) < 5 or boundaries[-1] - boundaries[0] > height * 0.65:
+            continue
+        data_top, data_bottom = boundaries[1], boundaries[-1]
+        vertical = group_lines(
+            x for x in range(width)
+            if sum(1 for y in range(data_top, data_bottom) if pixels[x, y] < 100)
+            > (data_bottom - data_top) * 0.65
+        )
+        if len(vertical) < 3:
+            continue
+
+        headers = [
+            read_cell(x0, x1, boundaries[0], boundaries[1])
+            for x0, x1 in zip(vertical, vertical[1:])
+        ]
+        normalized_headers = [re.sub(r"[^a-z]", "", header.lower()) for header in headers]
+        amount_column = next((
+            index for index, header in enumerate(normalized_headers)
+            if "mra" in header
+            or ("amount" in header and any(word in header for word in ("emi", "installment", "instalment", "repayment")))
+        ), None)
+        if amount_column is None:
+            continue
+
+        date_column = next((
+            index for index, header in enumerate(normalized_headers)
+            if "date" in header and any(word in header for word in ("due", "billing", "emi", "installment", "instalment", "payment"))
+        ), None)
+        period_column = next((index for index, header in enumerate(normalized_headers) if "period" in header), None)
+        rows = []
+        row_boundaries = boundaries[1:]
+        for row_index, (y0, y1) in enumerate(zip(row_boundaries, row_boundaries[1:]), start=1):
+            if date_column is not None:
+                date_text = read_cell(vertical[date_column], vertical[date_column + 1], y0, y1)
+                amount_text = read_cell(vertical[amount_column], vertical[amount_column + 1], y0, y1)
+                if _DATE_RE.search(date_text) and _amounts(amount_text):
+                    rows.append(f"{date_text} {amount_text}")
+            elif period_column is not None:
+                amount_text = read_cell(vertical[amount_column], vertical[amount_column + 1], y0, y1)
+                values = _amounts(amount_text)
+                if values:
+                    rows.append(f"{row_index} {amount_text}")
+        if rows:
+            result = "\n".join([" ".join(headers), *rows])
+            gray.close()
+            return result
+
+    gray.close()
+    return ""
+
+
 def _csv_rows(file_storage, title):
     try:
         content = file_storage.stream.read().decode("utf-8-sig")
@@ -243,8 +431,8 @@ def _csv_rows(file_storage, title):
     return installments
 
 
-def extract_emi_schedule(file_storage, filename, title):
-    """Extract installment rows from a supported CSV or text-based PDF."""
+def extract_emi_schedule(file_storage, filename, title, first_due_date=None):
+    """Extract installment rows from a CSV, text PDF, or scanned schedule PDF."""
     extension = (filename.rsplit(".", 1)[-1] if "." in filename else "").lower()
     if extension == "csv":
         return "CSV", _csv_rows(file_storage, title)
@@ -255,17 +443,27 @@ def extract_emi_schedule(file_storage, filename, title):
         reader = pypdf.PdfReader(file_storage)
         if reader.is_encrypted:
             raise ScheduleExtractionError("This PDF is password-protected. Upload an unlocked copy.")
+        page_count = len(reader.pages)
         page_text = [(page.extract_text() or "") for page in reader.pages]
     except ScheduleExtractionError:
         raise
     except Exception as exc:
         raise ScheduleExtractionError("The PDF could not be opened. Upload a valid, unlocked PDF.") from exc
 
+    file_storage.stream.seek(0)
+    pdf_bytes = file_storage.stream.read()
     text = "\n".join(page_text)
-    if not text.strip():
-        raise ScheduleExtractionError(
-            "No selectable text was found in this PDF. It may be scanned; export a text-searchable copy or upload a CSV."
-        )
-    lines = [re.sub(r"\s+", " ", line).strip() for line in text.splitlines()]
-    installments = _date_rows(lines, text, title)
-    return _detect_bank(text), installments
+    try:
+        return _extract_from_pdf_text(text, title, first_due_date)
+    except ScheduleExtractionError as text_error:
+        try:
+            ocr_text = _ocr_pdf(pdf_bytes, page_count)
+            return _extract_from_pdf_text(ocr_text, title, first_due_date)
+        except ScheduleExtractionError as ocr_error:
+            # Preserve the actionable missing-date message when OCR succeeded
+            # in reading a period-only schedule.
+            if "no payment dates" in str(ocr_error).lower():
+                raise ocr_error
+            if "no payment dates" in str(text_error).lower():
+                raise text_error
+            raise ocr_error

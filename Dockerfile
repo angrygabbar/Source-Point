@@ -8,6 +8,11 @@ ENV PYTHONUNBUFFERED=1
 # Set work directory
 WORKDIR /app
 
+# Render and OCR image-only bank schedules locally inside the app container.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends poppler-utils tesseract-ocr \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy requirements file
 COPY requirements.txt .
 

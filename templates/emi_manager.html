@@ -90,10 +90,16 @@
                         <input type="file" name="schedule_file" accept=".csv, .pdf" required class="hidden" onchange="this.previousElementSibling.querySelector('span:last-child').innerText = this.files[0].name">
                     </label>
                 </div>
+
+                <div class="md:col-span-3">
+                    <label for="first_due_date" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">First Installment Date</label>
+                    <input type="date" name="first_due_date" id="first_due_date" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 transition-all">
+                    <p class="text-[10px] text-gray-500 mt-1">Needed only when the PDF lists periods but no dates.</p>
+                </div>
                 
                 <div class="md:col-span-12 flex justify-between items-center border-t border-white/5 pt-4 mt-2">
                     <p class="text-[10px] text-gray-500 max-w-2xl">
-                        <i class="fas fa-info-circle mr-1"></i> Axis, SBI Card and ICICI schedules are supported. PDFs must contain selectable text; CSV headers can use Date and Amount/EMI Amount. For SBI MRA schedules, confirm the card payment due date on the statement.
+                        <i class="fas fa-info-circle mr-1"></i> Axis, SBI Card and ICICI schedules are supported, including scanned PDFs. Period-only schedules need the first installment date above; later dates are generated monthly. For SBI MRA schedules, confirm the card payment due date on the statement.
                     </p>
                     <button type="submit" class="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all transform hover:scale-[1.02] flex items-center">
                         <i class="fas fa-cog fa-spin mr-2 hidden group-active:inline-block"></i> Generate Plan

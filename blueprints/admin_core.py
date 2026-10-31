@@ -702,6 +702,7 @@ def import_emi_schedule():
     borrower_id = request.form.get('borrower_id', type=int)
     lender_id = request.form.get('lender_id', type=int)
     title = (request.form.get('title') or '').strip()
+    first_due_date_raw = (request.form.get('first_due_date') or '').strip()
     reminder_days = request.form.get('reminder_days', default=3, type=int)
     file = request.files.get('schedule_file')
 
@@ -726,7 +727,15 @@ def import_emi_schedule():
     filename = secure_filename(file.filename)
 
     try:
-        provider, installments = extract_emi_schedule(file, filename, title)
+        first_due_date = None
+        if first_due_date_raw:
+            try:
+                first_due_date = datetime.strptime(first_due_date_raw, '%Y-%m-%d').date()
+            except ValueError:
+                flash('Enter a valid first installment date.', 'danger')
+                return redirect(url_for('admin_core.emi_manager'))
+
+        provider, installments = extract_emi_schedule(file, filename, title, first_due_date)
         total_amount = sum((item.amount for item in installments), start=0)
         new_plan = EMIPlan(
             borrower_id=borrower.id,
