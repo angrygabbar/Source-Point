@@ -695,27 +695,66 @@ def share_brd(project_id):
 def emi_manager():
     plans = EMIPlan.query.order_by(EMIPlan.created_at.desc()).all()
     users = User.query.filter(User.role != UserRole.ADMIN.value).order_by(User.username).all()
-    summary = get_emi_dashboard_summary(plans)
-    return render_template('emi_manager.html', plans=plans, users=users, summary=summary)
+    dashboard = get_emi_dashboard_data(plans)
+    return render_template(
+        'emi_manager.html',
+        plans=dashboard['active_plans'],
+        paid_payments=dashboard['paid_payments'],
+        completed_plan_count=dashboard['completed_plan_count'],
+        users=users,
+        summary=dashboard['summary'],
+    )
 
 
-def get_emi_dashboard_summary(plans):
-    """Summarize scheduled and unpaid EMI amounts for the admin dashboard."""
+def get_emi_dashboard_data(plans):
+    """Build the EMI overview, actionable schedules, and separate paid history."""
     today = datetime.now(ZoneInfo('Asia/Kolkata')).date()
     payments = [payment for plan in plans for payment in plan.payments]
     month_payments = [
         payment for payment in payments
         if payment.due_date.year == today.year and payment.due_date.month == today.month
     ]
+    pending_payments = [payment for payment in payments if payment.status != 'Paid']
+    overdue_payments = [payment for payment in pending_payments if payment.due_date < today]
+    due_soon_payments = [
+        payment for payment in pending_payments
+        if today <= payment.due_date <= today + timedelta(days=7)
+    ]
+    paid_payments = sorted(
+        (payment for payment in payments if payment.status == 'Paid'),
+        key=lambda payment: (payment.payment_date or datetime.combine(payment.due_date, datetime.min.time()), payment.id),
+        reverse=True,
+    )
+    active_plans = []
+    completed_plan_count = 0
+    for plan in plans:
+        plan_payments = list(plan.payments)
+        if plan_payments and all(payment.status == 'Paid' for payment in plan_payments):
+            completed_plan_count += 1
+        else:
+            active_plans.append(plan)
+
     zero = Decimal('0.00')
-    return {
+    summary = {
+        'today': today,
         'month_label': today.strftime('%B %Y'),
         'monthly_liability': sum((payment.amount for payment in month_payments), zero),
         'monthly_pending': sum((payment.amount for payment in month_payments if payment.status != 'Paid'), zero),
         'monthly_paid': sum((payment.amount for payment in month_payments if payment.status == 'Paid'), zero),
         'overall_liability': sum((payment.amount for payment in payments), zero),
-        'pending_liability': sum((payment.amount for payment in payments if payment.status != 'Paid'), zero),
+        'pending_liability': sum((payment.amount for payment in pending_payments), zero),
         'amount_paid': sum((payment.amount for payment in payments if payment.status == 'Paid'), zero),
+        'overdue_liability': sum((payment.amount for payment in overdue_payments), zero),
+        'overdue_count': len(overdue_payments),
+        'due_soon_liability': sum((payment.amount for payment in due_soon_payments), zero),
+        'due_soon_count': len(due_soon_payments),
+        'due_soon_end': today + timedelta(days=7),
+    }
+    return {
+        'summary': summary,
+        'active_plans': active_plans,
+        'paid_payments': paid_payments,
+        'completed_plan_count': completed_plan_count,
     }
 
 @admin_core_bp.route('/emi_manager/import', methods=['POST'])

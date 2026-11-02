@@ -17,7 +17,7 @@ from travel_invoice_service import invoice_email_template
 from services.commerce_service import CommerceService
 from blueprints.admin_core import (
     import_emi_schedule as import_emi_schedule_core,
-    get_emi_dashboard_summary as get_emi_dashboard_summary_core,
+    get_emi_dashboard_data as get_emi_dashboard_data_core,
 )
 import os
 import cloudinary.uploader
@@ -1785,8 +1785,15 @@ def emi_manager():
     plans = EMIPlan.query.order_by(EMIPlan.created_at.desc()).all()
     # Fetch all users to populate both dropdowns
     users = User.query.filter(User.role != 'admin').order_by(User.username).all()
-    summary = get_emi_dashboard_summary_core(plans)
-    return render_template('emi_manager.html', plans=plans, users=users, summary=summary)
+    dashboard = get_emi_dashboard_data_core(plans)
+    return render_template(
+        'emi_manager.html',
+        plans=dashboard['active_plans'],
+        paid_payments=dashboard['paid_payments'],
+        completed_plan_count=dashboard['completed_plan_count'],
+        users=users,
+        summary=dashboard['summary'],
+    )
 
 @admin_bp.route('/emi_manager/import', methods=['POST'])
 @login_required
