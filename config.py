@@ -46,10 +46,11 @@ class Config:
             'task': 'worker.send_invoice_reminders_task',
             'schedule': crontab(hour='9,17', minute=0),
         },
-        # 2. Finance EMI Reminders (10 AM IST Daily)
+        # 2. Finance EMI Reminders (9 AM IST on the first day of each month)
+        # Keep the existing schedule key so RedBeat updates its stored entry in place.
         'send-emi-reminders-daily': {
             'task': 'worker.process_emi_reminders_task',
-            'schedule': crontab(hour=10, minute=0),
+            'schedule': crontab(day_of_month=1, hour=9, minute=0),
         },
         # 3. NEW: Hiring Event Checks (Every 15 Minutes)
         # Checks for upcoming tests (2hr reminder) AND expired tests (auto-complete)

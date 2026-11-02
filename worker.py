@@ -3,7 +3,8 @@ import sib_api_v3_sdk
 import os
 import base64
 import pybreaker
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 from flask import render_template
 import logging
 from enums import InvoiceStatus, UserRole
@@ -31,7 +32,7 @@ def _send_via_brevo_api(to_list, subject, html_content, cc_list=None, bcc_list=N
 
     if not api_key:
         logger.warning("Brevo API key is not set. Email skipped.")
-        return
+        return False
 
     configuration = sib_api_v3_sdk.Configuration()
     configuration.api_key['api-key'] = api_key
@@ -71,11 +72,14 @@ def _send_via_brevo_api(to_list, subject, html_content, cc_list=None, bcc_list=N
             
         perform_send()
         logger.info(f"[Celery] Email sent successfully to {[t['email'] for t in to_list]}")
+        return True
         
     except pybreaker.CircuitBreakerError:
         logger.error("[Celery] Circuit Breaker Open: Email service is down. Email dropped.")
+        return False
     except Exception as e:
         logger.error(f"[Celery] Error sending email: {e}")
+        return False
 
 # --- 3. TASKS ---
 
@@ -124,17 +128,74 @@ def send_single_reminder_task(payment_id):
 
 @celery.task
 def process_emi_reminders_task():
-    from models.finance import EMIPayment
-    today = datetime.utcnow().date()
-    logger.info(f"[Scheduler] Checking EMI payments due tomorrow ({today})...")
+    """Email each borrower a digest of unpaid installments due this month."""
+    from models.finance import EMIPlan, EMIPayment
 
-    batch = EMIPayment.query.filter(EMIPayment.status == 'Pending', EMIPayment.reminder_sent == False).limit(100).all()
-    count = 0
-    for payment in batch:
-        if payment.plan and (payment.due_date - today).days == 1:
-            send_single_reminder_task.delay(payment.id)
-            count += 1
-    logger.info(f"[Scheduler] Queued {count} EMI reminder tasks.")
+    today = datetime.now(ZoneInfo('Asia/Kolkata')).date()
+    if today.day != 1:
+        logger.info("[Scheduler] Monthly EMI reminders run only on the first day of the month.")
+        return 0
+
+    month_start = date(today.year, today.month, 1)
+    month_end = date(today.year + (today.month == 12), today.month % 12 + 1, 1)
+    due_payments = (
+        EMIPayment.query
+        .join(EMIPlan, EMIPayment.plan_id == EMIPlan.id)
+        .filter(
+            EMIPlan.is_active.isnot(False),
+            EMIPayment.status.is_distinct_from('Paid'),
+            EMIPayment.due_date >= month_start,
+            EMIPayment.due_date < month_end,
+            EMIPayment.monthly_reminder_sent_at.is_(None),
+        )
+        .order_by(EMIPayment.due_date, EMIPlan.title, EMIPayment.installment_number)
+        .all()
+    )
+
+    borrower_schedules = {}
+    for payment in due_payments:
+        plan = payment.plan
+        borrower = plan.borrower if plan else None
+        if not borrower or not borrower.email:
+            continue
+        borrower_schedules.setdefault(borrower.id, {'borrower': borrower, 'payments': []})['payments'].append(payment)
+
+    month_label = today.strftime('%B %Y')
+    emails_sent = 0
+    for schedule in borrower_schedules.values():
+        borrower = schedule['borrower']
+        payments = schedule['payments']
+        total_due = sum((payment.amount for payment in payments), start=0)
+        html_content = render_template(
+            'mail/emi_monthly_reminder_borrower.html',
+            borrower=borrower,
+            payments=payments,
+            month_label=month_label,
+            total_due=total_due,
+            now=datetime.now(ZoneInfo('Asia/Kolkata')),
+        )
+        sent = _send_via_brevo_api(
+            to_list=[{'email': borrower.email, 'name': borrower.username}],
+            subject=f'Your pending EMI schedule for {month_label}',
+            html_content=html_content,
+        )
+        if sent:
+            sent_at = datetime.utcnow()
+            for payment in payments:
+                payment.monthly_reminder_sent_at = sent_at
+            db.session.commit()
+            emails_sent += 1
+        else:
+            db.session.rollback()
+            logger.warning("[Scheduler] Monthly EMI reminder was not sent to borrower ID %s.", borrower.id)
+
+    logger.info(
+        "[Scheduler] Sent %s monthly EMI reminder email(s) covering %s pending installment(s) for %s.",
+        emails_sent,
+        sum(len(schedule['payments']) for schedule in borrower_schedules.values()),
+        month_label,
+    )
+    return emails_sent
 
 @celery.task
 def send_invoice_reminders_task():

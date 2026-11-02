@@ -15,7 +15,10 @@ from werkzeug.utils import secure_filename
 from invoice_service import InvoiceGenerator, BrdGenerator
 from travel_invoice_service import invoice_email_template
 from services.commerce_service import CommerceService
-from blueprints.admin_core import import_emi_schedule as import_emi_schedule_core
+from blueprints.admin_core import (
+    import_emi_schedule as import_emi_schedule_core,
+    get_emi_dashboard_summary as get_emi_dashboard_summary_core,
+)
 import os
 import cloudinary.uploader
 import csv
@@ -1782,7 +1785,8 @@ def emi_manager():
     plans = EMIPlan.query.order_by(EMIPlan.created_at.desc()).all()
     # Fetch all users to populate both dropdowns
     users = User.query.filter(User.role != 'admin').order_by(User.username).all()
-    return render_template('emi_manager.html', plans=plans, users=users)
+    summary = get_emi_dashboard_summary_core(plans)
+    return render_template('emi_manager.html', plans=plans, users=users, summary=summary)
 
 @admin_bp.route('/emi_manager/import', methods=['POST'])
 @login_required
@@ -1817,6 +1821,8 @@ def update_emi_payment():
             payment.payment_date = None
         elif status == 'Paid' and not payment.payment_date:
             payment.payment_date = datetime.utcnow()
+    if payment.status == 'Pending':
+        payment.monthly_reminder_sent_at = None
         
     db.session.commit()
     log_user_action("Update EMI Payment", f"Updated installment #{payment.installment_number} for plan {payment.plan.title}")

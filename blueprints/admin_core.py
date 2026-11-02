@@ -11,6 +11,8 @@ from utils import role_required, log_user_action, send_email
 from invoice_service import BrdGenerator
 from services.commerce_service import CommerceService
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+from decimal import Decimal
 from sqlalchemy import func
 from werkzeug.utils import secure_filename
 from services.emi_schedule_extractor import ScheduleExtractionError, extract_emi_schedule
@@ -693,7 +695,28 @@ def share_brd(project_id):
 def emi_manager():
     plans = EMIPlan.query.order_by(EMIPlan.created_at.desc()).all()
     users = User.query.filter(User.role != UserRole.ADMIN.value).order_by(User.username).all()
-    return render_template('emi_manager.html', plans=plans, users=users)
+    summary = get_emi_dashboard_summary(plans)
+    return render_template('emi_manager.html', plans=plans, users=users, summary=summary)
+
+
+def get_emi_dashboard_summary(plans):
+    """Summarize scheduled and unpaid EMI amounts for the admin dashboard."""
+    today = datetime.now(ZoneInfo('Asia/Kolkata')).date()
+    payments = [payment for plan in plans for payment in plan.payments]
+    month_payments = [
+        payment for payment in payments
+        if payment.due_date.year == today.year and payment.due_date.month == today.month
+    ]
+    zero = Decimal('0.00')
+    return {
+        'month_label': today.strftime('%B %Y'),
+        'monthly_liability': sum((payment.amount for payment in month_payments), zero),
+        'monthly_pending': sum((payment.amount for payment in month_payments if payment.status != 'Paid'), zero),
+        'monthly_paid': sum((payment.amount for payment in month_payments if payment.status == 'Paid'), zero),
+        'overall_liability': sum((payment.amount for payment in payments), zero),
+        'pending_liability': sum((payment.amount for payment in payments if payment.status != 'Paid'), zero),
+        'amount_paid': sum((payment.amount for payment in payments if payment.status == 'Paid'), zero),
+    }
 
 @admin_core_bp.route('/emi_manager/import', methods=['POST'])
 @login_required
@@ -783,6 +806,8 @@ def update_emi_payment():
         payment.status = status
         if status == 'Pending': payment.payment_date = None
         elif status == 'Paid' and not payment.payment_date: payment.payment_date = datetime.utcnow()
+    if payment.status == 'Pending':
+        payment.monthly_reminder_sent_at = None
     
     db.session.commit()
     flash('Payment details updated successfully.', 'success')

@@ -67,4 +67,5 @@ class EMIPayment(db.Model):
     status = db.Column(db.String(20), default='Pending')
     reminder_days_before = db.Column(db.Integer, default=3)
     reminder_sent = db.Column(db.Boolean, default=False)
+    monthly_reminder_sent_at = db.Column(db.DateTime, nullable=True)
     payment_date = db.Column(db.DateTime, nullable=True)

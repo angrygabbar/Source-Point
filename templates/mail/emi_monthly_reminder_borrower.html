@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Your {{ month_label }} EMI schedule</title>
+</head>
+<body style="margin:0;padding:24px;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
+    <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="max-width:640px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;">
+        <tr>
+            <td style="padding:28px 32px;background:#312e81;color:#fff;">
+                <p style="margin:0 0 8px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#c7d2fe;">SourcePoint Finance</p>
+                <h1 style="margin:0;font-size:25px;line-height:1.3;">Your EMI schedule for {{ month_label }}</h1>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding:28px 32px 12px;">
+                <p style="margin:0 0 10px;font-size:16px;">Hello {{ borrower.username }},</p>
+                <p style="margin:0;color:#475569;line-height:1.6;">These installments are currently marked pending and are scheduled for this month. Please review the due dates and update the payment status after each payment.</p>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding:12px 32px 20px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:#f8fafc;color:#475569;text-align:left;font-size:11px;text-transform:uppercase;">
+                            <th style="padding:12px 10px;">Schedule</th>
+                            <th style="padding:12px 10px;">Due date</th>
+                            <th style="padding:12px 10px;text-align:right;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                        <tr style="border-bottom:1px solid #e2e8f0;">
+                            <td style="padding:14px 10px;">
+                                <strong>{{ payment.plan.title }}</strong>
+                                <span style="display:block;margin-top:4px;font-size:12px;color:#64748b;">Installment {{ payment.installment_number }}{% if payment.description %} · {{ payment.description }}{% endif %}</span>
+                            </td>
+                            <td style="padding:14px 10px;white-space:nowrap;color:#334155;">{{ payment.due_date.strftime('%d %b %Y') }}</td>
+                            <td style="padding:14px 10px;text-align:right;white-space:nowrap;font-weight:700;">₹{{ "{:,.2f}".format(payment.amount) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="2" style="padding:16px 10px;font-weight:700;">Total pending this month</td>
+                            <td style="padding:16px 10px;text-align:right;white-space:nowrap;font-size:18px;font-weight:700;color:#312e81;">₹{{ "{:,.2f}".format(total_due) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding:0 32px 28px;color:#64748b;font-size:13px;line-height:1.6;">
+                If you have already paid an installment, please contact the schedule administrator to update its status. This is an automated monthly reminder; only installments marked pending at the time of sending are included.
+            </td>
+        </tr>
+        <tr>
+            <td style="padding:18px 32px;background:#f8fafc;color:#94a3b8;font-size:11px;text-align:center;">
+                © {{ now.year }} SourcePoint · Automated EMI reminder
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
