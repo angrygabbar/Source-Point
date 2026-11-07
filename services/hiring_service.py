@@ -194,7 +194,7 @@ class HiringService:
         return True, "Your code test has been submitted successfully and sent via email!"
 
     @staticmethod
-    def share_code_snippet(sender_id, recipient_id, code):
+    def share_code_snippet(sender_id, recipient_id, code, language='java'):
         if not recipient_id or not code or not code.strip():
             raise BusinessValidationError("Please select a recipient and provide code.")
 
@@ -203,7 +203,7 @@ class HiringService:
                 sender_id=sender_id, 
                 recipient_id=recipient_id, 
                 code=code, 
-                language='java'
+                language=language
             )
             db.session.add(new_snippet)
             db.session.commit()

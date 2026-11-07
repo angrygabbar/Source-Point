@@ -4,6 +4,7 @@ from services.auth_service import AuthService
 from extensions import db, bcrypt
 from utils import send_email, log_user_action
 from datetime import datetime
+from urllib.parse import quote
 from enums import UserRole
 import os
 import sys
@@ -200,6 +201,81 @@ def logout():
 @auth_bp.route('/reset_password_request')
 def reset_password_request():
     return render_template('forgot_password.html')
+
+@auth_bp.route('/api/v1/auth/password-reset/request', methods=['POST'])
+def mobile_password_reset_request():
+    """Send the existing 30-minute password-reset email without exposing account existence."""
+    data = request.get_json(silent=True) or {}
+    email = str(data.get('email', '')).strip()
+    if not email:
+        return jsonify({'success': False, 'message': 'Enter the email address for your account.'}), 400
+
+    from models.auth import User
+    user = User.query.filter_by(email=email).first()
+    if user:
+        from itsdangerous import URLSafeTimedSerializer
+        serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+        token = serializer.dumps(user.email, salt='password-reset-salt')
+        reset_url = request.host_url.rstrip('/') + url_for('auth.reset_password', token=token)
+        app_reset_url = 'sourcepoint://password-reset?token=' + quote(token, safe='')
+        try:
+            send_email(
+                to=[user.email],
+                subject='SourcePoint — Password Reset',
+                template='mail/password_reset_email.html',
+                user=user,
+                reset_url=reset_url,
+                app_reset_url=app_reset_url,
+            )
+        except Exception:
+            current_app.logger.exception('Mobile password-reset email could not be sent')
+
+    return jsonify({
+        'success': True,
+        'message': 'If an account with that email exists, a password reset link has been sent.',
+    })
+
+@auth_bp.route('/api/v1/auth/password-reset/confirm', methods=['POST'])
+def mobile_password_reset_confirm():
+    """Confirm a reset token using the same signer, lifetime, and password policy as the website."""
+    data = request.get_json(silent=True) or {}
+    token = data.get('token')
+    password = data.get('new_password')
+    confirm_password = data.get('confirm_password')
+    if not all(isinstance(value, str) and value for value in (token, password, confirm_password)):
+        return jsonify({'success': False, 'message': 'Complete all password-reset fields.'}), 400
+    if len(password) < 6:
+        return jsonify({'success': False, 'message': 'Password must be at least 6 characters.'}), 400
+    if password != confirm_password:
+        return jsonify({'success': False, 'message': 'Passwords do not match.'}), 400
+
+    from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
+    serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+    try:
+        email = serializer.loads(token, salt='password-reset-salt', max_age=1800)
+    except SignatureExpired:
+        return jsonify({'success': False, 'message': 'The password reset link has expired. Request a new one.'}), 410
+    except BadSignature:
+        return jsonify({'success': False, 'message': 'This password reset link is invalid.'}), 400
+
+    from models.auth import User
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({'success': False, 'message': 'This password reset link is invalid.'}), 400
+
+    try:
+        user.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception('Mobile password reset failed')
+        return jsonify({'success': False, 'message': 'Password could not be reset. Request a new link and try again.'}), 500
+    try:
+        log_user_action('Reset Password', 'User reset their password from the native app')
+    except Exception:
+        current_app.logger.exception('Password reset audit log could not be recorded')
+
+    return jsonify({'success': True, 'message': 'Password reset. Sign in using your new password.'})
 
 @auth_bp.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():

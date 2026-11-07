@@ -134,11 +134,15 @@ class Invoice(db.Model):
 
     @property
     def refundable_amount(self):
+        """Return the net amount still available for refund.
+
+        ``amount_paid`` is reduced when a refund is recorded; ``amount_refunded``
+        is a separate lifetime total for display and audit history.
+        """
         paid = float(self.amount_paid) if self.amount_paid else 0.0
         if self.status == InvoiceStatus.PAID.value and paid == 0.0:
             paid = float(self.total_amount) if self.total_amount else 0.0
-        refunded = float(self.amount_refunded) if self.amount_refunded else 0.0
-        return max(0.0, paid - refunded)
+        return max(0.0, paid)
 
 class InvoicePayment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
