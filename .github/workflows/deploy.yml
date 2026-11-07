@@ -35,21 +35,23 @@ jobs:
           # Fetch and build wheels in a regular container; BuildKit's network
           # cannot reliably reach package indexes on this Mac mini.
           WHEELHOUSE="$PWD/.docker-wheelhouse"
-          rm -rf "$WHEELHOUSE"
           mkdir -p "$WHEELHOUSE"
-          trap 'rm -rf "$WHEELHOUSE"' EXIT
           docker run --rm \
             --user "$(id -u):$(id -g)" \
             --env PIP_INDEX_URL=https://pypi.org/simple \
-            --env PIP_DEFAULT_TIMEOUT=300 \
-            --env PIP_RETRIES=10 \
+            --env PIP_DEFAULT_TIMEOUT=1800 \
+            --env PIP_RETRIES=20 \
             --mount "type=bind,source=$PWD/requirements.txt,target=/tmp/requirements.txt,readonly" \
             --mount "type=bind,source=$WHEELHOUSE,target=/wheelhouse" \
             python:3.11-bookworm \
-            python -m pip wheel --disable-pip-version-check --no-cache-dir \
+            sh -ceu 'python -m pip install --disable-pip-version-check --no-cache-dir \
+              --index-url https://pypi.org/simple --find-links /wheelhouse \
+              --timeout 1800 --retries 20 setuptools wheel && \
+              python -m pip wheel --disable-pip-version-check --no-cache-dir \
               --index-url https://pypi.org/simple \
-              --wheel-dir /wheelhouse --timeout 300 --retries 5 \
-              -r /tmp/requirements.txt
+              --wheel-dir /wheelhouse --find-links /wheelhouse \
+              --no-build-isolation --timeout 1800 --retries 20 \
+              -r /tmp/requirements.txt'
 
           # Build web, worker, and scheduler so background tasks get the new code too.
           # We start/recreate them only after database migrations succeed.
