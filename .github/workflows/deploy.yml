@@ -40,6 +40,9 @@ jobs:
           trap 'rm -rf "$WHEELHOUSE"' EXIT
           docker run --rm \
             --user "$(id -u):$(id -g)" \
+            --env PIP_INDEX_URL=https://pypi.org/simple \
+            --env PIP_DEFAULT_TIMEOUT=300 \
+            --env PIP_RETRIES=10 \
             --mount "type=bind,source=$PWD/requirements.txt,target=/tmp/requirements.txt,readonly" \
             --mount "type=bind,source=$WHEELHOUSE,target=/wheelhouse" \
             python:3.11-bookworm \
