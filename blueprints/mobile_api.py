@@ -38,7 +38,7 @@ from models.commerce import (
     SupersCoinInvoice, InventoryRollbackRequest, InventoryRollbackTerms, InventoryRollbackTermsDecision,
 )
 from models.auth import User, ActivityUpdate, Message, ActivityLog
-from models.hiring import JobApplication, JobOpening, CodeSnippet, ModeratorAssignmentHistory
+from models.hiring import JobApplication, JobOpening, CodeSnippet, CodeTestSubmission, ModeratorAssignmentHistory
 from models.learning import ChatHistory, LearningContent, ProblemStatement
 from models.newsletter import NewsArticle
 from models.gift_card import GiftCard
