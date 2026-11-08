@@ -85,7 +85,93 @@ def _send_via_brevo_api(to_list, subject, html_content, cc_list=None, bcc_list=N
 
 @celery.task
 def send_email_task(to_list, subject, html_content, cc_list, bcc_list, attachments):
-    _send_via_brevo_api(to_list, subject, html_content, cc_list, bcc_list, attachments)
+    return _send_via_brevo_api(to_list, subject, html_content, cc_list, bcc_list, attachments)
+
+
+@celery.task
+def send_admin_commerce_invoice_email_task(invoice_id, recipients=None, mode="resend"):
+    """Generate and deliver an admin invoice email outside the web request."""
+    from datetime import datetime
+    from enums import InvoiceStatus
+    from invoice_service import InvoiceGenerator
+    from models.commerce import Invoice
+    from travel_invoice_service import invoice_email_template
+    from utils import send_email
+
+    invoice = Invoice.query.get(invoice_id)
+    if not invoice:
+        logger.error("Admin invoice email task could not find invoice %s", invoice_id)
+        return False
+
+    pdf = InvoiceGenerator(invoice).generate_pdf()
+    attachment = [{
+        "filename": f"Invoice_{invoice.invoice_number}.pdf",
+        "content_type": "application/pdf",
+        "data": pdf,
+    }]
+    if mode == "reminder":
+        if invoice.status in {InvoiceStatus.PAID.value, InvoiceStatus.REFUNDED.value, InvoiceStatus.CANCELLED.value}:
+            logger.warning("Skipped reminder for non-payable invoice %s", invoice.id)
+            return False
+        return send_email(
+            to=invoice.recipient_email,
+            subject=f"Payment Reminder: Invoice #{invoice.invoice_number}",
+            template="mail/reminder_invoice_email.html",
+            recipient_name=invoice.recipient_name,
+            invoice_number=invoice.invoice_number,
+            created_at=invoice.created_at.strftime("%d %b %Y") if invoice.created_at else "",
+            total_amount=float(invoice.total_amount),
+            amount_paid=float(invoice.amount_paid or 0),
+            pending_amount=float(invoice.pending_amount),
+            due_date=invoice.due_date.strftime("%d %b %Y") if invoice.due_date else "Immediate",
+            invoice=invoice,
+            attachments=attachment,
+            sync=True,
+        )
+
+    recipient_list = recipients or [invoice.recipient_email]
+    subject = f"Updated Invoice #{invoice.invoice_number}" if mode == "updated" else f"Invoice #{invoice.invoice_number}"
+    return send_email(
+        to=recipient_list,
+        subject=subject,
+        template=invoice_email_template(invoice.invoice_type),
+        invoice=invoice,
+        attachments=attachment,
+        sync=True,
+    )
+
+
+@celery.task
+def send_admin_superscoins_invoice_email_task(invoice_id, admin_email="", admin_username="", payment_confirmation=False):
+    """Generate a SupersCoins invoice PDF and deliver it in the worker."""
+    from datetime import datetime
+    from invoice_service import SupersCoinInvoiceGenerator
+    from models.commerce import SupersCoinInvoice
+    from utils import send_email
+
+    invoice = SupersCoinInvoice.query.get(invoice_id)
+    if not invoice:
+        logger.error("SupersCoins email task could not find invoice %s", invoice_id)
+        return False
+    pdf = SupersCoinInvoiceGenerator(invoice).generate_pdf()
+    template = "mail/superscoins_invoice_paid_email.html" if payment_confirmation else "mail/superscoins_invoice_email.html"
+    suffix = " — Payment Confirmed" if payment_confirmation else ""
+    return send_email(
+        to=invoice.seller.email,
+        cc=admin_email or None,
+        subject=f"SupersCoins Invoice {invoice.invoice_number}{suffix}",
+        template=template,
+        invoice=invoice,
+        seller=invoice.seller,
+        admin={"username": admin_username or admin_email or "SourcePoint Admin"},
+        now=datetime.utcnow(),
+        attachments=[{
+            "filename": f"{invoice.invoice_number}.pdf",
+            "content_type": "application/pdf",
+            "data": pdf,
+        }],
+        sync=True,
+    )
 
 @celery.task
 def send_single_reminder_task(payment_id):

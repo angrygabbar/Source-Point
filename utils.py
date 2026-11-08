@@ -55,9 +55,21 @@ def _json_safe_attachments(attachments):
         queue_attachments.append(queued_attachment)
     return queue_attachments
 
+
+def enqueue_email_job(task, *args, **kwargs):
+    """Queue a mail task only when a Celery worker is reachable; return its ID."""
+    try:
+        workers = task.app.control.inspect(timeout=1).ping() or {}
+    except Exception as error:
+        raise RuntimeError("The email worker could not be reached. Check Redis and Celery on the server.") from error
+    if not workers:
+        raise RuntimeError("No email worker is available. Check the Celery worker service on the server.")
+    return task.delay(*args, **kwargs).id
+
 # --- EMAIL SERVICE (UPDATED) ---
 
-def send_email(to, subject, template, cc=None, bcc=None, attachments=None, sync=False, **kwargs):
+def send_email(to, subject, template, cc=None, bcc=None, attachments=None, sync=False,
+               return_task_id=False, require_worker=False, **kwargs):
     """
     Renders the email template and sends it.
     Args:
@@ -103,14 +115,17 @@ def send_email(to, subject, template, cc=None, bcc=None, attachments=None, sync=
 
     # Dispatch
     if sync:
-        # Run immediately in this thread (Blocking)
-        # We call the underlying function or the task directly
-        send_email_task(to_list, subject, html_content, cc_list, bcc_list, attachments)
+        # Run immediately in this thread (Blocking) and return the provider result.
+        # This is used for transactional admin actions that must not claim an email
+        # was sent when the queue or email provider is unavailable.
+        return bool(send_email_task(to_list, subject, html_content, cc_list, bcc_list, attachments))
     else:
-        # Send to Queue
-        send_email_task.delay(
-            to_list, subject, html_content, cc_list, bcc_list,
-            _json_safe_attachments(attachments),
-        )
+        # Queue delivery so slow email-provider responses do not hold open an
+        # HTTP request through Cloudflare. Transactional API callers can ask for
+        # the Celery task ID and report its eventual result to the client.
+        task_args = (to_list, subject, html_content, cc_list, bcc_list, _json_safe_attachments(attachments))
+        task_id = enqueue_email_job(send_email_task, *task_args) if require_worker else send_email_task.delay(*task_args).id
+        if return_task_id:
+            return task_id
 
     return True

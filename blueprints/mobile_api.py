@@ -57,7 +57,7 @@ from services.auth_service import AuthService
 from services.commerce_service import CommerceService
 from services.hiring_service import HiringService
 from services.rollback_terms_service import RollbackTermsService
-from utils import log_user_action, send_email
+from utils import enqueue_email_job, log_user_action, send_email
 
 
 mobile_api_bp = Blueprint("mobile_api", __name__, url_prefix="/api/v1")
@@ -5445,14 +5445,95 @@ def admin_update_emi_payment(payment_id):
         payment.status = data["status"]
         payment.payment_date = datetime.utcnow() if payment.status == "Paid" else None
     db.session.commit()
+    email_task_id = None
     if became_paid:
         try:
-            send_email(to=payment.plan.lender.email, subject=f"Payment Received: {payment.description}",
-                       template="mail/emi_paid_notification_lender.html", lender=payment.plan.lender,
-                       borrower=payment.plan.borrower, payment=payment, paid_date=payment.payment_date)
+            lender = payment.plan.lender
+            email_task_id = send_email(
+                to=lender.email, subject=f"Payment Received: {payment.description}",
+                template="mail/emi_paid_notification_lender.html", lender=lender,
+                borrower=payment.plan.borrower, payment=payment, paid_date=payment.payment_date,
+                return_task_id=True, require_worker=True,
+            ) if lender and lender.email else None
         except Exception:
             current_app.logger.exception("EMI saved but lender notification failed")
+        if not email_task_id:
+            current_app.logger.warning("EMI payment %s was marked paid but its lender email was not accepted", payment.id)
+            return jsonify({
+                "success": True,
+                "message": "EMI was marked paid, but the lender email was not sent. Use Resend lender notification to retry.",
+                "email_sent": False,
+            })
+        return jsonify({
+            "success": True,
+            "message": "EMI marked paid. Lender notification queued.",
+            "email_status": "queued",
+            "email_task_id": email_task_id,
+        }), 202
     return jsonify({"success": True, "message": "EMI payment updated."})
+
+
+@mobile_api_bp.post("/admin/emi/payments/<int:payment_id>/notify-lender")
+@mobile_login_required
+def admin_resend_emi_paid_notification(payment_id):
+    denied = _require_role("admin")
+    if denied:
+        return denied
+    payment = EMIPayment.query.get(payment_id)
+    if not payment:
+        return jsonify({"success": False, "message": "EMI payment not found."}), 404
+    if payment.status != "Paid":
+        return jsonify({"success": False, "message": "Only paid installments can send a payment notification."}), 409
+    lender = payment.plan.lender
+    if not lender or not lender.email:
+        return jsonify({"success": False, "message": "The lender has no email address on file."}), 409
+    try:
+        email_task_id = send_email(
+            to=lender.email, subject=f"Payment Received: {payment.description}",
+            template="mail/emi_paid_notification_lender.html", lender=lender,
+            borrower=payment.plan.borrower, payment=payment, paid_date=payment.payment_date,
+            return_task_id=True, require_worker=True,
+        )
+    except Exception:
+        current_app.logger.exception("EMI lender notification retry failed for payment %s", payment.id)
+        email_task_id = None
+    if not email_task_id:
+        current_app.logger.warning("EMI lender notification retry was not accepted for payment %s", payment.id)
+        return jsonify({
+            "success": False,
+            "message": "The notification could not be queued. Check Redis and the Celery email worker, then retry.",
+        }), 502
+    return jsonify({
+        "success": True,
+        "message": "Lender notification queued.",
+        "email_status": "queued",
+        "email_task_id": email_task_id,
+    }), 202
+
+
+@mobile_api_bp.get("/admin/email-jobs/<string:task_id>")
+@mobile_login_required
+def admin_email_job_status(task_id):
+    denied = _require_role("admin")
+    if denied:
+        return denied
+    from worker import send_email_task
+
+    task = send_email_task.AsyncResult(task_id)
+    if task.state in {"PENDING", "RECEIVED", "STARTED", "RETRY"}:
+        return jsonify({
+            "success": True,
+            "email_status": "sending" if task.state in {"STARTED", "RETRY"} else "queued",
+            "message": "Email delivery is still processing.",
+        }), 202
+    if task.state == "SUCCESS" and task.result is True:
+        return jsonify({"success": True, "email_status": "sent", "message": "The email provider accepted the message."})
+    current_app.logger.error("Email delivery task %s failed with state %s", task_id, task.state)
+    return jsonify({
+        "success": False,
+        "email_status": "failed",
+        "message": "The email worker or provider could not send the message. Check the server email logs and retry.",
+    }), 502
 
 
 @mobile_api_bp.delete("/admin/emi/plans/<int:plan_id>")
@@ -6264,17 +6345,19 @@ def admin_create_superscoins_invoice():
             db.session.rollback()
             return jsonify({"success": False, "message": message}), 400
         db.session.commit()
+        email_task_id = None
         try:
-            from invoice_service import SupersCoinInvoiceGenerator
-            pdf = SupersCoinInvoiceGenerator(invoice).generate_pdf()
-            send_email(to=invoice.seller.email, cc=current_user.email, subject=f"SupersCoins Invoice {invoice.invoice_number}",
-                       template="mail/superscoins_invoice_email.html", invoice=invoice, seller=invoice.seller,
-                       admin=current_user, now=datetime.utcnow(), attachments=[{"filename": f"{invoice.invoice_number}.pdf",
-                       "content_type": "application/pdf", "data": pdf}])
+            from worker import send_admin_superscoins_invoice_email_task
+            email_task_id = enqueue_email_job(
+                send_admin_superscoins_invoice_email_task,
+                invoice.id, current_user.email, current_user.username, False,
+            )
         except Exception:
             current_app.logger.exception("SupersCoins invoice saved but email failed")
         log_user_action("Create SupersCoins Invoice", f"Created {invoice.invoice_number} from native admin")
-        return jsonify({"success": True, "message": message, "id": invoice.id}), 201
+        if not email_task_id:
+            return jsonify({"success": True, "message": "Invoice created, but its email could not be queued. Check the email worker and retry.", "email_sent": False, "id": invoice.id}), 201
+        return jsonify({"success": True, "message": "Invoice created. Email queued.", "email_status": "queued", "email_task_id": email_task_id, "id": invoice.id}), 201
     except Exception:
         db.session.rollback()
         current_app.logger.exception("Native SupersCoins invoice creation failed")
@@ -6291,16 +6374,15 @@ def admin_send_superscoins_invoice(invoice_id):
     if not invoice:
         return jsonify({"success": False, "message": "SupersCoins invoice not found."}), 404
     try:
-        from invoice_service import SupersCoinInvoiceGenerator
-        pdf = SupersCoinInvoiceGenerator(invoice).generate_pdf()
-        send_email(to=invoice.seller.email, cc=current_user.email, subject=f"SupersCoins Invoice {invoice.invoice_number}",
-                   template="mail/superscoins_invoice_email.html", invoice=invoice, seller=invoice.seller,
-                   admin=current_user, now=datetime.utcnow(), attachments=[{"filename": f"{invoice.invoice_number}.pdf",
-                   "content_type": "application/pdf", "data": pdf}])
+        from worker import send_admin_superscoins_invoice_email_task
+        email_task_id = enqueue_email_job(
+            send_admin_superscoins_invoice_email_task,
+            invoice.id, current_user.email, current_user.username, False,
+        )
     except Exception:
         current_app.logger.exception("SupersCoins invoice email failed")
         return jsonify({"success": False, "message": "Invoice could not be emailed."}), 502
-    return jsonify({"success": True, "message": "SupersCoins invoice emailed."})
+    return jsonify({"success": True, "message": "Invoice email queued.", "email_status": "queued", "email_task_id": email_task_id}), 202
 
 
 @mobile_api_bp.post("/admin/superscoins/invoices/<int:invoice_id>/mark-paid")
@@ -6319,15 +6401,18 @@ def admin_mark_superscoins_invoice_paid(invoice_id):
     invoice.status, invoice.paid_at = "Paid", datetime.utcnow()
     db.session.commit()
     try:
-        from invoice_service import SupersCoinInvoiceGenerator
-        pdf = SupersCoinInvoiceGenerator(invoice).generate_pdf()
-        send_email(to=invoice.seller.email, cc=current_user.email, subject=f"SupersCoins Invoice {invoice.invoice_number} — Payment Confirmed",
-                   template="mail/superscoins_invoice_paid_email.html", invoice=invoice, seller=invoice.seller,
-                   admin=current_user, now=datetime.utcnow(), attachments=[{"filename": f"{invoice.invoice_number}.pdf",
-                   "content_type": "application/pdf", "data": pdf}])
+        from worker import send_admin_superscoins_invoice_email_task
+        email_task_id = enqueue_email_job(
+            send_admin_superscoins_invoice_email_task,
+            invoice.id, current_user.email, current_user.username, True,
+        )
     except Exception:
         current_app.logger.exception("SupersCoins invoice paid but notification failed")
-    return jsonify({"success": True, "message": "Invoice marked paid and the seller was notified."})
+        email_task_id = None
+    if not email_task_id:
+        current_app.logger.warning("SupersCoins invoice %s was marked paid but its email could not be queued", invoice.id)
+        return jsonify({"success": True, "message": "Invoice marked paid, but the seller email could not be queued. Check the email worker and retry.", "email_sent": False})
+    return jsonify({"success": True, "message": "Invoice marked paid. Seller email queued.", "email_status": "queued", "email_task_id": email_task_id}), 202
 
 
 @mobile_api_bp.get("/admin/superscoins/invoices/<int:invoice_id>/download")
@@ -6481,16 +6566,18 @@ def admin_create_commerce_invoice():
                          for description, quantity, price in invoice_items)
     db.session.add(invoice)
     db.session.commit()
+    email_task_id = None
     try:
-        from invoice_service import InvoiceGenerator
-        pdf = InvoiceGenerator(invoice).generate_pdf()
-        from travel_invoice_service import invoice_email_template, INVOICE_TYPE_LABELS
-        send_email(to=invoice.recipient_email, subject=f"{INVOICE_TYPE_LABELS[invoice_type]} Invoice {invoice.invoice_number}",
-                   template=invoice_email_template(invoice_type), invoice=invoice,
-                   attachments=[{"filename": f"{invoice.invoice_number}.pdf", "content_type": "application/pdf", "data": pdf}])
+        from worker import send_admin_commerce_invoice_email_task
+        email_task_id = enqueue_email_job(
+            send_admin_commerce_invoice_email_task, invoice.id, [invoice.recipient_email], "resend",
+        )
     except Exception:
         current_app.logger.exception("Invoice saved but PDF email delivery failed")
-    return jsonify({"success": True, "message": "Invoice created and emailed.", "id": invoice.id}), 201
+    if not email_task_id:
+        message = "Invoice created, but its email could not be queued. Check the email worker and retry."
+        return jsonify({"success": True, "message": message, "email_sent": False, "id": invoice.id}), 201
+    return jsonify({"success": True, "message": "Invoice created. Email queued.", "email_status": "queued", "email_task_id": email_task_id, "id": invoice.id}), 201
 
 
 @mobile_api_bp.patch("/admin/commerce/invoices/<int:invoice_id>")
@@ -6502,6 +6589,7 @@ def admin_update_commerce_invoice(invoice_id):
     invoice = Invoice.query.get(invoice_id)
     if not invoice:
         return jsonify({"success": False, "message": "Invoice not found."}), 404
+    was_paid = invoice.status == InvoiceStatus.PAID.value
     data = request.get_json(silent=True) or {}
     for field, max_length in (("recipient_name", 100), ("recipient_email", 120), ("notes", 10000),
                               ("payment_details", 10000), ("bill_to_address", 5000), ("ship_to_address", 5000),
@@ -6563,24 +6651,43 @@ def admin_update_commerce_invoice(invoice_id):
             return jsonify({"success": False, "message": "Payment amount must be between zero and invoice total."}), 400
         invoice.amount_paid = paid
         invoice.status = InvoiceStatus.PAID.value if paid >= float(invoice.total_amount) else InvoiceStatus.UNPAID.value
+    became_paid = not was_paid and invoice.status == InvoiceStatus.PAID.value
     db.session.commit()
     log_user_action("Update Invoice", f"Updated invoice {invoice.invoice_number} from native admin")
-    email_warning = None
-    if data.get("send_email"):
+    should_email = became_paid or bool(data.get("send_email"))
+    email_task_id = None
+    if should_email:
         try:
-            from invoice_service import InvoiceGenerator
-            from travel_invoice_service import invoice_email_template
-            pdf = InvoiceGenerator(invoice).generate_pdf()
-            send_email(to=invoice.recipient_email, subject=f"Updated Invoice #{invoice.invoice_number}",
-                       template=invoice_email_template(invoice.invoice_type), invoice=invoice,
-                       attachments=[{"filename": f"Invoice_{invoice.invoice_number}.pdf",
-                                     "content_type": "application/pdf", "data": pdf}])
+            if became_paid:
+                email_task_id = send_email(
+                    to=invoice.recipient_email,
+                    subject=f"Payment Receipt: Invoice #{invoice.invoice_number}",
+                    template="mail/payment_received.html", recipient_name=invoice.recipient_name,
+                    invoice=invoice, total_amount=invoice.total_amount,
+                    return_task_id=True, require_worker=True,
+                )
+            else:
+                from worker import send_admin_commerce_invoice_email_task
+                email_task_id = enqueue_email_job(
+                    send_admin_commerce_invoice_email_task, invoice.id, [invoice.recipient_email], "updated",
+                )
         except Exception:
             current_app.logger.exception("Invoice updated but notification email failed")
-            email_warning = "Invoice was saved, but its email could not be sent."
-    if email_warning:
-        return jsonify({"success": True, "message": email_warning, "email_sent": False})
-    return jsonify({"success": True, "message": "Invoice updated."})
+            email_task_id = None
+    if should_email and not email_task_id:
+        message = "Invoice was saved, but its email could not be queued. Check the email worker and retry."
+    elif became_paid:
+        message = "Invoice marked paid. Receipt email queued."
+    elif email_task_id:
+        message = "Invoice updated. Email queued."
+    else:
+        message = "Invoice updated."
+    result = {"success": True, "message": message}
+    if email_task_id:
+        result.update({"email_status": "queued", "email_task_id": email_task_id})
+    elif should_email:
+        result["email_sent"] = False
+    return jsonify(result)
 
 
 @mobile_api_bp.post("/admin/commerce/invoices/<int:invoice_id>/payments")
@@ -6616,16 +6723,23 @@ def admin_record_invoice_payment(invoice_id):
         invoice.status = InvoiceStatus.UNPAID.value
     db.session.commit()
     log_user_action("Record Payment", f"Recorded payment of {amount:.2f} for invoice {invoice.invoice_number}")
+    email_task_id = None
     try:
-        send_email(to=invoice.recipient_email, subject=f"Payment Recorded: Invoice #{invoice.invoice_number}",
+        email_task_id = send_email(to=invoice.recipient_email, subject=f"Payment Recorded: Invoice #{invoice.invoice_number}",
                    template="mail/partial_payment_received.html", recipient_name=invoice.recipient_name,
                    invoice_number=invoice.invoice_number, payment_amount=amount, amount_paid=float(invoice.amount_paid),
                    total_amount=float(invoice.total_amount), pending_amount=max(0, float(invoice.total_amount) - float(invoice.amount_paid)),
-                   admin_note=payment.note or "")
+                   admin_note=payment.note or "", return_task_id=True, require_worker=True)
     except Exception:
         current_app.logger.exception("Invoice payment saved but recipient email failed")
-    return jsonify({"success": True, "message": "Payment recorded and the invoice updated.",
-                    "amount_paid": float(invoice.amount_paid), "pending_amount": float(invoice.pending_amount), "status": invoice.status})
+    message = "Payment recorded. Receipt email queued." if email_task_id else "Payment recorded, but its email could not be queued. Check the email worker and retry."
+    response = {"success": True, "message": message,
+                "amount_paid": float(invoice.amount_paid), "pending_amount": float(invoice.pending_amount), "status": invoice.status}
+    if email_task_id:
+        response.update({"email_status": "queued", "email_task_id": email_task_id})
+    else:
+        response["email_sent"] = False
+    return jsonify(response)
 
 
 @mobile_api_bp.post("/admin/commerce/invoices/<int:invoice_id>/refunds")
@@ -6679,15 +6793,22 @@ def admin_refund_commerce_invoice(invoice_id):
     db.session.commit()
     log_user_action("Process Refund", f"Refunded {amount:.2f} ({refund_type}) for invoice {invoice.invoice_number}")
     try:
-        send_email(to=invoice.recipient_email, subject=f"Refund Processed: Invoice #{invoice.invoice_number}",
+        email_task_id = send_email(to=invoice.recipient_email, subject=f"Refund Processed: Invoice #{invoice.invoice_number}",
                    template="mail/refund_processed.html", recipient_name=invoice.recipient_name,
                    invoice_number=invoice.invoice_number, refund_amount=amount, refund_type=refund_type,
                    supercoin_credited=refund_type == "supercoins", total_refunded=float(invoice.amount_refunded),
                    amount_paid=float(invoice.amount_paid), total_amount=float(invoice.total_amount),
-                   pending_amount=max(0, float(invoice.total_amount) - float(invoice.amount_paid)), reason=reason)
+                   pending_amount=max(0, float(invoice.total_amount) - float(invoice.amount_paid)), reason=reason,
+                   return_task_id=True, require_worker=True)
     except Exception:
         current_app.logger.exception("Invoice refund saved but recipient email failed")
-    return jsonify({"success": True, "message": "Invoice refund recorded.", "status": invoice.status})
+    message = "Invoice refund recorded. Email queued." if email_task_id else "Invoice refund recorded, but its email could not be queued. Check the email worker and retry."
+    response = {"success": True, "message": message, "status": invoice.status}
+    if email_task_id:
+        response.update({"email_status": "queued", "email_task_id": email_task_id})
+    else:
+        response["email_sent"] = False
+    return jsonify(response)
 
 
 @mobile_api_bp.post("/admin/commerce/invoices/<int:invoice_id>/send")
@@ -6706,17 +6827,15 @@ def admin_send_commerce_invoice(invoice_id):
     if not isinstance(recipients, list) or not recipients or any(not isinstance(email, str) or not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email.strip()) for email in recipients):
         return jsonify({"success": False, "message": "Enter one or more valid recipient email addresses."}), 400
     try:
-        from invoice_service import InvoiceGenerator
-        from travel_invoice_service import invoice_email_template
-        pdf = InvoiceGenerator(invoice).generate_pdf()
-        send_email(to=list(dict.fromkeys(email.strip() for email in recipients)),
-                   subject=f"Invoice #{invoice.invoice_number}", template=invoice_email_template(invoice.invoice_type),
-                   invoice=invoice, attachments=[{"filename": f"Invoice_{invoice.invoice_number}.pdf",
-                                                  "content_type": "application/pdf", "data": pdf}])
+        from worker import send_admin_commerce_invoice_email_task
+        email_task_id = enqueue_email_job(
+            send_admin_commerce_invoice_email_task,
+            invoice.id, list(dict.fromkeys(email.strip() for email in recipients)), "resend",
+        )
     except Exception:
         current_app.logger.exception("Native admin could not resend invoice")
         return jsonify({"success": False, "message": "Invoice could not be emailed."}), 502
-    return jsonify({"success": True, "message": "Invoice emailed."})
+    return jsonify({"success": True, "message": "Invoice email queued.", "email_status": "queued", "email_task_id": email_task_id}), 202
 
 
 @mobile_api_bp.post("/admin/commerce/invoices/<int:invoice_id>/remind")
@@ -6731,20 +6850,14 @@ def admin_remind_commerce_invoice(invoice_id):
     if invoice.status in {InvoiceStatus.PAID.value, InvoiceStatus.REFUNDED.value, InvoiceStatus.CANCELLED.value}:
         return jsonify({"success": False, "message": "This invoice does not have a payable balance."}), 409
     try:
-        from invoice_service import InvoiceGenerator
-        pdf = InvoiceGenerator(invoice).generate_pdf()
-        send_email(to=invoice.recipient_email, subject=f"Payment Reminder: Invoice #{invoice.invoice_number}",
-                   template="mail/reminder_invoice_email.html", recipient_name=invoice.recipient_name,
-                   invoice_number=invoice.invoice_number,
-                   created_at=invoice.created_at.strftime("%d %b %Y") if invoice.created_at else "",
-                   total_amount=float(invoice.total_amount), amount_paid=float(invoice.amount_paid or 0),
-                   pending_amount=float(invoice.pending_amount),
-                   due_date=invoice.due_date.strftime("%d %b %Y") if invoice.due_date else "Immediate", invoice=invoice,
-                   attachments=[{"filename": f"Invoice_{invoice.invoice_number}.pdf", "content_type": "application/pdf", "data": pdf}])
+        from worker import send_admin_commerce_invoice_email_task
+        email_task_id = enqueue_email_job(
+            send_admin_commerce_invoice_email_task, invoice.id, [invoice.recipient_email], "reminder",
+        )
     except Exception:
         current_app.logger.exception("Native admin could not send invoice reminder")
         return jsonify({"success": False, "message": "Reminder could not be emailed."}), 502
-    return jsonify({"success": True, "message": "Payment reminder emailed."})
+    return jsonify({"success": True, "message": "Payment reminder queued.", "email_status": "queued", "email_task_id": email_task_id}), 202
 
 
 @mobile_api_bp.delete("/admin/commerce/invoices/<int:invoice_id>")
