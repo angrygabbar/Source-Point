@@ -22,7 +22,7 @@ from urllib.parse import urlparse
 from flask import Blueprint, current_app, jsonify, request, send_file, session, url_for
 from flask_login import current_user, login_user, logout_user
 from sqlalchemy import or_, func
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 from werkzeug.utils import secure_filename
 from io import BytesIO
 
@@ -449,6 +449,46 @@ def _order_payload(order):
             }
             for item in order.items
         ],
+    }
+
+
+def _admin_commerce_invoice_payload(item):
+    return {
+        "id": item.id,
+        "invoice_number": item.invoice_number,
+        "recipient_name": item.recipient_name,
+        "recipient_email": item.recipient_email,
+        "status": item.status,
+        "invoice_type": item.invoice_type,
+        "subtotal": float(item.subtotal or 0),
+        "tax": float(item.tax or 0),
+        "total_amount": float(item.total_amount or 0),
+        "amount_paid": float(item.amount_paid or 0),
+        "amount_refunded": float(item.amount_refunded or 0),
+        "pending_amount": float(item.pending_amount or 0),
+        "due_date": item.due_date.isoformat() if item.due_date else None,
+        "notes": item.notes or "",
+        "payment_details": item.payment_details or "",
+        "bill_to_address": item.bill_to_address or "",
+        "ship_to_address": item.ship_to_address or "",
+        "order_id": item.order_id or "",
+        "booking_details": item.booking_details or {},
+        "items": [
+            {"id": row.id, "description": row.description, "quantity": row.quantity,
+             "price": float(row.price or 0)}
+            for row in item.items
+        ],
+        "payments": [
+            {"id": row.id, "amount": float(row.amount or 0), "note": row.note or "",
+             "recorded_at": row.recorded_at.isoformat() if row.recorded_at else None}
+            for row in item.payments
+        ],
+        "refunds": [
+            {"id": row.id, "amount": float(row.amount or 0), "refund_type": row.refund_type,
+             "reason": row.reason or "", "recorded_at": row.recorded_at.isoformat() if row.recorded_at else None}
+            for row in item.refunds
+        ],
+        "created_at": item.created_at.isoformat() if item.created_at else None,
     }
 
 
@@ -3392,6 +3432,12 @@ def admin_commerce_workspace():
         return denied
     product_search = request.args.get("product_q", "").strip()[:150]
     product_page = max(1, request.args.get("product_page", 1, type=int))
+    invoice_search = request.args.get("invoice_q", "").strip()[:150]
+    invoice_status = request.args.get("invoice_status", "all").strip().lower()
+    invoice_page = max(1, request.args.get("invoice_page", 1, type=int))
+    invoice_status_values = {status.value.lower(): status.value for status in InvoiceStatus}
+    if invoice_status not in {"all", "open"} and invoice_status not in invoice_status_values:
+        return jsonify({"success": False, "message": "Choose a valid invoice status filter."}), 400
     product_query = Product.query
     if product_search:
         product_query = product_query.filter(or_(Product.name.ilike(f"%{product_search}%"),
@@ -3401,7 +3447,29 @@ def admin_commerce_workspace():
     products = product_query.order_by(Product.name.asc()).offset((product_page - 1) * product_page_size).limit(product_page_size).all()
     orders = Order.query.options(joinedload(Order.items)).order_by(Order.created_at.desc()).limit(100).all()
     requests = StockRequest.query.order_by(StockRequest.request_date.desc()).limit(100).all()
-    invoices = Invoice.query.order_by(Invoice.created_at.desc()).limit(100).all()
+    invoice_query = Invoice.query
+    if invoice_search:
+        pattern = f"%{invoice_search}%"
+        invoice_query = invoice_query.filter(or_(
+            Invoice.invoice_number.ilike(pattern),
+            Invoice.recipient_name.ilike(pattern),
+            Invoice.recipient_email.ilike(pattern),
+            Invoice.invoice_type.ilike(pattern),
+        ))
+    if invoice_status == "open":
+        invoice_query = invoice_query.filter(Invoice.status.in_([
+            InvoiceStatus.UNPAID.value, InvoiceStatus.OVERDUE.value,
+        ]))
+    elif invoice_status != "all":
+        invoice_query = invoice_query.filter(Invoice.status == invoice_status_values[invoice_status])
+    invoice_total = invoice_query.count()
+    invoice_page_size = 20
+    invoices = invoice_query.options(
+        selectinload(Invoice.items), selectinload(Invoice.payments), selectinload(Invoice.refunds),
+    ).order_by(Invoice.created_at.desc(), Invoice.id.desc()).offset(
+        (invoice_page - 1) * invoice_page_size
+    ).limit(invoice_page_size).all()
+    invoice_status_counts = dict(db.session.query(Invoice.status, func.count(Invoice.id)).group_by(Invoice.status).all())
     ads = AffiliateAd.query.order_by(AffiliateAd.ad_name.asc()).all()
     sellers = User.query.filter_by(role=UserRole.SELLER.value, is_active=True).order_by(User.username.asc()).all()
     buyers = User.query.filter_by(role=UserRole.BUYER.value, is_active=True, is_approved=True).order_by(User.username.asc()).all()
@@ -3420,6 +3488,20 @@ def admin_commerce_workspace():
             "invoices": Invoice.query.count(),
             "ads": len(ads),
         },
+        "invoice_counts": {
+            "all": sum(invoice_status_counts.values()),
+            "open": invoice_status_counts.get(InvoiceStatus.UNPAID.value, 0) + invoice_status_counts.get(InvoiceStatus.OVERDUE.value, 0),
+            "unpaid": invoice_status_counts.get(InvoiceStatus.UNPAID.value, 0),
+            "overdue": invoice_status_counts.get(InvoiceStatus.OVERDUE.value, 0),
+            "paid": invoice_status_counts.get(InvoiceStatus.PAID.value, 0),
+            "cancelled": invoice_status_counts.get(InvoiceStatus.CANCELLED.value, 0),
+            "refunded": invoice_status_counts.get(InvoiceStatus.REFUNDED.value, 0),
+        },
+        "invoice_pagination": {
+            "page": invoice_page, "per_page": invoice_page_size, "total": invoice_total,
+            "pages": max(1, (invoice_total + invoice_page_size - 1) // invoice_page_size),
+            "query": invoice_search, "status": invoice_status,
+        },
         "products": [_product_payload(product) for product in products],
         "product_search": product_search,
         "product_pagination": {"page": product_page, "per_page": product_page_size, "total": product_total,
@@ -3432,24 +3514,7 @@ def admin_commerce_workspace():
              "request_date": item.request_date.isoformat() if item.request_date else None}
             for item in requests
         ],
-        "invoices": [
-            {"id": item.id, "invoice_number": item.invoice_number, "recipient_name": item.recipient_name,
-             "recipient_email": item.recipient_email, "status": item.status, "invoice_type": item.invoice_type,
-             "subtotal": float(item.subtotal or 0), "tax": float(item.tax or 0),
-             "total_amount": float(item.total_amount or 0), "amount_paid": float(item.amount_paid or 0),
-             "amount_refunded": float(item.amount_refunded or 0), "pending_amount": float(item.pending_amount or 0),
-             "due_date": item.due_date.isoformat() if item.due_date else None,
-             "notes": item.notes or "", "payment_details": item.payment_details or "",
-             "bill_to_address": item.bill_to_address or "", "ship_to_address": item.ship_to_address or "",
-             "order_id": item.order_id or "", "booking_details": item.booking_details or {},
-             "items": [{"id": row.id, "description": row.description, "quantity": row.quantity, "price": float(row.price or 0)} for row in item.items],
-             "payments": [{"id": row.id, "amount": float(row.amount or 0), "note": row.note or "",
-                           "recorded_at": row.recorded_at.isoformat() if row.recorded_at else None} for row in item.payments],
-             "refunds": [{"id": row.id, "amount": float(row.amount or 0), "refund_type": row.refund_type,
-                          "reason": row.reason or "", "recorded_at": row.recorded_at.isoformat() if row.recorded_at else None} for row in item.refunds],
-             "created_at": item.created_at.isoformat() if item.created_at else None}
-            for item in invoices
-        ],
+        "invoices": [_admin_commerce_invoice_payload(item) for item in invoices],
         "ads": [{"id": item.id, "name": item.ad_name, "url": item.affiliate_link or ""} for item in ads],
         "seller_inventory": [
             {"id": allocation.id, "seller_id": seller.id, "seller": seller.username,
@@ -5177,6 +5242,76 @@ def admin_finance_workspace():
                                         "created_at": i.created_at.isoformat() if i.created_at else None,
                                         "due_date": i.due_date.isoformat() if i.due_date else None}
                                        for i in coin_invoices]}})
+
+
+@mobile_api_bp.get("/admin/emi")
+@mobile_login_required
+def admin_emi_workspace():
+    denied = _require_role("admin")
+    if denied:
+        return denied
+    plans = EMIPlan.query.options(
+        joinedload(EMIPlan.borrower), joinedload(EMIPlan.lender), selectinload(EMIPlan.payments),
+    ).order_by(EMIPlan.created_at.desc(), EMIPlan.id.desc()).all()
+    today = datetime.utcnow().date()
+    plan_payloads = []
+    installment_count = 0
+    paid_count = 0
+    overdue_count = 0
+    pending_total = 0.0
+    overdue_total = 0.0
+    completed_count = 0
+    for plan in plans:
+        payments = sorted(plan.payments, key=lambda row: (row.installment_number, row.id))
+        installment_count += len(payments)
+        plan_paid = sum(float(row.amount or 0) for row in payments if row.status == "Paid")
+        plan_pending = sum(float(row.amount or 0) for row in payments if row.status != "Paid")
+        plan_overdue = [row for row in payments if row.status != "Paid" and row.due_date and row.due_date < today]
+        paid_count += sum(1 for row in payments if row.status == "Paid")
+        overdue_count += len(plan_overdue)
+        pending_total += plan_pending
+        overdue_total += sum(float(row.amount or 0) for row in plan_overdue)
+        completed = bool(payments) and all(row.status == "Paid" for row in payments)
+        completed_count += 1 if completed else 0
+        plan_payloads.append({
+            "id": plan.id,
+            "title": plan.title,
+            "borrower_id": plan.borrower_id,
+            "borrower": plan.borrower.username if plan.borrower else "",
+            "lender_id": plan.lender_id,
+            "lender": plan.lender.username if plan.lender else "",
+            "total_principal": float(plan.total_principal or 0),
+            "is_active": bool(plan.is_active),
+            "created_at": plan.created_at.isoformat() if plan.created_at else None,
+            "payments": [{
+                "id": row.id,
+                "installment_number": row.installment_number,
+                "due_date": row.due_date.isoformat() if row.due_date else None,
+                "amount": float(row.amount or 0),
+                "description": row.description or "",
+                "status": row.status,
+                "payment_date": row.payment_date.isoformat() if row.payment_date else None,
+                "reminder_days_before": row.reminder_days_before,
+            } for row in payments],
+        })
+    users = User.query.filter(User.role != UserRole.ADMIN.value, User.is_active.is_(True)).order_by(User.username.asc()).limit(500).all()
+    return jsonify({
+        "success": True,
+        "summary": {
+            "plan_count": len(plans),
+            "active_count": sum(1 for plan in plans if plan.is_active),
+            "completed_count": completed_count,
+            "installment_count": installment_count,
+            "paid_count": paid_count,
+            "pending_count": max(0, installment_count - paid_count),
+            "overdue_count": overdue_count,
+            "pending_amount": round(pending_total, 2),
+            "overdue_amount": round(overdue_total, 2),
+            "today": today.isoformat(),
+        },
+        "plans": plan_payloads,
+        "users": [{"id": user.id, "username": user.username, "email": user.email, "role": user.role} for user in users],
+    })
 
 
 @mobile_api_bp.post("/admin/communications/email")
