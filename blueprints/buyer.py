@@ -240,9 +240,9 @@ def browse_vouchers():
 @role_required('buyer')
 def request_voucher(card_id):
     """Place a voucher request — pending admin approval."""
-    card = GiftCard.query.get_or_404(card_id)
+    card = GiftCard.query.filter_by(id=card_id).with_for_update().first_or_404()
 
-    if card.status != GiftCardStatus.AVAILABLE.value:
+    if card.status != GiftCardStatus.AVAILABLE.value or card.is_expired:
         flash('This voucher is no longer available.', 'warning')
         return redirect(url_for('buyer.browse_vouchers'))
 

@@ -17,6 +17,10 @@
             <p class="text-gray-400 mt-1">Securely manage and distribute gift cards</p>
         </div>
         <div class="flex gap-3">
+            <a href="{{ url_for('admin_giftcards.direct_send_dashboard') }}"
+                class="px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold rounded-2xl hover:shadow-lg hover:shadow-emerald-500/25 transition-all flex items-center gap-2 text-sm">
+                <i class="fas fa-paper-plane"></i> Send Gift Card
+            </a>
             <button onclick="document.getElementById('bulkAddModal').classList.remove('hidden')"
                 class="px-5 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-semibold rounded-2xl hover:shadow-lg hover:shadow-amber-500/25 transition-all flex items-center gap-2 text-sm">
                 <i class="fas fa-layer-group"></i> Bulk Add
@@ -562,6 +566,31 @@
                 <label class="block text-sm font-medium text-gray-300 mb-2">Recipient Email *</label>
                 <input type="email" name="recipient_email" required placeholder="recipient@example.com"
                     class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Sender Name *</label>
+                <input type="text" name="sender_name" required maxlength="150" placeholder="Who is this gift from?"
+                    class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Sender Relationship <span class="text-gray-500">(optional)</span></label>
+                <input type="text" name="sender_relationship" maxlength="80" placeholder="Sister, brother, friend..."
+                    class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Card Occasion and Theme *</label>
+                <select name="occasion" required
+                    class="w-full bg-[#0b1120] border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                    <option value="" disabled selected>Select an occasion</option>
+                    {% for key, theme in gift_card_occasions.items() %}
+                    <option value="{{ key }}">{{ theme.motif }} {{ theme.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Gift Message *</label>
+                <textarea name="custom_message" rows="4" maxlength="1500" required placeholder="Write a personal message from sender to recipient..."
+                    class="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-y"></textarea>
             </div>
             <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
                 <p class="text-amber-400 text-sm flex items-start gap-2">

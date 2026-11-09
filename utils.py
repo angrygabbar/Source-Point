@@ -69,11 +69,12 @@ def enqueue_email_job(task, *args, **kwargs):
 # --- EMAIL SERVICE (UPDATED) ---
 
 def send_email(to, subject, template, cc=None, bcc=None, attachments=None, sync=False,
-               return_task_id=False, require_worker=False, **kwargs):
+               return_task_id=False, require_worker=False, include_default_cc=True, **kwargs):
     """
     Renders the email template and sends it.
     Args:
         sync (bool): If True, sends immediately (blocking). If False, sends via Celery (background).
+        include_default_cc (bool): Include the default admin and archive CC recipients.
     """
     # Avoid circular import
     from worker import send_email_task
@@ -86,8 +87,9 @@ def send_email(to, subject, template, cc=None, bcc=None, attachments=None, sync=
     if cc:
         if isinstance(cc, str): cc_emails.add(cc)
         elif isinstance(cc, list): cc_emails.update(cc)
-    cc_emails.add(admin_email)
-    cc_emails.add(archive_email)
+    if include_default_cc:
+        cc_emails.add(admin_email)
+        cc_emails.add(archive_email)
 
     # To Logic
     primary_recipients_emails = set()

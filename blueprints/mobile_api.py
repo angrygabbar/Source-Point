@@ -751,8 +751,8 @@ def buyer_request_voucher(card_id):
     denied = _require_role("buyer")
     if denied:
         return denied
-    card = GiftCard.query.filter_by(id=card_id, status=GiftCardStatus.AVAILABLE.value).first()
-    if not card:
+    card = GiftCard.query.filter_by(id=card_id, status=GiftCardStatus.AVAILABLE.value).with_for_update().first()
+    if not card or card.is_expired:
         return jsonify({"success": False, "message": "This voucher is no longer available."}), 404
     existing = VoucherOrder.query.filter_by(
         user_id=current_user.id,
@@ -5660,17 +5660,30 @@ def admin_send_gift_card(card_id):
     denied = _require_role("admin")
     if denied:
         return denied
-    card = GiftCard.query.get(card_id)
+    card = GiftCard.query.filter_by(id=card_id).with_for_update().first()
     data = request.get_json(silent=True) or {}
     name, email = data.get("recipient_name"), data.get("recipient_email")
-    if not card or card.status != GiftCardStatus.AVAILABLE.value:
+    if not card or card.status != GiftCardStatus.AVAILABLE.value or card.is_expired:
         return jsonify({"success": False, "message": "Available gift card not found."}), 404
+    if VoucherOrder.query.filter_by(
+        gift_card_id=card.id, status=VoucherOrderStatus.PENDING.value
+    ).first():
+        return jsonify({"success": False, "message": "This gift card has a pending buyer request."}), 409
     if not isinstance(name, str) or not name.strip() or not isinstance(email, str) or not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email.strip()):
         return jsonify({"success": False, "message": "Enter a recipient name and valid email."}), 400
+    custom_message = data.get("custom_message", "")
+    if not isinstance(custom_message, str) or len(custom_message) > 1500:
+        return jsonify({"success": False, "message": "Personal message must be 1,500 characters or fewer."}), 400
+    sender_name = data.get("sender_name", "Source Point")
+    if not isinstance(sender_name, str) or not sender_name.strip() or len(sender_name.strip()) > 150:
+        return jsonify({"success": False, "message": "Enter a sender name of 150 characters or fewer."}), 400
+    sender_name = " ".join(sender_name.split())
     try:
-        send_email(to=email.strip(), subject=f"Your {card.brand} Gift Card from SourcePoint", template="mail/gift_card_email.html",
+        send_email(to=email.strip(), subject=f"A gift card from {sender_name}", template="mail/gift_card_email.html",
                    recipient_name=name.strip(), brand=card.brand, card_number=card.get_card_number(), pin=card.get_pin(),
-                   denomination=card.denomination, expiry_date=card.expiry_date)
+                   denomination=card.denomination, expiry_date=card.expiry_date, custom_message=custom_message,
+                   sender_name=sender_name,
+                   include_default_cc=False)
     except Exception:
         current_app.logger.exception("Gift card email could not be sent")
         return jsonify({"success": False, "message": "Gift card email could not be sent."}), 502
@@ -5687,7 +5700,7 @@ def admin_voucher_order_decision(order_id):
     denied = _require_role("admin")
     if denied:
         return denied
-    order = VoucherOrder.query.get(order_id)
+    order = VoucherOrder.query.filter_by(id=order_id).with_for_update().first()
     if not order or order.status != VoucherOrderStatus.PENDING.value:
         return jsonify({"success": False, "message": "Pending voucher order not found."}), 404
     data = request.get_json(silent=True) or {}
@@ -5695,13 +5708,14 @@ def admin_voucher_order_decision(order_id):
     if decision not in {"approve", "reject"}:
         return jsonify({"success": False, "message": "Choose approve or reject."}), 400
     if decision == "approve":
-        card = order.gift_card
+        card = GiftCard.query.filter_by(id=order.gift_card_id).with_for_update().first()
         try:
-            if not card or card.status != GiftCardStatus.AVAILABLE.value:
+            if not card or card.status != GiftCardStatus.AVAILABLE.value or card.is_expired:
                 return jsonify({"success": False, "message": "The gift card is no longer available."}), 409
             send_email(to=order.user.email, subject=f"Your {card.brand} Gift Card from SourcePoint", template="mail/gift_card_email.html",
                        recipient_name=order.user.username, brand=card.brand, card_number=card.get_card_number(), pin=card.get_pin(),
-                       denomination=card.denomination, expiry_date=card.expiry_date)
+                       denomination=card.denomination, expiry_date=card.expiry_date, custom_message='',
+                       include_default_cc=False)
             card.status = GiftCardStatus.SENT.value
             card.recipient_name, card.recipient_email = order.user.username, order.user.email
             card.sent_at, card.sent_by_id = datetime.utcnow(), current_user.id
