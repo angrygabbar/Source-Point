@@ -15,32 +15,36 @@ admin_giftcards_bp = Blueprint('admin_giftcards', __name__)
 _EMAIL_ADDRESS_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 GIFT_CARD_OCCASIONS = {
     'raksha_bandhan': {
-        'label': 'Raksha Bandhan', 'greeting': 'Happy Raksha Bandhan!', 'motif': '🪢',
-        'primary': '#be123c', 'secondary': '#f97316', 'accent': '#fbbf24', 'surface': '#3b1024',
+        'label': 'Raksha Bandhan', 'greeting': 'Happy Raksha Bandhan!',
+        'primary': '#71344b', 'secondary': '#b28c62', 'accent': '#71344b', 'surface': '#faf6f7',
     },
     'diwali': {
-        'label': 'Diwali', 'greeting': 'Wishing you a bright Diwali!', 'motif': '🪔',
-        'primary': '#7c3aed', 'secondary': '#f59e0b', 'accent': '#fde68a', 'surface': '#21113c',
+        'label': 'Diwali', 'greeting': 'Wishing you a bright Diwali!',
+        'primary': '#76591f', 'secondary': '#c0a46a', 'accent': '#76591f', 'surface': '#fbf8f1',
+    },
+    'bhai_dooj': {
+        'label': 'Bhai Dooj', 'greeting': 'Happy Bhai Dooj!',
+        'primary': '#5c4a2c', 'secondary': '#b59b6b', 'accent': '#5c4a2c', 'surface': '#faf8f3',
     },
     'birthday': {
-        'label': 'Birthday', 'greeting': 'Happy Birthday!', 'motif': '🎂',
-        'primary': '#db2777', 'secondary': '#7c3aed', 'accent': '#fcd34d', 'surface': '#30123e',
+        'label': 'Birthday', 'greeting': 'Happy Birthday!',
+        'primary': '#4f4b83', 'secondary': '#a8a6c7', 'accent': '#4f4b83', 'surface': '#f7f7fb',
     },
     'anniversary': {
-        'label': 'Anniversary', 'greeting': 'Happy Anniversary!', 'motif': '💝',
-        'primary': '#be123c', 'secondary': '#fb7185', 'accent': '#fda4af', 'surface': '#3a1020',
+        'label': 'Anniversary', 'greeting': 'Happy Anniversary!',
+        'primary': '#823f50', 'secondary': '#c89da6', 'accent': '#823f50', 'surface': '#fbf6f7',
     },
     'congratulations': {
-        'label': 'Congratulations', 'greeting': 'Congratulations!', 'motif': '🎉',
-        'primary': '#2563eb', 'secondary': '#10b981', 'accent': '#93c5fd', 'surface': '#102a43',
+        'label': 'Congratulations', 'greeting': 'Congratulations!',
+        'primary': '#315f58', 'secondary': '#91aaa2', 'accent': '#315f58', 'surface': '#f4f8f6',
     },
     'thank_you': {
-        'label': 'Thank You', 'greeting': 'A little thank-you gift!', 'motif': '💐',
-        'primary': '#0f766e', 'secondary': '#2dd4bf', 'accent': '#99f6e4', 'surface': '#0c2e2b',
+        'label': 'Thank You', 'greeting': 'With thanks and appreciation',
+        'primary': '#35625e', 'secondary': '#91aaa5', 'accent': '#35625e', 'surface': '#f4f8f7',
     },
     'general': {
-        'label': 'Just Because', 'greeting': 'A special gift for you!', 'motif': '🎁',
-        'primary': '#ec4899', 'secondary': '#8b5cf6', 'accent': '#c4b5fd', 'surface': '#251343',
+        'label': 'Just Because', 'greeting': 'A gift for you',
+        'primary': '#35516f', 'secondary': '#92a7bb', 'accent': '#35516f', 'surface': '#f5f7f9',
     },
 }
 

@@ -1,7 +1,7 @@
 {% if gift_theme is not defined %}
 {% set gift_theme = {
-    'label': 'Just Because', 'greeting': 'A special gift for you!', 'motif': '🎁',
-    'primary': '#ec4899', 'secondary': '#8b5cf6', 'accent': '#c4b5fd', 'surface': '#251343'
+    'label': 'Just Because', 'greeting': 'A gift for you',
+    'primary': '#35516f', 'secondary': '#92a7bb', 'accent': '#35516f', 'surface': '#f5f7f9'
 } %}
 {% endif %}
 {% if sender_name is not defined %}{% set sender_name = '' %}{% endif %}
@@ -9,243 +9,114 @@
 {% if custom_message is not defined %}{% set custom_message = '' %}{% endif %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Gift Card</title>
-    <style type="text/css">
-        @keyframes giftFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
-        @keyframes giftGlow { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
-        @keyframes giftShimmer { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
-        .gift-float { animation: giftFloat 3.8s ease-in-out infinite; }
-        .gift-glow { animation: giftGlow 2.8s ease-in-out infinite; }
-        .gift-card-shell { background-size: 200% 200%; animation: giftShimmer 9s ease-in-out infinite; }
-        @media (prefers-reduced-motion: reduce) {
-            .gift-float, .gift-glow, .gift-card-shell { animation: none !important; }
-        }
-    </style>
+    <title>Your {{ brand|e }} Gift Card</title>
 </head>
-
-<body style="margin:0;padding:0;background-color:#07070f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
-
-    <!-- Preheader -->
-    <span style="display:none;max-height:0;overflow:hidden;">
-        {{ gift_theme.greeting }} A {{ brand }} gift card from {{ sender_name or 'Source Point' }} is waiting for you.
+<body style="margin:0;padding:0;background-color:#f3f4f6;font-family:Arial,Helvetica,sans-serif;color:#263445;">
+    <span style="display:none;max-height:0;overflow:hidden;opacity:0;">
+        {{ gift_theme.greeting }} A {{ brand|e }} gift card from {{ sender_name|e if sender_name else 'Source Point' }}.
     </span>
 
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#07070f;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#f3f4f6" style="background-color:#f3f4f6;">
         <tr>
-            <td align="center" style="padding: 40px 20px;">
-
-                <table role="presentation" width="600" cellspacing="0" cellpadding="0"
-                    style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
-
-                    <!-- Header -->
+            <td align="center" style="padding:32px 14px;">
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:600px;background-color:#ffffff;border:1px solid #e5e7eb;border-radius:8px;">
                     <tr>
-                        <td
-                            style="background-color: {{ gift_theme.primary }}; background-image: linear-gradient(135deg, {{ gift_theme.primary }} 0%, {{ gift_theme.secondary }} 100%); padding: 40px 40px 50px 40px; text-align: center;">
-                            <table role="presentation" cellspacing="0" cellpadding="0"
-                                style="margin: 0 auto 20px auto;">
-                                <tr>
-                                    <td style="background: rgba(255,255,255,0.2); border-radius: 16px; padding: 16px;">
-                                        <span class="gift-float" style="display:block;font-size:42px;line-height:1;">{{ gift_theme.motif }}</span>
-                                    </td>
-                                </tr>
-                            </table>
-                            <h1
-                                style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">
-                                {{ gift_theme.greeting }}</h1>
-                            <p style="margin: 12px 0 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">A {{ gift_theme.label }} gift, sent with love</p>
-                            <p style="margin: 18px 0 0 0; font-size: 14px; color: rgba(255,255,255,0.95);">
-                                {% if sender_name %}From <strong>{{ sender_name|e }}</strong>{% if sender_relationship %} <span style="opacity:.9;">({{ sender_relationship|e }})</span>{% endif %}{% else %}From <strong>Source Point</strong>{% endif %}
-                                &nbsp; <span style="color:{{ gift_theme.accent }};">→</span> &nbsp; For <strong>{{ recipient_name|e }}</strong>
+                        <td height="5" bgcolor="{{ gift_theme.primary }}" style="height:5px;background-color:{{ gift_theme.primary }};font-size:0;line-height:0;">&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:30px 34px 25px 34px;">
+                            <p style="margin:0 0 22px 0;font-size:11px;line-height:1.4;font-weight:700;letter-spacing:1.5px;color:#6b7280;text-transform:uppercase;">
+                                SOURCE POINT &nbsp;·&nbsp; {{ gift_theme.label|e }}
+                            </p>
+                            <h1 style="margin:0 0 10px 0;font-size:27px;line-height:1.25;font-weight:600;color:#1f2937;">
+                                {{ gift_theme.greeting|e }}
+                            </h1>
+                            <p style="margin:0;font-size:15px;line-height:1.7;color:#5b6471;">
+                                Hello {{ recipient_name|e }}, a {{ brand|e }} gift card has been sent to you.
                             </p>
                         </td>
                     </tr>
 
-                    <!-- Wave Divider -->
+                    {% if custom_message %}
                     <tr>
-                        <td
-                            style="background-color: {{ gift_theme.secondary }}; background-image: linear-gradient(135deg, {{ gift_theme.primary }} 0%, {{ gift_theme.secondary }} 100%); height: 30px;">
-                            <div style="background: #1e293b; height: 30px; border-radius: 30px 30px 0 0;"></div>
-                        </td>
-                    </tr>
-
-                    <!-- Content -->
-                    <tr>
-                        <td style="padding: 0 40px 40px 40px;">
-
-                            <p style="font-size: 18px; color: #f1f5f9; margin: 0 0 24px 0; line-height: 1.6;">
-                                Hello <strong style="color:{{ gift_theme.primary }};">{{ recipient_name|e }}</strong>,
-                            </p>
-
-                            <p style="font-size: 16px; color: #d1d5db; margin: 0 0 24px 0; line-height: 1.6;">
-                                Your <strong style="color:{{ gift_theme.secondary }};">{{ brand|e }}</strong> gift card is ready. {% if custom_message %}Your sender has included a personal note below.{% else %}Find the card details on your digital gift card below.{% endif %}
-                            </p>
-
-                            {% if custom_message %}
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 24px 0;">
+                        <td style="padding:0 34px 24px 34px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#f8fafc" style="background-color:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;">
                                 <tr>
-                                    <td style="background-color:{{ gift_theme.surface }}; border: 1px solid {{ gift_theme.primary }}; border-radius: 12px; padding: 18px 20px;">
-                                        <p style="margin: 0 0 8px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color:{{ gift_theme.accent }}; font-weight: 700;">A message from {% if sender_name %}{{ sender_name|e }}{% if sender_relationship %} ({{ sender_relationship|e }}){% endif %}{% else %}Source Point{% endif %}</p>
-                                        <p style="margin: 0; color: #ffffff; font-size: 15px; line-height: 1.7; white-space: pre-wrap;">{{ custom_message|e }}</p>
-                                    </td>
-                                </tr>
-                            </table>
-                            {% endif %}
-
-                            <!-- Gift Card Box -->
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                style="margin: 0 0 24px 0;">
-                                <tr>
-                                    <td class="gift-card-shell"
-                                        style="background-color:{{ gift_theme.surface }}; background-image:linear-gradient(145deg, {{ gift_theme.surface }} 0%, {{ gift_theme.primary }} 100%); border-radius: 20px; padding: 30px; border: 1px solid {{ gift_theme.secondary }}; box-shadow: 0 18px 40px rgba(0,0,0,.3);">
-
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 18px 0;">
-                                            <tr>
-                                                <td style="text-align:left;vertical-align:middle;">
-                                                    <span style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.75);">{{ gift_theme.label|e }} · DIGITAL GIFT CARD</span>
-                                                </td>
-                                                <td class="gift-float gift-glow" style="text-align:right;font-size:34px;line-height:1;vertical-align:middle;">{{ gift_theme.motif }}</td>
-                                            </tr>
-                                        </table>
-
-                                        <!-- Brand Name -->
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-                                            <tr>
-                                                <td style="padding-bottom: 20px; text-align: center;">
-                                                    <span
-                                                        style="font-size: 25px; font-weight: 800; color: #ffffff; letter-spacing: 1px;">
-                                                        {{ brand|e }}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        </table>
-
-                                        <!-- Denomination -->
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                            style="margin-bottom: 20px;">
-                                            <tr>
-                                                <td style="text-align: center; padding-bottom: 16px;">
-                                                    <span
-                                                        style="font-size: 40px; font-weight: 800; color:{{ gift_theme.accent }}; letter-spacing: -1px;">
-                                                        ₹{{ "%.0f"|format(denomination) }}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        </table>
-
-                                        <!-- Divider -->
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-                                            <tr>
-                                                <td
-                                                    style="border-top: 1px dashed {{ gift_theme.accent }}; padding-top: 20px;">
-                                                </td>
-                                            </tr>
-                                        </table>
-
-                                        <!-- Card Number -->
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                            style="margin-bottom: 16px;">
-                                            <tr>
-                                                <td>
-                                                    <p
-                                                        style="margin: 0 0 6px 0; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #9ca3af; font-weight: 600;">
-                                                        Card Number</p>
-                                                    <p
-                                                        style="margin: 0; font-size: 22px; font-weight: 700; color: #f1f5f9; font-family: 'Courier New', monospace; letter-spacing: 3px; background: rgba(255,255,255,0.05); padding: 12px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);">
-                                                        {{ card_number|e }}
-                                                    </p>
-                                                </td>
-                                            </tr>
-                                        </table>
-
-                                        <!-- PIN -->
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-                                            <tr>
-                                                <td>
-                                                    <p
-                                                        style="margin: 0 0 6px 0; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #9ca3af; font-weight: 600;">
-                                                        PIN</p>
-                                                    <p
-                                                        style="margin: 0; font-size: 22px; font-weight: 700; color:{{ gift_theme.accent }}; font-family: 'Courier New', monospace; letter-spacing: 3px; background: rgba(255,255,255,0.06); padding: 12px 16px; border-radius: 10px; border: 1px solid {{ gift_theme.secondary }};">
-                                                        {{ pin|e }}
-                                                    </p>
-                                                </td>
-                                            </tr>
-                                        </table>
-
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:18px;border-top:1px solid rgba(255,255,255,.18);">
-                                            <tr>
-                                                <td style="padding-top:14px;color:rgba(255,255,255,.76);font-size:12px;line-height:1.7;">
-                                                    <strong style="color:#ffffff;">For:</strong> {{ recipient_name|e }}<br>
-                                                    <strong style="color:#ffffff;">From:</strong> {% if sender_name %}{{ sender_name|e }}{% if sender_relationship %} ({{ sender_relationship|e }}){% endif %}{% else %}Source Point{% endif %}<br>
-                                                    <strong style="color:#ffffff;">Expires:</strong> {% if expiry_date %}{{ expiry_date.strftime('%B %d, %Y') }}{% else %}No expiry date{% endif %}
-                                                </td>
-                                                <td class="gift-float" style="width:60px;padding-top:14px;text-align:right;vertical-align:bottom;color:{{ gift_theme.accent }};font-size:22px;">✦ ✧</td>
-                                            </tr>
-                                        </table>
-
-                                    </td>
-                                </tr>
-                            </table>
-
-                            <!-- How to Use -->
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                style="margin: 0 0 24px 0;">
-                                <tr>
-                                    <td
-                                        style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 12px; padding: 20px;">
-                                        <p
-                                            style="margin: 0 0 12px 0; font-size: 15px; font-weight: 700; color: #34d399;">
-                                            💡 How to Redeem</p>
-                                        <ol
-                                            style="margin: 0; padding-left: 20px; color: #d1d5db; font-size: 14px; line-height: 1.8;">
-                                            <li>Visit the {{ brand }} website or app</li>
-                                            <li>Add items to your cart and proceed to checkout</li>
-                                            <li>Select "Gift Card" as payment method</li>
-                                            <li>Enter the card number and PIN above</li>
-                                            <li>Enjoy! 🎉</li>
-                                        </ol>
-                                    </td>
-                                </tr>
-                            </table>
-
-                            <!-- Important Notice -->
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-                                style="margin: 0 0 24px 0;">
-                                <tr>
-                                    <td
-                                        style="background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.2); border-radius: 12px; padding: 16px 20px;">
-                                        <p style="margin: 0; color: #fbbf24; font-size: 13px; line-height: 1.6;">
-                                            🔒 <strong>Important:</strong> Keep this email confidential. Do not share
-                                            your card number and PIN with anyone. This gift card is for one-time use
-                                            only.
+                                    <td style="padding:17px 19px;">
+                                        <p style="margin:0 0 7px 0;font-size:11px;line-height:1.4;font-weight:700;letter-spacing:1px;color:#6b7280;text-transform:uppercase;">
+                                            A note from {% if sender_name %}{{ sender_name|e }}{% if sender_relationship %} ({{ sender_relationship|e }}){% endif %}{% else %}Source Point{% endif %}
                                         </p>
+                                        <p style="margin:0;font-size:15px;line-height:1.65;color:#374151;white-space:pre-wrap;">{{ custom_message|e }}</p>
                                     </td>
                                 </tr>
                             </table>
-
                         </td>
                     </tr>
+                    {% endif %}
 
-                    <!-- Footer -->
                     <tr>
-                        <td style="padding: 24px 40px; background: rgba(0,0,0,0.2); text-align: center;">
-                            <p style="margin: 0; font-size: 13px; color: #64748b;">
-                                Sent with ❤️ by <strong style="color: #94a3b8;">Source Point</strong>
-                            </p>
-                            <p style="margin: 8px 0 0 0; font-size: 11px; color: #475569;">
-                                This is an automated email. Please do not reply.
-                            </p>
+                        <td style="padding:0 34px 28px 34px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="{{ gift_theme.surface }}" style="background-color:{{ gift_theme.surface }};border:1px solid #e1e5e9;border-left:4px solid {{ gift_theme.primary }};border-radius:7px;">
+                                <tr>
+                                    <td style="padding:22px 24px 20px 24px;">
+                                        <p style="margin:0;font-size:11px;line-height:1.4;font-weight:700;letter-spacing:1.4px;color:#657080;text-transform:uppercase;">Digital gift card</p>
+                                        <p style="margin:9px 0 0 0;font-size:19px;line-height:1.4;font-weight:600;color:#263445;">{{ brand|e }}</p>
+                                        <p style="margin:3px 0 20px 0;font-size:30px;line-height:1.2;font-weight:600;color:{{ gift_theme.primary }};">₹{{ "%.0f"|format(denomination) }}</p>
+
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                            <tr>
+                                                <td style="padding:12px 0;border-top:1px solid #dfe4e8;">
+                                                    <p style="margin:0 0 5px 0;font-size:10px;line-height:1.4;font-weight:700;letter-spacing:1px;color:#687384;text-transform:uppercase;">Card number</p>
+                                                    <p style="margin:0;font-size:17px;line-height:1.5;font-weight:600;font-family:Consolas,'Courier New',monospace;letter-spacing:1px;color:#263445;word-break:break-all;">{{ card_number|e }}</p>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:12px 0;border-top:1px solid #dfe4e8;">
+                                                    <p style="margin:0 0 5px 0;font-size:10px;line-height:1.4;font-weight:700;letter-spacing:1px;color:#687384;text-transform:uppercase;">PIN</p>
+                                                    <p style="margin:0;font-size:17px;line-height:1.5;font-weight:600;font-family:Consolas,'Courier New',monospace;letter-spacing:1px;color:#263445;">{{ pin|e }}</p>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:12px 0 0 0;border-top:1px solid #dfe4e8;">
+                                                    <p style="margin:0 0 5px 0;font-size:10px;line-height:1.4;font-weight:700;letter-spacing:1px;color:#687384;text-transform:uppercase;">Expiry date</p>
+                                                    <p style="margin:0;font-size:14px;line-height:1.5;color:#263445;">{% if expiry_date %}{{ expiry_date.strftime('%B %d, %Y') }}{% else %}No expiry date{% endif %}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:19px;">
+                                            <tr>
+                                                <td style="padding-top:13px;border-top:1px solid #dfe4e8;font-size:12px;line-height:1.7;color:#586474;">
+                                                    <strong style="color:#354153;">To:</strong> {{ recipient_name|e }}<br>
+                                                    <strong style="color:#354153;">From:</strong> {% if sender_name %}{{ sender_name|e }}{% if sender_relationship %} ({{ sender_relationship|e }}){% endif %}{% else %}Source Point{% endif %}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
                         </td>
                     </tr>
 
+                    <tr>
+                        <td style="padding:0 34px 27px 34px;">
+                            <p style="margin:0 0 7px 0;font-size:13px;line-height:1.5;font-weight:600;color:#364152;">How to redeem</p>
+                            <p style="margin:0;font-size:13px;line-height:1.7;color:#667180;">
+                                Use the card number and PIN at {{ brand|e }} checkout. Keep these details private and refer to the brand’s redemption instructions if needed.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td bgcolor="#f8fafc" style="padding:18px 34px;background-color:#f8fafc;border-top:1px solid #e5e7eb;">
+                            <p style="margin:0;font-size:12px;line-height:1.6;color:#707987;">Sent by Source Point on behalf of the sender. This is an automated email.</p>
+                        </td>
+                    </tr>
                 </table>
             </td>
         </tr>
     </table>
 </body>
-
 </html>
