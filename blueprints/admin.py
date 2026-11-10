@@ -15,6 +15,7 @@ from werkzeug.utils import secure_filename
 from invoice_service import InvoiceGenerator, BrdGenerator
 from travel_invoice_service import invoice_email_template
 from services.commerce_service import CommerceService
+from services.invoice_recipient import invoice_recipient_id
 from blueprints.admin_core import (
     import_emi_schedule as import_emi_schedule_core,
     get_emi_dashboard_data as get_emi_dashboard_data_core,
@@ -1472,6 +1473,7 @@ def update_order_status(order_id):
 
                 new_invoice = Invoice(
                     invoice_number=inv_num, recipient_name=order.buyer.username, recipient_email=order.buyer.email,
+                    recipient_user_id=order.user_id,
                     bill_to_address=order.billing_address or order.shipping_address, ship_to_address=order.shipping_address,
                     order_id=order.order_number, subtotal=calculated_subtotal, tax=effective_tax_rate, total_amount=final_total,
                     due_date=datetime.utcnow().date(), notes="Auto-generated invoice. Prices include applicable GST.", admin_id=current_user.id

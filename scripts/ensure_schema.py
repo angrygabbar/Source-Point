@@ -214,7 +214,11 @@ def ensure_invoice_template_schema():
     table_name = f'"{Invoice.__tablename__}"' if dialect == "postgresql" else Invoice.__tablename__
     added_columns = []
 
-    for column in (Invoice.__table__.c.invoice_type, Invoice.__table__.c.booking_details):
+    for column in (
+        Invoice.__table__.c.invoice_type,
+        Invoice.__table__.c.booking_details,
+        Invoice.__table__.c.recipient_user_id,
+    ):
         if column.name in invoice_columns:
             continue
 
@@ -233,6 +237,25 @@ def ensure_invoice_template_schema():
         print(f"[schema] Added invoice columns: {', '.join(added_columns)}")
     else:
         print("[schema] Invoice template columns ready")
+
+    # Preserve old invoice visibility by attaching matching existing accounts.
+    table_names = set(inspect(db.engine).get_table_names())
+    if 'user' in table_names:
+        db.session.execute(text(
+            'UPDATE invoice '
+            'SET recipient_user_id = ('
+            'SELECT id FROM "user" '
+            'WHERE lower(trim("user".email)) = lower(trim(invoice.recipient_email)) '
+            'LIMIT 1'
+            ') '
+            'WHERE recipient_user_id IS NULL'
+        ))
+        db.session.commit()
+
+    from models.commerce import Invoice
+    for index in Invoice.__table__.indexes:
+        if 'recipient_user_id' in {column.name for column in index.columns}:
+            index.create(db.engine, checkfirst=True)
 
 
 def main():

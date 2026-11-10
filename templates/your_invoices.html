@@ -1,0 +1,63 @@
+{% extends "layout.html" %}
+{% block title %}Your Invoices — SourcePoint{% endblock %}
+
+{% block content %}
+<main class="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+    <header class="rounded-2xl border border-white/10 bg-[#111321] p-5 sm:p-7">
+        <p class="text-xs font-bold uppercase tracking-[0.18em] text-indigo-300">Account · Billing</p>
+        <h1 class="mt-1 text-2xl font-black text-white sm:text-3xl">Your Invoices</h1>
+        <p class="mt-2 max-w-2xl text-sm text-gray-400">Invoices addressed to your account appear here. You can view each invoice and its payment status.</p>
+    </header>
+
+    {% if invoices %}
+    <div class="flex items-center justify-between text-sm text-gray-400">
+        <span>{{ invoices|length }} invoice{{ 's' if invoices|length != 1 else '' }}</span>
+        <span>Most recent first</span>
+    </div>
+
+    <div class="space-y-3">
+        {% for invoice in invoices %}
+        {% set invoice_type_labels = {'ecommerce': 'E-commerce', 'bus': 'Bus Booking', 'hotel': 'Hotel Booking', 'flight': 'Flight Booking'} %}
+        <a href="{{ url_for('main.your_invoice_detail', invoice_id=invoice.id) }}"
+           hx-get="{{ url_for('main.your_invoice_detail', invoice_id=invoice.id) }}" hx-target="#main-content"
+           hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true"
+           class="group block rounded-2xl border border-white/10 bg-[#111321] p-4 transition hover:border-indigo-400/40 hover:bg-white/[0.04] sm:p-5">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="font-mono text-sm font-bold text-indigo-200">{{ invoice.invoice_number }}</span>
+                        <span class="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-300">{{ invoice_type_labels.get(invoice.invoice_type or 'ecommerce', 'E-commerce') }}</span>
+                    </div>
+                    <p class="mt-2 truncate text-sm font-semibold text-white">{{ invoice.recipient_name }}</p>
+                    <p class="mt-1 text-xs text-gray-500">Created {{ invoice.created_at|to_ist('%d %b %Y') if invoice.created_at else '—' }}{% if invoice.due_date %} · Due {{ invoice.due_date.strftime('%d %b %Y') }}{% endif %}</p>
+                </div>
+                <div class="flex items-center justify-between gap-6 sm:justify-end">
+                    <div class="sm:text-right">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Total</p>
+                        <p class="mt-1 text-lg font-extrabold text-white">₹{{ "{:,.2f}".format(invoice.total_amount|float) }}</p>
+                        <p class="mt-1 text-xs text-gray-400">Pending ₹{{ "{:,.2f}".format(invoice.pending_amount) }}</p>
+                    </div>
+                    {% if invoice.status == 'Paid' %}
+                    <span class="rounded-full border border-emerald-400/25 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-300">Paid</span>
+                    {% elif invoice.status == 'Cancelled' %}
+                    <span class="rounded-full border border-gray-400/25 bg-gray-500/10 px-3 py-1.5 text-xs font-bold text-gray-300">Cancelled</span>
+                    {% elif invoice.status == 'Refunded' %}
+                    <span class="rounded-full border border-purple-400/25 bg-purple-500/10 px-3 py-1.5 text-xs font-bold text-purple-300">Refunded</span>
+                    {% else %}
+                    <span class="rounded-full border border-amber-400/25 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-200">{{ invoice.status }}</span>
+                    {% endif %}
+                    <i class="fas fa-chevron-right text-xs text-gray-600 transition group-hover:translate-x-1 group-hover:text-indigo-300"></i>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <section class="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] px-6 py-16 text-center">
+        <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-xl text-indigo-300"><i class="fas fa-file-invoice-dollar"></i></span>
+        <h2 class="mt-5 text-lg font-bold text-white">No invoices yet</h2>
+        <p class="mx-auto mt-2 max-w-md text-sm text-gray-400">Invoices addressed to {{ current_user.email }} will appear here when they are created.</p>
+    </section>
+    {% endif %}
+</main>
+{% endblock %}

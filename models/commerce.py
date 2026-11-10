@@ -87,6 +87,8 @@ class Invoice(db.Model):
     invoice_number = db.Column(db.String(50), unique=True, nullable=False)
     recipient_name = db.Column(db.String(100), nullable=False)
     recipient_email = db.Column(db.String(120), nullable=False)
+    recipient_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
+    recipient_user = db.relationship('User', foreign_keys=[recipient_user_id], backref=db.backref('received_invoices', lazy=True))
     invoice_type = db.Column(db.String(20), nullable=False, default='ecommerce', server_default='ecommerce')
     booking_details = db.Column(db.JSON, nullable=True)
     bill_to_address = db.Column(db.Text, nullable=True)

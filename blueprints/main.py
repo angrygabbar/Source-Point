@@ -182,6 +182,24 @@ def send_message():
 def profile():
     return render_template('profile.html', secret_questions=SECRET_QUESTIONS)
 
+
+@main_bp.route('/your-invoices')
+@login_required
+def your_invoices():
+    invoices = Invoice.query.filter_by(recipient_user_id=current_user.id)\
+        .order_by(Invoice.created_at.desc(), Invoice.id.desc()).all()
+    return render_template('your_invoices.html', invoices=invoices)
+
+
+@main_bp.route('/your-invoices/<int:invoice_id>')
+@login_required
+def your_invoice_detail(invoice_id):
+    invoice = Invoice.query.filter_by(
+        id=invoice_id,
+        recipient_user_id=current_user.id,
+    ).first_or_404()
+    return render_template('your_invoice_detail.html', invoice=invoice)
+
 @main_bp.route('/update_profile', methods=['POST'])
 @login_required
 def update_profile():

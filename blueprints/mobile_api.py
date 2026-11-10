@@ -53,6 +53,7 @@ from models.teaching import (
     TeachingAttendance, TeachingSessionFeedback, TeachingEffortLog,
 )
 from models.interview import Interview, InterviewParticipant, InterviewFeedback
+from services.invoice_recipient import invoice_recipient_id
 from services.auth_service import AuthService
 from services.commerce_service import CommerceService
 from services.hiring_service import HiringService
@@ -1003,6 +1004,7 @@ def seller_create_invoice():
         invoice_number=f"INV{datetime.utcnow().year}{next_number:03d}",
         recipient_name=recipient_name.strip(),
         recipient_email=recipient_email.strip(),
+        recipient_user_id=invoice_recipient_id(recipient_email),
         bill_to_address=(data.get("bill_to_address") or "").strip() or None,
         ship_to_address=(data.get("ship_to_address") or "").strip() or None,
         subtotal=subtotal,
@@ -6567,7 +6569,7 @@ def admin_create_commerce_invoice():
     except ValueError:
         return jsonify({"success": False, "message": "Enter a due date in YYYY-MM-DD format."}), 400
     invoice = Invoice(invoice_number=f"SP-{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}", recipient_name=name.strip()[:100],
-                      recipient_email=email.strip()[:120], invoice_type=invoice_type,
+                      recipient_email=email.strip()[:120], recipient_user_id=invoice_recipient_id(email), invoice_type=invoice_type,
                       subtotal=subtotal, tax=tax, total_amount=subtotal + tax,
                       amount_paid=0, status=InvoiceStatus.UNPAID.value, admin_id=current_user.id,
                       due_date=due_date, notes=str(data.get("notes", "")).strip() or None,
@@ -6617,6 +6619,8 @@ def admin_update_commerce_invoice(invoice_id):
         return jsonify({"success": False, "message": "Enter a valid recipient email."}), 400
     if not invoice.recipient_name or not invoice.recipient_name.strip() or not invoice.recipient_email or not invoice.recipient_email.strip():
         return jsonify({"success": False, "message": "Recipient name and email are required."}), 400
+    if "recipient_email" in data:
+        invoice.recipient_user_id = invoice_recipient_id(invoice.recipient_email)
     if "due_date" in data:
         try:
             invoice.due_date = datetime.strptime(str(data["due_date"]), "%Y-%m-%d").date() if data["due_date"] else None

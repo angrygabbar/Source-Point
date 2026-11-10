@@ -12,6 +12,7 @@ from utils import role_required, log_user_action, send_email
 from datetime import datetime
 from invoice_service import InvoiceGenerator, SupersCoinInvoiceGenerator
 from services.commerce_service import CommerceService
+from services.invoice_recipient import invoice_recipient_id
 from services.rollback_terms_service import RollbackTermsService
 from services.superscoins_service import SupersCoinsService
 import os 
@@ -436,6 +437,7 @@ def create_invoice():
         
         invoice = Invoice(
             invoice_number=invoice_number, recipient_name=recipient_name, recipient_email=recipient_email,
+            recipient_user_id=invoice_recipient_id(recipient_email),
             bill_to_address=bill_to, ship_to_address=ship_to, subtotal=subtotal, total_amount=subtotal,
             due_date=due_date, admin_id=current_user.id,
             status=InvoiceStatus.UNPAID.value

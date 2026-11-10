@@ -1,0 +1,81 @@
+{% extends "layout.html" %}
+{% block title %}Invoice {{ invoice.invoice_number }} — Your Invoices{% endblock %}
+
+{% block content %}
+{% set invoice_type_labels = {'ecommerce': 'E-commerce', 'bus': 'Bus Booking', 'hotel': 'Hotel Booking', 'flight': 'Flight Booking'} %}
+<main class="mx-auto max-w-5xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+    <header class="flex flex-col gap-4 rounded-2xl border border-white/10 bg-[#111321] p-5 sm:flex-row sm:items-center sm:justify-between sm:p-7">
+        <div>
+            <a href="{{ url_for('main.your_invoices') }}" hx-get="{{ url_for('main.your_invoices') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="mb-3 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-indigo-300"><i class="fas fa-arrow-left"></i> Your Invoices</a>
+            <div class="mt-2 flex flex-wrap items-center gap-2">
+                <h1 class="text-2xl font-black text-white">{{ invoice.invoice_number }}</h1>
+                <span class="rounded-full border border-indigo-400/20 bg-indigo-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-200">{{ invoice_type_labels.get(invoice.invoice_type or 'ecommerce', 'E-commerce') }}</span>
+            </div>
+            <p class="mt-2 text-sm text-gray-400">Issued to {{ invoice.recipient_name }} · {{ invoice.recipient_email }}</p>
+        </div>
+        <button type="button" onclick="window.print()" class="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-bold text-gray-200 hover:bg-white/10"><i class="fas fa-print"></i> Print</button>
+    </header>
+
+    <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="rounded-2xl border border-white/10 bg-[#111321] p-5"><p class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Invoice total</p><p class="mt-2 text-xl font-extrabold text-white">₹{{ "{:,.2f}".format(invoice.total_amount|float) }}</p></div>
+        <div class="rounded-2xl border border-white/10 bg-[#111321] p-5"><p class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Paid</p><p class="mt-2 text-xl font-extrabold text-emerald-300">₹{{ "{:,.2f}".format(invoice.net_collected_amount|float) }}</p></div>
+        <div class="rounded-2xl border border-white/10 bg-[#111321] p-5"><p class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Pending</p><p class="mt-2 text-xl font-extrabold text-amber-200">₹{{ "{:,.2f}".format(invoice.pending_amount) }}</p></div>
+        <div class="rounded-2xl border border-white/10 bg-[#111321] p-5"><p class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Status</p><p class="mt-2 text-xl font-extrabold text-white">{{ invoice.status }}</p></div>
+    </section>
+
+    <section class="overflow-hidden rounded-2xl border border-white/10 bg-[#111321]">
+        <div class="border-b border-white/10 px-5 py-4 sm:px-6"><h2 class="font-bold text-white">Invoice items</h2></div>
+        <div class="divide-y divide-white/5">
+            {% for item in invoice.items %}
+            <div class="grid grid-cols-12 gap-3 px-5 py-4 sm:px-6">
+                <div class="col-span-7 text-sm font-medium text-gray-200 sm:col-span-8">{{ item.description }}<span class="ml-2 text-xs text-gray-500">× {{ item.quantity }}</span></div>
+                <div class="col-span-5 text-right text-sm font-semibold text-white sm:col-span-4">₹{{ "{:,.2f}".format((item.price|float) * item.quantity) }}</div>
+            </div>
+            {% else %}
+            <p class="px-5 py-6 text-sm text-gray-400 sm:px-6">No item details are available for this invoice.</p>
+            {% endfor %}
+        </div>
+        <div class="space-y-2 border-t border-white/10 bg-white/[0.02] px-5 py-4 sm:px-6">
+            <div class="flex justify-between gap-4 text-sm text-gray-400"><span>Subtotal</span><span>₹{{ "{:,.2f}".format(invoice.subtotal|float) }}</span></div>
+            <div class="flex justify-between gap-4 text-sm text-gray-400"><span>Tax</span><span>₹{{ "{:,.2f}".format(invoice.tax|float) }}</span></div>
+            <div class="flex justify-between gap-4 border-t border-white/10 pt-3 text-base font-extrabold text-white"><span>Total</span><span>₹{{ "{:,.2f}".format(invoice.total_amount|float) }}</span></div>
+        </div>
+    </section>
+
+    <section class="grid gap-4 md:grid-cols-2">
+        <div class="rounded-2xl border border-white/10 bg-[#111321] p-5 sm:p-6">
+            <h2 class="font-bold text-white">Invoice details</h2>
+            <dl class="mt-4 space-y-3 text-sm">
+                <div class="flex justify-between gap-4"><dt class="text-gray-500">Created</dt><dd class="text-right text-gray-200">{{ invoice.created_at|to_ist('%d %b %Y, %I:%M %p') if invoice.created_at else '—' }}</dd></div>
+                <div class="flex justify-between gap-4"><dt class="text-gray-500">Due date</dt><dd class="text-right text-gray-200">{{ invoice.due_date.strftime('%d %b %Y') if invoice.due_date else '—' }}</dd></div>
+                {% if invoice.order_id %}<div class="flex justify-between gap-4"><dt class="text-gray-500">Order / booking reference</dt><dd class="text-right text-gray-200">{{ invoice.order_id }}</dd></div>{% endif %}
+            </dl>
+            {% if invoice.payment_details %}<div class="mt-5 border-t border-white/10 pt-4"><h3 class="text-xs font-bold uppercase tracking-wider text-gray-500">Payment details</h3><p class="mt-2 whitespace-pre-line text-sm text-gray-300">{{ invoice.payment_details }}</p></div>{% endif %}
+            {% if invoice.notes %}<div class="mt-5 border-t border-white/10 pt-4"><h3 class="text-xs font-bold uppercase tracking-wider text-gray-500">Notes</h3><p class="mt-2 whitespace-pre-line text-sm text-gray-300">{{ invoice.notes }}</p></div>{% endif %}
+        </div>
+
+        <div class="rounded-2xl border border-white/10 bg-[#111321] p-5 sm:p-6">
+            <h2 class="font-bold text-white">Addresses and booking information</h2>
+            {% if invoice.bill_to_address %}<div class="mt-4"><h3 class="text-xs font-bold uppercase tracking-wider text-gray-500">Bill to</h3><p class="mt-1 whitespace-pre-line text-sm text-gray-300">{{ invoice.bill_to_address }}</p></div>{% endif %}
+            {% if invoice.ship_to_address %}<div class="mt-4"><h3 class="text-xs font-bold uppercase tracking-wider text-gray-500">Ship to</h3><p class="mt-1 whitespace-pre-line text-sm text-gray-300">{{ invoice.ship_to_address }}</p></div>{% endif %}
+            {% if invoice.booking_details %}
+            <dl class="mt-4 space-y-3 border-t border-white/10 pt-4 text-sm">
+                {% for key, value in invoice.booking_details.items() %}
+                <div class="flex justify-between gap-4"><dt class="capitalize text-gray-500">{{ key|replace('_', ' ') }}</dt><dd class="text-right text-gray-200">{{ value }}</dd></div>
+                {% endfor %}
+            </dl>
+            {% elif not invoice.bill_to_address and not invoice.ship_to_address %}
+            <p class="mt-4 text-sm text-gray-500">No additional details are available.</p>
+            {% endif %}
+        </div>
+    </section>
+</main>
+<style>
+@media print {
+    body, #main-content { background: #fff !important; color: #111 !important; }
+    #main-content main, #main-content section, #main-content header { break-inside: avoid; }
+    #main-content h1, #main-content h2, #main-content h3, #main-content p, #main-content dt, #main-content dd, #main-content span, #main-content div { color: #111 !important; }
+    #main-content button, #main-content a { display: none !important; }
+}
+</style>
+{% endblock %}

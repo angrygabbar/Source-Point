@@ -14,6 +14,7 @@ from travel_invoice_service import (
     normalize_invoice_type,
 )
 from services.commerce_service import CommerceService
+from services.invoice_recipient import invoice_recipient_id
 from services.rollback_terms_service import RollbackTermsService
 from datetime import datetime
 from werkzeug.utils import secure_filename
@@ -640,6 +641,7 @@ def update_order_status(order_id):
                     invoice_number=f"INV-{order.order_number}",
                     recipient_name=order.buyer.username,
                     recipient_email=order.buyer.email,
+                    recipient_user_id=order.user_id,
                     bill_to_address=order.billing_address,
                     ship_to_address=order.shipping_address, 
                     order_id=order.order_number,
@@ -951,6 +953,7 @@ def create_invoice():
             
             new_invoice = Invoice(
                 invoice_number=invoice_num, recipient_name=recipient_name, recipient_email=recipient_email,
+                recipient_user_id=invoice_recipient_id(recipient_email),
                 invoice_type=invoice_type,
                 booking_details=_booking_details_from_form(invoice_type, request.form),
                 bill_to_address=bill_to, ship_to_address=ship_to, order_id=order_id,
@@ -1043,6 +1046,7 @@ def edit_invoice(invoice_id):
             # Update invoice fields
             invoice.recipient_name = recipient_name
             invoice.recipient_email = recipient_email
+            invoice.recipient_user_id = invoice_recipient_id(recipient_email)
             invoice.booking_details = _booking_details_from_form(invoice.invoice_type, request.form)
             invoice.bill_to_address = bill_to
             invoice.ship_to_address = ship_to if invoice.invoice_type == 'ecommerce' else None

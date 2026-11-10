@@ -72,7 +72,7 @@ class User(UserMixin, db.Model):
     activity_logs = db.relationship('ActivityLog', backref='user', lazy=True)
     
     # Commerce relationships
-    invoices = db.relationship('Invoice', backref='admin', lazy=True)
+    invoices = db.relationship('Invoice', foreign_keys='Invoice.admin_id', backref='admin', lazy=True)
     orders = db.relationship('Order', foreign_keys='Order.user_id', backref='buyer', lazy=True)
     sales = db.relationship('Order', foreign_keys='Order.seller_id', backref='seller', lazy=True)
     
