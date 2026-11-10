@@ -252,7 +252,6 @@ def ensure_invoice_template_schema():
         ))
         db.session.commit()
 
-    from models.commerce import Invoice
     for index in Invoice.__table__.indexes:
         if 'recipient_user_id' in {column.name for column in index.columns}:
             index.create(db.engine, checkfirst=True)
