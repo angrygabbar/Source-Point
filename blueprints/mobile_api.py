@@ -1775,6 +1775,61 @@ def candidate_submit_code_test():
         return jsonify({"success": False, "message": str(error)}), 400
 
 
+def _recipient_invoice_payload(invoice):
+    return {
+        "id": invoice.id,
+        "invoice_number": invoice.invoice_number,
+        "recipient_name": invoice.recipient_name,
+        "recipient_email": invoice.recipient_email,
+        "status": invoice.status,
+        "invoice_type": invoice.invoice_type or "ecommerce",
+        "subtotal": float(invoice.subtotal or 0),
+        "tax": float(invoice.tax or 0),
+        "total_amount": float(invoice.total_amount or 0),
+        "amount_paid": float(invoice.net_collected_amount or 0),
+        "amount_refunded": float(invoice.amount_refunded or 0),
+        "pending_amount": float(invoice.pending_amount or 0),
+        "due_date": invoice.due_date.isoformat() if invoice.due_date else None,
+        "notes": invoice.notes or "",
+        "payment_details": invoice.payment_details or "",
+        "bill_to_address": invoice.bill_to_address or "",
+        "ship_to_address": invoice.ship_to_address or "",
+        "order_id": invoice.order_id or "",
+        "booking_details": invoice.booking_details or {},
+        "items": [
+            {
+                "id": row.id,
+                "description": row.description,
+                "quantity": row.quantity,
+                "price": float(row.price or 0),
+                "line_total": float((row.price or 0) * row.quantity),
+            }
+            for row in invoice.items
+        ],
+        "created_at": invoice.created_at.isoformat() if invoice.created_at else None,
+    }
+
+
+@mobile_api_bp.get("/invoices")
+@mobile_login_required
+def recipient_invoices():
+    invoices = Invoice.query.filter_by(recipient_user_id=current_user.id)\
+        .order_by(Invoice.created_at.desc(), Invoice.id.desc()).all()
+    return jsonify({"success": True, "invoices": [_recipient_invoice_payload(item) for item in invoices]})
+
+
+@mobile_api_bp.get("/invoices/<int:invoice_id>")
+@mobile_login_required
+def recipient_invoice_detail(invoice_id):
+    invoice = Invoice.query.filter_by(
+        id=invoice_id,
+        recipient_user_id=current_user.id,
+    ).first()
+    if not invoice:
+        return jsonify({"success": False, "message": "Invoice not found."}), 404
+    return jsonify({"success": True, "invoice": _recipient_invoice_payload(invoice)})
+
+
 @mobile_api_bp.get("/profile")
 @mobile_login_required
 def profile():
