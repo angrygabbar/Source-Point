@@ -149,6 +149,12 @@
                         Your Invoices
                     </a>
 
+                    <a href="{{ url_for('main.wealth_manager') }}" target="_blank" rel="noopener noreferrer"
+                        class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 mb-1 text-gray-400 hover:bg-white/5 hover:text-white">
+                        <i class="fas fa-chart-line w-6 text-center mr-2 text-emerald-400"></i>
+                        Wealth Manager
+                    </a>
+
                     {% if current_user.role in ['teacher', 'student'] %}
                     <a href="{{ url_for('teaching.home') }}"
                         class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 mb-1 {{ 'bg-white/10 text-white shadow-md border border-white/5' if request.endpoint and request.endpoint.startswith('teaching.') else 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
@@ -386,9 +392,24 @@
                     <a href="{{ url_for('newsletter.news_page') }}"
                         class="cyber-nav-link hidden sm:flex">News</a>
 
+                    <a href="{{ url_for('main.wealth_manager') }}" target="_blank" rel="noopener noreferrer"
+                        class="cyber-nav-link hidden sm:flex">Wealth Manager</a>
+
+                    <a href="{{ url_for('main.wealth_manager') }}" target="_blank" rel="noopener noreferrer"
+                        class="w-10 h-10 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 flex sm:hidden items-center justify-center text-emerald-300 transition-all"
+                        title="Wealth Manager" aria-label="Open Wealth Manager"><i class="fas fa-chart-line"></i></a>
+
                     <a href="{{ url_for('auth.login_register') }}"
                         class="cyber-login-btn">Login</a>
                     {% else %}
+
+                    <a href="{{ url_for('main.wealth_manager') }}" target="_blank" rel="noopener noreferrer"
+                        class="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-300 text-sm font-semibold transition-all">
+                        <i class="fas fa-chart-line"></i><span>Wealth Manager</span>
+                    </a>
+                    <a href="{{ url_for('main.wealth_manager') }}" target="_blank" rel="noopener noreferrer"
+                        class="w-10 h-10 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 flex sm:hidden items-center justify-center text-emerald-300 transition-all"
+                        title="Wealth Manager" aria-label="Open Wealth Manager"><i class="fas fa-chart-line"></i></a>
 
                     <a href="{{ url_for('auth.logout') }}"
                         class="w-10 h-10 rounded-xl bg-white/5 hover:bg-red-500/20 border border-white/5 hover:border-red-500/50 flex items-center justify-center text-gray-400 hover:text-red-400 transition-all"

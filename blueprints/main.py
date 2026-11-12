@@ -17,6 +17,7 @@ import cloudinary.uploader
 from enums import UserRole
 
 main_bp = Blueprint('main', __name__)
+WEALTH_MANAGER_URL = 'https://wealth-manager-frontend-8wgi.onrender.com/'
 
 SECRET_QUESTIONS = [
     "What was your first pet's name?",
@@ -39,6 +40,11 @@ def home():
         elif current_user.role == UserRole.CANDIDATE.value: return redirect(url_for('candidate.candidate_dashboard'))
         elif current_user.role in [UserRole.TEACHER.value, UserRole.STUDENT.value]: return redirect(url_for('teaching.home'))
     return render_template('home.html')
+
+@main_bp.route('/wealth-manager')
+def wealth_manager():
+    """Open the public, in-house wealth manager application."""
+    return redirect(WEALTH_MANAGER_URL)
 
 @main_bp.route('/offers')
 @cache.cached(timeout=300)
