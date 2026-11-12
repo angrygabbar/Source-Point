@@ -42,8 +42,9 @@ def home():
     return render_template('home.html')
 
 @main_bp.route('/wealth-manager')
+@login_required
 def wealth_manager():
-    """Open the public, in-house wealth manager application."""
+    """Open the in-house wealth manager application for signed-in users."""
     return redirect(WEALTH_MANAGER_URL)
 
 @main_bp.route('/offers')
