@@ -57,6 +57,10 @@ jobs:
           # We start/recreate them only after database migrations succeed.
           docker compose build --build-arg PREBUILT_WHEELS=1 web worker scheduler
 
+          # Wealth Manager has a separate API container. CoinBack has an API,
+          # frontend, and scanner container; the migration service shares the API image.
+          docker compose build wealth-manager-api coinback-api coinback-frontend coinback-scanner coinback-migrate
+
       # 4. Database Migrations
       - name: Run Database Migrations
         run: |
@@ -85,14 +89,18 @@ jobs:
           # Now safely upgrade to the repository head.
           $WEB_RUN flask db upgrade
 
+          # CoinBack stores its tables in its own schema in the shared Postgres database.
+          docker compose run --rm -T coinback-migrate
+
       # 5. Start/Recreate Application
       - name: Start Application
         run: |
           set -euo pipefail
           cd /Users/gaurav/Developer/Source-Point
-          docker compose up -d --no-build web worker scheduler
+          docker compose up -d --no-build web worker scheduler wealth-manager-api coinback-api coinback-frontend coinback-scanner
 
           echo "Waiting for web container health..."
+          WEB_READY=0
           for attempt in {1..30}; do
             STATE=$(docker inspect -f '{{.State.Status}}|{{if .State.Health}}{{.State.Health.Status}}{{else}}unconfigured{{end}}' sourcepoint_app 2>/dev/null || echo "missing|unavailable")
             CONTAINER_STATUS=${STATE%%|*}
@@ -107,16 +115,52 @@ jobs:
 
             echo "Container: $CONTAINER_STATUS; Docker health: $HEALTH_STATUS; app health: $APP_STATUS"
             if [ "$CONTAINER_STATUS" = "running" ] && { [ "$HEALTH_STATUS" = "healthy" ] || [ "$APP_STATUS" = "200" ]; }; then
-              docker compose ps
-              exit 0
+              WEB_READY=1
+              break
             fi
             sleep 5
           done
 
-          echo "Web container did not pass its health check."
+          if [ "$WEB_READY" != "1" ]; then
+            echo "Web container did not pass its health check."
+            docker compose ps
+            docker logs --tail 160 sourcepoint_app || true
+            exit 1
+          fi
+
+          echo "Waiting for Wealth Manager and CoinBack containers..."
+          MODULES_READY=0
+          for attempt in {1..30}; do
+            MODULES_READY=1
+            for service in wealth-manager-api coinback-api coinback-frontend coinback-scanner; do
+              CONTAINER_ID=$(docker compose ps -q "$service")
+              if [ -z "$CONTAINER_ID" ]; then
+                echo "Service $service has no container."
+                MODULES_READY=0
+                continue
+              fi
+              MODULE_STATE=$(docker inspect -f '{{.State.Status}}|{{if .State.Health}}{{.State.Health.Status}}{{else}}unconfigured{{end}}' "$CONTAINER_ID")
+              MODULE_STATUS=${MODULE_STATE%%|*}
+              MODULE_HEALTH=${MODULE_STATE#*|}
+              echo "$service: $MODULE_STATUS; health: $MODULE_HEALTH"
+              if [ "$MODULE_STATUS" != "running" ] || { [ "$MODULE_HEALTH" != "unconfigured" ] && [ "$MODULE_HEALTH" != "healthy" ]; }; then
+                MODULES_READY=0
+              fi
+            done
+            if [ "$MODULES_READY" = "1" ]; then
+              break
+            fi
+            sleep 5
+          done
+
+          if [ "$MODULES_READY" != "1" ]; then
+            echo "One or more integrated module services did not start successfully."
+            docker compose ps
+            docker compose logs --tail 120 wealth-manager-api coinback-api coinback-frontend coinback-scanner || true
+            exit 1
+          fi
+
           docker compose ps
-          docker logs --tail 160 sourcepoint_app || true
-          exit 1
 
       # 6. Cleanup
       - name: Cleanup Old Images
