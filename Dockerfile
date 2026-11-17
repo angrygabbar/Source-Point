@@ -1,3 +1,12 @@
+FROM node:24-alpine AS wealth-manager-ui
+WORKDIR /wealth-manager-frontend
+COPY ["Wealth Manager/frontend/package.json", "Wealth Manager/frontend/package-lock.json", "./"]
+RUN npm ci
+COPY ["Wealth Manager/frontend/", "./"]
+ARG VITE_API_BASE_URL=/wealth-api
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+RUN npm run build
+
 # Full Python image includes the compiler and build tools needed by dependencies.
 FROM python:3.11-bookworm
 
@@ -29,6 +38,7 @@ RUN if [ "$PREBUILT_WHEELS" = "1" ]; then \
 
 # Copy the rest of the application code
 COPY . .
+COPY --from=wealth-manager-ui /wealth-manager-frontend/dist /app/static/wealth_manager
 RUN chmod +x /app/docker-entrypoint.sh
 
 # Expose the port the app runs on

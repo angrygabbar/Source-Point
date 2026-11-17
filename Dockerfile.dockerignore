@@ -17,6 +17,9 @@ android/
 .gradle/
 build/
 dist/
+**/node_modules/
+**/target/
+static/wealth_manager/
 static/apks/
 *.apk
 *.aab

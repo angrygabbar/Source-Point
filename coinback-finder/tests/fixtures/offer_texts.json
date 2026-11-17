@@ -1,0 +1,10 @@
+[
+  {"text": "Get 100% SuperCoins back", "reward_type": "PERCENTAGE", "percentage": 100, "up_to": false},
+  {"text": "Get 50% SuperCoins back", "reward_type": "PERCENTAGE", "percentage": 50, "up_to": false},
+  {"text": "Earn 500 SuperCoins", "reward_type": "FIXED_COINS", "coins": 500, "percentage": null},
+  {"text": "Get up to 100% SuperCoins", "reward_type": "CONDITIONAL_UP_TO", "percentage": 100, "up_to": true},
+  {"text": "Earn 10 SuperCoins per ₹100", "reward_type": "PER_SPEND_RATE", "percentage": null},
+  {"text": "₹500 bank cashback on Axis Bank credit card", "reward_type": "NOT_COINBACK"},
+  {"text": "10% instant discount on HDFC Bank cards", "reward_type": "NOT_COINBACK"},
+  {"text": "Use 500 SuperCoins for extra ₹50 off", "reward_type": "NOT_COINBACK"}
+]

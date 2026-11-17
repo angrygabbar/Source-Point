@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --canvas: 40 20% 98%;
+  --surface: 0 0% 100%;
+  --subtle: 40 12% 95.5%;
+  --line: 35 10% 88%;
+  --line-strong: 30 8% 78%;
+  --fg: 222 22% 14%;
+  --muted: 220 9% 40%;
+  --faint: 220 8% 58%;
+
+  --accent: 214 58% 40%;
+  --accent-soft: 214 60% 95%;
+  --accent-fg: 0 0% 100%;
+  --positive: 158 58% 28%;
+  --positive-soft: 152 45% 94%;
+  --warning: 34 82% 34%;
+  --warning-soft: 40 85% 94%;
+  --negative: 0 58% 42%;
+  --negative-soft: 0 70% 96%;
+
+  --sidebar: 222 26% 14%;
+  --sidebar-fg: 220 16% 92%;
+  --sidebar-muted: 220 10% 62%;
+  --sidebar-hover: 222 20% 20%;
+  --sidebar-line: 222 18% 22%;
+
+  --chart-1: 214 50% 44%;
+  --chart-2: 158 45% 36%;
+  --chart-3: 36 72% 46%;
+  --chart-4: 0 52% 50%;
+  --chart-5: 220 9% 62%;
+  --chart-grid: 35 10% 90%;
+
+  color-scheme: light;
+}
+
+.dark {
+  --canvas: 222 18% 8%;
+  --surface: 222 16% 11%;
+  --subtle: 222 14% 14%;
+  --line: 222 12% 20%;
+  --line-strong: 222 10% 28%;
+  --fg: 220 14% 92%;
+  --muted: 220 9% 64%;
+  --faint: 220 8% 48%;
+
+  --accent: 214 70% 62%;
+  --accent-soft: 214 40% 18%;
+  --accent-fg: 222 30% 10%;
+  --positive: 155 50% 52%;
+  --positive-soft: 158 35% 14%;
+  --warning: 38 80% 58%;
+  --warning-soft: 36 40% 15%;
+  --negative: 0 70% 64%;
+  --negative-soft: 0 35% 16%;
+
+  --sidebar: 222 20% 6%;
+  --sidebar-fg: 220 14% 90%;
+  --sidebar-muted: 220 9% 56%;
+  --sidebar-hover: 222 16% 13%;
+  --sidebar-line: 222 14% 14%;
+
+  --chart-1: 214 65% 62%;
+  --chart-2: 155 45% 50%;
+  --chart-3: 38 75% 56%;
+  --chart-4: 0 62% 62%;
+  --chart-5: 220 8% 50%;
+  --chart-grid: 222 12% 18%;
+
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    @apply border-line;
+  }
+  html,
+  body {
+    @apply bg-canvas text-fg antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+  body {
+    @apply text-sm;
+  }
+  ::selection {
+    @apply bg-accent/20;
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent/50 ring-offset-1 ring-offset-canvas;
+  }
+}
+
+@layer components {
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--line-strong)) transparent;
+  }
+  .table-cell {
+    @apply h-9 whitespace-nowrap px-3 align-middle;
+  }
+  .eyebrow {
+    @apply text-2xs font-medium uppercase tracking-[0.06em] text-faint;
+  }
+}
+
+.recharts-cartesian-grid line {
+  stroke: hsl(var(--chart-grid));
+}
+.recharts-text {
+  fill: hsl(var(--muted));
+  font-size: 11px;
+}
+.recharts-tooltip-cursor {
+  fill: hsl(var(--subtle));
+}

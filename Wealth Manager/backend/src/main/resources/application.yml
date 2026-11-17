@@ -1,0 +1,35 @@
+server:
+  port: ${PORT:8080}
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: wealth-manager
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/sourcepoint_dev_db}
+    username: ${SPRING_DATASOURCE_USERNAME:dev_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:dev_password}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:5}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        format_sql: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 3
+
+app:
+  sso:
+    secret: ${WEALTH_MANAGER_SSO_SECRET:}
+    issuer: sourcepoint
+    audience: wealth-manager
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000,http://localhost:3001}
