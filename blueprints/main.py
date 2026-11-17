@@ -1,8 +1,14 @@
 import google.generativeai as genai
 import os
+import base64
+import hashlib
+import hmac
+import json
+import time
 from threading import Thread
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, current_app
+from flask import Blueprint, Response, current_app, flash, jsonify, redirect, render_template, request, send_from_directory, session, url_for
 from flask_login import login_required, current_user
+import requests
 from extensions import db, bcrypt, cache
 from models.auth import User, Message, ActivityLog, ActivityUpdate
 from models.commerce import Product, Order, Invoice, StockRequest, AffiliateAd
@@ -17,7 +23,6 @@ import cloudinary.uploader
 from enums import UserRole
 
 main_bp = Blueprint('main', __name__)
-WEALTH_MANAGER_URL = 'https://wealth-manager-frontend-8wgi.onrender.com/'
 
 SECRET_QUESTIONS = [
     "What was your first pet's name?",
@@ -42,10 +47,110 @@ def home():
     return render_template('home.html')
 
 @main_bp.route('/wealth-manager')
+@main_bp.route('/wealth-manager/')
 @login_required
 def wealth_manager():
-    """Open the in-house wealth manager application for signed-in users."""
-    return redirect(WEALTH_MANAGER_URL)
+    """Serve the integrated Wealth Manager frontend inside SourcePoint."""
+    build_dir = os.path.join(current_app.root_path, 'static', 'wealth_manager')
+    return send_from_directory(build_dir, 'index.html')
+
+
+@main_bp.route('/wealth-manager/<path:filename>')
+@login_required
+def wealth_manager_asset(filename):
+    """Serve the built Wealth Manager assets under the authenticated route."""
+    build_dir = os.path.join(current_app.root_path, 'static', 'wealth_manager')
+    return send_from_directory(build_dir, filename)
+
+
+def _base64url(data):
+    return base64.urlsafe_b64encode(data).rstrip(b'=').decode('ascii')
+
+
+def _wealth_manager_session_token(user):
+    secret = current_app.config.get('WEALTH_MANAGER_SSO_SECRET')
+    if not secret or len(secret.encode('utf-8')) < 32:
+        current_app.logger.error('WEALTH_MANAGER_SSO_SECRET must contain at least 32 bytes')
+        return None
+
+    now = int(time.time())
+    expires_at = now + 300
+    header = {'alg': 'HS256', 'typ': 'JWT'}
+    claims = {
+        'iss': 'sourcepoint',
+        'aud': 'wealth-manager',
+        'sub': user.email,
+        'name': user.username,
+        'sourcepointUserId': int(user.id),
+        'iat': now,
+        'exp': expires_at,
+    }
+    signing_input = f"{_base64url(json.dumps(header, separators=(',', ':')).encode('utf-8'))}.{_base64url(json.dumps(claims, separators=(',', ':')).encode('utf-8'))}"
+    signature = hmac.new(secret.encode('utf-8'), signing_input.encode('ascii'), hashlib.sha256).digest()
+    return f'{signing_input}.{_base64url(signature)}', expires_at
+
+
+@main_bp.route('/api/v1/wealth-manager/token', methods=['GET'])
+def wealth_manager_token():
+    """Exchange the current SourcePoint login for a short-lived module token."""
+    if not current_user.is_authenticated:
+        return jsonify({'success': False, 'message': 'Sign in to SourcePoint to continue.'}), 401
+    if not current_user.is_active or not current_user.is_approved:
+        return jsonify({'success': False, 'message': 'This SourcePoint account cannot access the module.'}), 403
+
+    result = _wealth_manager_session_token(current_user)
+    if result is None:
+        return jsonify({'success': False, 'message': 'Wealth Manager sign-in is not configured.'}), 503
+
+    token, expires_at = result
+    return jsonify({'token': token, 'expiresAt': expires_at * 1000}), 200, {
+        'Cache-Control': 'no-store, private',
+        'Pragma': 'no-cache',
+    }
+
+
+@main_bp.route('/wealth-api', defaults={'api_path': ''}, methods=['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'])
+@main_bp.route('/wealth-api/<path:api_path>', methods=['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'])
+def wealth_manager_api_proxy(api_path):
+    """Proxy Wealth Manager API calls through SourcePoint's origin."""
+    if not current_user.is_authenticated:
+        return jsonify({'message': 'Sign in to SourcePoint to continue.'}), 401
+    if not current_user.is_active or not current_user.is_approved:
+        return jsonify({'message': 'This SourcePoint account cannot access the module.'}), 403
+
+    api_base = (current_app.config.get('WEALTH_MANAGER_API_URL') or '').rstrip('/')
+    if not api_base:
+        return jsonify({'message': 'Wealth Manager API is not configured.'}), 503
+
+    target_url = f'{api_base}/{api_path}' if api_path else api_base
+    if request.query_string:
+        target_url = f'{target_url}?{request.query_string.decode("latin-1")}'
+
+    forwarded_headers = {}
+    for header in ('Authorization', 'Content-Type', 'Accept', 'Range'):
+        value = request.headers.get(header)
+        if value:
+            forwarded_headers[header] = value
+
+    try:
+        upstream = requests.request(
+            method=request.method,
+            url=target_url,
+            headers=forwarded_headers,
+            data=request.get_data(),
+            timeout=(3, 60),
+            allow_redirects=False,
+        )
+    except requests.RequestException:
+        current_app.logger.exception('Wealth Manager API request failed')
+        return jsonify({'message': 'Wealth Manager is temporarily unavailable.'}), 502
+
+    response_headers = {}
+    for header in ('Content-Type', 'Content-Disposition', 'Cache-Control', 'ETag', 'Last-Modified'):
+        value = upstream.headers.get(header)
+        if value:
+            response_headers[header] = value
+    return Response(upstream.content, status=upstream.status_code, headers=response_headers)
 
 @main_bp.route('/offers')
 @cache.cached(timeout=300)
