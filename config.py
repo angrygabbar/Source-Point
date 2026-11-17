@@ -5,6 +5,11 @@ from celery.schedules import crontab
 class Config:
     """Base configuration."""
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dev_key_change_in_prod')
+    WEALTH_MANAGER_SSO_SECRET = os.environ.get('WEALTH_MANAGER_SSO_SECRET')
+    WEALTH_MANAGER_API_URL = os.environ.get('WEALTH_MANAGER_API_URL')
+    COINBACK_SSO_SECRET = os.environ.get('COINBACK_SSO_SECRET')
+    COINBACK_API_URL = os.environ.get('COINBACK_API_URL')
+    COINBACK_FRONTEND_URL = os.environ.get('COINBACK_FRONTEND_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     PERMANENT_SESSION_LIFETIME = timedelta(minutes=30)
     

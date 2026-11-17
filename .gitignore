@@ -19,6 +19,9 @@ docker-compose.override.yml
 docker-compose*.yml
 Dockerfile
 .dockerignore
+!Wealth Manager/backend/Dockerfile
+!coinback-finder/backend/Dockerfile
+!coinback-finder/frontend/Dockerfile
 celerybeat-schedule
 
 # Google Calendar API Credentials (IMPORTANT!)
@@ -29,6 +32,12 @@ service_account.json
 # Uploaded binary files — never commit these to git
 static/apks/
 static/resumes/
+static/wealth_manager/
+
+# Wealth Manager module build artifacts
+Wealth Manager/frontend/node_modules/
+Wealth Manager/frontend/dist/
+Wealth Manager/backend/target/
 .venv/
 .venv/
 .venv/

@@ -149,7 +149,7 @@
                         Your Invoices
                     </a>
 
-                    <a href="{{ url_for('main.wealth_manager') }}" target="_blank" rel="noopener noreferrer"
+                    <a href="{{ url_for('main.wealth_manager') }}"
                         class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 mb-1 text-gray-400 hover:bg-white/5 hover:text-white">
                         <i class="fas fa-chart-line w-6 text-center mr-2 text-emerald-400"></i>
                         Wealth Manager
@@ -167,6 +167,10 @@
                     <div class="pt-6 pb-2">
                         <p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Admin Controls</p>
                     </div>
+                    <a href="{{ url_for('coinback_module.home') }}" target="_blank" rel="noopener noreferrer"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+                        <i class="fas fa-coins w-6 text-center mr-2 text-amber-400"></i> CoinBack Finder
+                    </a>
                     <a hx-get="{{ url_for('admin_users.manage_users') }}" hx-target="#main-content"
                         hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true"
                         class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer">
@@ -396,13 +400,23 @@
                         class="cyber-login-btn">Login</a>
                     {% else %}
 
-                    <a href="{{ url_for('main.wealth_manager') }}" target="_blank" rel="noopener noreferrer"
+                    <a href="{{ url_for('main.wealth_manager') }}"
                         class="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-300 text-sm font-semibold transition-all">
                         <i class="fas fa-chart-line"></i><span>Wealth Manager</span>
                     </a>
                     <a href="{{ url_for('main.wealth_manager') }}" target="_blank" rel="noopener noreferrer"
                         class="w-10 h-10 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 flex sm:hidden items-center justify-center text-emerald-300 transition-all"
                         title="Wealth Manager" aria-label="Open Wealth Manager"><i class="fas fa-chart-line"></i></a>
+
+                    {% if current_user.role == 'admin' %}
+                    <a href="{{ url_for('coinback_module.home') }}" target="_blank" rel="noopener noreferrer"
+                        class="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-300 text-sm font-semibold transition-all">
+                        <i class="fas fa-coins"></i><span>CoinBack Finder</span>
+                    </a>
+                    <a href="{{ url_for('coinback_module.home') }}" target="_blank" rel="noopener noreferrer"
+                        class="w-10 h-10 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 flex sm:hidden items-center justify-center text-amber-300 transition-all"
+                        title="CoinBack Finder" aria-label="Open CoinBack Finder"><i class="fas fa-coins"></i></a>
+                    {% endif %}
 
                     <a href="{{ url_for('auth.logout') }}"
                         class="w-10 h-10 rounded-xl bg-white/5 hover:bg-red-500/20 border border-white/5 hover:border-red-500/50 flex items-center justify-center text-gray-400 hover:text-red-400 transition-all"
