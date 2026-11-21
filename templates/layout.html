@@ -191,6 +191,16 @@
                         class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer {{ 'bg-white/10 text-white border border-white/5' if request.endpoint == 'admin_core.admin_newsletter' else '' }}">
                         <i class="fas fa-paper-plane w-6 text-center mr-2"></i> Newsletter
                     </a>
+                    <a hx-get="{{ url_for('admin_core.mobile_issue_reports') }}" hx-target="#main-content" hx-select="#main-content"
+                        hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer {{ 'bg-white/10 text-white border border-white/5' if request.endpoint in ['admin_core.mobile_issue_reports', 'admin_core.mobile_issue_report_detail'] else '' }}">
+                        <i class="fas fa-bug w-6 text-center mr-2 text-rose-400"></i> App Issue Reports
+                    </a>
+                    <a hx-get="{{ url_for('admin_core.mobile_devices') }}" hx-target="#main-content" hx-select="#main-content"
+                        hx-swap="outerHTML transition:true" hx-push-url="true"
+                        class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer {{ 'bg-white/10 text-white border border-white/5' if request.endpoint == 'admin_core.mobile_devices' else '' }}">
+                        <i class="fas fa-mobile-alt w-6 text-center mr-2 text-emerald-400"></i> Android Devices
+                    </a>
                     <a hx-get="{{ url_for('admin_hiring.manage_job_listings') }}" hx-target="#main-content"
                         hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true"
                         class="flex items-center px-4 py-2.5 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer {{ 'bg-white/10 text-white border border-white/5' if request.endpoint == 'admin_hiring.manage_job_listings' else '' }}">

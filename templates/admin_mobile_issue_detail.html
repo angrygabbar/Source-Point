@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+{% block title %}Issue {{ report.reference_code }} — SourcePoint Admin{% endblock %}
+{% block content %}
+<div class="animate-dynamic mx-auto max-w-5xl space-y-6">
+    <a href="{{ url_for('admin_core.mobile_issue_reports') }}" hx-get="{{ url_for('admin_core.mobile_issue_reports') }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" hx-push-url="true" class="inline-flex items-center text-sm text-indigo-300 hover:text-indigo-200">← All issue reports</a>
+    <header class="rounded-2xl border border-rose-400/20 bg-gradient-to-br from-rose-950/30 to-gray-950/70 p-6">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div><p class="font-mono text-sm text-rose-300">{{ report.reference_code }}</p><h1 class="mt-2 text-3xl font-bold text-white">{{ report.error_code }}</h1><p class="mt-2 text-sm text-gray-400">Submitted {{ report.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') if report.created_at else 'at an unknown time' }}</p></div>
+            <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-gray-200">{{ report.status|replace('_', ' ')|title }}</span>
+        </div>
+    </header>
+
+    <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {% for label, value in [('User', report.user.username if report.user else 'Account unavailable'), ('Email', report.user.email if report.user else '—'), ('Screen', report.screen or 'Not provided'), ('App version', report.app_version or 'Not provided'), ('Device', report.device_model or 'Not provided'), ('Android version', report.android_version or 'Not provided')] %}
+        <div class="rounded-xl border border-white/10 bg-white/[.03] p-4"><p class="text-xs uppercase tracking-wide text-gray-500">{{ label }}</p><p class="mt-2 break-words text-sm font-medium text-gray-200">{{ value }}</p></div>
+        {% endfor %}
+    </section>
+
+    <section class="rounded-2xl border border-white/10 bg-white/[.03] p-5">
+        <h2 class="text-lg font-semibold text-white">User description</h2>
+        <div class="mt-3 whitespace-pre-wrap break-words rounded-xl bg-black/20 p-4 text-sm leading-6 text-gray-300">{{ report.description }}</div>
+    </section>
+
+    <section class="rounded-2xl border border-white/10 bg-white/[.03] p-5">
+        <div class="flex items-center justify-between gap-3"><h2 class="text-lg font-semibold text-white">Diagnostic data</h2><span class="text-xs text-gray-500">Raw report payload</span></div>
+        <pre class="mt-3 max-h-[70vh] overflow-auto rounded-xl bg-black/40 p-4 text-xs leading-5 text-emerald-200">{{ report.diagnostic_data|tojson(indent=2) }}</pre>
+    </section>
+</div>
+{% endblock %}

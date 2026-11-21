@@ -11,6 +11,9 @@ class MobilePushDevice(db.Model):
     installation_id = db.Column(db.String(128), nullable=False)
     installation_id_hash = db.Column(db.String(64), nullable=False, unique=True, index=True)
     platform = db.Column(db.String(24), nullable=False, default="android", server_default="android")
+    app_version = db.Column(db.String(40), nullable=False, default="", server_default="")
+    device_model = db.Column(db.String(160), nullable=False, default="", server_default="")
+    android_version = db.Column(db.String(80), nullable=False, default="", server_default="")
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 

@@ -13,12 +13,77 @@ from services.commerce_service import CommerceService
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from decimal import Decimal
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from werkzeug.utils import secure_filename
 from services.emi_schedule_extractor import ScheduleExtractionError, extract_emi_schedule
 from enums import UserRole, ApplicationStatus
+from models.mobile_support import MobileIssueReport, MobilePushDevice
 
 admin_core_bp = Blueprint('admin_core', __name__, url_prefix='/admin')
+
+
+@admin_core_bp.route('/mobile/issues')
+@login_required
+@role_required(UserRole.ADMIN.value)
+def mobile_issue_reports():
+    query = MobileIssueReport.query.outerjoin(User, MobileIssueReport.user_id == User.id)
+    search = request.args.get('q', '').strip()
+    status = request.args.get('status', '').strip().lower()
+
+    if search:
+        pattern = f"%{search}%"
+        query = query.filter(or_(
+            MobileIssueReport.reference_code.ilike(pattern),
+            MobileIssueReport.error_code.ilike(pattern),
+            MobileIssueReport.screen.ilike(pattern),
+            MobileIssueReport.description.ilike(pattern),
+            MobileIssueReport.app_version.ilike(pattern),
+            MobileIssueReport.device_model.ilike(pattern),
+            User.username.ilike(pattern),
+            User.email.ilike(pattern),
+        ))
+    if status in {'open', 'in_progress', 'resolved'}:
+        query = query.filter(func.lower(MobileIssueReport.status) == status)
+
+    reports = query.order_by(MobileIssueReport.created_at.desc()).paginate(
+        page=request.args.get('page', 1, type=int), per_page=25, error_out=False
+    )
+    return render_template('admin_mobile_issues.html', reports=reports, search=search, status=status)
+
+
+@admin_core_bp.route('/mobile/issues/<int:report_id>')
+@login_required
+@role_required(UserRole.ADMIN.value)
+def mobile_issue_report_detail(report_id):
+    report = MobileIssueReport.query.get_or_404(report_id)
+    return render_template('admin_mobile_issue_detail.html', report=report)
+
+
+@admin_core_bp.route('/mobile/devices')
+@login_required
+@role_required(UserRole.ADMIN.value)
+def mobile_devices():
+    query = MobilePushDevice.query.join(User, MobilePushDevice.user_id == User.id)
+    search = request.args.get('q', '').strip()
+    if search:
+        pattern = f"%{search}%"
+        query = query.filter(or_(
+            User.username.ilike(pattern),
+            User.email.ilike(pattern),
+            MobilePushDevice.device_model.ilike(pattern),
+            MobilePushDevice.android_version.ilike(pattern),
+            MobilePushDevice.app_version.ilike(pattern),
+        ))
+
+    devices = query.order_by(MobilePushDevice.updated_at.desc()).paginate(
+        page=request.args.get('page', 1, type=int), per_page=25, error_out=False
+    )
+    installation_count = MobilePushDevice.query.count()
+    user_count = db.session.query(func.count(func.distinct(MobilePushDevice.user_id))).scalar() or 0
+    return render_template(
+        'admin_mobile_devices.html', devices=devices, search=search,
+        installation_count=installation_count, user_count=user_count,
+    )
 
 # =========================================================
 # DASHBOARD & ANALYTICS

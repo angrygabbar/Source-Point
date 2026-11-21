@@ -547,6 +547,16 @@ def register_mobile_push_token():
     installation_id = data.get("installation_id")
     if not isinstance(installation_id, str) or not 8 <= len(installation_id) <= 128:
         return jsonify({"success": False, "message": "A valid Firebase installation ID is required."}), 400
+
+    metadata = {}
+    for field, max_length in (
+        ("app_version", 40), ("device_model", 160), ("android_version", 80),
+    ):
+        value = data.get(field)
+        if value is not None:
+            if not isinstance(value, str) or len(value) > max_length:
+                return jsonify({"success": False, "message": f"Invalid {field}."}), 400
+            metadata[field] = value.strip()
     from services.mobile_push import installation_id_digest
 
     digest = installation_id_digest(installation_id)
@@ -556,10 +566,12 @@ def register_mobile_push_token():
         device.installation_id = installation_id
         device.platform = "android"
         device.updated_at = datetime.utcnow()
+        for field, value in metadata.items():
+            setattr(device, field, value)
     else:
         db.session.add(MobilePushDevice(
             user_id=current_user.id, installation_id=installation_id,
-            installation_id_hash=digest, platform="android",
+            installation_id_hash=digest, platform="android", **metadata,
         ))
     db.session.commit()
     return jsonify({"success": True}), 200

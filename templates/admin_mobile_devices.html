@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+{% block title %}Android Devices — SourcePoint Admin{% endblock %}
+{% block content %}
+<div class="animate-dynamic space-y-6">
+    <header class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+            <p class="text-xs font-bold uppercase tracking-[.2em] text-emerald-400">Android app</p>
+            <h1 class="mt-2 text-3xl font-bold text-white">Registered devices</h1>
+            <p class="mt-1 max-w-2xl text-sm text-gray-400">Installations that have registered for push notifications, with the most recently reported app and Android configuration.</p>
+        </div>
+        <form method="get" action="{{ url_for('admin_core.mobile_devices') }}" class="flex gap-2 rounded-xl border border-white/10 bg-white/5 p-3">
+            <input name="q" value="{{ search }}" placeholder="Search user or device…" class="min-w-0 rounded-lg border border-white/10 bg-gray-950/70 px-3 py-2 text-sm text-white sm:w-72">
+            <button class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">Search</button>
+        </form>
+    </header>
+
+    <section class="grid gap-4 sm:grid-cols-2">
+        <div class="rounded-2xl border border-emerald-400/15 bg-gradient-to-br from-emerald-950/30 to-gray-950/60 p-5"><p class="text-xs uppercase tracking-wide text-gray-500">Registered installations</p><p class="mt-2 text-3xl font-bold text-white">{{ installation_count }}</p></div>
+        <div class="rounded-2xl border border-indigo-400/15 bg-gradient-to-br from-indigo-950/30 to-gray-950/60 p-5"><p class="text-xs uppercase tracking-wide text-gray-500">Users with a registered app</p><p class="mt-2 text-3xl font-bold text-white">{{ user_count }}</p></div>
+    </section>
+
+    <div class="rounded-xl border border-amber-400/20 bg-amber-400/[.06] px-4 py-3 text-sm text-amber-100/80">
+        This list shows devices registered by the app, not a live Play Store install check. “Last reported” is refreshed when the app syncs. Device details appear after the user runs an app version that sends them.
+    </div>
+
+    <section class="overflow-hidden rounded-2xl border border-white/10 bg-gray-950/40">
+        <div class="flex items-center justify-between border-b border-white/10 px-5 py-4"><h2 class="font-semibold text-white">App installations</h2><span class="text-xs text-gray-400">{{ devices.total }} matching</span></div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-left text-sm">
+                <thead class="bg-white/[.03] text-xs uppercase tracking-wide text-gray-400"><tr><th class="px-5 py-3">User</th><th class="px-5 py-3">Device</th><th class="px-5 py-3">Android</th><th class="px-5 py-3">App</th><th class="px-5 py-3">Last reported</th><th class="px-5 py-3">Installation</th></tr></thead>
+                <tbody class="divide-y divide-white/5">
+                    {% for device in devices.items %}
+                    <tr class="hover:bg-white/[.03]">
+                        <td class="px-5 py-4 text-gray-200">{{ device.user.username }}<span class="mt-1 block text-xs text-gray-500">{{ device.user.email }}</span></td>
+                        <td class="px-5 py-4 text-gray-300">{{ device.device_model or 'Not reported by this app version' }}</td>
+                        <td class="px-5 py-4 text-gray-300">{{ device.android_version or '—' }}</td>
+                        <td class="px-5 py-4 text-gray-300">{{ device.app_version or '—' }}</td>
+                        <td class="whitespace-nowrap px-5 py-4 text-gray-400">{{ device.updated_at.strftime('%Y-%m-%d %H:%M UTC') if device.updated_at else '—' }}</td>
+                        <td class="px-5 py-4 font-mono text-xs text-gray-500" title="Hashed identifier: {{ device.installation_id_hash }}">…{{ device.installation_id_hash[-8:] }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="px-5 py-12 text-center text-gray-500">No registered Android installations found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if devices.pages > 1 %}
+        <nav class="flex items-center justify-between border-t border-white/10 px-5 py-4 text-sm"><span class="text-gray-500">Page {{ devices.page }} of {{ devices.pages }}</span><div class="flex gap-2">
+            {% if devices.has_prev %}<a href="{{ url_for('admin_core.mobile_devices', q=search, page=devices.prev_num) }}" hx-get="{{ url_for('admin_core.mobile_devices', q=search, page=devices.prev_num) }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" class="rounded-lg border border-white/10 px-3 py-1.5 text-gray-300">Previous</a>{% endif %}
+            {% if devices.has_next %}<a href="{{ url_for('admin_core.mobile_devices', q=search, page=devices.next_num) }}" hx-get="{{ url_for('admin_core.mobile_devices', q=search, page=devices.next_num) }}" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML transition:true" class="rounded-lg border border-white/10 px-3 py-1.5 text-gray-300">Next</a>{% endif %}
+        </div></nav>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
