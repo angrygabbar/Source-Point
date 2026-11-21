@@ -12,6 +12,7 @@ from models.auth import User, Message
 from models.learning import LearningContent
 from models.interview import Interview, InterviewParticipant
 from models.app_release import AndroidAppRelease
+from models.mobile_support import MobilePushDevice, MobileIssueReport
 from models.newsletter import NewsArticle
 from models import teaching as teaching_models
 from bs4 import BeautifulSoup

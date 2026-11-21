@@ -89,6 +89,23 @@ def send_email_task(to_list, subject, html_content, cc_list, bcc_list, attachmen
 
 
 @celery.task
+def send_invoice_push_notification_task(invoice_id):
+    """Deliver an invoice alert to registered Android devices after the email dispatch."""
+    from models.commerce import Invoice
+    from services.mobile_push import send_pending_invoice_notification
+
+    invoice = Invoice.query.get(invoice_id)
+    if not invoice:
+        return 0
+    try:
+        return send_pending_invoice_notification(invoice)
+    except Exception:
+        db.session.rollback()
+        logger.exception("Android push notification failed for invoice %s", invoice_id)
+        return 0
+
+
+@celery.task
 def send_admin_commerce_invoice_email_task(invoice_id, recipients=None, mode="resend"):
     """Generate and deliver an admin invoice email outside the web request."""
     from datetime import datetime
@@ -305,12 +322,14 @@ def send_invoice_reminders_task():
                 amount_paid=float(invoice.amount_paid), pending_amount=invoice.pending_amount
             )
             
-            _send_via_brevo_api(
+            sent = _send_via_brevo_api(
                 to_list=[{"email": invoice.recipient_email, "name": invoice.recipient_name}],
                 subject=f"Payment Reminder: Invoice {invoice.invoice_number}",
                 html_content=html_content
             )
-            count += 1
+            if sent:
+                count += 1
+                send_invoice_push_notification_task.delay(invoice.id)
         except Exception as e:
             logger.error(f"[Scheduler] Invoice {invoice.invoice_number} failed: {e}")
     logger.info(f"[Scheduler] Sent {count} invoice reminders.")

@@ -14,6 +14,7 @@ from .mcq import MCQQuestion, Test, TestAssignment, TestResult
 from .gift_card import GiftCard
 from .newsletter import NewsArticle
 from .asset import Asset
+from .mobile_support import MobilePushDevice, MobileIssueReport
 from .teaching import (TeachingClass, TeachingEnrollment, TeachingSession,
                        TeachingMaterial, TeachingAssignment,
                        TeachingSubmission, TeachingEffortLog, TeachingAttendance,

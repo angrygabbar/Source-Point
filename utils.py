@@ -120,14 +120,42 @@ def send_email(to, subject, template, cc=None, bcc=None, attachments=None, sync=
         # Run immediately in this thread (Blocking) and return the provider result.
         # This is used for transactional admin actions that must not claim an email
         # was sent when the queue or email provider is unavailable.
-        return bool(send_email_task(to_list, subject, html_content, cc_list, bcc_list, attachments))
+        delivered = bool(send_email_task(to_list, subject, html_content, cc_list, bcc_list, attachments))
+        if delivered:
+            _send_invoice_push_if_needed(template, kwargs, to_list)
+        return delivered
     else:
         # Queue delivery so slow email-provider responses do not hold open an
         # HTTP request through Cloudflare. Transactional API callers can ask for
         # the Celery task ID and report its eventual result to the client.
         task_args = (to_list, subject, html_content, cc_list, bcc_list, _json_safe_attachments(attachments))
         task_id = enqueue_email_job(send_email_task, *task_args) if require_worker else send_email_task.delay(*task_args).id
+        _send_invoice_push_if_needed(template, kwargs, to_list)
         if return_task_id:
             return task_id
 
     return True
+
+
+def _send_invoice_push_if_needed(template, template_context, recipients):
+    """Dispatch an app push beside invoice alerts, without affecting email delivery."""
+    try:
+        from models.commerce import Invoice
+        from travel_invoice_service import INVOICE_EMAIL_TEMPLATES
+
+        invoice = template_context.get("invoice")
+        invoice_alert_templates = set(INVOICE_EMAIL_TEMPLATES.values()) | {"mail/reminder_invoice_email.html"}
+        if template not in invoice_alert_templates or not isinstance(invoice, Invoice) or invoice.pending_amount <= 0:
+            return
+        expected_recipient = invoice.recipient_email.strip().lower()
+        if not expected_recipient or not any(
+            str(recipient.get("email", "")).strip().lower() == expected_recipient
+            for recipient in recipients
+        ):
+            return
+
+        from worker import send_invoice_push_notification_task
+        send_invoice_push_notification_task.delay(invoice.id)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception("Could not send Android invoice push notification")

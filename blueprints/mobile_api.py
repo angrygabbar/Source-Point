@@ -26,7 +26,7 @@ from sqlalchemy.orm import joinedload, selectinload
 from werkzeug.utils import secure_filename
 from io import BytesIO
 
-from extensions import db, bcrypt
+from extensions import db, bcrypt, limiter
 from enums import (
     OrderStatus, GiftCardStatus, VoucherOrderStatus, UserRole, ApplicationStatus,
     InvoiceStatus, RollbackRequestStatus, RollbackTermsDecision,
@@ -46,6 +46,7 @@ from models.asset import Asset
 from models.finance import Project, Transaction, BRD, EMIPlan, EMIPayment
 from models.mcq import MCQQuestion, Test, TestAssignment, TestResult
 from models.app_release import AndroidAppRelease, AppFeature
+from models.mobile_support import MobilePushDevice, MobileIssueReport
 from models.teaching import (
     TeachingAnnouncement, TeachingAssignment, TeachingClass, TeachingEnrollment,
     TeachingMaterial, TeachingSession, TeachingSubmission, TeachingTest,
@@ -517,11 +518,10 @@ def login():
     if not user:
         return jsonify({"success": False, "message": message}), 401
 
-    if not login_user(user, remember=False):
+    if not login_user(user, remember=True, duration=timedelta(days=3650)):
         return jsonify({"success": False, "message": "This account cannot sign in."}), 403
 
-    # Match the website's configured session lifetime while ensuring a cookie
-    # is returned to a native HTTP client that is not a browser session.
+    # Native clients retain the long-lived remember cookie until explicit logout.
     session.permanent = True
     return jsonify({"success": True, "user": _user_payload(user)})
 
@@ -538,6 +538,125 @@ def logout():
     logout_user()
     session.clear()
     return jsonify({"success": True})
+
+
+@mobile_api_bp.post("/mobile/push-token")
+@mobile_login_required
+def register_mobile_push_token():
+    data = request.get_json(silent=True) or {}
+    installation_id = data.get("installation_id")
+    if not isinstance(installation_id, str) or not 8 <= len(installation_id) <= 128:
+        return jsonify({"success": False, "message": "A valid Firebase installation ID is required."}), 400
+    from services.mobile_push import installation_id_digest
+
+    digest = installation_id_digest(installation_id)
+    device = MobilePushDevice.query.filter_by(installation_id_hash=digest).first()
+    if device:
+        device.user_id = current_user.id
+        device.installation_id = installation_id
+        device.platform = "android"
+        device.updated_at = datetime.utcnow()
+    else:
+        db.session.add(MobilePushDevice(
+            user_id=current_user.id, installation_id=installation_id,
+            installation_id_hash=digest, platform="android",
+        ))
+    db.session.commit()
+    return jsonify({"success": True}), 200
+
+
+@mobile_api_bp.delete("/mobile/push-token")
+@mobile_login_required
+def unregister_mobile_push_token():
+    data = request.get_json(silent=True) or {}
+    installation_id = data.get("installation_id")
+    if not isinstance(installation_id, str) or not installation_id:
+        return jsonify({"success": False, "message": "A Firebase installation ID is required."}), 400
+    from services.mobile_push import installation_id_digest
+
+    MobilePushDevice.query.filter_by(
+        user_id=current_user.id, installation_id_hash=installation_id_digest(installation_id),
+    ).delete(synchronize_session=False)
+    db.session.commit()
+    return jsonify({"success": True})
+
+
+@mobile_api_bp.get("/mobile/sync")
+@mobile_login_required
+def mobile_sync():
+    invoices = Invoice.query.filter_by(recipient_user_id=current_user.id).order_by(Invoice.created_at.desc()).all()
+    pending = [invoice for invoice in invoices if invoice.pending_amount > 0]
+    return jsonify({
+        "success": True,
+        "server_time": datetime.now(timezone.utc).isoformat(),
+        "user": _user_payload(current_user),
+        "pending_invoice_count": len(pending),
+        "pending_invoice_total": round(sum(invoice.pending_amount for invoice in pending), 2),
+        "pending_invoices": [
+            {"id": invoice.id, "invoice_number": invoice.invoice_number,
+             "status": invoice.status, "pending_amount": float(invoice.pending_amount)}
+            for invoice in pending[:25]
+        ],
+    })
+
+
+@mobile_api_bp.post("/mobile/issues")
+@limiter.limit("10 per hour")
+def submit_mobile_issue():
+    data = request.get_json(silent=True) or {}
+    description = str(data.get("description", "")).strip()
+    error_code = str(data.get("error_code", "USER_REPORTED")).strip()[:80] or "USER_REPORTED"
+    screen = str(data.get("screen", "")).strip()[:160]
+    app_version = str(data.get("app_version", "")).strip()[:40]
+    device_model = str(data.get("device_model", "")).strip()[:160]
+    android_version = str(data.get("android_version", "")).strip()[:80]
+    diagnostics = data.get("diagnostics", {})
+    if not description or len(description) > 10000:
+        return jsonify({"success": False, "message": "Describe the issue in 1 to 10,000 characters."}), 400
+    if not isinstance(diagnostics, dict):
+        return jsonify({"success": False, "message": "Issue diagnostics must be a JSON object."}), 400
+    diagnostics_json = json.dumps(diagnostics, ensure_ascii=False, default=str)
+    if len(diagnostics_json) > 30000:
+        return jsonify({"success": False, "message": "The diagnostic details are too large. Remove older entries and try again."}), 413
+
+    reference = "SP-ISSUE-" + secrets.token_hex(5).upper()
+    report = MobileIssueReport(
+        reference_code=reference,
+        user_id=current_user.id if current_user.is_authenticated else None,
+        error_code=error_code,
+        screen=screen,
+        description=description,
+        app_version=app_version,
+        device_model=device_model,
+        android_version=android_version,
+        diagnostic_data=diagnostics,
+    )
+    db.session.add(report)
+    db.session.commit()
+    return jsonify({"success": True, "reference_code": reference}), 201
+
+
+@mobile_api_bp.get("/admin/mobile/issues")
+@mobile_login_required
+def admin_mobile_issues():
+    denied = _require_role("admin")
+    if denied:
+        return denied
+    reports = MobileIssueReport.query.order_by(MobileIssueReport.created_at.desc()).limit(100).all()
+    return jsonify({"success": True, "reports": [{
+        "id": report.id,
+        "reference_code": report.reference_code,
+        "user": report.user.username if report.user else "Guest",
+        "user_email": report.user.email if report.user else "",
+        "error_code": report.error_code,
+        "screen": report.screen,
+        "description": report.description,
+        "app_version": report.app_version,
+        "device_model": report.device_model,
+        "android_version": report.android_version,
+        "diagnostics": report.diagnostic_data,
+        "created_at": report.created_at.isoformat() if report.created_at else None,
+    } for report in reports]})
 
 
 @mobile_api_bp.get("/buyer/products")
