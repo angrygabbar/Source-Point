@@ -1,0 +1,6 @@
+version_name=1.3.11
+version_code=27
+build_variant=debug
+apk_sha256=5a84854b0b35517e3fe57feadc5f254431f1f1bb8cd8be104a495fd7140ca485
+certificate_sha256=6a8261a3b415d7cdaad60d3f3f58f8cd8fd0deb6e131228dd275e13dce4e9a78
+certificate_check=verified against archived v1.3.10
