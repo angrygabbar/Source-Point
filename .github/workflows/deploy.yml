@@ -105,22 +105,22 @@ jobs:
           docker run --rm \
             --user "$(id -u):$(id -g)" \
             --env PIP_INDEX_URL=https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple \
-            --env PIP_DEFAULT_TIMEOUT=1800 \
-            --env PIP_RETRIES=20 \
+            --env PIP_DEFAULT_TIMEOUT=60 \
+            --env PIP_RETRIES=5 \
             --mount "type=bind,source=$PWD/stock_ai/requirements.txt,target=/tmp/requirements.txt,readonly" \
             --mount "type=bind,source=$STOCKAI_WHEELHOUSE,target=/wheelhouse" \
             python:3.11-bookworm \
             sh -ceu 'python -m pip install --disable-pip-version-check --no-cache-dir \
               --index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple --find-links /wheelhouse \
-              --timeout 1800 --retries 20 setuptools wheel && \
+              --timeout 60 --retries 5 setuptools wheel && \
               python -m pip wheel --disable-pip-version-check --no-cache-dir \
               --index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple \
               --wheel-dir /wheelhouse --find-links /wheelhouse \
-              --no-build-isolation --timeout 1800 --retries 20 \
+              --no-build-isolation --timeout 60 --retries 5 \
               -r /tmp/requirements.txt && \
               python -m pip wheel --disable-pip-version-check --no-cache-dir \
               --index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple --wheel-dir /wheelhouse \
-              --no-deps --timeout 1800 --retries 20 xgboost==3.2.0'
+              --no-deps --timeout 60 --retries 5 xgboost==3.2.0'
           docker compose build --build-arg PREBUILT_WHEELS=1 stockai
 
           # Wealth Manager has a separate API container. CoinBack has an API,
