@@ -1,0 +1,11 @@
+.git
+.DS_Store
+__pycache__/
+*.py[cod]
+*.log
+.venv/
+venv/
+env/
+yfinance.cache
+models/
+db-dump/

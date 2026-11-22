@@ -5,7 +5,7 @@ psycopg2-binary
 pandas
 numpy
 scikit-learn
-xgboost
+# Installed separately without optional NVIDIA/NCCL dependencies; the server trains on CPU.
 ta
 yfinance
 apscheduler
