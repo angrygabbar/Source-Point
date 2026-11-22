@@ -21,6 +21,10 @@ services:
       # APK files get their OWN named volume — survives container restarts,
       # rebuilds, and code redeployments. Files are NEVER lost.
       - apk_storage:/app/static/apks
+      - ./app.py:/app/app.py:ro
+      - ./config.py:/app/config.py:ro
+      - ./blueprints/stock_ai_module.py:/app/blueprints/stock_ai_module.py:ro
+      - ./templates/layout.html:/app/templates/layout.html:ro
     depends_on:
       db:
         condition: service_started
