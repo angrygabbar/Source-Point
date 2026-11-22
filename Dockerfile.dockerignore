@@ -24,3 +24,4 @@ static/apks/
 *.apk
 *.aab
 stock_ai/
+actions-runner/
