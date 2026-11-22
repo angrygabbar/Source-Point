@@ -2,20 +2,24 @@ FROM python:3.11-slim-bookworm
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
-
-RUN sed -i 's|http://deb.debian.org/debian$|https://mirrors.tuna.tsinghua.edu.cn/debian|' /etc/apt/sources.list.d/debian.sources \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates libgomp1 \
-    && rm -rf /var/lib/apt/lists/* \
-    && groupadd --system app \
-    && useradd --system --gid app --create-home app
+    PIP_NO_CACHE_DIR=1 \
+    LD_LIBRARY_PATH=/usr/local/lib
 
 WORKDIR /app
 
 COPY requirements.txt ./
 ARG PREBUILT_WHEELS=0
 COPY .docker-wheelhouse /wheelhouse
+RUN if [ -f /wheelhouse/libgomp.so.1.0.0 ]; then \
+        cp /wheelhouse/libgomp.so.1.0.0 /usr/local/lib/libgomp.so.1.0.0; \
+    else \
+        apt-get update && apt-get install -y --no-install-recommends libgomp1 \
+        && cp /usr/lib/*-linux-gnu/libgomp.so.1.0.0 /usr/local/lib/libgomp.so.1.0.0 \
+        && rm -rf /var/lib/apt/lists/*; \
+    fi \
+    && ln -sf libgomp.so.1.0.0 /usr/local/lib/libgomp.so.1 \
+    && groupadd --system app \
+    && useradd --system --gid app --create-home app
 RUN if [ "$PREBUILT_WHEELS" = "1" ]; then \
         pip install --no-index --find-links=/wheelhouse -r requirements.txt && \
         pip install --no-index --find-links=/wheelhouse --no-deps xgboost==3.2.0; \

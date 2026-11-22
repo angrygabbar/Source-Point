@@ -102,6 +102,13 @@ jobs:
 
           STOCKAI_WHEELHOUSE="$PWD/stock_ai/.docker-wheelhouse"
           mkdir -p "$STOCKAI_WHEELHOUSE"
+          # The slim runtime needs libgomp for CPU XGBoost; copy it from the
+          # networked builder image so BuildKit does not need apt access.
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            --mount "type=bind,source=$STOCKAI_WHEELHOUSE,target=/wheelhouse" \
+            python:3.11-bookworm \
+            sh -ceu 'libgomp=$(find /usr/lib -name libgomp.so.1.0.0 -print -quit); test -n "$libgomp"; cp "$libgomp" /wheelhouse/libgomp.so.1.0.0'
           docker run --rm \
             --user "$(id -u):$(id -g)" \
             --env PIP_INDEX_URL=https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple \
