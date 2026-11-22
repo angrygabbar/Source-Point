@@ -137,7 +137,7 @@ services:
       - path: ./coinback-finder/.env
         required: false
     environment:
-      DATABASE_URL: postgresql+psycopg://dev_user:dev_password@db:5432/sourcepoint_dev_db
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://dev_user:dev_password@db:5432/sourcepoint_dev_db}
       COINBACK_SSO_SECRET: ${COINBACK_SSO_SECRET:?Set COINBACK_SSO_SECRET in the SourcePoint .env file}
     command: ["alembic", "upgrade", "head"]
     restart: "no"
@@ -159,7 +159,7 @@ services:
       - path: ./coinback-finder/.env
         required: false
     environment:
-      DATABASE_URL: postgresql+psycopg://dev_user:dev_password@db:5432/sourcepoint_dev_db
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://dev_user:dev_password@db:5432/sourcepoint_dev_db}
       COINBACK_SSO_SECRET: ${COINBACK_SSO_SECRET:?Set COINBACK_SSO_SECRET in the SourcePoint .env file}
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2", "--proxy-headers"]
     depends_on:
@@ -186,7 +186,7 @@ services:
       - path: ./coinback-finder/.env
         required: false
     environment:
-      DATABASE_URL: postgresql+psycopg://dev_user:dev_password@db:5432/sourcepoint_dev_db
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://dev_user:dev_password@db:5432/sourcepoint_dev_db}
       COINBACK_SSO_SECRET: ${COINBACK_SSO_SECRET:?Set COINBACK_SSO_SECRET in the SourcePoint .env file}
     command: ["python", "-m", "app.scheduler"]
     healthcheck:
