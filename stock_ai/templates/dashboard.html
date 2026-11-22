@@ -15,13 +15,13 @@
     </div>
 </div>
 
-<div class="grid grid-cols-12 gap-6 px-6 py-6">
+<div class="grid grid-cols-12 gap-4 sm:gap-6 px-3 sm:px-6 py-4 sm:py-6">
 
     <!-- LEFT COLUMN -->
-    <div class="col-span-12 lg:col-span-4 space-y-6">
+    <div class="col-span-12 xl:col-span-4 space-y-6">
 
         <!-- MARKET SENTIMENT CARD -->
-        <div class="glass-panel p-6 rounded-xl relative overflow-hidden tilt-card reveal">
+        <div class="glass-panel p-4 sm:p-6 rounded-xl relative overflow-hidden tilt-card reveal">
             <div class="absolute top-0 right-0 p-4 opacity-[0.03] text-9xl font-display font-bold text-white z-0">₹
             </div>
             <!-- Accent glow ring -->
@@ -30,7 +30,7 @@
             <div class="relative z-10">
                 <div class="text-gray-500 uppercase text-[10px] font-display font-medium tracking-[0.15em] mb-2">Market
                     Sentiment</div>
-                <div class="text-4xl font-bold text-white flex items-center gap-3 font-mono">
+                <div class="text-3xl sm:text-4xl font-bold text-white flex flex-wrap items-center gap-3 font-mono">
                     <span class="neon-text-blue">{{ status.nifty_level }}</span>
                     <span class="text-[9px] font-display tracking-wider px-2.5 py-1 rounded-full"
                         style="background: rgba(59,130,246,0.08); color: #60a5fa; border: 1px solid rgba(59,130,246,0.15);">NIFTY</span>
@@ -41,7 +41,7 @@
 
         <!-- TOP MOVER CARD -->
         <div
-            class="glass-panel p-5 rounded-xl flex items-center justify-between tilt-card reveal delay-1 hover-glow-green">
+            class="glass-panel p-4 sm:p-5 rounded-xl flex items-center justify-between gap-3 tilt-card reveal delay-1 hover-glow-green">
             <div>
                 <div class="text-gray-500 text-[10px] uppercase font-display tracking-[0.15em]">Top Mover</div>
                 <div class="text-white font-bold text-lg mt-1">{{ status.top_gainer }}</div>
@@ -54,9 +54,9 @@
     </div>
 
     <!-- RIGHT COLUMN - SIGNALS TABLE -->
-    <div class="col-span-12 lg:col-span-8 reveal delay-2">
+    <div class="col-span-12 xl:col-span-8 reveal delay-2">
         <div class="glass-panel rounded-xl overflow-hidden h-full flex flex-col">
-            <div class="px-6 py-4 flex justify-between items-center"
+            <div class="px-4 sm:px-6 py-4 flex flex-wrap gap-2 justify-between items-center"
                 style="border-bottom: 1px solid rgba(255,255,255,0.04); background: rgba(0,0,0,0.3);">
                 <h3 class="text-white font-bold text-sm flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
@@ -68,7 +68,7 @@
             </div>
 
             <div class="overflow-x-auto flex-1">
-                <table class="w-full text-left">
+                <table class="w-full min-w-[640px] text-left">
                     <thead style="background: rgba(255,255,255,0.02);">
                         <tr class="text-[10px] uppercase text-gray-600 font-display tracking-wider">
                             <th class="px-6 py-3">Ticker</th>

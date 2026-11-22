@@ -255,15 +255,23 @@
         .animate-marquee {
             animation: marquee 30s linear infinite;
         }
+        @supports (height: 100dvh) {
+            body { height: 100dvh; }
+        }
+        .mobile-nav-link { min-width: 0; color: #737b8c; }
+        .mobile-nav-link.active {
+            color: #93c5fd;
+            background: rgba(59, 130, 246, 0.12);
+        }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden text-sm selection:bg-blue-500/30">
+<body class="flex h-screen min-w-0 overflow-hidden text-sm selection:bg-blue-500/30">
 
     <!-- PARTICLE CANVAS -->
     <canvas id="particleCanvas"></canvas>
 
     <!-- SIDEBAR -->
-    <aside class="w-64 bg-black/80 backdrop-blur-xl flex flex-col justify-between hidden md:flex z-50 sidebar-glow relative" style="border-right: 1px solid rgba(255,255,255,0.04);">
+    <aside class="w-64 bg-black/80 backdrop-blur-xl flex flex-col justify-between hidden lg:flex z-50 sidebar-glow relative" style="border-right: 1px solid rgba(255,255,255,0.04);">
         <div>
             <div class="h-16 flex items-center px-6" style="border-bottom: 1px solid rgba(255,255,255,0.04);">
                 <div class="flex items-center gap-3">
@@ -324,21 +332,21 @@
     </aside>
 
     <!-- MAIN CONTENT -->
-    <main class="flex-1 flex flex-col relative overflow-hidden z-10">
-        <header class="h-14 bg-black/60 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-40" style="border-bottom: 1px solid rgba(255,255,255,0.04);">
-            <div class="flex items-center gap-2 text-gray-500 text-xs">
-                <span class="font-display text-[10px] tracking-widest uppercase">Terminal</span>
-                <i class="fa-solid fa-chevron-right text-[8px] text-gray-700"></i>
-                <span class="text-white font-medium" id="pageTitle">Current View</span>
+    <main class="min-w-0 min-h-0 flex-1 flex flex-col relative overflow-hidden z-10">
+        <header class="min-h-14 bg-black/60 backdrop-blur-xl flex items-center justify-between gap-3 px-3 sm:px-6 py-2 sticky top-0 z-40" style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+            <div class="min-w-0 flex-1 flex items-center gap-2 text-gray-500 text-xs">
+                <span class="hidden sm:inline font-display text-[10px] tracking-widest uppercase">Terminal</span>
+                <i class="hidden sm:inline fa-solid fa-chevron-right text-[8px] text-gray-700"></i>
+                <span class="min-w-0 max-w-[68vw] sm:max-w-none truncate text-white font-medium" id="pageTitle">Current View</span>
             </div>
 
-            <div class="flex items-center gap-4">
-                <div class="relative group">
+            <div class="shrink-0 flex items-center gap-2 sm:gap-4">
+                <div class="hidden sm:block relative group">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <i class="fa-solid fa-search text-gray-600 text-xs"></i>
                     </div>
                     <input type="text" 
-                           class="search-glow bg-white/[0.03] border border-white/[0.06] text-gray-300 text-xs rounded-full focus:ring-0 block w-64 pl-8 p-2 transition-all duration-300 outline-none" 
+                           class="search-glow bg-white/[0.03] border border-white/[0.06] text-gray-300 text-xs rounded-full focus:ring-0 w-40 md:w-64 pl-8 p-2 transition-all duration-300 outline-none"
                            placeholder="Search ticker or command... (Cmd+K)">
                 </div>
                 
@@ -349,9 +357,26 @@
             </div>
         </header>
 
-        <div class="flex-1 overflow-y-auto p-0 scroll-smooth page-content">
+        <div class="min-h-0 flex-1 overflow-y-auto p-0 scroll-smooth page-content">
             {% block content %}{% endblock %}
         </div>
+        <nav aria-label="Stock AI navigation" class="lg:hidden shrink-0 grid grid-cols-5 gap-1 px-2 py-2 bg-black/90 backdrop-blur-xl" style="border-top: 1px solid rgba(255,255,255,0.08); padding-bottom: max(0.5rem, env(safe-area-inset-bottom));">
+            <a href="{{ request.script_root }}/dashboard" class="mobile-nav-link {% if request.path.endswith('/dashboard') %}active{% endif %} flex flex-col items-center justify-center gap-1 rounded-lg px-1 py-1.5 text-[9px]" {% if request.path.endswith('/dashboard') %}aria-current="page"{% endif %}>
+                <i class="fa-solid fa-chart-line text-xs" aria-hidden="true"></i><span>Home</span>
+            </a>
+            <a href="{{ request.script_root }}/analysis" class="mobile-nav-link {% if request.path.endswith('/analysis') %}active{% endif %} flex flex-col items-center justify-center gap-1 rounded-lg px-1 py-1.5 text-[9px]" {% if request.path.endswith('/analysis') %}aria-current="page"{% endif %}>
+                <i class="fa-solid fa-magnifying-glass-chart text-xs" aria-hidden="true"></i><span>Analyze</span>
+            </a>
+            <a href="{{ request.script_root }}/screener" class="mobile-nav-link {% if request.path.endswith('/screener') %}active{% endif %} flex flex-col items-center justify-center gap-1 rounded-lg px-1 py-1.5 text-[9px]" {% if request.path.endswith('/screener') %}aria-current="page"{% endif %}>
+                <i class="fa-solid fa-satellite-dish text-xs" aria-hidden="true"></i><span>Radar</span>
+            </a>
+            <a href="{{ request.script_root }}/portfolio" class="mobile-nav-link {% if request.path.endswith('/portfolio') %}active{% endif %} flex flex-col items-center justify-center gap-1 rounded-lg px-1 py-1.5 text-[9px]" {% if request.path.endswith('/portfolio') %}aria-current="page"{% endif %}>
+                <i class="fa-solid fa-briefcase text-xs" aria-hidden="true"></i><span>Portfolio</span>
+            </a>
+            <a href="{{ request.script_root }}/admin" class="mobile-nav-link {% if request.path.endswith('/admin') %}active{% endif %} flex flex-col items-center justify-center gap-1 rounded-lg px-1 py-1.5 text-[9px]" {% if request.path.endswith('/admin') %}aria-current="page"{% endif %}>
+                <i class="fa-solid fa-server text-xs" aria-hidden="true"></i><span>Admin</span>
+            </a>
+        </nav>
     </main>
 
     <!-- PARTICLE SYSTEM -->
