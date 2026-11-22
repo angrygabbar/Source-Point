@@ -118,9 +118,11 @@ jobs:
               --wheel-dir /wheelhouse --find-links /wheelhouse \
               --no-build-isolation --timeout 60 --retries 5 \
               -r /tmp/requirements.txt && \
-              python -m pip wheel --disable-pip-version-check --no-cache-dir \
-              --index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple --wheel-dir /wheelhouse \
-              --no-deps --timeout 60 --retries 5 xgboost==3.2.0'
+              if ! find /wheelhouse -maxdepth 1 -name "xgboost-3.2.0-*.whl" -print -quit | grep -q .; then \
+                python -m pip wheel --disable-pip-version-check --no-cache-dir \
+                --index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple --wheel-dir /wheelhouse \
+                --no-deps --timeout 60 --retries 5 xgboost==3.2.0; \
+              fi'
           docker compose build --build-arg PREBUILT_WHEELS=1 stockai
 
           # Wealth Manager has a separate API container. CoinBack has an API,
