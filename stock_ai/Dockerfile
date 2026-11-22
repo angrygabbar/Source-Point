@@ -19,8 +19,8 @@ RUN if [ "$PREBUILT_WHEELS" = "1" ]; then \
         pip install --no-index --find-links=/wheelhouse -r requirements.txt && \
         pip install --no-index --find-links=/wheelhouse --no-deps xgboost==3.2.0; \
     else \
-        pip install --no-cache-dir -r requirements.txt && \
-        pip install --no-cache-dir --no-deps xgboost==3.2.0; \
+        pip install --no-cache-dir --index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple -r requirements.txt && \
+        pip install --no-cache-dir --no-deps --index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple xgboost==3.2.0; \
     fi \
     && rm -rf /wheelhouse
 

@@ -104,22 +104,22 @@ jobs:
           mkdir -p "$STOCKAI_WHEELHOUSE"
           docker run --rm \
             --user "$(id -u):$(id -g)" \
-            --env PIP_INDEX_URL=https://pypi.org/simple \
+            --env PIP_INDEX_URL=https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple \
             --env PIP_DEFAULT_TIMEOUT=1800 \
             --env PIP_RETRIES=20 \
             --mount "type=bind,source=$PWD/stock_ai/requirements.txt,target=/tmp/requirements.txt,readonly" \
             --mount "type=bind,source=$STOCKAI_WHEELHOUSE,target=/wheelhouse" \
             python:3.11-bookworm \
             sh -ceu 'python -m pip install --disable-pip-version-check --no-cache-dir \
-              --index-url https://pypi.org/simple --find-links /wheelhouse \
+              --index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple --find-links /wheelhouse \
               --timeout 1800 --retries 20 setuptools wheel && \
               python -m pip wheel --disable-pip-version-check --no-cache-dir \
-              --index-url https://pypi.org/simple \
+              --index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple \
               --wheel-dir /wheelhouse --find-links /wheelhouse \
               --no-build-isolation --timeout 1800 --retries 20 \
               -r /tmp/requirements.txt && \
               python -m pip wheel --disable-pip-version-check --no-cache-dir \
-              --index-url https://pypi.org/simple --wheel-dir /wheelhouse \
+              --index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple --wheel-dir /wheelhouse \
               --no-deps --timeout 1800 --retries 20 xgboost==3.2.0'
           docker compose build --build-arg PREBUILT_WHEELS=1 stockai
 
