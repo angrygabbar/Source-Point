@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-6 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- LEFT COLUMN -->
+    <div class="space-y-6">
+        <!-- SYSTEM TRIGGERS -->
+        <div class="glass-panel p-6 rounded-2xl reveal">
+            <h3 class="text-white font-bold mb-5 flex items-center gap-2.5 text-sm">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                    style="background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(168,85,247,0.1));">
+                    <i class="fa-solid fa-gear text-blue-400 text-[10px]"></i>
+                </div>
+                System Triggers
+            </h3>
+
+            <div class="space-y-2.5">
+                <button onclick="triggerAction(`${window.STOCK_AI_PREFIX}/api/trigger_update`)"
+                    class="cyber-btn w-full text-left px-4 py-3.5 rounded-xl text-sm text-gray-300 transition-all duration-300 flex justify-between items-center group"
+                    style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04);">
+                    <span class="flex items-center gap-2.5">
+                        <i
+                            class="fa-solid fa-rotate text-blue-400/70 text-xs transition-transform duration-500 group-hover:rotate-180"></i>
+                        Force DB Update
+                    </span>
+                    <span
+                        class="opacity-0 group-hover:opacity-100 text-[10px] font-display tracking-wider text-blue-400 transition-all duration-300">RUN</span>
+                </button>
+
+                <button onclick="triggerAction(`${window.STOCK_AI_PREFIX}/api/trigger_hunter`)"
+                    class="cyber-btn w-full text-left px-4 py-3.5 rounded-xl text-sm text-gray-300 transition-all duration-300 flex justify-between items-center group"
+                    style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04);">
+                    <span class="flex items-center gap-2.5">
+                        <i
+                            class="fa-solid fa-crosshairs text-green-400/70 text-xs transition-transform duration-500 group-hover:scale-110"></i>
+                        Run AI Hunter
+                    </span>
+                    <span
+                        class="opacity-0 group-hover:opacity-100 text-[10px] font-display tracking-wider text-green-400 transition-all duration-300">RUN</span>
+                </button>
+
+                <button onclick="trainModel()"
+                    class="cyber-btn w-full text-left px-4 py-3.5 rounded-xl text-sm transition-all duration-300 flex justify-between items-center group animate-pulse-glow"
+                    style="background: linear-gradient(135deg, rgba(59,130,246,0.06), rgba(139,92,246,0.04)); border: 1px solid rgba(59,130,246,0.12); color: #60a5fa;">
+                    <span class="flex items-center gap-2.5">
+                        <i class="fa-solid fa-brain text-purple-400 text-xs animate-neon-pulse"></i>
+                        Retrain AI Model
+                    </span>
+                    <span
+                        class="opacity-0 group-hover:opacity-100 text-[10px] font-display tracking-wider text-purple-400 transition-all duration-300">START</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- SYSTEM HEALTH -->
+        <div class="glass-panel p-6 rounded-2xl reveal delay-1">
+            <h3 class="text-white font-bold mb-4 text-sm">System Health</h3>
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <div class="relative">
+                            <div class="h-2.5 w-2.5 rounded-full bg-green-500"></div>
+                            <div class="absolute inset-0 h-2.5 w-2.5 rounded-full bg-green-500 animate-ping opacity-40">
+                            </div>
+                        </div>
+                        <span class="text-sm text-gray-400">Scheduler</span>
+                    </div>
+                    <span class="text-[9px] font-display tracking-wider px-2.5 py-1 rounded-full"
+                        style="background: rgba(16,185,129,0.08); color: #34d399; border: 1px solid rgba(16,185,129,0.15);">ACTIVE</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <div class="h-2.5 w-2.5 rounded-full bg-green-500"></div>
+                        <span class="text-sm text-gray-400">Database</span>
+                    </div>
+                    <span class="text-[9px] font-display tracking-wider px-2.5 py-1 rounded-full"
+                        style="background: rgba(16,185,129,0.08); color: #34d399; border: 1px solid rgba(16,185,129,0.15);">CONNECTED</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <div class="h-2.5 w-2.5 rounded-full bg-blue-500 animate-pulse"></div>
+                        <span class="text-sm text-gray-400">AI Model</span>
+                    </div>
+                    <span class="text-[9px] font-display tracking-wider px-2.5 py-1 rounded-full"
+                        style="background: rgba(59,130,246,0.08); color: #60a5fa; border: 1px solid rgba(59,130,246,0.15);">LOADED</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TERMINAL OUTPUT -->
+    <div class="lg:col-span-2 reveal delay-2">
+        <div class="glass-panel rounded-2xl h-[600px] flex flex-col overflow-hidden relative">
+            <!-- CRT Scanline -->
+            <div class="absolute inset-0 pointer-events-none z-30 overflow-hidden opacity-[0.03]">
+                <div class="w-full h-0.5 bg-white absolute" style="animation: scanLine 3s linear infinite;"></div>
+            </div>
+
+            <div class="px-6 py-4 flex justify-between items-center"
+                style="border-bottom: 1px solid rgba(255,255,255,0.04); background: rgba(0,0,0,0.3);">
+                <h3 class="font-mono text-sm flex items-center gap-2.5">
+                    <div class="flex gap-1.5">
+                        <div class="w-3 h-3 rounded-full" style="background: #ff5f57;"></div>
+                        <div class="w-3 h-3 rounded-full" style="background: #febc2e;"></div>
+                        <div class="w-3 h-3 rounded-full" style="background: #28c840;"></div>
+                    </div>
+                    <span class="text-gray-400 ml-2">Terminal Output</span>
+                </h3>
+                <span class="text-[9px] font-display tracking-wider text-gray-600 uppercase flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                    Live Socket.IO Stream
+                </span>
+            </div>
+
+            <div id="consoleOutput" class="flex-1 p-5 font-mono text-xs overflow-y-auto space-y-1 terminal-text"
+                style="background: rgba(0,0,0,0.4);">
+                <div class="text-green-400" style="text-shadow: 0 0 6px rgba(52,211,153,0.3);">root@stockai:~$
+                    system_monitor --attach</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+    .cyber-btn:hover {
+        background: rgba(255, 255, 255, 0.04) !important;
+        border-color: rgba(59, 130, 246, 0.15) !important;
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.05);
+    }
+
+    .terminal-text div {
+        text-shadow: 0 0 4px rgba(52, 211, 153, 0.15);
+    }
+
+    @keyframes scanLine {
+        0% {
+            top: -2px;
+        }
+
+        100% {
+            top: 100%;
+        }
+    }
+</style>
+
+<script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+<script>
+    const socket = io({
+        path: `${window.STOCK_AI_PREFIX}/socket.io`,
+        transports: ['polling']
+    });
+    const consoleDiv = document.getElementById('consoleOutput');
+
+    socket.on('connect', () => {
+        logToScreen("✅ Connected to Real-time Log Stream", "text-green-400");
+    });
+
+    socket.on('log_message', (msg) => {
+        logToScreen(msg.data);
+    });
+
+    function logToScreen(text, colorClass = "text-gray-400") {
+        const line = document.createElement('div');
+        line.className = `pb-1 ${colorClass} transition-all duration-300`;
+        line.style.cssText = "border-bottom: 1px solid rgba(255,255,255,0.02); animation: fadeSlideIn 0.3s ease-out;";
+        line.innerText = text;
+        consoleDiv.appendChild(line);
+        consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    }
+
+    async function triggerAction(endpoint) {
+        logToScreen(`> Triggering ${endpoint}...`, "neon-text-cyan");
+        try {
+            await fetch(endpoint, { method: 'POST' });
+        } catch (e) {
+            logToScreen(`❌ Error: ${e}`, "neon-text-red");
+        }
+    }
+
+    async function trainModel() {
+        logToScreen("> 🧠 Triggering AI Model Training...", "neon-text-purple");
+        try {
+            await fetch(`${window.STOCK_AI_PREFIX}/api/trigger_training`, { method: 'POST' });
+        } catch (e) {
+            logToScreen(`❌ Training Error: ${e}`, "neon-text-red");
+        }
+    }
+
+    consoleDiv.scrollTop = consoleDiv.scrollHeight;
+</script>
+{% endblock %}

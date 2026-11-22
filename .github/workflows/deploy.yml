@@ -25,12 +25,48 @@ jobs:
           # --exclude: protect local environments and configs
           rsync -av --exclude='.git' --exclude='venv' --exclude='__pycache__' ./ /Users/gaurav/Developer/Source-Point/
 
+      - name: Prepare Stock AI deployment settings
+        run: |
+          set -euo pipefail
+          cd /Users/gaurav/Developer/Source-Point
+          python3 - <<'PY'
+          import json
+          import secrets
+          from pathlib import Path
+
+          env_path = Path('.env')
+          lines = env_path.read_text().splitlines() if env_path.exists() else []
+          existing = {}
+          for line in lines:
+              stripped = line.strip()
+              if not stripped or stripped.startswith('#') or '=' not in stripped:
+                  continue
+              key, value = stripped.split('=', 1)
+              existing[key] = value.strip().strip('"').strip("'")
+
+          dump_dir = existing.get('STOCK_AI_DB_DUMP_DIR') or '/Users/gaurav/Desktop/Stock Db'
+          if not Path(dump_dir).expanduser().is_dir():
+              raise SystemExit(f'Stock AI database dump directory is missing: {dump_dir}')
+
+          required = {
+              'STOCK_AI_SSO_SECRET': secrets.token_urlsafe(48),
+              'STOCK_AI_DB_PASS': secrets.token_urlsafe(36),
+              'STOCK_AI_DB_DUMP_DIR': dump_dir,
+          }
+          missing = {key: value for key, value in required.items() if not existing.get(key)}
+          if missing:
+              lines = [line for line in lines if not any(line.strip().startswith(f'{key}=') for key in missing)]
+              lines.extend(f'{key}={json.dumps(value) if key == "STOCK_AI_DB_DUMP_DIR" else value}' for key, value in missing.items())
+              env_path.write_text('\n'.join(lines).rstrip() + '\n')
+          print('Stock AI secrets are configured and the database dump directory is available.')
+          PY
+
       # 3. Build Docker images without touching the currently running app yet.
       - name: Build Application Images
         run: |
           set -euo pipefail
           cd /Users/gaurav/Developer/Source-Point
-          docker compose up -d db redis
+          docker compose up -d db redis stockai-db
 
           # Fetch and build wheels in a regular container; BuildKit's network
           # cannot reliably reach package indexes on this Mac mini.
@@ -56,6 +92,26 @@ jobs:
           # Build web, worker, and scheduler so background tasks get the new code too.
           # We start/recreate them only after database migrations succeed.
           docker compose build --build-arg PREBUILT_WHEELS=1 web worker scheduler
+
+          STOCKAI_WHEELHOUSE="$PWD/stock_ai/.docker-wheelhouse"
+          mkdir -p "$STOCKAI_WHEELHOUSE"
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            --env PIP_INDEX_URL=https://pypi.org/simple \
+            --env PIP_DEFAULT_TIMEOUT=1800 \
+            --env PIP_RETRIES=20 \
+            --mount "type=bind,source=$PWD/stock_ai/requirements.txt,target=/tmp/requirements.txt,readonly" \
+            --mount "type=bind,source=$STOCKAI_WHEELHOUSE,target=/wheelhouse" \
+            python:3.11-bookworm \
+            sh -ceu 'python -m pip install --disable-pip-version-check --no-cache-dir \
+              --index-url https://pypi.org/simple --find-links /wheelhouse \
+              --timeout 1800 --retries 20 setuptools wheel && \
+              python -m pip wheel --disable-pip-version-check --no-cache-dir \
+              --index-url https://pypi.org/simple \
+              --wheel-dir /wheelhouse --find-links /wheelhouse \
+              --no-build-isolation --timeout 1800 --retries 20 \
+              -r /tmp/requirements.txt'
+          docker compose build --build-arg PREBUILT_WHEELS=1 stockai
 
           # Wealth Manager has a separate API container. CoinBack has an API,
           # frontend, and scanner container; the migration service shares the API image.
@@ -97,7 +153,7 @@ jobs:
         run: |
           set -euo pipefail
           cd /Users/gaurav/Developer/Source-Point
-          docker compose up -d --no-build web worker scheduler wealth-manager-api coinback-api coinback-frontend coinback-scanner
+          docker compose up -d --no-build web worker scheduler wealth-manager-api coinback-api coinback-frontend coinback-scanner stockai-db stockai
 
           echo "Waiting for web container health..."
           WEB_READY=0
@@ -130,9 +186,9 @@ jobs:
 
           echo "Waiting for Wealth Manager and CoinBack containers..."
           MODULES_READY=0
-          for attempt in {1..30}; do
+          for attempt in {1..60}; do
             MODULES_READY=1
-            for service in wealth-manager-api coinback-api coinback-frontend coinback-scanner; do
+            for service in wealth-manager-api coinback-api coinback-frontend coinback-scanner stockai-db stockai; do
               CONTAINER_ID=$(docker compose ps -q "$service")
               if [ -z "$CONTAINER_ID" ]; then
                 echo "Service $service has no container."
@@ -156,7 +212,7 @@ jobs:
           if [ "$MODULES_READY" != "1" ]; then
             echo "One or more integrated module services did not start successfully."
             docker compose ps
-            docker compose logs --tail 120 wealth-manager-api coinback-api coinback-frontend coinback-scanner || true
+            docker compose logs --tail 120 wealth-manager-api coinback-api coinback-frontend coinback-scanner stockai-db stockai || true
             exit 1
           fi
 

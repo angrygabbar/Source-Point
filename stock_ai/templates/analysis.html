@@ -1,0 +1,1009 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-6 py-6">
+
+    <div class="mb-6">
+        <div class="text-[10px] uppercase tracking-[0.22em] text-blue-300/70">Research workspace</div>
+        <h1 class="text-2xl sm:text-3xl font-bold text-white mt-1">Stock analysis</h1>
+        <p class="text-sm text-gray-500 mt-1">Signals use end-of-day data. Check the model status and data date before relying on a score.</p>
+    </div>
+
+    <!-- SEARCH BAR -->
+    <div class="flex flex-col sm:flex-row gap-3 mb-5 relative z-50 reveal">
+        <div class="relative w-full sm:max-w-md group">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <i
+                    class="fa-solid fa-satellite-dish text-gray-600 text-xs group-focus-within:text-blue-400 transition-colors"></i>
+            </div>
+            <input type="text" id="stockCode" placeholder="Search Company or Code (e.g. Reliance)" autocomplete="off"
+                onkeyup="handleSearch(this.value)"
+                class="search-glow w-full bg-white/[0.03] border border-white/[0.06] text-white px-4 py-3.5 pl-10 rounded-xl focus:outline-none font-mono text-sm transition-all duration-300">
+
+            <div id="searchResults"
+                class="hidden absolute top-full left-0 w-full bg-[#0a0a14]/95 backdrop-blur-xl border border-white/[0.06] rounded-xl mt-2 shadow-2xl max-h-64 overflow-y-auto"
+                style="box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+            </div>
+        </div>
+
+        <button onclick="startAnalysis()"
+            class="neon-btn px-8 py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all duration-300 flex items-center gap-2 relative z-10"
+            id="analyzeBtn">
+            <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+            ANALYZE
+        </button>
+    </div>
+    <div id="analysisStatus" class="hidden text-sm rounded-lg px-4 py-3 mb-5" role="status" aria-live="polite"></div>
+
+    <!-- LIVE HEADER -->
+    <div id="liveHeader"
+        class="hidden glass-panel holo-border p-7 rounded-2xl mb-8 relative overflow-hidden reveal delay-1"
+        style="box-shadow: 0 0 40px rgba(59,130,246,0.05);">
+        <div class="absolute top-4 right-5 flex items-center gap-2.5">
+            <span class="inline-flex h-2 w-2 rounded-full bg-blue-400"></span>
+            <span id="signalMode" class="text-[9px] text-blue-300 font-display tracking-[0.15em] uppercase">EOD signal</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8 items-end">
+            <div>
+                <h1 class="text-3xl font-bold text-white mb-1" id="assetName">--</h1>
+                <div class="text-gray-600 text-xs font-mono flex items-center gap-2">
+                    BSE: <span id="assetCode" class="text-gray-400">--</span>
+                    <span class="text-gray-700">•</span><span id="dataAsOf" class="text-gray-500">Data date --</span>
+                </div>
+            </div>
+
+            <div>
+                <div class="text-gray-600 text-[9px] uppercase font-display tracking-[0.15em] mb-1">Latest Price</div>
+                <div class="text-5xl font-bold text-white font-mono tracking-tight" id="livePrice"
+                    style="text-shadow: 0 0 20px rgba(255,255,255,0.1);">₹0.00</div>
+                <div class="text-[10px] text-gray-600 mt-1" id="priceSourceLabel">Stored BSE close</div>
+            </div>
+
+            <div>
+                <div class="text-gray-600 text-[9px] uppercase font-display tracking-[0.15em] mb-1">Day Change</div>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-2xl font-bold font-mono" id="liveChange">0.00</span>
+                    <span class="text-sm font-bold px-2.5 py-1 rounded-full" id="livePct"
+                        style="background: rgba(255,255,255,0.04);">0.00%</span>
+                </div>
+            </div>
+
+            <div class="text-right">
+                <div class="text-gray-600 text-[9px] uppercase font-display tracking-[0.15em] mb-1">AI Verdict</div>
+                <div class="text-xl font-bold neon-text-blue font-display animate-neon-pulse" id="aiSignal">WAITING...
+                </div>
+                <div class="text-[10px] text-gray-600 mt-1.5 font-mono">
+                    Risk/Reward: <span id="rrRatio" class="font-bold text-gray-400">--</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RESULT AREA -->
+    <div id="resultArea" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6 reveal delay-2">
+
+        <!-- CHART -->
+        <div class="lg:col-span-2 glass-panel rounded-2xl p-5 h-[500px] relative flex flex-col"
+            style="box-shadow: 0 0 30px rgba(59,130,246,0.04);">
+            <div class="relative z-10 flex shrink-0 flex-wrap items-center justify-between gap-3">
+                <div class="text-[10px] uppercase tracking-[0.15em] text-gray-500">Price history · BSE daily data</div>
+                <div class="flex flex-wrap items-center gap-1" role="group" aria-label="Chart date range">
+                    {% for range, label in [('1m','1M'), ('3m','3M'), ('6m','6M'), ('1y','1Y'), ('3y','3Y'), ('5y','5Y'), ('max','MAX')] %}
+                    <button type="button" data-range="{{ range }}" onclick="setResearchRange('{{ range }}')"
+                        class="range-button {{ 'active' if range == '1y' else '' }} rounded-md border border-white/10 px-2 py-1 text-[9px] text-gray-400 hover:text-white">
+                        {{ label }}
+                    </button>
+                    {% endfor %}
+                </div>
+                <div class="flex flex-wrap items-center gap-3 text-[9px] text-gray-500">
+                    <label class="flex items-center gap-1"><input type="checkbox" data-indicator="sma20" checked onchange="renderResearchChart()"> SMA20</label>
+                    <label class="flex items-center gap-1"><input type="checkbox" data-indicator="sma50" onchange="renderResearchChart()"> SMA50</label>
+                    <label class="flex items-center gap-1"><input type="checkbox" data-indicator="sma200" onchange="renderResearchChart()"> SMA200</label>
+                    <label class="flex items-center gap-1"><input type="checkbox" data-indicator="volume" onchange="renderResearchChart()"> Volume</label>
+                </div>
+            </div>
+            <div class="relative mt-3 min-h-0 flex-1"><canvas id="stockChart"></canvas></div>
+        </div>
+
+        <!-- SIDE PANELS -->
+        <div class="space-y-5">
+
+            <!-- AI CONFIDENCE -->
+            <div class="glass-panel p-6 rounded-2xl tilt-card">
+                <div class="flex items-start justify-between gap-3">
+                    <div id="confidenceLabel" class="text-gray-500 text-[9px] uppercase font-display tracking-[0.15em]">Model Score</div>
+                    <span id="modelStatusBadge" class="rounded-full border border-white/10 px-2 py-1 text-[9px] uppercase tracking-wider text-gray-400">Checking</span>
+                </div>
+                <div class="text-4xl font-bold text-white mt-2 font-mono" id="confDisplay"
+                    style="text-shadow: 0 0 20px rgba(59,130,246,0.2);">0%</div>
+                <div id="modelLabel" class="text-[10px] text-gray-400 mt-2">Model status loads with analysis.</div>
+                <div id="confidenceNote" class="text-[10px] text-gray-500 mt-2">Probability is shown after analysis.</div>
+                <div id="modelValidation" class="text-[10px] leading-relaxed text-gray-500 mt-2"></div>
+                <div class="w-full h-2 rounded-full mt-4 overflow-hidden" style="background: rgba(255,255,255,0.04);">
+                    <div id="confBar" class="h-full w-0 rounded-full transition-all duration-1000"
+                        style="background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4); box-shadow: 0 0 12px rgba(59,130,246,0.4);">
+                    </div>
+                </div>
+            </div>
+
+            <!-- TRADE SETUP -->
+            <div class="glass-panel p-6 rounded-2xl space-y-4 tilt-card">
+                <div class="text-gray-600 text-[9px] uppercase font-display tracking-[0.15em] pb-2"
+                    style="border-bottom: 1px solid rgba(255,255,255,0.04);">Trade Setup</div>
+
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-500 text-sm">Target</span>
+                    <span class="neon-text-green font-mono font-bold text-lg" id="aiTarget">--</span>
+                </div>
+
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-500 text-sm">Stop Loss</span>
+                    <span class="neon-text-red font-mono font-bold text-lg" id="aiStopLoss">--</span>
+                </div>
+
+                <div class="flex justify-between items-center pt-2"
+                    style="border-top: 1px solid rgba(255,255,255,0.04);">
+                    <span class="text-gray-500 text-sm">Upside to target</span>
+                    <span class="text-white font-mono font-bold" id="estReturn">--</span>
+                </div>
+                <p class="text-[10px] leading-relaxed text-gray-600">ATR guide levels from the stored close. They are illustrative and are not live orders or guaranteed prices.</p>
+            </div>
+
+            <!-- FUNDAMENTALS -->
+            <div class="glass-panel p-6 rounded-2xl space-y-3 tilt-card">
+                <div class="flex justify-between">
+                    <span class="text-gray-500 text-sm">EPS (TTM, reported)</span>
+                    <span class="text-white font-mono" id="epsDisplay">--</span>
+                </div>
+                <div class="flex justify-between text-[10px]">
+                    <span class="text-gray-600">Latest financial period</span>
+                    <span class="text-gray-500 font-mono" id="epsAsOf">--</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-500 text-sm">Market VIX</span>
+                    <span class="text-white font-mono" id="vixDisplay">--</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section id="researchWorkspace" class="hidden space-y-5 reveal delay-3" aria-label="Detailed stock research">
+        <div class="glass-panel rounded-2xl p-4 sm:p-5">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <div class="text-[10px] uppercase tracking-[0.18em] text-blue-300/70">Stock research</div>
+                    <h2 id="researchCompanyTitle" class="mt-1 text-xl font-bold text-white">Detailed company view</h2>
+                    <div class="mt-1 text-[10px] text-gray-500">BSE code <span id="researchCode" class="font-mono text-gray-300">--</span> · <span id="researchDate">Price data --</span> · <span id="researchSessionCount">-- sessions</span></div>
+                </div>
+                <div class="text-right text-[9px] text-gray-500">Sections include only available data<br><span id="researchExternalStatus">Company data not loaded</span></div>
+            </div>
+            <div class="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Research sections">
+                <button class="research-tab active" data-tab="overview" onclick="selectResearchTab('overview')">Overview</button>
+                <button class="research-tab" data-tab="technicals" onclick="selectResearchTab('technicals')">Technicals</button>
+                <button class="research-tab" data-tab="financials" onclick="selectResearchTab('financials')">Financials</button>
+                <button class="research-tab" data-tab="statements" onclick="selectResearchTab('statements')">Statements</button>
+                <button class="research-tab" data-tab="events" onclick="selectResearchTab('events')">Dividends & data</button>
+            </div>
+        </div>
+
+        <div id="researchPanel-overview" class="research-panel space-y-5">
+            <div id="researchSummaryGrid" class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-3"></div>
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+                <div class="glass-panel rounded-2xl p-5 xl:col-span-2">
+                    <div class="mb-4 text-[10px] uppercase tracking-[0.15em] text-gray-500">Company profile & valuation</div>
+                    <div id="companyProfile" class="grid grid-cols-2 md:grid-cols-3 gap-x-5 gap-y-4"></div>
+                    <p id="companyDescription" class="mt-5 text-xs leading-relaxed text-gray-400"></p>
+                </div>
+                <div class="glass-panel rounded-2xl p-5">
+                    <div class="mb-4 text-[10px] uppercase tracking-[0.15em] text-gray-500">Market context</div>
+                    <div id="macroSnapshot" class="space-y-3"></div>
+                </div>
+            </div>
+            <div class="glass-panel rounded-2xl p-5">
+                <div class="mb-3 text-[10px] uppercase tracking-[0.15em] text-gray-500">Data coverage</div>
+                <div id="coverageSummary" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+            </div>
+        </div>
+
+        <div id="researchPanel-technicals" class="research-panel hidden">
+            <div class="glass-panel rounded-2xl p-5">
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h3 class="text-sm font-semibold text-white">Technical indicators</h3>
+                        <p class="mt-1 text-[10px] text-gray-500">Calculated from BSE daily OHLCV. Moving averages and oscillators are descriptive indicators, not forecasts.</p>
+                    </div>
+                    <span id="indicatorAsOf" class="text-[9px] font-mono text-gray-500">As of --</span>
+                </div>
+                <div id="technicalGrid" class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-3"></div>
+            </div>
+        </div>
+
+        <div id="researchPanel-financials" class="research-panel hidden space-y-5">
+            <div class="glass-panel rounded-2xl p-5">
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h3 class="text-sm font-semibold text-white">Fundamental snapshot</h3>
+                        <p class="mt-1 text-[10px] text-gray-500">Provider fields can use a different reporting date from the local BSE price history.</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span id="financialSourceLabel" class="text-[9px] text-gray-500">Waiting for source data</span>
+                        <button type="button" onclick="loadExternalResearch(currentCode, true)" class="rounded-lg border border-white/10 px-2.5 py-1.5 text-[9px] text-blue-200 hover:bg-blue-400/10">Refresh source</button>
+                    </div>
+                </div>
+                <div id="fundamentalGrid" class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-3"></div>
+                <div class="mt-6 border-t border-white/5 pt-5">
+                    <div class="mb-3 text-[10px] uppercase tracking-[0.15em] text-gray-500">Analyst recommendation history</div>
+                    <div id="analystRecommendations" class="overflow-x-auto"></div>
+                </div>
+            </div>
+            <div class="glass-panel rounded-2xl p-5">
+                <h3 class="mb-4 text-sm font-semibold text-white">Local quarterly records</h3>
+                <div id="localFinancialTable" class="overflow-x-auto"></div>
+            </div>
+        </div>
+
+        <div id="researchPanel-statements" class="research-panel hidden">
+            <div class="glass-panel rounded-2xl p-5">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h3 id="statementTitle" class="text-sm font-semibold text-white">Quarterly income statement</h3>
+                        <p id="statementSource" class="mt-1 text-[10px] text-gray-500">External source statements are cached for 24 hours.</p>
+                    </div>
+                    <select id="statementSelect" onchange="renderStatement()" class="rounded-lg border border-white/10 bg-[#10101a] px-3 py-2 text-xs text-gray-200">
+                        <option value="income_quarterly">Quarterly income</option>
+                        <option value="income_annual">Annual income</option>
+                        <option value="balance_quarterly">Quarterly balance sheet</option>
+                        <option value="balance_annual">Annual balance sheet</option>
+                        <option value="cashflow_quarterly">Quarterly cash flow</option>
+                        <option value="cashflow_annual">Annual cash flow</option>
+                    </select>
+                </div>
+                <div id="statementTable" class="mt-4 overflow-x-auto"></div>
+            </div>
+        </div>
+
+        <div id="researchPanel-events" class="research-panel hidden space-y-5">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div class="glass-panel rounded-2xl p-5">
+                    <div class="mb-3 text-sm font-semibold text-white">Dividends and stock splits</div>
+                    <div id="corporateActions" class="overflow-x-auto"></div>
+                </div>
+                <div class="glass-panel rounded-2xl p-5">
+                    <div class="mb-3 text-sm font-semibold text-white">Source and coverage notes</div>
+                    <div id="sourceNotes" class="space-y-3 text-xs leading-relaxed text-gray-400"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<style>
+    .neon-btn {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .neon-btn::before {
+        content: '';
+        position: absolute;
+        inset: -2px;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6, #3b82f6);
+        border-radius: inherit;
+        z-index: -1;
+        opacity: 0;
+        transition: opacity 0.3s;
+        filter: blur(8px);
+    }
+
+    .neon-btn:hover::before {
+        opacity: 1;
+    }
+
+    .neon-btn:hover {
+        box-shadow: 0 0 30px rgba(59, 130, 246, 0.4), 0 0 60px rgba(139, 92, 246, 0.2);
+    }
+
+    .research-tab {
+        border: 1px solid rgba(255,255,255,.08); border-radius: .65rem; padding: .55rem .85rem;
+        color: #9ca3af; font-size: .7rem; transition: all .2s ease;
+    }
+    .research-tab:hover { color: #fff; border-color: rgba(96,165,250,.35); }
+    .research-tab.active, .range-button.active {
+        color: #bfdbfe; background: rgba(59,130,246,.12); border-color: rgba(96,165,250,.35);
+    }
+    .research-metric { min-width: 0; border: 1px solid rgba(255,255,255,.06); background: rgba(255,255,255,.018); border-radius: .85rem; padding: .85rem; }
+    .research-table { width: 100%; border-collapse: collapse; font-size: .68rem; }
+    .research-table th { position: sticky; top: 0; background: #0b0b14; color: #9ca3af; font-weight: 600; text-align: right; white-space: nowrap; padding: .65rem .75rem; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .research-table th:first-child, .research-table td:first-child { position: sticky; left: 0; text-align: left; background: #0b0b14; }
+    .research-table td { color: #d1d5db; text-align: right; white-space: nowrap; padding: .6rem .75rem; border-bottom: 1px solid rgba(255,255,255,.045); }
+    .research-table tr:hover td { background-color: rgba(59,130,246,.045); }
+
+    @keyframes scanPulse {
+
+        0%,
+        100% {
+            transform: scale(1);
+            opacity: 0.8;
+        }
+
+        50% {
+            transform: scale(1.1);
+            opacity: 1;
+        }
+    }
+</style>
+
+<script>
+    let myChart = null;
+    let liveInterval = null;
+    let currentCode = null;
+    let searchTimeout = null;
+    let currentResearch = null;
+    let currentExternal = null;
+    let currentRange = '1y';
+
+    // --- SEARCH & AUTOCOMPLETE ---
+    function handleSearch(query) {
+        clearTimeout(searchTimeout);
+        const list = document.getElementById('searchResults');
+
+        if (query.length < 2) {
+            list.classList.add('hidden');
+            return;
+        }
+
+        searchTimeout = setTimeout(async () => {
+            try {
+                const res = await fetch(`${window.STOCK_AI_PREFIX}/api/search?${new URLSearchParams({ q: query })}`);
+                if (!res.ok) throw new Error(`Search failed (${res.status})`);
+                const data = await res.json();
+
+                list.innerHTML = '';
+
+                if (data.length > 0) {
+                    list.classList.remove('hidden');
+                    data.forEach((item, idx) => {
+                        const div = document.createElement('div');
+                        div.className = "px-4 py-3.5 hover:bg-blue-500/[0.06] cursor-pointer flex justify-between items-center group transition-all duration-200";
+                        div.style.cssText = `border-bottom: 1px solid rgba(255,255,255,0.03); animation: rowSlideIn 0.3s ease-out ${idx * 0.04}s both;`;
+                        const name = document.createElement('span');
+                        name.className = "text-gray-300 group-hover:text-white font-medium transition-colors";
+                        name.textContent = item.name || `Stock ${item.code}`;
+                        const code = document.createElement('span');
+                        code.className = "font-mono text-[10px] px-2.5 py-1 rounded-full";
+                        code.style.cssText = "background: rgba(59,130,246,0.08); color: #60a5fa; border: 1px solid rgba(59,130,246,0.15);";
+                        code.textContent = item.code;
+                        div.append(name, code);
+                        div.onclick = () => {
+                            document.getElementById('stockCode').value = item.code;
+                            list.classList.add('hidden');
+                            startAnalysis();
+                        };
+                        list.appendChild(div);
+                    });
+                } else {
+                    list.classList.add('hidden');
+                }
+            } catch (e) { console.error(e); }
+        }, 300);
+    }
+
+    document.addEventListener('click', function (e) {
+        if (!document.getElementById('stockCode').contains(e.target)) {
+            document.getElementById('searchResults').classList.add('hidden');
+        }
+    });
+
+    async function startAnalysis() {
+        const code = document.getElementById('stockCode').value.trim();
+        if (!code) return;
+        currentCode = code;
+        currentResearch = null;
+        currentExternal = null;
+        document.getElementById('researchWorkspace').classList.add('hidden');
+
+        const btn = document.getElementById('analyzeBtn');
+        const originalText = btn.innerHTML;
+        const status = document.getElementById('analysisStatus');
+        btn.innerHTML = `<div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Scanning...`;
+        btn.disabled = true;
+        status.className = "text-sm rounded-lg px-4 py-3 mb-5 border border-blue-400/15 bg-blue-400/5 text-blue-200";
+        status.textContent = "Loading recent price history and model assessment…";
+
+        try {
+            const response = await fetch(`${window.STOCK_AI_PREFIX}/api/predict`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: code })
+            });
+            if (!response.ok) throw new Error(`Analysis request failed (${response.status})`);
+            const data = await response.json();
+
+            if (!data || data.error) {
+                status.className = "text-sm rounded-lg px-4 py-3 mb-5 border border-amber-400/20 bg-amber-400/5 text-amber-200";
+                status.textContent = "No recent price history is available for that stock. Check the code and try again.";
+                return;
+            }
+
+            document.getElementById('liveHeader').classList.remove('hidden');
+            document.getElementById('resultArea').classList.remove('hidden');
+            status.classList.add('hidden');
+
+            document.getElementById('assetName').innerText = data.name.replace('Stock ', '');
+            document.getElementById('assetCode').innerText = code;
+            document.getElementById('dataAsOf').innerText = `Data ${data.data_as_of || '--'}`;
+            document.getElementById('signalMode').innerText = data.data_age_days > 5 ? 'Stale EOD signal' : 'EOD signal';
+            document.getElementById('livePrice').innerText = `₹${Number(data.current).toFixed(2)}`;
+            document.getElementById('priceSourceLabel').innerText = 'Stored BSE close';
+            document.getElementById('aiSignal').innerText = data.signal;
+
+            document.getElementById('aiTarget').innerText = "₹" + data.target;
+            document.getElementById('aiStopLoss').innerText = data.stop_loss ? "₹" + data.stop_loss : "--";
+            document.getElementById('estReturn').innerText = data.est_return;
+
+            if (data.stop_loss && data.current) {
+                const reward = data.target - data.current;
+                const risk = data.current - data.stop_loss;
+                if (risk > 0) {
+                    const ratio = (reward / risk).toFixed(2);
+                    const rrEl = document.getElementById('rrRatio');
+                    rrEl.innerText = "1:" + ratio;
+                    rrEl.className = ratio >= 2.0 ? "font-bold neon-text-green" : "font-bold text-yellow-500";
+                }
+            }
+
+            document.getElementById('confDisplay').innerText = data.confidence + "%";
+            document.getElementById('confBar').style.width = data.confidence + "%";
+            const confidenceNotes = {
+                calibrated_model: "Calibrated chance of hitting the target before the stop within 5 sessions.",
+                legacy_model_not_calibrated: "Legacy model score; it is not calibrated as a hit probability.",
+                heuristic_not_calibrated: "Rule-based estimate; it is not a calibrated probability."
+            };
+            document.getElementById('confidenceLabel').innerText = data.confidence_basis === 'calibrated_model'
+                ? '5-Day Target Probability'
+                : 'Uncalibrated Model Score';
+            document.getElementById('modelLabel').innerText = data.model_label || 'Model status unavailable';
+            const statusBadge = document.getElementById('modelStatusBadge');
+            const isCalibrated = data.confidence_basis === 'calibrated_model';
+            statusBadge.innerText = isCalibrated ? 'Validated' : 'Unvalidated';
+            statusBadge.className = isCalibrated
+                ? 'rounded-full border border-emerald-400/20 bg-emerald-400/5 px-2 py-1 text-[9px] uppercase tracking-wider text-emerald-300'
+                : 'rounded-full border border-amber-400/20 bg-amber-400/5 px-2 py-1 text-[9px] uppercase tracking-wider text-amber-300';
+            const validation = data.model_validation || {};
+            const validationLine = document.getElementById('modelValidation');
+            if (isCalibrated && validation.average_precision !== undefined) {
+                const period = validation.holdout_start && validation.holdout_end
+                    ? `${validation.holdout_start} to ${validation.holdout_end}`
+                    : 'recent unseen data';
+                const baseRate = Number(validation.positive_rate) * 100;
+                const coverage = Number(validation.signal_coverage) * 100;
+                const netReturn = Number(validation.mean_net_return) * 100;
+                const universe = validation.training_stock_count
+                    ? ` • ${validation.training_stock_count} liquid stocks`
+                    : '';
+                validationLine.innerText = `Holdout ${period}${universe} • PR-AUC ${(Number(validation.average_precision)).toFixed(3)} vs ${baseRate.toFixed(1)}% base rate • signals ${coverage.toFixed(1)}% • net ${netReturn.toFixed(2)}% after ${Number(validation.round_trip_cost_bps).toFixed(0)} bps costs.`;
+            } else {
+                validationLine.innerText = 'No current walk-forward audit is available for this legacy model.';
+            }
+            document.getElementById('aiSignal').className = isCalibrated
+                ? 'text-xl font-bold neon-text-blue font-display'
+                : 'text-xl font-bold text-amber-300 font-display';
+            let confidenceNote = confidenceNotes[data.confidence_basis] || "Model score; probability calibration status unknown.";
+            if (data.confidence_basis === 'calibrated_model') {
+                confidenceNote += ` BUY ≥ ${data.buy_threshold}%; STRONG BUY ≥ ${data.strong_buy_threshold}%.`;
+            }
+            document.getElementById('confidenceNote').innerText = confidenceNote;
+
+            document.getElementById('epsDisplay').innerText = data.eps ? "₹" + Number(data.eps).toFixed(2) : "N/A";
+            document.getElementById('epsAsOf').innerText = data.financial_period || 'Unavailable';
+            document.getElementById('vixDisplay').innerText = data.vix || "--";
+
+            renderChart(data.chart);
+            loadDetailedResearch(code, currentRange);
+            loadExternalResearch(code);
+
+            if (liveInterval) clearInterval(liveInterval);
+            fetchLivePrice();
+            liveInterval = setInterval(fetchLivePrice, 30000);
+
+        } catch (e) {
+            console.error(e);
+            status.className = "text-sm rounded-lg px-4 py-3 mb-5 border border-red-400/20 bg-red-400/5 text-red-200";
+            status.textContent = "Analysis could not be completed. Check that the app and database are available, then try again.";
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    async function fetchLivePrice() {
+        if (!currentCode) return;
+        const res = await fetch(`${window.STOCK_AI_PREFIX}/api/live_price`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: currentCode })
+        });
+        if (res.status !== 200) return;
+        const quote = await res.json();
+        if (!quote) return;
+
+        const priceEl = document.getElementById('livePrice');
+        const changeEl = document.getElementById('liveChange');
+        const pctEl = document.getElementById('livePct');
+
+        const quotePrice = Number(quote.price);
+        const quoteChange = Number(quote.change);
+        const quotePct = Number(quote.pct);
+        if (![quotePrice, quoteChange, quotePct].every(Number.isFinite)) return;
+        priceEl.innerText = "₹" + quotePrice.toFixed(2);
+        changeEl.innerText = (quoteChange > 0 ? "+" : "") + quoteChange.toFixed(2);
+        pctEl.innerText = quotePct.toFixed(2) + "%";
+        document.getElementById('priceSourceLabel').innerText = `Market quote • refreshed ${new Date().toLocaleTimeString()}`;
+
+        const isGreen = quote.color === 'green';
+        const colorClass = isGreen ? 'neon-text-green' : 'neon-text-red';
+        const bgClass = isGreen ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)';
+        const borderClass = isGreen ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)';
+
+        priceEl.className = `text-5xl font-bold font-mono tracking-tight ${colorClass} transition-colors duration-300`;
+        priceEl.style.textShadow = isGreen ? '0 0 20px rgba(52,211,153,0.2)' : '0 0 20px rgba(248,113,113,0.2)';
+        changeEl.className = `text-2xl font-bold font-mono ${colorClass}`;
+        pctEl.className = `text-sm font-bold px-2.5 py-1 rounded-full ${colorClass}`;
+        pctEl.style.background = bgClass;
+        pctEl.style.border = `1px solid ${borderClass}`;
+    }
+
+    function researchNode(tag, className, text) {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined && text !== null) node.textContent = text;
+        return node;
+    }
+
+    function formatCurrency(value) {
+        const n = Number(value);
+        if (!Number.isFinite(n)) return '—';
+        const abs = Math.abs(n);
+        if (abs >= 1e7) return `₹${(n / 1e7).toLocaleString('en-IN', { maximumFractionDigits: 2 })} Cr`;
+        if (abs >= 1e5) return `₹${(n / 1e5).toLocaleString('en-IN', { maximumFractionDigits: 2 })} L`;
+        return `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+    }
+
+    function formatLargeNumber(value) {
+        const n = Number(value);
+        if (!Number.isFinite(n)) return '—';
+        return n.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+    }
+
+    function formatPercent(value, alreadyPercent = false) {
+        let n = Number(value);
+        if (!Number.isFinite(n)) return '—';
+        if (!alreadyPercent) n *= 100;
+        return `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
+    }
+
+    function formatMultiple(value) {
+        const n = Number(value);
+        return Number.isFinite(n) ? `${n.toFixed(2)}×` : '—';
+    }
+
+    function addResearchMetric(container, label, value, note = '', tone = '') {
+        const card = researchNode('div', 'research-metric');
+        card.appendChild(researchNode('div', 'text-[9px] uppercase tracking-wider text-gray-500', label));
+        card.appendChild(researchNode('div', `mt-2 break-words font-mono text-xs leading-relaxed font-semibold ${tone || 'text-white'}`, value ?? '—'));
+        if (note) card.appendChild(researchNode('div', 'mt-1 text-[9px] text-gray-600', note));
+        container.appendChild(card);
+    }
+
+    function addProfileField(container, label, value) {
+        const item = researchNode('div', 'min-w-0');
+        item.appendChild(researchNode('div', 'text-[9px] uppercase tracking-wider text-gray-600', label));
+        item.appendChild(researchNode('div', 'mt-1 break-words text-xs font-medium text-gray-200', value || '—'));
+        container.appendChild(item);
+    }
+
+    function formatReturn(value) {
+        if (value === null || value === undefined || !Number.isFinite(Number(value))) return '—';
+        const n = Number(value) * 100;
+        return `${n > 0 ? '+' : ''}${n.toFixed(2)}%`;
+    }
+
+    async function loadDetailedResearch(code, range) {
+        try {
+            const response = await fetch(`${window.STOCK_AI_PREFIX}/api/research/${encodeURIComponent(code)}?range=${encodeURIComponent(range)}`);
+            const payload = await response.json();
+            if (!response.ok || payload.error) throw new Error(payload.error || `Research request failed (${response.status})`);
+            if (String(currentCode) !== String(code)) return;
+            currentResearch = payload;
+            document.getElementById('researchWorkspace').classList.remove('hidden');
+            renderLocalResearch(payload);
+            renderResearchChart();
+        } catch (error) {
+            const status = document.getElementById('researchExternalStatus');
+            status.textContent = error.message || 'Detailed history is unavailable';
+        }
+    }
+
+    async function loadExternalResearch(code, refresh = false) {
+        const status = document.getElementById('researchExternalStatus');
+        status.textContent = 'Loading company statements and valuation…';
+        try {
+            const suffix = refresh ? '?refresh=1' : '';
+            const response = await fetch(`${window.STOCK_AI_PREFIX}/api/research/${encodeURIComponent(code)}/external${suffix}`);
+            const payload = await response.json();
+            if (String(currentCode) !== String(code)) return;
+            currentExternal = payload;
+            if (payload.available) {
+                const fetched = payload.fetched_at ? new Date(payload.fetched_at).toLocaleString() : 'time unavailable';
+                const freshness = payload.stale
+                    ? ` · stale cache${payload.error ? ' · refresh failed' : ''}`
+                    : ` · ${Number(payload.age_hours || 0).toFixed(1)}h old`;
+                status.textContent = `${payload.symbol || 'Yahoo Finance'} · fetched ${fetched}${freshness}`;
+            } else {
+                status.textContent = payload.loading ? 'Company data is loading…' : 'External company data unavailable';
+            }
+            renderExternalResearch(payload);
+        } catch (error) {
+            status.textContent = 'External company data could not be loaded';
+            renderExternalResearch({ available: false, error: error.message });
+        }
+    }
+
+    async function setResearchRange(range) {
+        if (!['1m', '3m', '6m', '1y', '3y', '5y', 'max'].includes(range)) return;
+        currentRange = range;
+        document.querySelectorAll('.range-button').forEach(button => {
+            button.classList.toggle('active', button.dataset.range === range);
+        });
+        if (currentCode) await loadDetailedResearch(currentCode, range);
+    }
+
+    function selectResearchTab(tabName) {
+        document.querySelectorAll('.research-tab').forEach(button => {
+            button.classList.toggle('active', button.dataset.tab === tabName);
+            button.setAttribute('aria-selected', button.dataset.tab === tabName ? 'true' : 'false');
+        });
+        document.querySelectorAll('.research-panel').forEach(panel => {
+            panel.classList.toggle('hidden', panel.id !== `researchPanel-${tabName}`);
+        });
+    }
+
+    function renderLocalResearch(data) {
+        const summary = data.summary || {};
+        document.getElementById('researchCompanyTitle').textContent = data.name || `BSE ${data.code}`;
+        document.getElementById('assetName').textContent = (data.name || `BSE ${data.code}`).replace('Stock ', '');
+        document.getElementById('researchCode').textContent = data.code;
+        document.getElementById('researchDate').textContent = `Price data ${data.data_as_of || '—'}`;
+        document.getElementById('researchSessionCount').textContent = `${formatLargeNumber(data.history_sessions)} sessions`;
+        document.getElementById('indicatorAsOf').textContent = `As of ${data.data_as_of || '—'}`;
+
+        const summaryGrid = document.getElementById('researchSummaryGrid');
+        summaryGrid.replaceChildren();
+        const summaryItems = [
+            ['Last close', formatCurrency(summary.last_close), 'Stored BSE close'],
+            ['1 day', formatReturn(summary.return_1d), '1 trading session'],
+            ['1 week', formatReturn(summary.return_1w), '5 trading sessions'],
+            ['1 month', formatReturn(summary.return_1m), '21 trading sessions'],
+            ['3 months', formatReturn(summary.return_3m), '63 trading sessions'],
+            ['6 months', formatReturn(summary.return_6m), '126 trading sessions'],
+            ['1 year', formatReturn(summary.return_1y), '252 trading sessions'],
+            ['52 week high', formatCurrency(summary.high_52w), formatReturn(summary.distance_from_52w_high) + ' from high'],
+            ['52 week low', formatCurrency(summary.low_52w), formatReturn(summary.distance_from_52w_low) + ' from low'],
+            ['20 day avg volume', formatLargeNumber(summary.volume_average_20d), 'Shares per session'],
+            ['Last day volume', formatLargeNumber(summary.volume), 'Shares'],
+            ['Turnover value', formatCurrency(summary.turnover_value), 'Close × volume'],
+        ];
+        summaryItems.forEach(([label, value, note]) => {
+            const numeric = Number(String(value).replace(/[^0-9.+-]/g, ''));
+            const returnMetric = ['1 day', '1 week', '1 month', '3 months', '6 months', '1 year'].includes(label);
+            const tone = returnMetric && Number.isFinite(numeric)
+                ? (numeric > 0 ? 'text-emerald-300' : numeric < 0 ? 'text-rose-300' : 'text-white') : '';
+            addResearchMetric(summaryGrid, label, value, note, tone);
+        });
+
+        const technicalGrid = document.getElementById('technicalGrid');
+        technicalGrid.replaceChildren();
+        const t = data.technical || {};
+        const technicalItems = [
+            ['RSI (14)', t.rsi_14 == null ? '—' : Number(t.rsi_14).toFixed(2), 'Momentum · 0 to 100'],
+            ['ADX (14)', t.adx_14 == null ? '—' : Number(t.adx_14).toFixed(2), 'Trend strength'],
+            ['+DI / −DI', `${t.positive_di_14 == null ? '—' : Number(t.positive_di_14).toFixed(1)} / ${t.negative_di_14 == null ? '—' : Number(t.negative_di_14).toFixed(1)}`, 'Directional movement'],
+            ['Stochastic %K / %D', `${t.stochastic_k == null ? '—' : Number(t.stochastic_k).toFixed(1)} / ${t.stochastic_d == null ? '—' : Number(t.stochastic_d).toFixed(1)}`, '14, 3 oscillator'],
+            ['MACD', formatCurrency(t.macd), '12 / 26 EMA'],
+            ['MACD signal', formatCurrency(t.macd_signal), '9 EMA of MACD'],
+            ['MACD histogram', formatCurrency(t.macd_histogram), 'MACD less signal'],
+            ['ATR (14)', formatCurrency(t.atr_14), 'Average true range'],
+            ['ATR / price', formatReturn(t.atr_pct), 'Relative daily range'],
+            ['Annualized vol (20d)', formatReturn(t.annualized_volatility_20d), 'Realized volatility'],
+            ['Volume / 20d avg', formatMultiple(t.volume_ratio_20d), 'Current volume ratio'],
+            ['Relative strength (20d)', formatReturn(t.relative_strength_20d), 'Stock less Nifty 50'],
+            ['SMA 20 / 50 / 200', `${formatCurrency(t.sma_20)} / ${formatCurrency(t.sma_50)} / ${formatCurrency(t.sma_200)}`, 'Simple moving averages'],
+            ['EMA 20 / 50 / 200', `${formatCurrency(t.ema_20)} / ${formatCurrency(t.ema_50)} / ${formatCurrency(t.ema_200)}`, 'Exponential moving averages'],
+            ['Bollinger bands', `${formatCurrency(t.bollinger_lower)} · ${formatCurrency(t.bollinger_middle)} · ${formatCurrency(t.bollinger_upper)}`, 'Lower · mid · upper'],
+            ['Trend stack', t.trend_score_0_3 == null ? '—' : `${t.trend_score_0_3} / 3`, 'Close / EMA20 / EMA50 / EMA200'],
+        ];
+        technicalItems.forEach(item => addResearchMetric(technicalGrid, ...item));
+
+        const macro = data.macro || {};
+        const macroSnapshot = document.getElementById('macroSnapshot');
+        macroSnapshot.replaceChildren();
+        [
+            ['India VIX', macro.india_vix == null ? '—' : Number(macro.india_vix).toFixed(2)],
+            ['USD / INR', macro.usd_inr == null ? '—' : Number(macro.usd_inr).toFixed(2)],
+            ['Nifty 50', formatCurrency(macro.nifty50_close)],
+            ['Nifty 1m / 1y', `${formatReturn(macro.nifty_return_1m)} / ${formatReturn(macro.nifty_return_1y)}`],
+            ['Beta / correlation', `${macro.beta_1y == null ? '—' : Number(macro.beta_1y).toFixed(2)} / ${macro.correlation_1y == null ? '—' : Number(macro.correlation_1y).toFixed(2)}`],
+            ['Crude / US index', `${macro.crude_oil == null ? '—' : Number(macro.crude_oil).toFixed(2) + ' USD/bbl'} / ${macro.us_market_close == null ? '—' : formatLargeNumber(macro.us_market_close)}`],
+        ].forEach(([label, value]) => {
+            const row = researchNode('div', 'flex items-center justify-between gap-3 border-b border-white/5 pb-2');
+            row.append(researchNode('span', 'text-xs text-gray-500', label), researchNode('span', 'text-right font-mono text-xs text-gray-200', value));
+            macroSnapshot.appendChild(row);
+        });
+
+        const coverage = data.coverage || {};
+        const coverageSummary = document.getElementById('coverageSummary');
+        coverageSummary.replaceChildren();
+        const deliveryLabel = Number(coverage.delivery_rows_with_values || 0) > 0
+            ? `${formatLargeNumber(coverage.delivery_rows_with_values)} sessions have values`
+            : 'Not populated in the local database';
+        [
+            ['BSE price history', `${formatLargeNumber(coverage.daily_price_rows)} rows`, `Data through ${data.data_as_of || '—'}`],
+            ['Local quarterly fundamentals', `${formatLargeNumber(coverage.local_financial_quarters)} periods`, coverage.local_financials_as_of || 'No local quarter rows'],
+            ['Delivery percentage', deliveryLabel, 'No value is inferred when absent'],
+            ['External profile & statements', currentExternal?.available ? `${currentExternal.symbol} · cached` : 'Loading / unavailable', currentExternal?.fetched_at || 'Yahoo Finance lookup'],
+        ].forEach(item => addResearchMetric(coverageSummary, ...item));
+
+        renderLocalFinancials(data.financials || []);
+        renderMacroNotes(data);
+    }
+
+    function renderLocalFinancials(rows) {
+        const container = document.getElementById('localFinancialTable');
+        container.replaceChildren();
+        if (!rows.length) {
+            container.appendChild(researchNode('p', 'text-xs text-gray-500', 'No local quarterly financial records are stored for this BSE code. External statements, when available, appear in the Statements tab.'));
+            return;
+        }
+        const table = researchNode('table', 'research-table');
+        const head = researchNode('thead');
+        const headerRow = researchNode('tr');
+        ['Period', 'Revenue', 'Net profit', 'EPS'].forEach(text => headerRow.appendChild(researchNode('th', '', text)));
+        head.appendChild(headerRow); table.appendChild(head);
+        const body = researchNode('tbody');
+        rows.forEach(row => {
+            const tr = researchNode('tr');
+            [row.period || '—', formatCurrency(row.revenue), formatCurrency(row.net_profit), row.eps == null ? '—' : `₹${Number(row.eps).toFixed(2)}`]
+                .forEach(value => tr.appendChild(researchNode('td', '', value)));
+            body.appendChild(tr);
+        });
+        table.appendChild(body); container.appendChild(table);
+    }
+
+    function formatProfileValue(key, value) {
+        if (value === null || value === undefined || value === '') return '—';
+        const numeric = Number(value);
+        if (!Number.isFinite(numeric)) return String(value);
+        if (['marketCap', 'enterpriseValue', 'totalCash', 'totalDebt', 'freeCashflow', 'operatingCashflow', 'targetMeanPrice', 'targetHighPrice', 'targetLowPrice'].includes(key)) return formatCurrency(numeric);
+        if (['dividendYield', 'profitMargins', 'operatingMargins', 'grossMargins', 'returnOnEquity', 'returnOnAssets', 'revenueGrowth', 'earningsGrowth', 'payoutRatio'].includes(key)) {
+            return formatPercent(numeric, key === 'dividendYield' && Math.abs(numeric) > 1);
+        }
+        if (key === 'debtToEquity') return formatPercent(numeric, true);
+        if (['trailingPE', 'forwardPE', 'priceToBook', 'priceToSalesTrailing12Months', 'enterpriseToRevenue', 'enterpriseToEbitda', 'beta', 'currentRatio', 'quickRatio'].includes(key)) return `${numeric.toFixed(2)}×`;
+        if (['trailingEps', 'forwardEps', 'bookValue', 'regularMarketPrice', 'previousClose', 'dayLow', 'dayHigh', 'fiftyTwoWeekLow', 'fiftyTwoWeekHigh', 'dividendRate'].includes(key)) return `₹${numeric.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+        if (['sharesOutstanding', 'floatShares', 'fullTimeEmployees', 'numberOfAnalystOpinions'].includes(key)) return formatLargeNumber(numeric);
+        return numeric.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+    }
+
+    function renderExternalResearch(payload) {
+        const profile = payload?.available ? (payload.profile || {}) : {};
+        const companyProfile = document.getElementById('companyProfile');
+        companyProfile.replaceChildren();
+        const profileFields = [
+            ['Sector', 'sector'], ['Industry', 'industry'], ['Country', 'country'], ['Exchange', 'fullExchangeName'],
+            ['Currency', 'currency'], ['Employees', 'fullTimeEmployees'], ['Market cap', 'marketCap'],
+            ['Enterprise value', 'enterpriseValue'], ['Trailing P/E', 'trailingPE'], ['Forward P/E', 'forwardPE'],
+            ['Price / book', 'priceToBook'], ['Price / sales', 'priceToSalesTrailing12Months'],
+            ['Latest reported quarter', 'mostRecentQuarter'], ['Fiscal year end', 'lastFiscalYearEnd'],
+        ];
+        profileFields.forEach(([label, key]) => addProfileField(companyProfile, label, formatProfileValue(key, profile[key])));
+        const description = document.getElementById('companyDescription');
+        description.textContent = profile.longBusinessSummary || (payload?.error ? `Company profile unavailable: ${payload.error}` : 'Company description is not available from the selected data source.');
+        const facts = document.getElementById('fundamentalGrid');
+        facts.replaceChildren();
+        [
+            ['Trailing EPS', 'trailingEps'], ['Forward EPS', 'forwardEps'], ['Book value / share', 'bookValue'],
+            ['Beta', 'beta'], ['Dividend yield', 'dividendYield'], ['Dividend / share', 'dividendRate'],
+            ['Payout ratio', 'payoutRatio'], ['Return on equity', 'returnOnEquity'], ['Return on assets', 'returnOnAssets'],
+            ['Profit margin', 'profitMargins'], ['Operating margin', 'operatingMargins'], ['Gross margin', 'grossMargins'],
+            ['Revenue growth', 'revenueGrowth'], ['Earnings growth', 'earningsGrowth'], ['Debt / equity', 'debtToEquity'],
+            ['Current ratio', 'currentRatio'], ['Quick ratio', 'quickRatio'], ['Free cash flow', 'freeCashflow'],
+            ['Operating cash flow', 'operatingCashflow'], ['Analyst target mean', 'targetMeanPrice'],
+            ['Analyst consensus', 'recommendationKey'], ['Analyst score', 'recommendationMean'],
+            ['Analyst count', 'numberOfAnalystOpinions'],
+        ].forEach(([label, key]) => addResearchMetric(facts, label, formatProfileValue(key, profile[key])));
+        const ownership = Object.fromEntries((payload?.ownership || []).map(item => [item.metric, item.value]));
+        const heldPercent = key => ownership[key] == null ? '—' : `${(Number(ownership[key]) * 100).toFixed(2)}%`;
+        addResearchMetric(facts, 'Insiders / promoter held', heldPercent('insidersPercentHeld'));
+        addResearchMetric(facts, 'Institutional held', heldPercent('institutionsPercentHeld'));
+        addResearchMetric(facts, 'Institutions of float', heldPercent('institutionsFloatPercentHeld'));
+        addResearchMetric(facts, 'Institutions of record', formatLargeNumber(ownership.institutionsCount));
+        renderAnalystRecommendations(payload?.analyst_recommendations || []);
+        const sourceLabel = document.getElementById('financialSourceLabel');
+        sourceLabel.textContent = payload?.available
+            ? `${payload.provider} · ${payload.symbol} · cached at ${payload.fetched_at ? new Date(payload.fetched_at).toLocaleString() : '—'}${payload.stale ? ' · stale cache' : ''}`
+            : (payload?.error || 'External company data not available');
+        renderStatement();
+        renderCorporateActions(payload?.actions || []);
+        if (currentResearch) renderLocalResearch(currentResearch);
+    }
+
+    function humanMetric(label) {
+        return String(label || '').replaceAll('_', ' ').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/\s+/g, ' ').trim();
+    }
+
+    function formatStatementValue(metric, value) {
+        if (value === null || value === undefined || !Number.isFinite(Number(value))) return '—';
+        const label = String(metric).toLowerCase();
+        if (label.includes('per share') || label.includes('eps') || label.includes('share price')) return `₹${Number(value).toFixed(2)}`;
+        if (label.includes('share') && (label.includes('average') || label.includes('weighted'))) return formatLargeNumber(value);
+        return formatCurrency(value);
+    }
+
+    function renderStatement() {
+        const container = document.getElementById('statementTable');
+        container.replaceChildren();
+        const key = document.getElementById('statementSelect').value;
+        const title = document.querySelector(`#statementSelect option[value="${key}"]`)?.textContent || 'Statement';
+        document.getElementById('statementTitle').textContent = title;
+        const tableData = currentExternal?.available ? currentExternal.statements?.[key] : null;
+        if (!tableData?.rows?.length) {
+            container.appendChild(researchNode('p', 'text-xs text-gray-500', currentExternal?.error || 'No statement data is available for this company or period.'));
+            return;
+        }
+        const table = researchNode('table', 'research-table min-w-full');
+        const head = researchNode('thead');
+        const headerRow = researchNode('tr');
+        headerRow.appendChild(researchNode('th', '', 'Financial line item'));
+        tableData.periods.forEach(period => headerRow.appendChild(researchNode('th', '', period)));
+        head.appendChild(headerRow); table.appendChild(head);
+        const body = researchNode('tbody');
+        tableData.rows.forEach(row => {
+            const tr = researchNode('tr');
+            tr.appendChild(researchNode('td', '', humanMetric(row.metric)));
+            (row.values || []).forEach(value => tr.appendChild(researchNode('td', '', formatStatementValue(row.metric, value))));
+            body.appendChild(tr);
+        });
+        table.appendChild(body); container.appendChild(table);
+    }
+
+    function renderCorporateActions(actions) {
+        const container = document.getElementById('corporateActions');
+        container.replaceChildren();
+        if (!actions.length) {
+            container.appendChild(researchNode('p', 'text-xs text-gray-500', 'No dividend or stock split events were returned by the external source.'));
+            return;
+        }
+        const table = researchNode('table', 'research-table');
+        const head = researchNode('thead');
+        const header = researchNode('tr');
+        ['Date', 'Event', 'Value'].forEach(value => header.appendChild(researchNode('th', '', value)));
+        head.appendChild(header); table.appendChild(head);
+        const body = researchNode('tbody');
+        actions.forEach(action => {
+            const tr = researchNode('tr');
+            [action.date || '—', action.type || '—', action.type === 'Dividend' ? formatCurrency(action.value) : formatMultiple(action.value)]
+                .forEach(value => tr.appendChild(researchNode('td', '', value)));
+            body.appendChild(tr);
+        });
+        table.appendChild(body); container.appendChild(table);
+    }
+
+    function renderAnalystRecommendations(rows) {
+        const container = document.getElementById('analystRecommendations');
+        container.replaceChildren();
+        if (!rows.length) {
+            container.appendChild(researchNode('p', 'text-xs text-gray-500', 'No analyst recommendation data is available from this source.'));
+            return;
+        }
+        const table = researchNode('table', 'research-table');
+        const head = researchNode('thead');
+        const header = researchNode('tr');
+        ['Period', 'Strong buy', 'Buy', 'Hold', 'Sell', 'Strong sell'].forEach(value => header.appendChild(researchNode('th', '', value)));
+        head.appendChild(header); table.appendChild(head);
+        const body = researchNode('tbody');
+        rows.forEach(row => {
+            const tr = researchNode('tr');
+            [row.period || '—', row.strong_buy, row.buy, row.hold, row.sell, row.strong_sell]
+                .forEach(value => tr.appendChild(researchNode('td', '', value == null ? '—' : formatLargeNumber(value))));
+            body.appendChild(tr);
+        });
+        table.appendChild(body); container.appendChild(table);
+    }
+
+    function renderMacroNotes(data) {
+        const coverage = data.coverage || {};
+        const notes = document.getElementById('sourceNotes');
+        notes.replaceChildren();
+        [
+            `Price history: ${data.price_source || 'local BSE store'} through ${data.data_as_of || 'unknown date'}; ${formatLargeNumber(data.history_sessions)} sessions returned.`,
+            `Local fundamentals: ${formatLargeNumber(coverage.local_financial_quarters)} quarterly rows; most recent period ${coverage.local_financials_as_of || 'not available'}.`,
+            Number(coverage.delivery_rows_with_values || 0) > 0 ? `Delivery percentage is populated for ${formatLargeNumber(coverage.delivery_rows_with_values)} rows.` : 'Delivery percentage is not populated for this security in the local database; the app does not estimate it.',
+            'Technical indicators are calculated from stored daily OHLCV and macro history. They are descriptive and can change when source data is corrected.',
+            'Company profile, valuation, statements, shareholding summary, analyst recommendations, dividends and splits are supplemented from Yahoo Finance through yfinance and cached locally for 24 hours. Confirm filings and corporate actions against exchange/company disclosures.',
+            'yfinance is an unofficial wrapper for Yahoo Finance public APIs; the data source describes its service as intended for personal use and research.',
+            'Previously researched companies are refreshed by the scheduled job on weekdays at 20:15 IST. The default batch is 100 companies per run and can be changed with RESEARCH_REFRESH_LIMIT.',
+            'External company matching uses name similarity. The matched Yahoo symbol is shown above; review it before relying on cross-source fundamentals.'
+        ].forEach(text => notes.appendChild(researchNode('p', '', text)));
+    }
+
+    function renderChart(chartData) {
+        if (currentResearch?.price_bars?.length) return renderResearchChart();
+        const ctx = document.getElementById('stockChart').getContext('2d');
+        if (myChart) myChart.destroy();
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(59, 130, 246, 0.15)');
+        gradient.addColorStop(0.5, 'rgba(139, 92, 246, 0.05)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: chartData.dates, datasets: [{ label: 'Close', data: chartData.prices, borderColor: '#3b82f6', backgroundColor: gradient, borderWidth: 2, pointRadius: 0, fill: true, tension: 0.3 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(10,10,18,0.9)', borderColor: 'rgba(59,130,246,0.2)', borderWidth: 1, titleColor: '#fff', bodyColor: '#60a5fa', cornerRadius: 8, padding: 12 } }, scales: { x: { grid: { display: false }, ticks: { color: '#444', maxTicksLimit: 8 } }, y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#888' } } }, interaction: { mode: 'index', intersect: false } }
+        });
+    }
+
+    function renderResearchChart() {
+        if (!currentResearch?.price_bars?.length) return;
+        const bars = currentResearch.price_bars;
+        const ctx = document.getElementById('stockChart').getContext('2d');
+        if (myChart) myChart.destroy();
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(59, 130, 246, 0.16)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        const enabled = key => document.querySelector(`[data-indicator="${key}"]`)?.checked;
+        const line = (key, label, color) => ({
+            label, data: bars.map(bar => bar[key]), borderColor: color, backgroundColor: 'transparent',
+            borderWidth: 1.2, pointRadius: 0, pointHoverRadius: 3, spanGaps: true, tension: 0.08,
+            hidden: !enabled(key), yAxisID: 'price'
+        });
+        const volumeEnabled = Boolean(enabled('volume'));
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: bars.map(bar => bar.date),
+                datasets: [
+                    { label: 'Close', data: bars.map(bar => bar.close), borderColor: '#60a5fa', backgroundColor: gradient, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, fill: true, tension: 0.08, yAxisID: 'price' },
+                    line('sma20', 'SMA 20', '#fbbf24'),
+                    line('sma50', 'SMA 50', '#a78bfa'),
+                    line('sma200', 'SMA 200', '#34d399'),
+                    { type: 'bar', label: 'Volume', data: bars.map(bar => bar.volume), backgroundColor: 'rgba(148,163,184,.18)', borderWidth: 0, hidden: !volumeEnabled, yAxisID: 'volume', barPercentage: 1, categoryPercentage: 1 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(10,10,18,0.95)', borderColor: 'rgba(59,130,246,0.2)', borderWidth: 1,
+                        titleColor: '#fff', bodyColor: '#d1d5db', cornerRadius: 8, padding: 12,
+                        callbacks: {
+                            afterBody: items => {
+                                const bar = bars[items[0]?.dataIndex];
+                                if (!bar) return [];
+                                return [`Open ${formatCurrency(bar.open)} · High ${formatCurrency(bar.high)}`, `Low ${formatCurrency(bar.low)} · Close ${formatCurrency(bar.close)}`, `Volume ${formatLargeNumber(bar.volume)} · Delivery ${bar.delivery_pct == null ? 'n/a' : Number(bar.delivery_pct).toFixed(2) + '%'}`];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#667085', maxTicksLimit: 8, maxRotation: 0 } },
+                    price: { type: 'linear', position: 'left', grid: { color: 'rgba(255,255,255,.035)' }, ticks: { color: '#8b95a5', callback: value => `₹${Number(value).toLocaleString('en-IN')}` } },
+                    volume: { type: 'linear', position: 'right', display: volumeEnabled, grid: { drawOnChartArea: false }, ticks: { color: '#667085', maxTicksLimit: 4, callback: value => formatLargeNumber(value) } }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

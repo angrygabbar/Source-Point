@@ -17,6 +17,7 @@ OS-specific files
 docker-compose.yml
 docker-compose.override.yml
 docker-compose*.yml
+!docker-compose.yml
 Dockerfile
 .dockerignore
 !Wealth Manager/backend/Dockerfile
@@ -41,3 +42,9 @@ Wealth Manager/backend/target/
 .venv/
 .venv/
 .venv/
+
+# Stock AI database dumps and generated wheelhouse are not source files.
+stock_ai/.docker-wheelhouse/*
+!stock_ai/.docker-wheelhouse/.gitkeep
+stock_ai/db-dump/*
+!stock_ai/db-dump/.gitkeep

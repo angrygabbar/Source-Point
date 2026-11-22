@@ -144,6 +144,7 @@ def create_app():
     from blueprints.admin_assets import admin_assets_bp
     from blueprints.teaching import teaching_bp
     from blueprints.coinback_module import coinback_module_bp
+    from blueprints.stock_ai_module import stock_ai_module_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(mobile_api_bp)
@@ -170,6 +171,7 @@ def create_app():
     app.register_blueprint(admin_assets_bp)
     app.register_blueprint(teaching_bp)
     app.register_blueprint(coinback_module_bp)
+    app.register_blueprint(stock_ai_module_bp)
 
     # --- 8. CONTEXT PROCESSORS (FIXED) ---
     @app.context_processor

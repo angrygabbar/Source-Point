@@ -1,0 +1,14 @@
+flask==3.0.0
+flask-cors
+flask-socketio
+psycopg2-binary
+pandas
+numpy
+scikit-learn
+xgboost
+ta
+yfinance
+apscheduler
+joblib
+requests
+chart_studio

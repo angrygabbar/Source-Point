@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6 px-6 py-6">
+
+    <!-- PORTFOLIO SUMMARY -->
+    <div class="glass-panel holo-border p-8 rounded-2xl relative overflow-hidden reveal">
+        <div class="absolute top-0 right-0 p-8 opacity-[0.03] text-9xl font-display font-bold text-white z-0">₹</div>
+
+        <!-- Accent orbs -->
+        <div class="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-20"
+            style="background: radial-gradient(circle, {{ 'rgba(16,185,129,0.3)' if summary.pnl >= 0 else 'rgba(239,68,68,0.3)' }}, transparent);">
+        </div>
+
+        <div class="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div>
+                <div class="text-gray-600 text-[9px] uppercase font-display tracking-[0.2em] font-medium mb-2">Total
+                    Invested</div>
+                <div class="text-3xl font-bold text-white font-mono"
+                    style="text-shadow: 0 0 20px rgba(255,255,255,0.05);">₹{{ summary.invested }}</div>
+            </div>
+            <div>
+                <div class="text-gray-600 text-[9px] uppercase font-display tracking-[0.2em] font-medium mb-2">Current
+                    P&L</div>
+                <div class="text-4xl font-bold font-mono {{ summary.color }}"
+                    style="text-shadow: 0 0 20px {{ 'rgba(52,211,153,0.3)' if summary.pnl >= 0 else 'rgba(248,113,113,0.3)' }};">
+                    {{ '+' if summary.pnl > 0 else '' }}{{ summary.pnl }}
+                </div>
+            </div>
+            <div>
+                <div class="text-gray-600 text-[9px] uppercase font-display tracking-[0.2em] font-medium mb-2">Net
+                    Return</div>
+                <div class="text-3xl font-bold font-mono {{ summary.color }} flex items-center gap-3">
+                    {{ summary.pct }}%
+                    <span class="text-[10px] font-display tracking-wider px-3 py-1 rounded-full"
+                        style="background: {{ 'rgba(16,185,129,0.08)' if summary.pnl >= 0 else 'rgba(239,68,68,0.08)' }}; border: 1px solid {{ 'rgba(16,185,129,0.15)' if summary.pnl >= 0 else 'rgba(239,68,68,0.15)' }};">
+                        {{ '▲ PROFIT' if summary.pnl >= 0 else '▼ LOSS' }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HOLDINGS TABLE -->
+    <div class="glass-panel rounded-2xl overflow-hidden reveal delay-1">
+        <div class="px-6 py-4 flex justify-between items-center"
+            style="border-bottom: 1px solid rgba(255,255,255,0.04); background: rgba(0,0,0,0.3);">
+            <h3 class="text-white font-bold text-sm flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                Active Holdings
+            </h3>
+            <span class="text-[9px] text-gray-600 font-display tracking-wider uppercase">Prices update
+                automatically</span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead style="background: rgba(255,255,255,0.02);">
+                    <tr class="text-[10px] uppercase text-gray-600 font-display tracking-[0.15em]">
+                        <th class="px-6 py-4">Asset</th>
+                        <th class="px-6 py-4">Buy Price</th>
+                        <th class="px-6 py-4">Live Price</th>
+                        <th class="px-6 py-4">Qty</th>
+                        <th class="px-6 py-4">P&L</th>
+                        <th class="px-6 py-4 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm">
+                    {% for h in holdings %}
+                    <tr class="row-glow transition-all duration-300 group"
+                        style="border-bottom: 1px solid rgba(255,255,255,0.03); animation: rowSlideIn 0.4s ease-out {{ loop.index * 0.06 }}s both;">
+                        <td class="px-6 py-4 font-bold text-white">
+                            {{ h.name }}
+                            <span class="block text-[10px] text-gray-600 font-mono mt-0.5">{{ h.code }}</span>
+                        </td>
+                        <td class="px-6 py-4 font-mono text-gray-400">₹{{ h.buy_price }}</td>
+                        <td class="px-6 py-4 font-mono text-white font-bold">₹{{ h.current_price }}</td>
+                        <td class="px-6 py-4 font-mono text-gray-400">{{ h.qty }}</td>
+                        <td class="px-6 py-4 font-mono font-bold {{ h.color }}"
+                            style="text-shadow: 0 0 8px {{ 'rgba(52,211,153,0.3)' if h.pnl >= 0 else 'rgba(248,113,113,0.3)' }};">
+                            {{ '+' if h.pnl > 0 else '' }}{{ h.pnl }}
+                            <span class="text-[10px] opacity-70">({{ h.pnl_pct }}%)</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <button onclick="sellStock({{ h.id }})"
+                                class="text-xs px-4 py-1.5 rounded-full font-medium transition-all duration-300 hover-glow-red"
+                                style="background: rgba(239,68,68,0.06); color: #f87171; border: 1px solid rgba(239,68,68,0.15);">
+                                CLOSE
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-20 text-center">
+                            <div class="flex flex-col items-center gap-3">
+                                <div class="w-12 h-12 rounded-xl flex items-center justify-center animate-float"
+                                    style="background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(168,85,247,0.05));">
+                                    <i class="fa-solid fa-briefcase text-blue-400/50 text-lg"></i>
+                                </div>
+                                <span class="text-gray-600 text-xs font-mono">No open positions. Use the Dashboard or
+                                    Screener to find trades.</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function sellStock(id) {
+        if (!confirm("Close this position?")) return;
+
+        await fetch(`${window.STOCK_AI_PREFIX}/api/sell_stock`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id })
+        });
+        window.location.reload();
+    }
+</script>
+{% endblock %}

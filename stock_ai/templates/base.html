@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockAi | Quant Fusion OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>window.STOCK_AI_PREFIX = {{ request.script_root|tojson }};</script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                        display: ['Orbitron', 'sans-serif'],
+                    },
+                    colors: {
+                        bg: '#050508',
+                        panel: '#0a0a0f',
+                        border: '#1a1a2e',
+                        accent: '#3b82f6',
+                        success: '#10b981',
+                        danger: '#ef4444',
+                        cyber: '#00f0ff',
+                        neon: '#a855f7',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* === GLOBAL RESET & BASE === */
+        * { box-sizing: border-box; }
+        body { background-color: #050508; color: #e5e5e5; }
+
+        /* === ANIMATED PARTICLE CANVAS === */
+        #particleCanvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; pointer-events: none; opacity: 0.4;
+        }
+
+        /* === GLASS PANELS === */
+        .glass-panel {
+            background: rgba(10, 10, 18, 0.65);
+            backdrop-filter: blur(16px) saturate(1.3);
+            -webkit-backdrop-filter: blur(16px) saturate(1.3);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+
+        /* === HOLOGRAPHIC BORDER === */
+        .holo-border {
+            position: relative;
+            border: 1px solid transparent;
+            background-clip: padding-box;
+        }
+        .holo-border::before {
+            content: ''; position: absolute; inset: -1px; z-index: -1;
+            border-radius: inherit;
+            background: linear-gradient(135deg, rgba(59,130,246,0.3), rgba(168,85,247,0.2), rgba(0,240,255,0.15), rgba(59,130,246,0.3));
+            background-size: 300% 300%;
+            animation: gradientShift 6s ease infinite;
+        }
+
+        /* === NAV ACTIVE STATE === */
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(59,130,246,0.12), transparent);
+            color: #60a5fa;
+            border-left: 2px solid #60a5fa;
+            box-shadow: inset 4px 0 12px rgba(59,130,246,0.1);
+        }
+        .nav-item {
+            position: relative;
+            overflow: hidden;
+        }
+        .nav-item::after {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(59,130,246,0.08), transparent 60%);
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .nav-item:hover::after { opacity: 1; }
+
+        /* === SCROLLBAR === */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #050508; }
+        ::-webkit-scrollbar-thumb { 
+            background: linear-gradient(180deg, #1e3a5f, #3b82f6); 
+            border-radius: 10px; 
+        }
+        ::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #3b82f6, #60a5fa); }
+
+        /* === KEYFRAMES === */
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 5px rgba(59,130,246,0.3); }
+            50% { box-shadow: 0 0 20px rgba(59,130,246,0.6), 0 0 40px rgba(59,130,246,0.2); }
+        }
+        @keyframes neonPulse {
+            0%, 100% { text-shadow: 0 0 4px currentColor; }
+            50% { text-shadow: 0 0 12px currentColor, 0 0 24px currentColor; }
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-6px); }
+        }
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeSlideInLeft {
+            from { opacity: 0; transform: translateX(-16px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes scanLine {
+            0% { top: -2px; }
+            100% { top: 100%; }
+        }
+        @keyframes borderGlow {
+            0%, 100% { border-color: rgba(59,130,246,0.2); }
+            50% { border-color: rgba(59,130,246,0.5); }
+        }
+        @keyframes breathe {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+        }
+        @keyframes rotateGradient {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes typewriter {
+            from { width: 0 }
+            to { width: 100% }
+        }
+        @keyframes blinkCaret {
+            50% { border-color: transparent; }
+        }
+        @keyframes rowSlideIn {
+            from { opacity: 0; transform: translateX(-8px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* === UTILITY CLASSES === */
+        .animate-gradient-shift { animation: gradientShift 6s ease infinite; }
+        .animate-pulse-glow { animation: pulseGlow 2s ease-in-out infinite; }
+        .animate-neon-pulse { animation: neonPulse 2s ease-in-out infinite; }
+        .animate-shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 3s ease infinite;
+        }
+        .animate-float { animation: float 4s ease-in-out infinite; }
+        .animate-breathe { animation: breathe 3s ease-in-out infinite; }
+
+        .reveal { animation: fadeSlideIn 0.6s ease-out forwards; opacity: 0; }
+        .reveal-left { animation: fadeSlideInLeft 0.5s ease-out forwards; opacity: 0; }
+
+        /* Staggered delays */
+        .delay-1 { animation-delay: 0.08s; }
+        .delay-2 { animation-delay: 0.16s; }
+        .delay-3 { animation-delay: 0.24s; }
+        .delay-4 { animation-delay: 0.32s; }
+        .delay-5 { animation-delay: 0.4s; }
+        .delay-6 { animation-delay: 0.48s; }
+        .delay-7 { animation-delay: 0.56s; }
+        .delay-8 { animation-delay: 0.64s; }
+
+        /* === GLOW EFFECTS === */
+        .glow-blue { box-shadow: 0 0 12px rgba(59,130,246,0.25), 0 0 24px rgba(59,130,246,0.1); }
+        .glow-green { box-shadow: 0 0 12px rgba(16,185,129,0.25), 0 0 24px rgba(16,185,129,0.1); }
+        .glow-red { box-shadow: 0 0 12px rgba(239,68,68,0.25), 0 0 24px rgba(239,68,68,0.1); }
+        .glow-purple { box-shadow: 0 0 12px rgba(168,85,247,0.25), 0 0 24px rgba(168,85,247,0.1); }
+        .glow-cyan { box-shadow: 0 0 12px rgba(0,240,255,0.25), 0 0 24px rgba(0,240,255,0.1); }
+
+        .hover-glow:hover { box-shadow: 0 0 16px rgba(59,130,246,0.3), 0 0 32px rgba(59,130,246,0.15); transition: box-shadow 0.3s; }
+        .hover-glow-green:hover { box-shadow: 0 0 16px rgba(16,185,129,0.3), 0 0 32px rgba(16,185,129,0.15); transition: box-shadow 0.3s; }
+        .hover-glow-red:hover { box-shadow: 0 0 16px rgba(239,68,68,0.3), 0 0 32px rgba(239,68,68,0.15); transition: box-shadow 0.3s; }
+
+        /* === NEON TEXT === */
+        .neon-text-blue { color: #60a5fa; text-shadow: 0 0 8px rgba(96,165,250,0.4); }
+        .neon-text-green { color: #34d399; text-shadow: 0 0 8px rgba(52,211,153,0.4); }
+        .neon-text-red { color: #f87171; text-shadow: 0 0 8px rgba(248,113,113,0.4); }
+        .neon-text-cyan { color: #00f0ff; text-shadow: 0 0 8px rgba(0,240,255,0.4); }
+        .neon-text-purple { color: #c084fc; text-shadow: 0 0 8px rgba(192,132,252,0.4); }
+
+        /* === CARD TILT (3D hover) === */
+        .tilt-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+        .tilt-card:hover {
+            transform: translateY(-4px) rotateX(2deg) rotateY(-2deg);
+            box-shadow: 0 12px 40px rgba(59,130,246,0.15);
+        }
+
+        /* === SIDEBAR GRADIENT LINE === */
+        .sidebar-glow {
+            position: relative;
+        }
+        .sidebar-glow::after {
+            content: ''; position: absolute; top: 0; right: 0;
+            width: 1px; height: 100%;
+            background: linear-gradient(180deg, transparent, rgba(59,130,246,0.3), rgba(168,85,247,0.2), transparent);
+        }
+
+        /* === SEARCH GLOW === */
+        .search-glow:focus {
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.3), 0 0 20px rgba(59,130,246,0.1);
+            border-color: rgba(59,130,246,0.5) !important;
+        }
+
+        /* === TABLE ROW HOVER === */
+        .row-glow:hover {
+            background: linear-gradient(90deg, rgba(59,130,246,0.04), transparent) !important;
+            box-shadow: inset 3px 0 0 rgba(59,130,246,0.4);
+        }
+
+        /* === BADGE GLOW === */
+        .badge-buy {
+            background: rgba(16,185,129,0.1);
+            color: #34d399;
+            border: 1px solid rgba(16,185,129,0.2);
+            text-shadow: 0 0 6px rgba(52,211,153,0.3);
+        }
+        .badge-sell {
+            background: rgba(239,68,68,0.1);
+            color: #f87171;
+            border: 1px solid rgba(239,68,68,0.2);
+            text-shadow: 0 0 6px rgba(248,113,113,0.3);
+        }
+
+        /* === PAGE CONTENT TRANSITION === */
+        .page-content {
+            animation: fadeSlideIn 0.5s ease-out forwards;
+        }
+
+        /* === MARQUEE === */
+        @keyframes marquee {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+        .animate-marquee {
+            animation: marquee 30s linear infinite;
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden text-sm selection:bg-blue-500/30">
+
+    <!-- PARTICLE CANVAS -->
+    <canvas id="particleCanvas"></canvas>
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-black/80 backdrop-blur-xl flex flex-col justify-between hidden md:flex z-50 sidebar-glow relative" style="border-right: 1px solid rgba(255,255,255,0.04);">
+        <div>
+            <div class="h-16 flex items-center px-6" style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                <div class="flex items-center gap-3">
+                    <div class="h-9 w-9 rounded-lg flex items-center justify-center shadow-lg animate-pulse-glow relative overflow-hidden" style="background: linear-gradient(135deg, #3b82f6, #8b5cf6);">
+                        <i class="fa-solid fa-layer-group text-white text-xs relative z-10"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-display font-bold tracking-tight text-white text-sm">STOCK<span class="text-blue-400">Ai</span> <span class="text-[9px] text-gray-600 font-sans font-normal ml-0.5">v5.0</span></h1>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="p-4 space-y-1">
+                <div class="text-[9px] uppercase tracking-[0.2em] text-gray-600 font-display font-medium mb-3 px-2 mt-4">Terminal</div>
+                
+                <a href="{{ request.script_root }}/dashboard" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.03] transition-all duration-300 group">
+                    <i class="fa-solid fa-chart-line w-5 text-center transition-colors duration-300 group-hover:text-blue-400"></i>
+                    <span class="text-[13px]">Dashboard</span>
+                </a>
+
+                <a href="{{ request.script_root }}/analysis" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.03] transition-all duration-300 group">
+                    <i class="fa-solid fa-magnifying-glass-chart w-5 text-center transition-colors duration-300 group-hover:text-purple-400"></i>
+                    <span class="text-[13px]">Deep Analysis</span>
+                </a>
+
+                <a href="{{ request.script_root }}/screener" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.03] transition-all duration-300 group">
+                    <i class="fa-solid fa-satellite-dish w-5 text-center transition-colors duration-300 group-hover:text-green-400"></i>
+                    <span class="text-[13px]">Market Radar</span>
+                </a>
+
+                <a href="{{ request.script_root }}/portfolio" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.03] transition-all duration-300 group">
+                    <i class="fa-solid fa-briefcase w-5 text-center transition-colors duration-300 group-hover:text-yellow-400"></i>
+                    <span class="text-[13px]">Portfolio</span>
+                </a>
+
+                <div class="text-[9px] uppercase tracking-[0.2em] text-gray-600 font-display font-medium mb-3 px-2 mt-6">System</div>
+
+                <a href="{{ request.script_root }}/admin" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.03] transition-all duration-300 group">
+                    <i class="fa-solid fa-server w-5 text-center transition-colors duration-300 group-hover:text-red-400"></i>
+                    <span class="text-[13px]">Admin Control</span>
+                </a>
+            </nav>
+        </div>
+
+        <div class="p-4" style="border-top: 1px solid rgba(255,255,255,0.04);">
+            <div class="flex items-center gap-3">
+                <div class="h-9 w-9 rounded-full flex items-center justify-center" style="background: linear-gradient(135deg, #1e293b, #0f172a);">
+                    <i class="fa-solid fa-user-astronaut text-xs text-gray-400"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="text-xs font-medium text-white">Quant Admin</div>
+                    <div class="text-[10px] text-green-400 flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-breathe"></span> Online
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 flex flex-col relative overflow-hidden z-10">
+        <header class="h-14 bg-black/60 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-40" style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+            <div class="flex items-center gap-2 text-gray-500 text-xs">
+                <span class="font-display text-[10px] tracking-widest uppercase">Terminal</span>
+                <i class="fa-solid fa-chevron-right text-[8px] text-gray-700"></i>
+                <span class="text-white font-medium" id="pageTitle">Current View</span>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fa-solid fa-search text-gray-600 text-xs"></i>
+                    </div>
+                    <input type="text" 
+                           class="search-glow bg-white/[0.03] border border-white/[0.06] text-gray-300 text-xs rounded-full focus:ring-0 block w-64 pl-8 p-2 transition-all duration-300 outline-none" 
+                           placeholder="Search ticker or command... (Cmd+K)">
+                </div>
+                
+                <button class="w-8 h-8 rounded-full bg-white/[0.03] border border-white/[0.06] flex items-center justify-center hover:bg-white/[0.06] transition-all duration-300 text-gray-400 relative hover-glow">
+                    <i class="fa-regular fa-bell text-xs"></i>
+                    <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-black animate-breathe"></span>
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-0 scroll-smooth page-content">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- PARTICLE SYSTEM -->
+    <script>
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        const PARTICLE_COUNT = 60;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() { this.reset(); }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 1.5 + 0.3;
+                this.speedX = (Math.random() - 0.5) * 0.3;
+                this.speedY = (Math.random() - 0.5) * 0.3;
+                this.opacity = Math.random() * 0.5 + 0.1;
+                this.hue = Math.random() > 0.5 ? 220 : 260;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.reset();
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${this.hue}, 80%, 70%, ${this.opacity})`;
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(new Particle());
+
+        function drawLines() {
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 120) {
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.strokeStyle = `rgba(59, 130, 246, ${0.06 * (1 - dist / 120)})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            drawLines();
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+    </script>
+
+    <!-- ACTIVE NAV HIGHLIGHT + RIPPLE -->
+    <script>
+        const path = window.location.pathname;
+        document.querySelectorAll('.nav-item').forEach(el => {
+            if(el.getAttribute('href') === path) {
+                el.classList.add('active');
+                document.getElementById('pageTitle').innerText = el.innerText.trim();
+            }
+            // Ripple position tracking
+            el.addEventListener('mousemove', e => {
+                const rect = el.getBoundingClientRect();
+                el.style.setProperty('--x', ((e.clientX - rect.left) / rect.width * 100) + '%');
+                el.style.setProperty('--y', ((e.clientY - rect.top) / rect.height * 100) + '%');
+            });
+        });
+        if(path === '/') document.getElementById('pageTitle').innerText = 'Welcome';
+    </script>
+</body>
+</html>

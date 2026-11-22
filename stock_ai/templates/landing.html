@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockAi | The Unfair Advantage</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter'], mono: ['JetBrains Mono'], display: ['Orbitron'] },
+                    animation: {
+                        'blob': 'blob 7s infinite',
+                        'fade-in': 'fadeIn 0.8s ease-out forwards',
+                        'shimmer': 'shimmer 3s ease infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-ring': 'pulseRing 2s ease-out infinite',
+                    },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        shimmer: {
+                            '0%': { backgroundPosition: '-200% center' },
+                            '100%': { backgroundPosition: '200% center' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-12px)' },
+                        },
+                        pulseRing: {
+                            '0%': { transform: 'scale(1)', opacity: '1' },
+                            '100%': { transform: 'scale(2.5)', opacity: '0' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: #030306;
+            overflow-x: hidden;
+        }
+
+        /* Animated Grid */
+        .grid-bg {
+            background-image:
+                linear-gradient(to right, rgba(59, 130, 246, 0.04) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(59, 130, 246, 0.04) 1px, transparent 1px);
+            background-size: 50px 50px;
+            mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+        }
+
+        /* Scan line */
+        .scan-line::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
+            animation: scanDown 4s ease-in-out infinite;
+        }
+
+        @keyframes scanDown {
+
+            0%,
+            100% {
+                top: 0;
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 1;
+            }
+
+            90% {
+                opacity: 1;
+            }
+
+            95% {
+                top: 100%;
+                opacity: 0;
+            }
+        }
+
+        /* Hero gradient text */
+        .gradient-text {
+            background: linear-gradient(135deg, #ffffff 0%, #60a5fa 25%, #c084fc 50%, #60a5fa 75%, #ffffff 100%);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientFlow 6s ease infinite;
+        }
+
+        @keyframes gradientFlow {
+
+            0%,
+            100% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        /* Holographic card */
+        .holo-card {
+            background: rgba(10, 10, 18, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .holo-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), transparent, rgba(168, 85, 247, 0.05));
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+
+        .holo-card:hover::before {
+            opacity: 1;
+        }
+
+        .holo-card:hover {
+            border-color: rgba(59, 130, 246, 0.25);
+            transform: translateY(-6px);
+            box-shadow: 0 20px 60px rgba(59, 130, 246, 0.1), 0 0 40px rgba(59, 130, 246, 0.05);
+        }
+
+        /* Neon CTA */
+        .neon-btn {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .neon-btn::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6, #3b82f6);
+            border-radius: inherit;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s;
+            filter: blur(8px);
+        }
+
+        .neon-btn:hover::before {
+            opacity: 1;
+        }
+
+        .neon-btn:hover {
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.4), 0 0 60px rgba(139, 92, 246, 0.2);
+        }
+
+        /* Orb animations */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            pointer-events: none;
+        }
+
+        /* Status badge typing */
+        .typing-badge {
+            border-right: 2px solid #60a5fa;
+            animation: blink 0.8s step-end infinite;
+        }
+
+        @keyframes blink {
+            50% {
+                border-color: transparent;
+            }
+        }
+
+        /* Stat counter */
+        .stat-glow {
+            text-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Footer matrix effect */
+        .footer-glow {
+            text-shadow: 0 0 6px rgba(59, 130, 246, 0.3);
+        }
+    </style>
+</head>
+
+<body class="text-white min-h-screen relative flex flex-col font-sans">
+
+    <!-- NAVIGATION -->
+    <nav class="fixed top-0 w-full p-6 flex justify-between items-center z-50"
+        style="background: linear-gradient(180deg, rgba(3,3,6,0.9), transparent);">
+        <div class="flex items-center gap-3 font-display font-bold text-lg tracking-tight">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center relative"
+                style="background: linear-gradient(135deg, #3b82f6, #8b5cf6);">
+                <span class="text-white font-bold text-sm relative z-10">S</span>
+                <div class="absolute inset-0 rounded-lg animate-pulse-ring"
+                    style="border: 1px solid rgba(59,130,246,0.4);"></div>
+            </div>
+            <span>STOCK<span class="text-blue-400">Ai</span></span>
+            <span class="text-gray-600 font-sans font-normal text-xs ml-1">v5.0</span>
+        </div>
+        <a href="{{ request.script_root }}/dashboard"
+            class="group px-7 py-2.5 bg-white text-black text-sm font-bold rounded-full hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] transition-all duration-300 flex items-center gap-2">
+            Launch Terminal
+            <svg class="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3">
+                </path>
+            </svg>
+        </a>
+    </nav>
+
+    <!-- ANIMATED BACKGROUND -->
+    <div class="absolute inset-0 grid-bg z-0 pointer-events-none scan-line"></div>
+
+    <!-- Floating Orbs -->
+    <div class="orb w-[500px] h-[500px] -top-40 -left-40 animate-blob opacity-[0.07]"
+        style="background: radial-gradient(circle, #8b5cf6, transparent);"></div>
+    <div class="orb w-[400px] h-[400px] top-20 -right-20 animate-blob opacity-[0.06]"
+        style="background: radial-gradient(circle, #3b82f6, transparent); animation-delay: 2s;"></div>
+    <div class="orb w-[300px] h-[300px] bottom-20 left-1/3 animate-blob opacity-[0.05]"
+        style="background: radial-gradient(circle, #06b6d4, transparent); animation-delay: 4s;"></div>
+
+    <!-- HERO -->
+    <main class="flex-1 flex flex-col justify-center items-center text-center px-4 relative z-10 mt-20">
+
+        <!-- Status Badge -->
+        <div
+            class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-blue-500/20 bg-blue-500/[0.06] text-blue-400 text-xs font-mono mb-10 animate-fade-in backdrop-blur-sm">
+            <span class="relative flex h-2 w-2">
+                <span
+                    class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-400"></span>
+            </span>
+            <span class="typing-badge pr-1">SYSTEM ONLINE: 5,000+ TICKERS ACTIVE</span>
+        </div>
+
+        <!-- Hero Title -->
+        <h1 class="text-7xl md:text-[6.5rem] font-extrabold tracking-tight mb-6 gradient-text animate-fade-in leading-none"
+            style="animation-delay: 0.15s;">
+            Quant Fusion.
+        </h1>
+
+        <!-- Subtitle -->
+        <p class="text-gray-400 text-lg md:text-xl max-w-2xl mb-12 animate-fade-in leading-relaxed"
+            style="animation-delay: 0.3s;">
+            The operating system for the modern algorithmic trader.
+            Integrates <span class="text-white font-medium">Technical</span>, <span
+                class="text-white font-medium">Fundamental</span>, and <span class="text-white font-medium">Macro</span>
+            analysis into one probabilistic engine.
+        </p>
+
+        <!-- CTA Buttons -->
+        <div class="flex flex-col md:flex-row gap-4 animate-fade-in" style="animation-delay: 0.45s;">
+            <a href="{{ request.script_root }}/dashboard"
+                class="neon-btn px-10 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all duration-300 flex items-center gap-3 relative z-10">
+                <span>Enter Terminal</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3">
+                    </path>
+                </svg>
+            </a>
+            <a href="https://github.com/your-repo"
+                class="px-10 py-4 bg-white/[0.03] hover:bg-white/[0.06] text-gray-300 border border-white/[0.08] rounded-xl font-medium transition-all duration-300 backdrop-blur-sm hover:border-white/[0.15]">
+                View Documentation
+            </a>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="flex gap-12 mt-16 animate-fade-in" style="animation-delay: 0.6s;">
+            <div class="text-center">
+                <div class="text-3xl font-bold font-display stat-glow text-white">5,000+</div>
+                <div class="text-xs text-gray-600 mt-1 uppercase tracking-wider">Stocks Tracked</div>
+            </div>
+            <div class="text-center">
+                <div class="text-3xl font-bold font-display stat-glow text-white">75%+</div>
+                <div class="text-xs text-gray-600 mt-1 uppercase tracking-wider">AI Precision</div>
+            </div>
+            <div class="text-center">
+                <div class="text-3xl font-bold font-display stat-glow text-white">&lt;10m</div>
+                <div class="text-xs text-gray-600 mt-1 uppercase tracking-wider">Scan Time</div>
+            </div>
+        </div>
+
+        <!-- Feature Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-24 max-w-5xl w-full text-left animate-fade-in"
+            style="animation-delay: 0.75s;">
+
+            <div class="holo-card p-7 rounded-2xl group">
+                <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-5 transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+                    style="background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05));">
+                    <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                    </svg>
+                </div>
+                <h3 class="text-white font-bold mb-2 text-[15px]">XGBoost Engine</h3>
+                <p class="text-sm text-gray-500 leading-relaxed">Predictive modeling with 75%+ historical precision on
+                    trend reversals.</p>
+                <div class="mt-5 pt-4 border-t border-white/[0.04] flex items-center gap-2 text-xs text-gray-600">
+                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Active
+                </div>
+            </div>
+
+            <div class="holo-card p-7 rounded-2xl group">
+                <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-5 transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]"
+                    style="background: linear-gradient(135deg, rgba(168,85,247,0.15), rgba(168,85,247,0.05));">
+                    <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                        </path>
+                    </svg>
+                </div>
+                <div class="flex justify-between items-start">
+                    <h3 class="text-white font-bold mb-2 text-[15px]">Macro Radar</h3>
+                    <span class="text-[9px] font-display font-bold tracking-wider px-2 py-0.5 rounded-full"
+                        style="background: rgba(168,85,247,0.1); color: #c084fc; border: 1px solid rgba(168,85,247,0.2);">NEW</span>
+                </div>
+                <p class="text-sm text-gray-500 leading-relaxed">Real-time VIX and USD/INR correlation to prevent buying
+                    in a crash.</p>
+                <div class="mt-5 pt-4 border-t border-white/[0.04] flex items-center gap-2 text-xs text-gray-600">
+                    <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span> Monitoring
+                </div>
+            </div>
+
+            <div class="holo-card p-7 rounded-2xl group">
+                <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-5 transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.3)]"
+                    style="background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(59,130,246,0.05));">
+                    <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="text-white font-bold mb-2 text-[15px]">Automated Hunter</h3>
+                <p class="text-sm text-gray-500 leading-relaxed">Parallel processing scans 5,000+ stocks in &lt;10
+                    minutes daily.</p>
+                <div class="mt-5 pt-4 border-t border-white/[0.04] flex items-center gap-2 text-xs text-gray-600">
+                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span> Scanning
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="p-8 text-center text-xs font-mono footer-glow relative z-10">
+        <div class="flex justify-center items-center gap-6 text-gray-600">
+            <span class="flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                SYSTEM STATUS: NORMAL
+            </span>
+            <span class="text-gray-800">|</span>
+            <span>LATENCY: 12ms</span>
+            <span class="text-gray-800">|</span>
+            <span>SERVER: MUMBAI-1</span>
+        </div>
+    </footer>
+
+</body>
+
+</html>

@@ -10,6 +10,8 @@ class Config:
     COINBACK_SSO_SECRET = os.environ.get('COINBACK_SSO_SECRET')
     COINBACK_API_URL = os.environ.get('COINBACK_API_URL')
     COINBACK_FRONTEND_URL = os.environ.get('COINBACK_FRONTEND_URL')
+    STOCK_AI_URL = os.environ.get('STOCK_AI_URL')
+    STOCK_AI_SSO_SECRET = os.environ.get('STOCK_AI_SSO_SECRET')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     PERMANENT_SESSION_LIFETIME = timedelta(minutes=30)
     

@@ -1,0 +1,274 @@
+services:
+  web:
+    build: .
+    container_name: sourcepoint_app
+    restart: always
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://dev_user:dev_password@db:5432/sourcepoint_dev_db
+      - RUN_SCHEMA_ENSURE=1
+      - WEALTH_MANAGER_API_URL=http://wealth-manager-api:8080/api
+      - WEALTH_MANAGER_SSO_SECRET=${WEALTH_MANAGER_SSO_SECRET:-sourcepoint-wealth-manager-local-only-change-me}
+      - STOCK_AI_URL=http://stockai:5001
+      - STOCK_AI_SSO_SECRET=${STOCK_AI_SSO_SECRET:?Set STOCK_AI_SSO_SECRET in the SourcePoint .env file}
+      - COINBACK_API_URL=http://coinback-api:8000
+      - COINBACK_FRONTEND_URL=http://coinback-frontend:3000
+      - COINBACK_SSO_SECRET=${COINBACK_SSO_SECRET:?Set COINBACK_SSO_SECRET in the SourcePoint .env file}
+    volumes:
+      # APK files get their OWN named volume — survives container restarts,
+      # rebuilds, and code redeployments. Files are NEVER lost.
+      - apk_storage:/app/static/apks
+    depends_on:
+      db:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  db:
+    image: postgres:15
+    container_name: sourcepoint_db_dev
+    restart: always
+    environment:
+      POSTGRES_USER: dev_user
+      POSTGRES_PASSWORD: dev_password
+      POSTGRES_DB: sourcepoint_dev_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dev_user -d sourcepoint_dev_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:alpine
+    container_name: sourcepoint_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  worker:
+    build: .
+    restart: always
+    command: ["celery", "-A", "app.celery", "worker", "--loglevel=info"]
+    env_file:
+      - .env
+    environment:
+      - C_FORCE_ROOT=true
+      - DATABASE_URL=postgresql://dev_user:dev_password@db:5432/sourcepoint_dev_db
+      - RUN_SCHEMA_ENSURE=0
+    volumes:
+      - apk_storage:/app/static/apks
+    depends_on:
+      db:
+        condition: service_started
+      redis:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    deploy:
+      replicas: 2
+
+  # Celery Beat Scheduler (Required for automated emails)
+  scheduler:
+    build: .
+    container_name: sourcepoint_scheduler
+    restart: always
+    command: ["celery", "-A", "app.celery", "beat", "--loglevel=info"]
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://dev_user:dev_password@db:5432/sourcepoint_dev_db
+      - RUN_SCHEMA_ENSURE=0
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_started
+      web:
+        condition: service_healthy
+
+  wealth-manager-api:
+    build:
+      context: ./Wealth Manager/backend
+    container_name: sourcepoint_wealth_manager_api
+    restart: always
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/sourcepoint_dev_db
+      SPRING_DATASOURCE_USERNAME: dev_user
+      SPRING_DATASOURCE_PASSWORD: dev_password
+      WEALTH_MANAGER_SSO_SECRET: ${WEALTH_MANAGER_SSO_SECRET:-sourcepoint-wealth-manager-local-only-change-me}
+      APP_CORS_ALLOWED_ORIGINS: http://localhost:5000
+      DB_POOL_SIZE: "5"
+    depends_on:
+      db:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+
+  coinback-migrate:
+    build:
+      context: ./coinback-finder
+      dockerfile: backend/Dockerfile
+    image: sourcepoint-coinback-backend:latest
+    env_file:
+      - .env
+      - path: ./coinback-finder/.env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+psycopg://dev_user:dev_password@db:5432/sourcepoint_dev_db
+      COINBACK_SSO_SECRET: ${COINBACK_SSO_SECRET:?Set COINBACK_SSO_SECRET in the SourcePoint .env file}
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+    healthcheck:
+      disable: true
+    depends_on:
+      db:
+        condition: service_healthy
+
+  coinback-api:
+    build:
+      context: ./coinback-finder
+      dockerfile: backend/Dockerfile
+    image: sourcepoint-coinback-backend:latest
+    container_name: sourcepoint_coinback_api
+    restart: unless-stopped
+    env_file:
+      - .env
+      - path: ./coinback-finder/.env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+psycopg://dev_user:dev_password@db:5432/sourcepoint_dev_db
+      COINBACK_SSO_SECRET: ${COINBACK_SSO_SECRET:?Set COINBACK_SSO_SECRET in the SourcePoint .env file}
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2", "--proxy-headers"]
+    depends_on:
+      db:
+        condition: service_healthy
+      coinback-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=4)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  coinback-scanner:
+    build:
+      context: ./coinback-finder
+      dockerfile: backend/Dockerfile
+    image: sourcepoint-coinback-backend:latest
+    container_name: sourcepoint_coinback_scanner
+    restart: unless-stopped
+    env_file:
+      - .env
+      - path: ./coinback-finder/.env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+psycopg://dev_user:dev_password@db:5432/sourcepoint_dev_db
+      COINBACK_SSO_SECRET: ${COINBACK_SSO_SECRET:?Set COINBACK_SSO_SECRET in the SourcePoint .env file}
+    command: ["python", "-m", "app.scheduler"]
+    healthcheck:
+      disable: true
+    depends_on:
+      db:
+        condition: service_healthy
+      coinback-migrate:
+        condition: service_completed_successfully
+
+  coinback-frontend:
+    build:
+      context: ./coinback-finder/frontend
+      dockerfile: Dockerfile
+    image: sourcepoint-coinback-frontend:latest
+    container_name: sourcepoint_coinback_frontend
+    restart: unless-stopped
+    depends_on:
+      coinback-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/coinback/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  stockai-db:
+    image: postgres:18
+    container_name: sourcepoint_stockai_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${STOCK_AI_DB_NAME:-stock_market}
+      POSTGRES_USER: ${STOCK_AI_DB_USER:-admin}
+      POSTGRES_PASSWORD: ${STOCK_AI_DB_PASS:?Set STOCK_AI_DB_PASS in the SourcePoint .env file}
+      STOCK_AI_DB_DUMP_FILE: ${STOCK_AI_DB_DUMP_FILE:-}
+    volumes:
+      - stockai_db_data:/var/lib/postgresql
+      - ./stock_ai/db-init/20-restore-dump.sh:/docker-entrypoint-initdb.d/20-restore-dump.sh:ro
+      - type: bind
+        source: ${STOCK_AI_DB_DUMP_DIR:-./stock_ai/db-dump}
+        target: /stockai-dump
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+
+  stockai:
+    build:
+      context: ./stock_ai
+      dockerfile: Dockerfile
+    image: sourcepoint-stockai:latest
+    container_name: sourcepoint_stockai
+    restart: unless-stopped
+    environment:
+      DB_HOST: stockai-db
+      DB_PORT: 5432
+      DB_NAME: ${STOCK_AI_DB_NAME:-stock_market}
+      DB_USER: ${STOCK_AI_DB_USER:-admin}
+      DB_PASS: ${STOCK_AI_DB_PASS:?Set STOCK_AI_DB_PASS in the SourcePoint .env file}
+      SECRET_KEY: ${STOCK_AI_SSO_SECRET:?Set STOCK_AI_SSO_SECRET in the SourcePoint .env file}
+      SOURCEPOINT_SSO_SECRET: ${STOCK_AI_SSO_SECRET:?Set STOCK_AI_SSO_SECRET in the SourcePoint .env file}
+      SOURCEPOINT_SSO_REQUIRED: "true"
+      DEBUG_MODE: "false"
+      RESEARCH_REFRESH_LIMIT: ${RESEARCH_REFRESH_LIMIT:-100}
+    volumes:
+      - stockai_model_data:/app/models
+    depends_on:
+      stockai-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5001/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+
+volumes:
+  postgres_data_dev:
+  # Dedicated persistent volume for uploaded APK files
+  # This survives: container restarts, image rebuilds, code redeployments
+  apk_storage:
+  stockai_db_data:
+  stockai_model_data:
