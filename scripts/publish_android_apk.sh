@@ -56,7 +56,7 @@ fi
 
 remote_url="$(git -C "$repo_root" config --get "remote.$remote_name.url" || true)"
 [[ -n "$remote_url" ]] || fail "Could not read the Git URL for remote '$remote_name'."
-cache_dir="$(cd "$(dirname "$notes_file")" && pwd)/.sourcepoint-apk-release-repo"
+cache_dir="${TMPDIR:-/tmp}/sourcepoint-apk-release-repo-$(id -u)"
 if [[ -e "$cache_dir" && ! -d "$cache_dir/.git" ]]; then
   fail "The release cache path exists but is not a Git clone: $cache_dir"
 fi
