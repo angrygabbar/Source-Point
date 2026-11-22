@@ -33,6 +33,7 @@ jobs:
           import json
           import secrets
           from pathlib import Path
+          from urllib.parse import unquote, urlsplit
 
           env_path = Path('.env')
           lines = env_path.read_text().splitlines() if env_path.exists() else []
@@ -48,17 +49,42 @@ jobs:
           if not Path(dump_dir).expanduser().is_dir():
               raise SystemExit(f'Stock AI database dump directory is missing: {dump_dir}')
 
+          source_database_url = existing.get('DATABASE_URL')
+          if not source_database_url:
+              raise SystemExit('DATABASE_URL must be configured in the SourcePoint .env file')
+          database = urlsplit(source_database_url)
+          if database.scheme not in {'postgresql', 'postgresql+psycopg'} or not database.hostname or not database.path.strip('/'):
+              raise SystemExit('DATABASE_URL must be a PostgreSQL URL with a host and database name')
+          if database.scheme == 'postgresql':
+              coinback_database_url = 'postgresql+psycopg://' + source_database_url.split('://', 1)[1]
+          else:
+              coinback_database_url = source_database_url
+          database_host = f'[{database.hostname}]' if ':' in database.hostname else database.hostname
+          wealth_manager_jdbc_url = f'jdbc:postgresql://{database_host}:{database.port or 5432}{database.path}'
+          if database.query:
+              wealth_manager_jdbc_url += f'?{database.query}'
+          derived_database_settings = {
+              'COINBACK_DATABASE_URL': coinback_database_url,
+              'WEALTH_MANAGER_JDBC_URL': wealth_manager_jdbc_url,
+              'WEALTH_MANAGER_DB_USER': unquote(database.username or ''),
+              'WEALTH_MANAGER_DB_PASSWORD': unquote(database.password or ''),
+          }
+          if not derived_database_settings['WEALTH_MANAGER_DB_USER'] or not derived_database_settings['WEALTH_MANAGER_DB_PASSWORD']:
+              raise SystemExit('DATABASE_URL must include a username and password for integrated modules')
+
           required = {
               'STOCK_AI_SSO_SECRET': secrets.token_urlsafe(48),
               'STOCK_AI_DB_PASS': secrets.token_urlsafe(36),
               'STOCK_AI_DB_DUMP_DIR': dump_dir,
           }
           missing = {key: value for key, value in required.items() if not existing.get(key)}
-          if missing:
-              lines = [line for line in lines if not any(line.strip().startswith(f'{key}=') for key in missing)]
-              lines.extend(f'{key}={json.dumps(value) if key == "STOCK_AI_DB_DUMP_DIR" else value}' for key, value in missing.items())
+          updates = {**missing, **derived_database_settings}
+          if updates:
+              lines = [line for line in lines if not any(line.strip().startswith(f'{key}=') for key in updates)]
+              lines.extend(f'{key}={json.dumps(value.replace("$", "$$"))}' for key, value in updates.items())
               env_path.write_text('\n'.join(lines).rstrip() + '\n')
-          print('Stock AI secrets are configured and the database dump directory is available.')
+          print('Integrated module database settings are synced and Stock AI secrets are configured.')
+          print('The Stock AI database dump directory is available.')
           PY
 
       # 3. Build Docker images without touching the currently running app yet.
