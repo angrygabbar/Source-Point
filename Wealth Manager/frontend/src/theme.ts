@@ -3,7 +3,7 @@ import { alpha, createTheme } from '@mui/material/styles';
 
 export function createAppTheme(mode: PaletteMode) {
   const dark = mode === 'dark';
-  const primary = dark ? '#35c5f0' : '#007bb8';
+  const primary = dark ? '#22d3ee' : '#007bb8';
   const secondary = dark ? '#42d392' : '#00856f';
 
   return createTheme({
@@ -15,14 +15,14 @@ export function createAppTheme(mode: PaletteMode) {
       warning: { main: dark ? '#ffb454' : '#b05a00' },
       error: { main: dark ? '#ff7070' : '#b42318' },
       background: {
-        default: dark ? '#080d14' : '#f3f6f8',
-        paper: dark ? '#0e1621' : '#ffffff',
+        default: dark ? '#141415' : '#fafafa',
+        paper: dark ? '#19191b' : '#ffffff',
       },
       text: {
-        primary: dark ? '#edf5fa' : '#132031',
-        secondary: dark ? '#91a4b7' : '#5b6475',
+        primary: dark ? '#ededed' : '#171717',
+        secondary: dark ? '#a1a1a6' : '#525252',
       },
-      divider: dark ? alpha('#9bc7da', 0.15) : '#dce4e9',
+      divider: dark ? alpha('#ededed', 0.08) : alpha('#171717', 0.08),
     },
     shape: {
       borderRadius: 8,
@@ -35,6 +35,10 @@ export function createAppTheme(mode: PaletteMode) {
         'Segoe UI',
         'sans-serif',
       ].join(','),
+      fontWeightLight: 400,
+      fontWeightRegular: 400,
+      fontWeightMedium: 500,
+      fontWeightBold: 600,
       h1: { letterSpacing: 0 },
       h2: { letterSpacing: 0 },
       h3: { letterSpacing: 0 },
@@ -44,14 +48,14 @@ export function createAppTheme(mode: PaletteMode) {
       button: {
         textTransform: 'none',
         letterSpacing: 0,
-        fontWeight: 800,
+        fontWeight: 500,
       },
     },
     components: {
       MuiCssBaseline: {
         styleOverrides: {
           body: {
-            backgroundColor: dark ? '#080d14' : '#f3f6f8',
+            backgroundColor: dark ? '#141415' : '#fafafa',
           },
           '.recharts-cartesian-axis-tick-value': {
             fill: dark ? '#91a4b7' : '#5b6475',
@@ -72,6 +76,9 @@ export function createAppTheme(mode: PaletteMode) {
           root: {
             minHeight: 38,
             borderRadius: 6,
+            '@media (pointer: coarse)': {
+              minHeight: 44,
+            },
           },
         },
       },
@@ -79,8 +86,8 @@ export function createAppTheme(mode: PaletteMode) {
         styleOverrides: {
           root: {
             backgroundImage: 'none',
-            borderColor: dark ? alpha('#9bc7da', 0.16) : '#dce4e9',
-            boxShadow: dark ? '0 12px 36px rgba(0, 0, 0, 0.22)' : '0 8px 28px rgba(24, 48, 68, 0.06)',
+            borderColor: dark ? alpha('#ededed', 0.08) : alpha('#171717', 0.08),
+            boxShadow: dark ? 'none' : '0 1px 2px rgba(0, 0, 0, 0.05)',
           },
         },
       },
@@ -93,18 +100,27 @@ export function createAppTheme(mode: PaletteMode) {
         styleOverrides: {
           head: {
             color: dark ? '#91a4b7' : '#5b6475',
-            fontWeight: 800,
-            backgroundColor: dark ? '#101b28' : '#f7f9fa',
+            fontWeight: 500,
+            backgroundColor: dark ? '#232325' : '#f4f4f5',
           },
           root: {
-            borderColor: dark ? alpha('#9bc7da', 0.12) : '#e4eaee',
+            borderColor: dark ? alpha('#ededed', 0.08) : alpha('#171717', 0.08),
+          },
+        },
+      },
+      MuiTableContainer: {
+        styleOverrides: {
+          root: {
+            width: '100%',
+            maxWidth: '100%',
+            overflowX: 'auto',
           },
         },
       },
       MuiLinearProgress: {
         styleOverrides: {
           root: {
-            backgroundColor: dark ? alpha('#9bc7da', 0.12) : '#e7edf0',
+            backgroundColor: dark ? alpha('#ededed', 0.1) : '#e5e7eb',
           },
         },
       },
@@ -112,7 +128,7 @@ export function createAppTheme(mode: PaletteMode) {
         styleOverrides: {
           root: {
             borderRadius: 5,
-            fontWeight: 800,
+            fontWeight: 500,
           },
         },
       },

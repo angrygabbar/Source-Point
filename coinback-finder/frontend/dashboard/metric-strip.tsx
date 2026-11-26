@@ -40,7 +40,7 @@ export function MetricStrip({ summary, loading }: { summary?: DashboardSummary; 
   ];
 
   return (
-    <div className="grid grid-cols-2 overflow-hidden rounded-md border border-line bg-surface sm:grid-cols-4 xl:grid-cols-8">
+    <div className="grid grid-cols-2 overflow-hidden rounded-md border border-line bg-surface sm:grid-cols-4 xl:grid-cols-4">
       {metrics.map((m, i) => (
         <Link
           key={m.label}

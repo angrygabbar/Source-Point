@@ -137,7 +137,7 @@ export default function ScannerPage() {
         {!s ? (
           <Skeleton className="m-3 h-14" />
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8">
+          <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-4">
             <Stat
               label="State"
               value={

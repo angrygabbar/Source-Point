@@ -43,17 +43,17 @@ export type AppView =
   | 'reports'
   | 'profile';
 
-const views: Array<{ value: AppView; label: string; icon: ReactElement }> = [
-  { value: 'dashboard', label: 'Command Center', icon: <DashboardIcon fontSize="small" /> },
-  { value: 'monthly', label: 'Monthly Finance', icon: <PaidIcon fontSize="small" /> },
-  { value: 'budgets', label: 'Budget Control', icon: <PriceCheckIcon fontSize="small" /> },
-  { value: 'goals', label: 'Goals', icon: <FlagIcon fontSize="small" /> },
-  { value: 'investments', label: 'Investments', icon: <TrendingUpIcon fontSize="small" /> },
-  { value: 'loans', label: 'Loans', icon: <AccountBalanceWalletIcon fontSize="small" /> },
-  { value: 'analytics', label: 'Analytics Lab', icon: <QueryStatsIcon fontSize="small" /> },
-  { value: 'planning', label: 'Planning', icon: <SavingsIcon fontSize="small" /> },
-  { value: 'reports', label: 'Reports', icon: <AssessmentIcon fontSize="small" /> },
-  { value: 'profile', label: 'Profile', icon: <PersonIcon fontSize="small" /> },
+const views: Array<{ value: AppView; label: string; shortLabel: string; icon: ReactElement }> = [
+  { value: 'dashboard', label: 'Overview', shortLabel: 'Home', icon: <DashboardIcon fontSize="small" /> },
+  { value: 'monthly', label: 'Monthly finances', shortLabel: 'Monthly', icon: <PaidIcon fontSize="small" /> },
+  { value: 'budgets', label: 'Budgets', shortLabel: 'Budgets', icon: <PriceCheckIcon fontSize="small" /> },
+  { value: 'goals', label: 'Goals', shortLabel: 'Goals', icon: <FlagIcon fontSize="small" /> },
+  { value: 'investments', label: 'Investments', shortLabel: 'Invest', icon: <TrendingUpIcon fontSize="small" /> },
+  { value: 'loans', label: 'Loans', shortLabel: 'Loans', icon: <AccountBalanceWalletIcon fontSize="small" /> },
+  { value: 'analytics', label: 'Analytics', shortLabel: 'Analytics', icon: <QueryStatsIcon fontSize="small" /> },
+  { value: 'planning', label: 'Planning', shortLabel: 'Planning', icon: <SavingsIcon fontSize="small" /> },
+  { value: 'reports', label: 'Reports', shortLabel: 'Reports', icon: <AssessmentIcon fontSize="small" /> },
+  { value: 'profile', label: 'Profile', shortLabel: 'Profile', icon: <PersonIcon fontSize="small" /> },
 ];
 
 interface ShellProps {
@@ -84,7 +84,7 @@ export function Shell({
     .toUpperCase();
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
+    <Box sx={{ minHeight: '100vh', minWidth: 0, overflowX: 'hidden', backgroundColor: 'background.default' }}>
       <Box
         component="aside"
         sx={{
@@ -115,7 +115,7 @@ export function Shell({
             <SavingsIcon />
           </Box>
           <Box sx={{ minWidth: 0 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 900, lineHeight: 1.15 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.15 }}>
               Wealth OS
             </Typography>
             <Typography variant="caption" color="text.secondary">
@@ -191,11 +191,11 @@ export function Shell({
               borderColor: 'divider',
             }}
           >
-            <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main', fontSize: 13, fontWeight: 900 }}>
+            <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main', fontSize: 13, fontWeight: 600 }}>
               {initials}
             </Avatar>
             <Box sx={{ minWidth: 0, textAlign: 'left' }}>
-              <Typography variant="body2" noWrap sx={{ fontWeight: 900 }}>
+              <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
                 {user.name}
               </Typography>
               <Typography variant="caption" color="text.secondary" noWrap>
@@ -206,7 +206,7 @@ export function Shell({
         </Box>
       </Box>
 
-      <Box sx={{ ml: { xs: 0, md: '244px' }, minWidth: 0, maxWidth: { md: 'calc(100vw - 244px)' } }}>
+      <Box sx={{ ml: { xs: 0, md: '244px' }, minWidth: 0, width: { xs: '100%', md: 'calc(100% - 244px)' }, maxWidth: '100%' }}>
         <AppBar
           position="sticky"
           color="inherit"
@@ -233,7 +233,7 @@ export function Shell({
               <SavingsIcon fontSize="small" />
             </Box>
             <Box sx={{ minWidth: 0, flex: 1 }}>
-              <Typography variant="h6" noWrap sx={{ fontWeight: 900, lineHeight: 1.15 }}>
+              <Typography variant="h6" noWrap sx={{ fontWeight: 600, lineHeight: 1.15 }}>
                 {activeView.label}
               </Typography>
               <Typography variant="caption" color="text.secondary" noWrap>
@@ -259,15 +259,29 @@ export function Shell({
               variant="scrollable"
               scrollButtons="auto"
               allowScrollButtonsMobile
-              sx={{ minHeight: 48 }}
+              sx={{
+                minHeight: 58,
+                '& .MuiTabs-scrollButtons': { width: 28 },
+                '& .MuiTabs-indicator': { height: 2 },
+              }}
             >
               {views.map((view) => (
                 <Tab
                   key={view.value}
                   value={view.value}
+                  label={view.shortLabel}
                   icon={view.icon}
+                  iconPosition="top"
                   aria-label={view.label}
-                  sx={{ minWidth: 54, minHeight: 48, px: 1 }}
+                  sx={{
+                    minWidth: 70,
+                    minHeight: 58,
+                    px: 0.75,
+                    py: 0.5,
+                    fontSize: '0.68rem',
+                    lineHeight: 1.1,
+                    '& .MuiTab-iconWrapper': { mb: 0.25 },
+                  }}
                 />
               ))}
             </Tabs>
@@ -276,7 +290,7 @@ export function Shell({
 
         <Container
           maxWidth="xl"
-          sx={{ minWidth: 0, py: { xs: 2, md: 3 }, px: { xs: 1.5, sm: 2.5, lg: 3 } }}
+          sx={{ minWidth: 0, width: '100%', maxWidth: '100%', overflowX: 'hidden', py: { xs: 1.5, sm: 2, md: 3 }, px: { xs: 1, sm: 2.5, lg: 3 } }}
         >
           {children}
         </Container>

@@ -1,7 +1,14 @@
 html,
 body,
 #root {
+  width: 100%;
+  max-width: 100%;
   min-height: 100%;
+}
+
+html,
+body {
+  overflow-x: hidden;
 }
 
 body {

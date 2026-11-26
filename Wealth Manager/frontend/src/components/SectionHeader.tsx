@@ -18,7 +18,7 @@ export function SectionHeader({ title, action }: SectionHeaderProps) {
         mb: 1.5,
       }}
     >
-      <Typography variant="h6" sx={{ fontWeight: 800 }}>
+      <Typography variant="h6" sx={{ fontWeight: 600 }}>
         {title}
       </Typography>
       {action}

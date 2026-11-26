@@ -33,7 +33,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onNavigate }: { colla
       <nav className="scrollbar-thin flex-1 overflow-y-auto px-2 py-3" aria-label="Primary">
         {NAV_SECTIONS.map((section) => (
           <div key={section.title} className="mb-4">
-            <p className={cn("px-2 pb-1.5 text-2xs font-medium uppercase tracking-[0.08em] text-sidebar-muted", collapsed && "lg:sr-only")}>{section.title}</p>
+            <p className={cn("px-2 pb-1.5 text-2xs font-medium text-sidebar-muted", collapsed && "lg:sr-only")}>{section.title}</p>
             <ul className="space-y-0.5">
               {section.items.map((item) => {
                 const active = isActive(pathname, item.href);
@@ -51,7 +51,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onNavigate }: { colla
                         collapsed && "lg:justify-center lg:px-0",
                       )}
                     >
-                      {active ? <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-positive" aria-hidden /> : null}
+                      {active ? <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-accent" aria-hidden /> : null}
                       <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
                       <span className={cn("truncate", collapsed && "lg:hidden")}>{item.label}</span>
                     </Link>

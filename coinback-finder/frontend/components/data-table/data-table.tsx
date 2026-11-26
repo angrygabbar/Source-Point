@@ -160,7 +160,7 @@ export function DataTable<T>({
                     style={{ width: col.width }}
                     aria-sort={active ? (order === "asc" ? "ascending" : "descending") : undefined}
                     className={cn(
-                      "sticky top-0 z-10 h-8 whitespace-nowrap border-b border-line bg-subtle px-3 text-2xs font-medium uppercase tracking-[0.04em] text-muted",
+                      "sticky top-0 z-10 h-8 whitespace-nowrap border-b border-line bg-subtle px-3 text-2xs font-medium text-muted",
                       col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left",
                     )}
                   >

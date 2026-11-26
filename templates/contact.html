@@ -141,52 +141,20 @@
         <div class="hero-orb" style="--clr:rgba(6,182,212,0.1);width:180px;height:180px;top:10%;left:-40px;"></div>
 
         <div class="relative z-10">
-            <!-- Radar icon -->
-            <div class="relative w-16 h-16 mx-auto mb-6">
-                <div style="position:absolute;inset:0;border-radius:50%;border:1px solid rgba(99,102,241,.4);animation:radarSpin 7s linear infinite;"></div>
-                <div style="position:absolute;inset:5px;border-radius:50%;border:1px solid rgba(99,102,241,.2);animation:radarSpin 4s linear infinite reverse;"></div>
-                <div class="absolute inset-0 rounded-full bg-indigo-600/15 flex items-center justify-center">
-                    <i class="fas fa-satellite-dish text-indigo-400 text-2xl"></i>
-                </div>
-                <div class="absolute inset-0 rounded-full" style="background:conic-gradient(from 0deg,transparent 80%,rgba(99,102,241,.7) 100%);animation:radarSpin 2s linear infinite;"></div>
+            <div class="sp-card-icon w-12 h-12 rounded-xl mx-auto mb-5 text-lg">
+                <i class="fas fa-envelope" aria-hidden="true"></i>
             </div>
 
             <div class="section-label mx-auto w-fit mb-4">
-                <span class="w-1.5 h-1.5 rounded-full bg-indigo-400" style="animation:dotBlink 1.5s infinite;"></span>
-                SourcePoint · Established 2023
+                Contact
             </div>
 
             <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight mb-4 leading-tight">
-                Let's Build Something
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-cyan-400 to-emerald-400 text-neon-indigo"> Extraordinary</span>
+                Talk with SourcePoint
             </h1>
             <p class="text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed mb-8">
-                We are a full-spectrum technology company delivering software development, intelligent recruitment pipelines,
-                e-commerce infrastructure, and AI-powered solutions — all from one unified platform.
+                Tell us about your software, hiring, commerce or data workflow. We’ll help you find the right next step.
             </p>
-
-            <!-- Quick stat row -->
-            <div class="flex flex-wrap justify-center gap-8 text-center">
-                <div>
-                    <div class="text-3xl font-black text-white">20<span class="text-indigo-400">+</span></div>
-                    <div class="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5 font-bold">Engineers</div>
-                </div>
-                <div class="w-px bg-white/10"></div>
-                <div>
-                    <div class="text-3xl font-black text-white">3</div>
-                    <div class="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5 font-bold">Core Domains</div>
-                </div>
-                <div class="w-px bg-white/10"></div>
-                <div>
-                    <div class="text-3xl font-black text-white">99.9<span class="text-emerald-400">%</span></div>
-                    <div class="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5 font-bold">Uptime</div>
-                </div>
-                <div class="w-px bg-white/10"></div>
-                <div>
-                    <div class="text-3xl font-black text-white">$200K<span class="text-cyan-400">+</span></div>
-                    <div class="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5 font-bold">Transacted</div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -200,7 +168,7 @@
                 <i class="fas fa-cubes text-[10px]"></i> What We Do
             </div>
             <h2 class="text-3xl sm:text-4xl font-black text-white tracking-tight">Our Core Services</h2>
-            <p class="text-gray-500 mt-2 max-w-xl mx-auto text-sm">Three powerful domains. One integrated ecosystem.</p>
+            <p class="text-gray-500 mt-2 max-w-xl mx-auto text-sm">Services for software, hiring and commerce workflows.</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-5 stagger-children">
@@ -214,8 +182,7 @@
                 <div class="text-[9px] font-black tracking-[.2em] uppercase text-indigo-500 mb-1">Domain · 01</div>
                 <h3 class="text-xl font-black text-white mb-3">Software Development</h3>
                 <p class="text-gray-500 text-sm leading-relaxed mb-4">
-                    End-to-end software delivery from architecture to deployment. We build scalable, cloud-native web apps,
-                    APIs, automation pipelines, and enterprise dashboards using modern stacks.
+                    We build web applications, APIs, dashboards and automation to fit your project requirements.
                 </p>
                 <ul class="space-y-1.5">
                     {% for item in ['Full-Stack Web Applications','REST API & Microservices','Cloud Deployment (Docker/AWS)','Custom Admin Dashboards','Automation & AI Integration'] %}
@@ -235,8 +202,7 @@
                 <div class="text-[9px] font-black tracking-[.2em] uppercase text-violet-500 mb-1">Domain · 02</div>
                 <h3 class="text-xl font-black text-white mb-3">Recruitment Management</h3>
                 <p class="text-gray-500 text-sm leading-relaxed mb-4">
-                    An AI-augmented hiring pipeline that handles everything from job postings to onboarding —
-                    complete with automated code assessments, MCQ tests, interview scheduling and feedback.
+                    Manage job postings, applications, code assessments, interviews and feedback in one workflow.
                 </p>
                 <ul class="space-y-1.5">
                     {% for item in ['Automated Job Listing & Applications','AI Resume Screening','Live Code Test Environment','MCQ Assessment Engine','Interview Scheduling & Feedback'] %}
@@ -256,8 +222,7 @@
                 <div class="text-[9px] font-black tracking-[.2em] uppercase text-emerald-500 mb-1">Domain · 03</div>
                 <h3 class="text-xl font-black text-white mb-3">E-Commerce Platform</h3>
                 <p class="text-gray-500 text-sm leading-relaxed mb-4">
-                    A white-label marketplace infrastructure with multi-seller support, real-time inventory management,
-                    invoice generation, gift cards, and buyer-seller analytics in one place.
+                    Manage products, inventory, orders, invoices and buyer-seller activity.
                 </p>
                 <ul class="space-y-1.5">
                     {% for item in ['Multi-Seller Marketplace','Real-Time Inventory Management','Automated Invoice Generation','Gift Cards & Vouchers','Shareable Product Catalogues'] %}
@@ -272,10 +237,10 @@
         <!-- Additional services row -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4 stagger-fast">
             {% set addl = [
-                ('fa-brain','rgba(168,85,247,.1)','rgba(168,85,247,.3)','#c084fc','AI & Automation','Gemini-powered grading, smart matching, intelligent recommendations.'),
-                ('fa-project-diagram','rgba(59,130,246,.1)','rgba(59,130,246,.3)','#60a5fa','Project Management','BRD authoring, milestone tracking, EMI finance management.'),
-                ('fa-book-open','rgba(234,179,8,.1)','rgba(234,179,8,.3)','#fbbf24','Learning Hub','Structured courses in Java, C, C++, SQL, DBMS, PL/SQL for teams.'),
-                ('fa-shield-alt','rgba(16,185,129,.1)','rgba(16,185,129,.3)','#34d399','Secure Infrastructure','Docker-containerised, Redis-backed, Cloudinary-powered cloud apps.')
+                ('fa-brain','rgba(168,85,247,.1)','rgba(168,85,247,.3)','#c084fc','AI & Automation','Automation for selected review and operations workflows.'),
+                ('fa-project-diagram','rgba(59,130,246,.1)','rgba(59,130,246,.3)','#60a5fa','Project Management','Project briefs, milestones and cost records.'),
+                ('fa-book-open','rgba(234,179,8,.1)','rgba(234,179,8,.3)','#fbbf24','Learning Hub','Courses and assessments for programming and database topics.'),
+                ('fa-shield-alt','rgba(16,185,129,.1)','rgba(16,185,129,.3)','#34d399','Infrastructure','Deployment and hosting options for project needs.')
             ] %}
             {% for icon,bg,bdr,clr,title,desc in addl %}
             <div class="svc-card" style="--border-grad:linear-gradient(135deg,{{ bdr }},transparent);">
@@ -284,35 +249,6 @@
                 </div>
                 <h4 class="text-sm font-black text-white mb-1.5">{{ title }}</h4>
                 <p class="text-gray-600 text-xs leading-relaxed">{{ desc }}</p>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-
-
-    <!-- ══════════════════════════════════════
-         WHY CHOOSE US — Stats Row
-    ══════════════════════════════════════ -->
-    <div class="rounded-2xl border border-white/8 overflow-hidden"
-         style="background:linear-gradient(135deg,rgba(8,8,22,.98),rgba(4,4,12,.99));">
-        <div class="px-6 py-5 border-b border-white/6 flex items-center gap-3">
-            <div style="width:10px;height:10px;border-radius:50%;background:#6366f1;box-shadow:0 0 8px #6366f1;animation:dotBlink 1.5s infinite;"></div>
-            <h3 class="font-black text-white text-lg">Why Choose SourcePoint</h3>
-        </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-px bg-white/5">
-            {% set why = [
-                ('fa-bolt','#fbbf24','rgba(234,179,8,.1)','24h','Turnaround on support requests'),
-                ('fa-lock','#34d399','rgba(16,185,129,.1)','100%','Data privacy & secure architecture'),
-                ('fa-sitemap','#818cf8','rgba(99,102,241,.1)','3-in-1','Platform covering dev + hiring + commerce'),
-                ('fa-headset','#60a5fa','rgba(59,130,246,.1)','Dedicated','Account manager for every client')
-            ] %}
-            {% for icon,clr,bg,val,desc in why %}
-            <div class="stat-card bg-transparent rounded-none border-none flex flex-col items-center justify-center py-8 px-4 gap-3">
-                <div style="width:3rem;height:3rem;border-radius:.875rem;background:{{ bg }};display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:{{ clr }};">
-                    <i class="fas {{ icon }}"></i>
-                </div>
-                <div class="text-2xl font-black text-white">{{ val }}</div>
-                <p class="text-gray-500 text-xs text-center leading-relaxed">{{ desc }}</p>
             </div>
             {% endfor %}
         </div>
@@ -332,7 +268,7 @@
                 </div>
                 <h2 class="text-2xl font-black text-white">We'd love to<br>hear from you</h2>
                 <p class="text-gray-500 text-sm mt-2 leading-relaxed">
-                    Reach out for a demo, partnership inquiry, support request or just a conversation about how SourcePoint can power your next big idea.
+                    Send a question about a demo, partnership, support request or a SourcePoint workflow.
                 </p>
             </div>
 
@@ -345,7 +281,7 @@
                     <div>
                         <p class="text-[10px] text-gray-600 uppercase tracking-widest font-bold mb-0.5">Email</p>
                         <a href="mailto:admin@sourcepoint.in" class="text-white font-bold text-sm hover:text-indigo-300 transition-colors">admin@sourcepoint.in</a>
-                        <p class="text-gray-600 text-xs mt-0.5">We respond within 24 hours</p>
+                        <p class="text-gray-600 text-xs mt-0.5">Email us with your question.</p>
                     </div>
                 </div>
 
@@ -357,7 +293,7 @@
                         <p class="text-[10px] text-gray-600 uppercase tracking-widest font-bold mb-0.5">WhatsApp</p>
                         <a href="https://wa.me/919404022998?text=Hi%2C%20I%27d%20like%20to%20learn%20more%20about%20SourcePoint." target="_blank"
                            class="text-white font-bold text-sm hover:text-emerald-300 transition-colors">Chat with us on WhatsApp</a>
-                        <p class="text-gray-600 text-xs mt-0.5">Instant response during business hours</p>
+                        <p class="text-gray-600 text-xs mt-0.5">Message us about your project.</p>
                     </div>
                 </div>
 
@@ -366,9 +302,9 @@
                         <i class="fas fa-globe"></i>
                     </div>
                     <div>
-                        <p class="text-[10px] text-gray-600 uppercase tracking-widest font-bold mb-0.5">Location</p>
-                        <p class="text-white font-bold text-sm">100% Online Platform</p>
-                        <p class="text-gray-600 text-xs mt-0.5">Serving clients worldwide, remotely</p>
+                        <p class="text-[10px] text-gray-600 uppercase tracking-widest font-bold mb-0.5">Availability</p>
+                        <p class="text-white font-bold text-sm">Remote enquiries</p>
+                        <p class="text-gray-600 text-xs mt-0.5">Contact us to discuss your project.</p>
                     </div>
                 </div>
 
@@ -386,29 +322,11 @@
 
             <!-- WhatsApp CTA -->
             <a href="https://wa.me/919404022998?text=Hi%2C%20I%27d%20like%20to%20learn%20more%20about%20SourcePoint." target="_blank"
-               class="flex items-center justify-center gap-3 w-full py-3.5 rounded-xl font-black text-white text-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/20"
+               class="contact-action-link flex items-center justify-center gap-3 w-full py-3.5 rounded-xl font-black text-white text-sm transition-all"
                style="background:linear-gradient(135deg,#128C7E,#25D366);">
                 <i class="fab fa-whatsapp text-lg"></i> Chat on WhatsApp
             </a>
 
-            <!-- Social links -->
-            <div class="pt-2">
-                <p class="text-[10px] text-gray-600 uppercase tracking-widest font-bold mb-3">Follow Us</p>
-                <div class="flex gap-3">
-                    {% for icon,href,clr,bg in [
-                        ('fa-linkedin','#','#0A66C2','rgba(10,102,194,.12)'),
-                        ('fa-twitter','#','#1DA1F2','rgba(29,161,242,.12)'),
-                        ('fa-github','#','#f1f5f9','rgba(255,255,255,.06)'),
-                        ('fa-instagram','#','#E1306C','rgba(225,48,108,.12)')
-                    ] %}
-                    <a href="{{ href }}" target="_blank"
-                       class="w-10 h-10 rounded-xl flex items-center justify-center text-sm transition-all hover:-translate-y-1 hover:scale-110"
-                       style="background:{{ bg }};border:1px solid {{ bg.replace('.12',',.3)').replace('(','(') }};color:{{ clr }};">
-                        <i class="fab {{ icon }}"></i>
-                    </a>
-                    {% endfor %}
-                </div>
-            </div>
         </div>
 
         <!-- RIGHT: Enquiry form -->
@@ -417,10 +335,10 @@
                  style="background:linear-gradient(145deg,rgba(10,10,25,.97),rgba(5,5,14,.99));">
 
                 <!-- Top accent line -->
-                <div class="absolute top-0 left-0 right-0 h-[2px]"
+                <div class="contact-top-accent absolute top-0 left-0 right-0 h-[2px]"
                      style="background:linear-gradient(90deg,transparent,#6366f1,#06b6d4,transparent);box-shadow:0 0 12px rgba(99,102,241,.5);"></div>
                 <!-- Hex bg -->
-                <svg class="absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
+                <svg class="contact-form-pattern absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
                     <defs><pattern id="fhex" width="40" height="35" patternUnits="userSpaceOnUse">
                         <polygon points="20,2 38,12 38,24 20,34 2,24 2,12" fill="none" stroke="rgba(99,102,241,1)" stroke-width=".7"/>
                     </pattern></defs>
@@ -439,7 +357,7 @@
                         </div>
                         <div>
                             <h3 class="text-lg font-black text-white">Send an Enquiry</h3>
-                            <p class="text-gray-600 text-xs">We'll get back to you within 24 hours</p>
+                            <p class="text-gray-600 text-xs">Our team will review your message.</p>
                         </div>
                     </div>
 
@@ -514,7 +432,7 @@
 
                         <p class="text-center text-[10px] text-gray-600 pt-1">
                             <i class="fas fa-lock text-[9px] mr-1"></i>
-                            Your information is secure and will never be shared with third parties.
+                            We’ll use your details to respond to this enquiry.
                         </p>
                     </form>
                 </div>
@@ -529,11 +447,11 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         <!-- Location card (replaces unreliable iframe embed) -->
-        <div class="relative rounded-2xl overflow-hidden border border-blue-500/20 flex flex-col items-center justify-center p-8 text-center"
+        <div class="contact-channel-card relative rounded-2xl overflow-hidden border border-blue-500/20 flex flex-col items-center justify-center p-8 text-center"
              style="background:linear-gradient(145deg,rgba(8,10,24,.98),rgba(4,6,16,.99));min-height:260px;">
 
             <!-- Animated world grid SVG background -->
-            <svg class="absolute inset-0 w-full h-full opacity-[0.04]" xmlns="http://www.w3.org/2000/svg">
+            <svg class="contact-world-grid absolute inset-0 w-full h-full opacity-[0.04]" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                     <pattern id="world-grid" width="40" height="40" patternUnits="userSpaceOnUse">
                         <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(59,130,246,1)" stroke-width="0.8"/>
@@ -546,36 +464,28 @@
             <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,.1),transparent 70%);pointer-events:none;"></div>
 
             <!-- Top accent line -->
-            <div class="absolute top-0 left-0 right-0 h-[2px]"
+            <div class="contact-top-accent absolute top-0 left-0 right-0 h-[2px]"
                  style="background:linear-gradient(90deg,transparent,#3b82f6,transparent);"></div>
 
             <div class="relative z-10">
-                <!-- Animated globe icon -->
-                <div class="relative w-16 h-16 mx-auto mb-5">
-                    <div style="position:absolute;inset:0;border-radius:50%;border:1px solid rgba(59,130,246,.4);animation:radarSpin 8s linear infinite;"></div>
-                    <div style="position:absolute;inset:5px;border-radius:50%;border:1px solid rgba(59,130,246,.2);animation:radarSpin 5s linear infinite reverse;"></div>
-                    <div class="absolute inset-0 rounded-full flex items-center justify-center"
-                         style="background:rgba(59,130,246,.12);">
-                        <i class="fas fa-globe-asia text-blue-400 text-2xl" style="animation:floatY 3s ease-in-out infinite;"></i>
-                    </div>
-                    <div class="absolute inset-0 rounded-full"
-                         style="background:conic-gradient(from 0deg,transparent 80%,rgba(59,130,246,.6) 100%);animation:radarSpin 2.5s linear infinite;"></div>
+                <div class="sp-card-icon w-12 h-12 rounded-xl mx-auto mb-5 text-lg">
+                    <i class="fas fa-envelope" aria-hidden="true"></i>
                 </div>
 
-                <p class="text-[9px] font-black tracking-[.25em] uppercase text-blue-500 mb-2">100% Online Platform</p>
-                <h3 class="text-xl font-black text-white mb-2">Serving Clients Worldwide</h3>
+                <p class="text-[9px] font-black tracking-[.25em] uppercase text-blue-500 mb-2">Contact</p>
+                <h3 class="text-xl font-black text-white mb-2">Talk with our team</h3>
                 <p class="text-gray-500 text-sm mb-5 max-w-xs">
-                    We operate entirely online, delivering software, recruitment and e-commerce solutions to businesses across India and beyond.
+                    Tell us what you’re building or where your workflow needs support.
                 </p>
 
                 <div class="flex flex-wrap justify-center gap-3">
                     <a href="mailto:admin@sourcepoint.in"
-                       class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-blue-300 transition-all hover:-translate-y-0.5 hover:bg-blue-500/15"
+                       class="contact-action-link inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-blue-300 transition-all hover:-translate-y-0.5 hover:bg-blue-500/15"
                        style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);">
                         <i class="fas fa-envelope text-[11px]"></i> admin@sourcepoint.in
                     </a>
                     <a href="https://wa.me/919404022998" target="_blank"
-                       class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-300 transition-all hover:-translate-y-0.5 hover:bg-emerald-500/15"
+                       class="contact-action-link inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-300 transition-all hover:-translate-y-0.5 hover:bg-emerald-500/15"
                        style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);">
                         <i class="fab fa-whatsapp text-[11px]"></i> Chat on WhatsApp
                     </a>
@@ -584,20 +494,18 @@
         </div>
 
         <!-- Final CTA card -->
-        <div class="relative rounded-2xl overflow-hidden border border-indigo-500/25 flex flex-col justify-between p-7"
+        <div class="contact-cta-card relative rounded-2xl overflow-hidden border border-indigo-500/25 flex flex-col justify-between p-7"
              style="background:linear-gradient(145deg,rgba(10,10,28,.97),rgba(5,5,16,.99));">
-            <div class="absolute top-0 left-0 right-0 h-[2px]" style="background:linear-gradient(90deg,transparent,#6366f1,transparent);"></div>
+            <div class="contact-top-accent absolute top-0 left-0 right-0 h-[2px]" style="background:linear-gradient(90deg,transparent,#6366f1,transparent);"></div>
             <div style="position:absolute;right:-30px;bottom:-30px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,.12),transparent 70%);pointer-events:none;"></div>
 
             <div class="relative z-10">
-                <div class="w-12 h-12 rounded-xl mb-5 flex items-center justify-center text-indigo-400 text-xl"
-                     style="background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);">
-                    <i class="fas fa-rocket" style="animation:floatY 3s ease-in-out infinite;"></i>
+                <div class="sp-card-icon w-12 h-12 rounded-xl mb-5 flex items-center justify-center text-lg">
+                    <i class="fas fa-envelope" aria-hidden="true"></i>
                 </div>
-                <h3 class="text-2xl font-black text-white mb-3 leading-tight">Ready to transform<br>your business?</h3>
+                <h3 class="text-2xl font-black text-white mb-3 leading-tight">Need help with a workflow?</h3>
                 <p class="text-gray-500 text-sm leading-relaxed mb-6">
-                    Whether you're a startup looking to hire fast, an enterprise scaling e-commerce, or a team needing custom software —
-                    SourcePoint is your single platform for it all.
+                    Share your goals and we can discuss the tools and scope that fit.
                 </p>
 
                 <div class="space-y-3">
@@ -605,7 +513,7 @@
                        class="glow-btn flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-black text-white
                               bg-gradient-to-r from-indigo-600 to-violet-700 hover:from-indigo-500 hover:to-violet-600
                               shadow-lg shadow-indigo-900/50 hover:shadow-indigo-500/25 hover:-translate-y-0.5 transition-all">
-                        <i class="fas fa-arrow-right text-xs"></i> Get Started Free
+                        <i class="fas fa-arrow-right text-xs"></i> Sign in
                     </a>
                     <a href="https://wa.me/919404022998?text=Hi%2C%20I%20want%20a%20demo%20of%20SourcePoint." target="_blank"
                        class="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold text-gray-300

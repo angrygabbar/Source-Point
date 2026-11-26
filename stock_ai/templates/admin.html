@@ -12,7 +12,7 @@
                     style="background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(168,85,247,0.1));">
                     <i class="fa-solid fa-gear text-blue-400 text-[10px]"></i>
                 </div>
-                System Triggers
+                Data and model tasks
             </h3>
 
             <div class="space-y-2.5">
@@ -22,7 +22,7 @@
                     <span class="flex items-center gap-2.5">
                         <i
                             class="fa-solid fa-rotate text-blue-400/70 text-xs transition-transform duration-500 group-hover:rotate-180"></i>
-                        Force DB Update
+                        Update market data
                     </span>
                     <span
                         class="opacity-0 group-hover:opacity-100 text-[10px] font-display tracking-wider text-blue-400 transition-all duration-300">RUN</span>
@@ -34,7 +34,7 @@
                     <span class="flex items-center gap-2.5">
                         <i
                             class="fa-solid fa-crosshairs text-green-400/70 text-xs transition-transform duration-500 group-hover:scale-110"></i>
-                        Run AI Hunter
+                        Generate stock signals
                     </span>
                     <span
                         class="opacity-0 group-hover:opacity-100 text-[10px] font-display tracking-wider text-green-400 transition-all duration-300">RUN</span>
@@ -45,7 +45,7 @@
                     style="background: linear-gradient(135deg, rgba(59,130,246,0.06), rgba(139,92,246,0.04)); border: 1px solid rgba(59,130,246,0.12); color: #60a5fa;">
                     <span class="flex items-center gap-2.5">
                         <i class="fa-solid fa-brain text-purple-400 text-xs animate-neon-pulse"></i>
-                        Retrain AI Model
+                        Train model
                     </span>
                     <span
                         class="opacity-0 group-hover:opacity-100 text-[10px] font-display tracking-wider text-purple-400 transition-all duration-300">START</span>
@@ -53,39 +53,10 @@
             </div>
         </div>
 
-        <!-- SYSTEM HEALTH -->
+        <!-- TASK STATUS -->
         <div class="glass-panel p-6 rounded-2xl reveal delay-1">
-            <h3 class="text-white font-bold mb-4 text-sm">System Health</h3>
-            <div class="space-y-3">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2.5">
-                        <div class="relative">
-                            <div class="h-2.5 w-2.5 rounded-full bg-green-500"></div>
-                            <div class="absolute inset-0 h-2.5 w-2.5 rounded-full bg-green-500 animate-ping opacity-40">
-                            </div>
-                        </div>
-                        <span class="text-sm text-gray-400">Scheduler</span>
-                    </div>
-                    <span class="text-[9px] font-display tracking-wider px-2.5 py-1 rounded-full"
-                        style="background: rgba(16,185,129,0.08); color: #34d399; border: 1px solid rgba(16,185,129,0.15);">ACTIVE</span>
-                </div>
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2.5">
-                        <div class="h-2.5 w-2.5 rounded-full bg-green-500"></div>
-                        <span class="text-sm text-gray-400">Database</span>
-                    </div>
-                    <span class="text-[9px] font-display tracking-wider px-2.5 py-1 rounded-full"
-                        style="background: rgba(16,185,129,0.08); color: #34d399; border: 1px solid rgba(16,185,129,0.15);">CONNECTED</span>
-                </div>
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2.5">
-                        <div class="h-2.5 w-2.5 rounded-full bg-blue-500 animate-pulse"></div>
-                        <span class="text-sm text-gray-400">AI Model</span>
-                    </div>
-                    <span class="text-[9px] font-display tracking-wider px-2.5 py-1 rounded-full"
-                        style="background: rgba(59,130,246,0.08); color: #60a5fa; border: 1px solid rgba(59,130,246,0.15);">LOADED</span>
-                </div>
-            </div>
+            <h3 class="text-white font-medium mb-3 text-sm">Task status</h3>
+            <p class="text-sm text-gray-500 leading-relaxed">Results from data updates and model tasks appear in the activity log.</p>
         </div>
     </div>
 
@@ -105,18 +76,17 @@
                         <div class="w-3 h-3 rounded-full" style="background: #febc2e;"></div>
                         <div class="w-3 h-3 rounded-full" style="background: #28c840;"></div>
                     </div>
-                    <span class="text-gray-400 ml-2">Terminal Output</span>
+                    <span class="text-gray-400 ml-2">Activity log</span>
                 </h3>
                 <span class="text-[9px] font-display tracking-wider text-gray-600 uppercase flex items-center gap-2">
                     <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                    Live Socket.IO Stream
+                    Task activity
                 </span>
             </div>
 
             <div id="consoleOutput" class="flex-1 p-5 font-mono text-xs overflow-y-auto space-y-1 terminal-text"
                 style="background: rgba(0,0,0,0.4);">
-                <div class="text-green-400" style="text-shadow: 0 0 6px rgba(52,211,153,0.3);">root@stockai:~$
-                    system_monitor --attach</div>
+                <div id="emptyLogState" class="text-gray-500">No task activity yet.</div>
             </div>
         </div>
     </div>
@@ -162,6 +132,7 @@
     });
 
     function logToScreen(text, colorClass = "text-gray-400") {
+        document.getElementById('emptyLogState')?.remove();
         const line = document.createElement('div');
         line.className = `pb-1 ${colorClass} transition-all duration-300`;
         line.style.cssText = "border-bottom: 1px solid rgba(255,255,255,0.02); animation: fadeSlideIn 0.3s ease-out;";
@@ -180,7 +151,7 @@
     }
 
     async function trainModel() {
-        logToScreen("> 🧠 Triggering AI Model Training...", "neon-text-purple");
+        logToScreen("> Triggering model training...", "neon-text-purple");
         try {
             await fetch(`${window.STOCK_AI_PREFIX}/api/trigger_training`, { method: 'POST' });
         } catch (e) {

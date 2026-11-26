@@ -38,10 +38,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen min-w-0 overflow-x-hidden">
       <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} mobileOpen={mobileOpen} onNavigate={() => setMobileOpen(false)} />
       {mobileOpen ? <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={() => setMobileOpen(false)} aria-hidden /> : null}
-      <div className={cn("flex min-h-screen flex-col transition-[padding] duration-150", collapsed ? "lg:pl-14" : "lg:pl-56")}>
+      <div className={cn("flex min-h-screen min-w-0 flex-col transition-[padding] duration-150", collapsed ? "lg:pl-14" : "lg:pl-56")}>
         <Topbar onMenu={() => setMobileOpen(true)} onSearch={() => setPaletteOpen(true)} />
         <main className="flex-1 px-3 py-4 lg:px-5">{children}</main>
       </div>

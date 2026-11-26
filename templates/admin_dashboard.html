@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}Master Command Center{% endblock %}
+{% block title %}Admin dashboard{% endblock %}
 
 {% block content %}
 <style>
@@ -272,16 +272,14 @@
                     </div>
                     <div>
                         <div class="flex items-center gap-2 mb-0.5">
-                            <span class="text-[9px] font-black tracking-[0.3em] uppercase text-indigo-400">SourcePoint OS</span>
+                            <span class="text-[9px] font-black tracking-[0.3em] uppercase text-indigo-400">Administration</span>
                             <span class="w-1.5 h-1.5 rounded-full bg-indigo-400" style="animation:dotBlink 1.5s ease-in-out infinite;"></span>
                         </div>
                         <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight leading-none" style="animation:glitchIn .6s ease forwards;">
-                            Master Command Center
+                            Admin dashboard
                         </h1>
                         <p class="text-gray-500 text-xs mt-1">
-                            Welcome back, <span class="text-indigo-300 font-bold">{{ current_user.username }}</span>
-                            <span class="text-gray-700 mx-1.5">·</span>
-                            <span class="text-gray-600">Select a domain module below</span>
+                            Manage users, projects and platform operations
                         </p>
                     </div>
                 </div>
@@ -291,11 +289,11 @@
                     <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold"
                          style="background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.3);color:#34d399;">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400" style="animation:dotBlink 2s ease-in-out infinite;"></span>
-                        Systems Online
+                        Admin access
                     </div>
                     <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold"
                          style="background:rgba(99,102,241,.08);border-color:rgba(99,102,241,.3);color:#818cf8;">
-                        <i class="fas fa-shield-alt text-[9px]"></i> Secure Mode
+                        <i class="fas fa-shield-alt text-[9px]"></i> Access controls
                     </div>
                     <a href="{{ url_for('admin.activity_tracker') }}" target="_blank"
                        class="glow-btn inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-purple-700 to-blue-700 hover:-translate-y-0.5 transition-all">
@@ -895,13 +893,13 @@
             {% endif %}
         </div>
 
-        <!-- Live Telemetry -->
+        <!-- Recent activity -->
         <div class="glass-panel-v2 rounded-2xl border border-white/8 overflow-hidden">
             <div class="flex items-center justify-between px-5 py-4 border-b border-white/6"
                  style="background:linear-gradient(90deg,rgba(168,85,247,.06),transparent);">
                 <div class="flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-purple-400" style="animation:dotBlink 1.2s ease-in-out infinite;box-shadow:0 0 6px #a855f7;"></span>
-                    <h3 class="text-sm font-bold text-white">Live Telemetry</h3>
+                    <h3 class="text-sm font-bold text-white">Recent activity</h3>
                 </div>
                 <a hx-get="{{ url_for('admin_core.admin_activity_logs') }}" hx-target="#main-content" hx-select="#main-content" hx-push-url="true" hx-swap="outerHTML transition:true"
                    class="text-[10px] font-bold text-purple-400 hover:text-white transition-colors cursor-pointer uppercase tracking-widest">
@@ -924,7 +922,7 @@
                 {% else %}
                 <div class="flex flex-col items-center justify-center py-12 text-gray-700">
                     <i class="fas fa-satellite-dish text-3xl mb-3 opacity-20"></i>
-                    <p class="text-xs font-medium text-gray-600">No signals detected.</p>
+                    <p class="text-xs font-medium text-gray-600">No recent activity.</p>
                 </div>
                 {% endfor %}
             </div>

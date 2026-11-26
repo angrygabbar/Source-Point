@@ -220,7 +220,7 @@ export function MonthlyFinanceView({ onChanged }: MonthlyFinanceViewProps) {
         <Box sx={{ display: 'grid', gap: 2 }}>
           {groups.map((group) => (
             <Box key={group.title}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
                 {group.title}
               </Typography>
               <Box

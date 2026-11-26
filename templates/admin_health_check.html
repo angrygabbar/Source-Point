@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}Server Health — Command Center{% endblock %}
+{% block title %}Health check{% endblock %}
 
 {% block content %}
 <style>
@@ -106,8 +106,7 @@
                             <span class="w-1.5 h-1.5 rounded-full" style="background:{% if overall_status == 'HEALTHY' %}#34d399{% elif overall_status == 'WARNING' %}#fbbf24{% else %}#f87171{% endif %};animation:dotBlink 1.5s ease-in-out infinite;"></span>
                         </div>
                         <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight" style="animation:glitchIn .5s ease forwards;">
-                            {% if overall_status == 'HEALTHY' %}🟢{% elif overall_status == 'WARNING' %}🟡{% else %}🔴{% endif %}
-                            System {{ overall_status }}
+                            System {{ overall_status|title }}
                         </h1>
                         <p class="text-gray-500 text-xs mt-1">{{ report_time }}</p>
                     </div>

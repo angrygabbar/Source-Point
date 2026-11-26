@@ -245,7 +245,7 @@ export function LoansView({ onChanged }: LoansViewProps) {
 
       {simulation && (
         <Paper variant="outlined" sx={{ p: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 900, mb: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
             Prepayment Simulation
           </Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' }, gap: 1.5 }}>

@@ -107,6 +107,8 @@
   }
   .eyebrow {
     @apply text-2xs font-medium uppercase tracking-[0.06em] text-faint;
+    text-transform: none;
+    letter-spacing: 0.01em;
   }
 }
 

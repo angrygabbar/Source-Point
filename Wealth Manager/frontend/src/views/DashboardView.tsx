@@ -85,7 +85,7 @@ export function DashboardView({ dashboard }: DashboardViewProps) {
             <Chip icon={<SyncIcon />} size="small" color="success" variant="outlined" label="Data synced" />
             {activeMonth && <Chip icon={<CalendarMonthIcon />} size="small" variant="outlined" label={monthLabel(activeMonth)} />}
           </Box>
-          <Typography variant="h5" sx={{ fontWeight: 900 }}>
+          <Typography variant="h5" sx={{ fontWeight: 600 }}>
             Wealth Pulse
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -96,7 +96,7 @@ export function DashboardView({ dashboard }: DashboardViewProps) {
           <Typography variant="caption" color="text.secondary">
             Savings efficiency
           </Typography>
-          <Typography variant="h6" sx={{ fontWeight: 900 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
             {formatPercent(snapshot.savingsRate)}
           </Typography>
         </Box>
@@ -104,7 +104,7 @@ export function DashboardView({ dashboard }: DashboardViewProps) {
           <Typography variant="caption" color="text.secondary">
             Emergency runway
           </Typography>
-          <Typography variant="h6" sx={{ fontWeight: 900 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
             {emergencyRunway.toFixed(1)} months
           </Typography>
         </Box>
@@ -112,7 +112,7 @@ export function DashboardView({ dashboard }: DashboardViewProps) {
           <Typography variant="caption" color="text.secondary">
             Active goals
           </Typography>
-          <Typography variant="h6" sx={{ fontWeight: 900 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
             {dashboard.goals.length}
           </Typography>
         </Box>
@@ -152,7 +152,7 @@ export function DashboardView({ dashboard }: DashboardViewProps) {
               />
               <Box sx={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}>
                 <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="h4" sx={{ fontWeight: 900, lineHeight: 1 }}>
+                  <Typography variant="h4" sx={{ fontWeight: 600, lineHeight: 1 }}>
                     {dashboard.financialHealth.score}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -169,7 +169,7 @@ export function DashboardView({ dashboard }: DashboardViewProps) {
                   <Typography variant="body2" color="text.secondary">
                     {item.label}
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
                     {item.value.toFixed(1)} / {item.max}
                   </Typography>
                 </Box>
@@ -183,7 +183,7 @@ export function DashboardView({ dashboard }: DashboardViewProps) {
           <SectionHeader title="Goal And Fund Progress" />
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
             <Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 700 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
                 Emergency Fund
               </Typography>
               <LinearProgress
@@ -203,7 +203,7 @@ export function DashboardView({ dashboard }: DashboardViewProps) {
               {dashboard.goals.slice(0, 4).map((goal) => (
                 <Box key={goal.id}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {goal.goalName}
                     </Typography>
                     <Typography variant="body2">{formatPercent(goal.progressPercentage)}</Typography>

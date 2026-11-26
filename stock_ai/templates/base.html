@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StockAi | Quant Fusion OS</title>
+    <title>Stock AI | Market research</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>window.STOCK_AI_PREFIX = {{ request.script_root|tojson }};</script>
@@ -18,7 +18,7 @@
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
                         mono: ['JetBrains Mono', 'monospace'],
-                        display: ['Orbitron', 'sans-serif'],
+                        display: ['Inter', 'sans-serif'],
                     },
                     colors: {
                         bg: '#050508',
@@ -89,9 +89,9 @@
         /* === SCROLLBAR === */
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: #050508; }
-        ::-webkit-scrollbar-thumb { 
-            background: linear-gradient(180deg, #1e3a5f, #3b82f6); 
-            border-radius: 10px; 
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #1e3a5f, #3b82f6);
+            border-radius: 10px;
         }
         ::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #3b82f6, #60a5fa); }
 
@@ -264,8 +264,9 @@
             background: rgba(59, 130, 246, 0.12);
         }
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/stock-ai-unslop.css') }}">
 </head>
-<body class="flex h-screen min-w-0 overflow-hidden text-sm selection:bg-blue-500/30">
+<body class="stock-ai flex h-screen min-w-0 overflow-hidden text-sm selection:bg-blue-500/30">
 
     <!-- PARTICLE CANVAS -->
     <canvas id="particleCanvas"></canvas>
@@ -279,14 +280,14 @@
                         <i class="fa-solid fa-layer-group text-white text-xs relative z-10"></i>
                     </div>
                     <div>
-                        <h1 class="font-display font-bold tracking-tight text-white text-sm">STOCK<span class="text-blue-400">Ai</span> <span class="text-[9px] text-gray-600 font-sans font-normal ml-0.5">v5.0</span></h1>
+                        <h1 class="font-display font-bold tracking-tight text-white text-sm">Stock AI</h1>
                     </div>
                 </div>
             </div>
 
             <nav class="p-4 space-y-1">
-                <div class="text-[9px] uppercase tracking-[0.2em] text-gray-600 font-display font-medium mb-3 px-2 mt-4">Terminal</div>
-                
+                <div class="text-[9px] uppercase tracking-[0.2em] text-gray-600 font-display font-medium mb-3 px-2 mt-4">Workspace</div>
+
                 <a href="{{ request.script_root }}/dashboard" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.03] transition-all duration-300 group">
                     <i class="fa-solid fa-chart-line w-5 text-center transition-colors duration-300 group-hover:text-blue-400"></i>
                     <span class="text-[13px]">Dashboard</span>
@@ -294,12 +295,12 @@
 
                 <a href="{{ request.script_root }}/analysis" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.03] transition-all duration-300 group">
                     <i class="fa-solid fa-magnifying-glass-chart w-5 text-center transition-colors duration-300 group-hover:text-purple-400"></i>
-                    <span class="text-[13px]">Deep Analysis</span>
+                    <span class="text-[13px]">Analysis</span>
                 </a>
 
                 <a href="{{ request.script_root }}/screener" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.03] transition-all duration-300 group">
                     <i class="fa-solid fa-satellite-dish w-5 text-center transition-colors duration-300 group-hover:text-green-400"></i>
-                    <span class="text-[13px]">Market Radar</span>
+                    <span class="text-[13px]">Screener</span>
                 </a>
 
                 <a href="{{ request.script_root }}/portfolio" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.03] transition-all duration-300 group">
@@ -307,11 +308,11 @@
                     <span class="text-[13px]">Portfolio</span>
                 </a>
 
-                <div class="text-[9px] uppercase tracking-[0.2em] text-gray-600 font-display font-medium mb-3 px-2 mt-6">System</div>
+                <div class="text-[9px] uppercase tracking-[0.2em] text-gray-600 font-display font-medium mb-3 px-2 mt-6">Administration</div>
 
                 <a href="{{ request.script_root }}/admin" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.03] transition-all duration-300 group">
                     <i class="fa-solid fa-server w-5 text-center transition-colors duration-300 group-hover:text-red-400"></i>
-                    <span class="text-[13px]">Admin Control</span>
+                    <span class="text-[13px]">Admin tools</span>
                 </a>
             </nav>
         </div>
@@ -322,10 +323,8 @@
                     <i class="fa-solid fa-user-astronaut text-xs text-gray-400"></i>
                 </div>
                 <div class="flex-1">
-                    <div class="text-xs font-medium text-white">Quant Admin</div>
-                    <div class="text-[10px] text-green-400 flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-breathe"></span> Online
-                    </div>
+                    <div class="text-xs font-medium text-white">Stock AI</div>
+
                 </div>
             </div>
         </div>
@@ -345,11 +344,11 @@
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <i class="fa-solid fa-search text-gray-600 text-xs"></i>
                     </div>
-                    <input type="text" 
+                    <input type="text"
                            class="search-glow bg-white/[0.03] border border-white/[0.06] text-gray-300 text-xs rounded-full focus:ring-0 w-40 md:w-64 pl-8 p-2 transition-all duration-300 outline-none"
-                           placeholder="Search ticker or command... (Cmd+K)">
+                           placeholder="Search ticker">
                 </div>
-                
+
                 <button class="w-8 h-8 rounded-full bg-white/[0.03] border border-white/[0.06] flex items-center justify-center hover:bg-white/[0.06] transition-all duration-300 text-gray-400 relative hover-glow">
                     <i class="fa-regular fa-bell text-xs"></i>
                     <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-black animate-breathe"></span>
@@ -365,10 +364,10 @@
                 <i class="fa-solid fa-chart-line text-xs" aria-hidden="true"></i><span>Home</span>
             </a>
             <a href="{{ request.script_root }}/analysis" class="mobile-nav-link {% if request.path.endswith('/analysis') %}active{% endif %} flex flex-col items-center justify-center gap-1 rounded-lg px-1 py-1.5 text-[9px]" {% if request.path.endswith('/analysis') %}aria-current="page"{% endif %}>
-                <i class="fa-solid fa-magnifying-glass-chart text-xs" aria-hidden="true"></i><span>Analyze</span>
+                <i class="fa-solid fa-magnifying-glass-chart text-xs" aria-hidden="true"></i><span>Analysis</span>
             </a>
             <a href="{{ request.script_root }}/screener" class="mobile-nav-link {% if request.path.endswith('/screener') %}active{% endif %} flex flex-col items-center justify-center gap-1 rounded-lg px-1 py-1.5 text-[9px]" {% if request.path.endswith('/screener') %}aria-current="page"{% endif %}>
-                <i class="fa-solid fa-satellite-dish text-xs" aria-hidden="true"></i><span>Radar</span>
+                <i class="fa-solid fa-satellite-dish text-xs" aria-hidden="true"></i><span>Screener</span>
             </a>
             <a href="{{ request.script_root }}/portfolio" class="mobile-nav-link {% if request.path.endswith('/portfolio') %}active{% endif %} flex flex-col items-center justify-center gap-1 rounded-lg px-1 py-1.5 text-[9px]" {% if request.path.endswith('/portfolio') %}aria-current="page"{% endif %}>
                 <i class="fa-solid fa-briefcase text-xs" aria-hidden="true"></i><span>Portfolio</span>

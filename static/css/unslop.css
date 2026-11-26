@@ -1,0 +1,616 @@
+/* SourcePoint interface direction: precise, technical, steady. */
+/* Design pass informed by Unslop by Damir Sokolovsky (@heydamir), CC BY 4.0. */
+:root {
+    color-scheme: dark;
+    --sp-bg: #141415;
+    --sp-sidebar: #0f0f10;
+    --sp-card: #19191b;
+    --sp-raised: #232325;
+    --sp-line: rgba(237, 237, 237, 0.08);
+    --sp-text: #ededed;
+    --sp-secondary: #a1a1a6;
+    --sp-muted: #85858b;
+    --sp-cyan: #22d3ee;
+    --sp-primary-action: #ededed;
+    --sp-motion: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html,
+body.sp-cyber-theme {
+    background: var(--sp-bg) !important;
+    color: var(--sp-text) !important;
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+body.sp-cyber-theme {
+    min-height: 100vh;
+    background-image: none !important;
+}
+
+body.sp-cyber-theme::selection {
+    color: var(--sp-text);
+    background: rgba(34, 211, 238, 0.24);
+}
+
+body.sp-cyber-theme [class*="bg-[#00000a]"] {
+    background-color: var(--sp-bg) !important;
+}
+
+body.sp-cyber-theme [class~="fixed"][class*="bg-gradient-to-b"] {
+    background-image: none !important;
+    background-color: transparent !important;
+}
+
+body.sp-cyber-theme h1,
+body.sp-cyber-theme h2,
+body.sp-cyber-theme h3,
+body.sp-cyber-theme h4,
+body.sp-cyber-theme .brand-wordmark {
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+    font-weight: 500 !important;
+    letter-spacing: 0 !important;
+    text-shadow: none !important;
+}
+
+body.sp-cyber-theme .font-black,
+body.sp-cyber-theme .font-extrabold,
+body.sp-cyber-theme .font-bold {
+    font-weight: 500 !important;
+}
+
+body.sp-cyber-theme .font-semibold {
+    font-weight: 600 !important;
+}
+
+body.sp-cyber-theme [class~="uppercase"] {
+    text-transform: none !important;
+    letter-spacing: 0.01em !important;
+}
+
+body.sp-cyber-theme .text-neon-purple,
+body.sp-cyber-theme [class*="text-purple-"],
+body.sp-cyber-theme [class*="text-indigo-"] {
+    color: var(--sp-secondary) !important;
+    text-shadow: none !important;
+}
+
+body.sp-cyber-theme [class*="text-blue-"] {
+    color: var(--sp-cyan) !important;
+    text-shadow: none !important;
+}
+
+body.sp-cyber-theme [class*="bg-purple-"],
+body.sp-cyber-theme [class*="bg-indigo-"] {
+    background-image: none !important;
+    background-color: var(--sp-raised) !important;
+}
+
+body.sp-cyber-theme [class*="bg-blue-"] {
+    background-image: none !important;
+    background-color: var(--sp-raised) !important;
+}
+
+body.sp-cyber-theme [class*="bg-gradient-to-"] {
+    background-image: none !important;
+    background-color: var(--sp-raised) !important;
+}
+
+body.sp-cyber-theme [style*="radial-gradient"] {
+    display: none !important;
+}
+
+body.sp-cyber-theme [style*="conic-gradient"],
+body.sp-cyber-theme .scan-sweep,
+body.sp-cyber-theme .radar-ring,
+body.sp-cyber-theme .radar-sweep,
+body.sp-cyber-theme .neon-card .icon-glow,
+body.sp-cyber-theme .neon-card .sparkline-wrap {
+    display: none !important;
+}
+
+body.sp-cyber-theme .gradient-text,
+body.sp-cyber-theme .text-gradient,
+body.sp-cyber-theme [class*="bg-clip-text"] {
+    color: var(--sp-text) !important;
+    background: none !important;
+    -webkit-text-fill-color: currentColor !important;
+    text-shadow: none !important;
+}
+
+body.sp-cyber-theme [class*="border-purple-"],
+body.sp-cyber-theme [class*="border-indigo-"] {
+    border-color: var(--sp-line) !important;
+}
+
+body.sp-cyber-theme [class*="border-blue-"] {
+    border-color: var(--sp-line) !important;
+}
+
+body.sp-cyber-theme button[class*="bg-gradient-"],
+body.sp-cyber-theme a[class*="bg-gradient-"],
+body.sp-cyber-theme button[class*="bg-indigo-"],
+body.sp-cyber-theme a[class*="bg-indigo-"],
+body.sp-cyber-theme button[class*="bg-purple-"],
+body.sp-cyber-theme a[class*="bg-purple-"],
+body.sp-cyber-theme button[class*="bg-blue-"],
+body.sp-cyber-theme a[class*="bg-blue-"] {
+    color: #141415 !important;
+    background: var(--sp-primary-action) !important;
+    border-color: var(--sp-primary-action) !important;
+}
+
+body.sp-cyber-theme [class*="shadow-purple-"],
+body.sp-cyber-theme [class*="shadow-indigo-"],
+body.sp-cyber-theme [class*="shadow-cyan-"],
+body.sp-cyber-theme [class*="shadow-emerald-"] {
+    box-shadow: none !important;
+}
+
+body.sp-cyber-theme [style*="animation"] {
+    animation: none !important;
+}
+
+body.sp-cyber-theme .sp-ambient,
+body.sp-cyber-theme #bg-canvas,
+body.sp-cyber-theme #star-canvas,
+body.sp-cyber-theme .cursor-glow,
+body.sp-cyber-theme .bg-grid-overlay,
+body.sp-cyber-theme .solar-system {
+    display: none !important;
+}
+
+body.sp-cyber-theme .glass-sidebar {
+    background: var(--sp-sidebar) !important;
+    border-color: var(--sp-line) !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+body.sp-cyber-theme .glass-sidebar nav a,
+body.sp-cyber-theme .glass-sidebar .nav-item {
+    min-height: 36px;
+    padding-block: 0.375rem !important;
+    border-radius: 8px !important;
+    color: var(--sp-secondary) !important;
+    font-weight: 400 !important;
+    transition: color 160ms var(--sp-motion), background-color 160ms var(--sp-motion), border-color 160ms var(--sp-motion) !important;
+}
+
+body.sp-cyber-theme .glass-sidebar nav a i,
+body.sp-cyber-theme .glass-sidebar .nav-item i {
+    color: var(--sp-muted) !important;
+}
+
+body.sp-cyber-theme .glass-sidebar nav a:hover,
+body.sp-cyber-theme .glass-sidebar .nav-item:hover,
+body.sp-cyber-theme .glass-sidebar nav a.bg-white\/10,
+body.sp-cyber-theme .glass-sidebar .nav-item.bg-white\/10 {
+    color: var(--sp-text) !important;
+    background: var(--sp-raised) !important;
+    border-color: var(--sp-line) !important;
+}
+
+body.sp-cyber-theme header {
+    height: 64px !important;
+    background: var(--sp-bg) !important;
+    border-bottom: 1px solid var(--sp-line) !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+}
+
+body.sp-cyber-theme header a[class*="rounded-xl"][class*="bg-"] {
+    color: var(--sp-secondary) !important;
+    background: var(--sp-raised) !important;
+    border-color: var(--sp-line) !important;
+    box-shadow: none !important;
+    font-weight: 500 !important;
+}
+
+body.sp-cyber-theme header a[class*="rounded-xl"][class*="bg-"]:hover {
+    color: var(--sp-text) !important;
+    border-color: rgba(237, 237, 237, 0.16) !important;
+}
+
+body.sp-cyber-theme header a[class*="rounded-xl"][class*="bg-"] i {
+    color: var(--sp-muted) !important;
+}
+
+body.sp-cyber-theme .glass-sidebar nav a::before,
+body.sp-cyber-theme .glass-sidebar .nav-item::before {
+    background: var(--sp-cyan) !important;
+    box-shadow: none !important;
+}
+
+body.sp-cyber-theme .glass-panel,
+body.sp-cyber-theme .glass-panel-v2,
+body.sp-cyber-theme .glass-card,
+body.sp-cyber-theme .glass-card-v2,
+body.sp-cyber-theme .health-card,
+body.sp-cyber-theme .glass-accordion,
+body.sp-cyber-theme .neon-card,
+body.sp-cyber-theme .terminal-window,
+body.sp-cyber-theme .action-card-3d,
+body.sp-cyber-theme .approval-card,
+body.sp-cyber-theme .dir-link,
+body.sp-cyber-theme .tabs-premium,
+body.sp-cyber-theme .futuristic-tabs {
+    background-color: var(--sp-card) !important;
+    background-image: none !important;
+    border: 1px solid var(--sp-line) !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transition: background-color 160ms var(--sp-motion), border-color 160ms var(--sp-motion), color 160ms var(--sp-motion) !important;
+}
+
+body.sp-cyber-theme .sp-card,
+body.sp-cyber-theme .sp-console,
+body.sp-cyber-theme .sp-mini-panel,
+body.sp-cyber-theme .sp-stat-tile,
+body.sp-cyber-theme .sp-product-card,
+body.sp-cyber-theme .sp-role-card,
+body.sp-cyber-theme .sp-app-banner,
+body.sp-cyber-theme .sp-cta-band {
+    background: var(--sp-card) !important;
+    border: 1px solid var(--sp-line) !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+}
+
+body.sp-cyber-theme .contact-hero {
+    padding: 2.5rem 1.5rem !important;
+    background: var(--sp-card) !important;
+    border: 1px solid var(--sp-line) !important;
+    border-radius: 12px !important;
+}
+
+body.sp-cyber-theme .svc-card,
+body.sp-cyber-theme .info-card,
+body.sp-cyber-theme .contact-form-panel,
+body.sp-cyber-theme .contact-channel-card,
+body.sp-cyber-theme .contact-cta-card {
+    background: var(--sp-card) !important;
+    border: 1px solid var(--sp-line) !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+    animation: none !important;
+    transform: none !important;
+}
+
+body.sp-cyber-theme .svc-card::before,
+body.sp-cyber-theme .svc-card::after,
+body.sp-cyber-theme .aurora-bg::before,
+body.sp-cyber-theme .hero-hex-bg,
+body.sp-cyber-theme .hero-orb,
+body.sp-cyber-theme .scan-sweep,
+body.sp-cyber-theme .pulse-ring,
+body.sp-cyber-theme .contact-top-accent,
+body.sp-cyber-theme .contact-world-grid,
+body.sp-cyber-theme .contact-form-pattern {
+    display: none !important;
+    content: none !important;
+    animation: none !important;
+}
+
+body.sp-cyber-theme .svc-card:hover,
+body.sp-cyber-theme .info-card:hover {
+    border-color: rgba(237, 237, 237, 0.14) !important;
+    background: var(--sp-raised) !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+body.sp-cyber-theme .svc-icon,
+body.sp-cyber-theme .info-icon {
+    color: var(--sp-secondary) !important;
+    background: var(--sp-raised) !important;
+    border: 1px solid var(--sp-line) !important;
+    box-shadow: none !important;
+}
+
+body.sp-cyber-theme .section-label {
+    color: var(--sp-secondary) !important;
+    background: var(--sp-raised) !important;
+    border: 1px solid var(--sp-line) !important;
+    border-radius: 6px !important;
+    font-size: 12px !important;
+    font-weight: 400 !important;
+    letter-spacing: 0.01em !important;
+    text-transform: none !important;
+}
+
+body.sp-cyber-theme .animated-border-btn {
+    padding: 0 !important;
+    background: none !important;
+    animation: none !important;
+}
+
+body.sp-cyber-theme .animated-border-btn-inner,
+body.sp-cyber-theme .contact-action-link {
+    color: #141415 !important;
+    background: var(--sp-primary-action) !important;
+    border: 1px solid var(--sp-primary-action) !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    font-weight: 500 !important;
+}
+
+body.sp-cyber-theme .sp-card-icon {
+    color: var(--sp-secondary) !important;
+    background: var(--sp-raised) !important;
+    border: 1px solid var(--sp-line) !important;
+    box-shadow: none !important;
+}
+
+body.sp-cyber-theme .sp-product-row {
+    background: var(--sp-raised) !important;
+    border-color: var(--sp-line) !important;
+    box-shadow: none !important;
+}
+
+body.sp-cyber-theme .sp-product-row i,
+body.sp-cyber-theme .sp-role-card > i {
+    color: var(--sp-muted) !important;
+}
+
+body.sp-cyber-theme .sp-secondary-btn {
+    color: var(--sp-secondary) !important;
+    background: var(--sp-raised) !important;
+    border-color: var(--sp-line) !important;
+    box-shadow: none !important;
+}
+
+body.sp-cyber-theme .sp-secondary-btn:hover {
+    color: var(--sp-text) !important;
+    border-color: rgba(237, 237, 237, 0.16) !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+body.sp-cyber-theme .site-footer {
+    color: var(--sp-secondary) !important;
+    background: var(--sp-bg) !important;
+    border-top: 1px solid var(--sp-line) !important;
+    box-shadow: none !important;
+}
+
+body.sp-cyber-theme .sp-hero::after,
+body.sp-cyber-theme .footer-glow,
+body.sp-cyber-theme .sp-console::before {
+    display: none !important;
+}
+
+body.sp-cyber-theme .scroll-reveal,
+body.sp-cyber-theme .scroll-reveal-left,
+body.sp-cyber-theme .scroll-reveal-right,
+body.sp-cyber-theme .scroll-reveal-scale,
+body.sp-cyber-theme .scroll-reveal-stagger > *,
+body.sp-cyber-theme .reveal,
+body.sp-cyber-theme .reveal-left {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+}
+
+body.sp-cyber-theme .health-page {
+    animation: none !important;
+}
+
+body.sp-cyber-theme .glass-panel::before,
+body.sp-cyber-theme .glass-panel::after,
+body.sp-cyber-theme .glass-panel-v2::before,
+body.sp-cyber-theme .health-card::after,
+body.sp-cyber-theme .glass-accordion::before,
+body.sp-cyber-theme .glass-accordion-header::after,
+body.sp-cyber-theme .glass-accordion-header .scan-sweep,
+body.sp-cyber-theme .neon-card::before,
+body.sp-cyber-theme .neon-card .card-accent-bar,
+body.sp-cyber-theme .holo-shimmer,
+body.sp-cyber-theme .holo-border::before,
+body.sp-cyber-theme .neon-border::before {
+    content: none !important;
+    display: none !important;
+    animation: none !important;
+    box-shadow: none !important;
+}
+
+body.sp-cyber-theme .glass-panel:hover,
+body.sp-cyber-theme .glass-panel-v2:hover,
+body.sp-cyber-theme .health-card:hover,
+body.sp-cyber-theme .neon-card:hover,
+body.sp-cyber-theme .tilt-card:hover,
+body.sp-cyber-theme .hover-glow:hover,
+body.sp-cyber-theme .glow-card:hover {
+    border-color: rgba(237, 237, 237, 0.14) !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+body.sp-cyber-theme .glow-btn,
+body.sp-cyber-theme .cyber-login-btn,
+body.sp-cyber-theme .sp-primary-btn {
+    min-height: 40px;
+    color: #141415 !important;
+    background: var(--sp-primary-action) !important;
+    border: 1px solid var(--sp-primary-action) !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    font-weight: 500 !important;
+    transition: color 160ms var(--sp-motion), background-color 160ms var(--sp-motion), border-color 160ms var(--sp-motion) !important;
+}
+
+body.sp-cyber-theme .glow-btn::after,
+body.sp-cyber-theme .btn-shine::after {
+    display: none !important;
+}
+
+body.sp-cyber-theme .header-glass {
+    background: var(--sp-bg) !important;
+    border-bottom: 1px solid var(--sp-line) !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+}
+
+body.sp-cyber-theme #main-content {
+    background: var(--sp-bg) !important;
+    scrollbar-color: rgba(237, 237, 237, 0.2) transparent !important;
+}
+
+body.sp-cyber-theme th {
+    color: var(--sp-secondary) !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: 0.01em !important;
+}
+
+body.sp-cyber-theme td,
+body.sp-cyber-theme th {
+    border-color: var(--sp-line) !important;
+}
+
+body.sp-cyber-theme input,
+body.sp-cyber-theme select,
+body.sp-cyber-theme textarea {
+    color: var(--sp-text) !important;
+    background-color: var(--sp-raised) !important;
+    border-color: var(--sp-line) !important;
+    box-shadow: none !important;
+}
+
+body.sp-cyber-theme .brand-wordmark {
+    color: var(--sp-text) !important;
+}
+
+body.sp-cyber-theme .source-mark {
+    color: var(--sp-text) !important;
+    background: var(--sp-raised) !important;
+    border: 1px solid var(--sp-line) !important;
+    box-shadow: none !important;
+}
+
+body.sp-cyber-theme .source-mark::before,
+body.sp-cyber-theme .source-mark::after {
+    display: none !important;
+}
+
+body.sp-cyber-theme .page-loader {
+    background: var(--sp-bg) !important;
+}
+
+body.sp-cyber-theme .page-loader .loader-text {
+    color: var(--sp-secondary) !important;
+    font-family: Inter, system-ui, sans-serif !important;
+}
+
+body.sp-cyber-theme .animate-pulse,
+body.sp-cyber-theme .animate-ping,
+body.sp-cyber-theme .animate-bounce,
+body.sp-cyber-theme .sp-hero-motion,
+body.sp-cyber-theme .scan-line,
+body.sp-cyber-theme .scan-sweep,
+body.sp-cyber-theme .pulse-glow,
+body.sp-cyber-theme .pulseGlow,
+body.sp-cyber-theme .dotBlink,
+body.sp-cyber-theme .borderFlow,
+body.sp-cyber-theme .shimmer,
+body.sp-cyber-theme .floatUp {
+    animation: none !important;
+}
+
+body.sp-cyber-theme [class*="transition-all"] {
+    transition-property: color, background-color, border-color, opacity, transform !important;
+    transition-duration: 160ms !important;
+    transition-timing-function: var(--sp-motion) !important;
+}
+
+body.sp-cyber-theme .sp-hero {
+    min-height: 68vh;
+    background-color: var(--sp-bg);
+}
+
+body.sp-cyber-theme .sp-hero::before {
+    animation: none !important;
+}
+
+body.sp-cyber-theme .sp-hero-title,
+body.sp-cyber-theme .sp-hero-title span,
+body.sp-cyber-theme .sp-section-title,
+body.sp-cyber-theme .sp-hero-copy {
+    color: var(--sp-text) !important;
+    background: none !important;
+    -webkit-text-fill-color: currentColor !important;
+    text-shadow: none !important;
+}
+
+body.sp-cyber-theme .sp-eyebrow,
+body.sp-cyber-theme .cyber-chip {
+    color: var(--sp-secondary) !important;
+    font-family: Inter, system-ui, sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+    letter-spacing: 0.01em !important;
+    text-transform: none !important;
+    background: var(--sp-raised) !important;
+    border: 1px solid var(--sp-line) !important;
+    border-radius: 6px !important;
+}
+
+body.sp-cyber-theme .sp-eyebrow::before,
+body.sp-cyber-theme .cyber-chip::before {
+    content: none !important;
+    display: none !important;
+}
+
+body.sp-cyber-theme .sp-section-kicker {
+    color: var(--sp-secondary) !important;
+    font-family: Inter, system-ui, sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+}
+
+body.sp-cyber-theme .sp-section-kicker,
+body.sp-cyber-theme .sp-console-title,
+body.sp-cyber-theme .cyber-chip,
+body.sp-cyber-theme .sp-product-price {
+    text-transform: none !important;
+    letter-spacing: 0.01em !important;
+}
+
+body.sp-cyber-theme .sp-eyebrow,
+body.sp-cyber-theme .sp-section-kicker,
+body.sp-cyber-theme .sp-stat-label {
+    text-transform: none !important;
+    letter-spacing: 0.01em !important;
+}
+
+@media (max-width: 767px) {
+    body.sp-cyber-theme #main-content {
+        padding-inline: 16px !important;
+    }
+
+    body.sp-cyber-theme .glass-sidebar {
+        max-width: min(288px, calc(100vw - 40px));
+    }
+
+    body.sp-cyber-theme .sp-hero {
+        padding-top: 48px;
+    }
+
+    body.sp-cyber-theme .sp-section {
+        padding-block: 48px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.sp-cyber-theme *,
+    body.sp-cyber-theme *::before,
+    body.sp-cyber-theme *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

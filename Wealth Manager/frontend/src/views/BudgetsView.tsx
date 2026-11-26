@@ -249,7 +249,7 @@ export function BudgetsView({ defaultMonth, onChanged }: BudgetsViewProps) {
               <Typography variant="body2" color="text.secondary">
                 Overall utilization
               </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 800 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
                 {formatPercent(summary.utilizationPercentage)}
               </Typography>
             </Box>
@@ -278,7 +278,7 @@ export function BudgetsView({ defaultMonth, onChanged }: BudgetsViewProps) {
               {(summary?.budgets ?? []).map((budget) => (
                 <TableRow key={budget.id} hover>
                   <TableCell>
-                    <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {budget.category.replaceAll('_', ' ')}
                     </Typography>
                     {budget.notes && (

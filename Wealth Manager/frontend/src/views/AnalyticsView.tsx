@@ -137,25 +137,25 @@ export function AnalyticsView({ dashboard }: AnalyticsViewProps) {
         <SectionHeader title="Scenario Controls" action={<Chip label="Live model" color="secondary" size="small" />} />
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(4, minmax(0, 1fr))' }, gap: 3 }}>
           <Box>
-            <Typography variant="body2" sx={{ fontWeight: 800 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
               Horizon: {horizon} months
             </Typography>
             <Slider value={horizon} min={6} max={60} step={6} onChange={(_, value) => setHorizon(value as number)} />
           </Box>
           <Box>
-            <Typography variant="body2" sx={{ fontWeight: 800 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
               Portfolio return: {annualReturn}%
             </Typography>
             <Slider value={annualReturn} min={0} max={18} step={0.5} onChange={(_, value) => setAnnualReturn(value as number)} />
           </Box>
           <Box>
-            <Typography variant="body2" sx={{ fontWeight: 800 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
               Savings boost: {formatCurrency(monthlySavingsBoost)}
             </Typography>
             <Slider value={monthlySavingsBoost} min={0} max={50000} step={1000} onChange={(_, value) => setMonthlySavingsBoost(value as number)} />
           </Box>
           <Box>
-            <Typography variant="body2" sx={{ fontWeight: 800 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
               Extra debt payment: {formatCurrency(extraDebtPayment)}
             </Typography>
             <Slider value={extraDebtPayment} min={0} max={50000} step={1000} onChange={(_, value) => setExtraDebtPayment(value as number)} />
@@ -185,7 +185,7 @@ export function AnalyticsView({ dashboard }: AnalyticsViewProps) {
               <Typography variant="caption" color="text.secondary">
                 Projected net worth
               </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 900 }}>
+              <Typography variant="h5" sx={{ fontWeight: 600 }}>
                 {formatCurrency(projectedNetWorth)}
               </Typography>
             </Box>
@@ -193,7 +193,7 @@ export function AnalyticsView({ dashboard }: AnalyticsViewProps) {
               <Typography variant="caption" color="text.secondary">
                 Projected debt
               </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 900 }}>
+              <Typography variant="h5" sx={{ fontWeight: 600 }}>
                 {formatCurrency(projectedDebt)}
               </Typography>
             </Box>
@@ -201,7 +201,7 @@ export function AnalyticsView({ dashboard }: AnalyticsViewProps) {
               <Typography variant="caption" color="text.secondary">
                 Wealth acceleration
               </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 900 }}>
+              <Typography variant="h5" sx={{ fontWeight: 600 }}>
                 {formatCurrency((forecast.at(-1)?.optimized ?? 0) - (forecast.at(-1)?.baseline ?? 0))}
               </Typography>
             </Box>

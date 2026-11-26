@@ -192,7 +192,7 @@ export function PlanningView({ dashboard }: PlanningViewProps) {
               slotProps={{ htmlInput: { min: 1, step: '0.01' } }}
             />
             <Box sx={{ px: 1 }}>
-              <Typography variant="body2" sx={{ fontWeight: 800 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
                 Expected Return: {retirementForm.expectedAnnualReturn}%
               </Typography>
               <Slider
@@ -215,10 +215,10 @@ export function PlanningView({ dashboard }: PlanningViewProps) {
       {retirementResult && (
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', xl: '360px 1fr' }, gap: 2 }}>
           <Paper variant="outlined" sx={{ p: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 900, mb: 1 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
               Retirement Readiness
             </Typography>
-            <Typography variant="h3" sx={{ fontWeight: 900 }}>
+            <Typography variant="h3" sx={{ fontWeight: 600 }}>
               {retirementResult.retirementReadinessScore}
             </Typography>
             <Typography color="text.secondary">Future corpus: {formatCurrency(retirementResult.futureCorpus)}</Typography>

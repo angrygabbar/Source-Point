@@ -8,22 +8,14 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>{% block title %}Vision For The Future{% endblock %}</title>
+    <title>{% block title %}SourcePoint{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.6"></script>
 
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-
-    <!-- Heavy 3D libs: desktop-only to prevent mobile freeze -->
-    <script>
-      if (window.innerWidth > 768) {
-        document.write('<scr'+'ipt src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/scr'+'ipt>');
-        document.write('<scr'+'ipt src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/gsap.min.js"><\/scr'+'ipt>');
-      }
-    </script>
 
     <!-- TinyMCE: only load on pages that need it -->
     {% block extra_head %}{% endblock %}
@@ -49,6 +41,7 @@
             display: none !important;
         }
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/unslop.css') }}">
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
@@ -481,7 +474,7 @@
                             </div>
                             <span class="brand-wordmark text-sm font-bold">SourcePoint</span>
                         </div>
-                        <p class="text-[11px] text-gray-500 tracking-wide">Software delivery, hiring, and commerce in one future-ready workspace.</p>
+                        <p class="text-[11px] text-gray-500">Software delivery, hiring and commerce in one workspace</p>
                         <p class="text-[11px] text-gray-600">&copy; {{ now().year if now is defined else '2026' }} SourcePoint</p>
                     </div>
                 </div>
@@ -499,7 +492,7 @@
         // --- 0. Magnetic Cursor Glow ---
         (function() {
             const glow = document.getElementById('cursor-glow');
-            if (!glow || window.innerWidth < 1024) return;
+            if (!glow || getComputedStyle(glow).display === 'none' || window.innerWidth < 1024) return;
             let mx = 0, my = 0, gx = 0, gy = 0;
             document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
             function update() {
@@ -685,7 +678,7 @@
         const canvas = document.getElementById('bg-canvas');
         const isMobile = window.innerWidth <= 900 || ('ontouchstart' in window);
 
-        if (!isMobile && canvas && typeof THREE !== 'undefined') {
+        if (!isMobile && canvas && getComputedStyle(canvas).display !== 'none' && typeof THREE !== 'undefined') {
             const scene = new THREE.Scene();
             scene.fog = new THREE.FogExp2(0x000005, 0.00015);
 

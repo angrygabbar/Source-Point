@@ -4,16 +4,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StockAi | The Unfair Advantage</title>
+    <title>Stock AI | Market research</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap"
         rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter'], mono: ['JetBrains Mono'], display: ['Orbitron'] },
+                    fontFamily: { sans: ['Inter'], mono: ['JetBrains Mono'], display: ['Inter'] },
                     animation: {
                         'blob': 'blob 7s infinite',
                         'fade-in': 'fadeIn 0.8s ease-out forwards',
@@ -205,9 +205,10 @@
             text-shadow: 0 0 6px rgba(59, 130, 246, 0.3);
         }
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/stock-ai-unslop.css') }}">
 </head>
 
-<body class="text-white min-h-screen relative flex flex-col font-sans">
+<body class="stock-ai-landing text-white min-h-screen relative flex flex-col font-sans">
 
     <!-- NAVIGATION -->
     <nav class="fixed top-0 w-full p-6 flex justify-between items-center z-50"
@@ -219,12 +220,11 @@
                 <div class="absolute inset-0 rounded-lg animate-pulse-ring"
                     style="border: 1px solid rgba(59,130,246,0.4);"></div>
             </div>
-            <span>STOCK<span class="text-blue-400">Ai</span></span>
-            <span class="text-gray-600 font-sans font-normal text-xs ml-1">v5.0</span>
+            <span>Stock AI</span>
         </div>
         <a href="{{ request.script_root }}/dashboard"
             class="group px-7 py-2.5 bg-white text-black text-sm font-bold rounded-full hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] transition-all duration-300 flex items-center gap-2">
-            Launch Terminal
+            Open workspace
             <svg class="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor"
                 viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3">
@@ -255,54 +255,35 @@
                     class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                 <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-400"></span>
             </span>
-            <span class="typing-badge pr-1">SYSTEM ONLINE: 5,000+ TICKERS ACTIVE</span>
+            <span class="typing-badge pr-1">Market research and portfolio tracking</span>
         </div>
 
         <!-- Hero Title -->
         <h1 class="text-7xl md:text-[6.5rem] font-extrabold tracking-tight mb-6 gradient-text animate-fade-in leading-none"
             style="animation-delay: 0.15s;">
-            Quant Fusion.
+            Stock AI
         </h1>
 
         <!-- Subtitle -->
         <p class="text-gray-400 text-lg md:text-xl max-w-2xl mb-12 animate-fade-in leading-relaxed"
             style="animation-delay: 0.3s;">
-            The operating system for the modern algorithmic trader.
-            Integrates <span class="text-white font-medium">Technical</span>, <span
-                class="text-white font-medium">Fundamental</span>, and <span class="text-white font-medium">Macro</span>
-            analysis into one probabilistic engine.
+            Review market signals, company information, and portfolio holdings in one workspace.
         </p>
 
         <!-- CTA Buttons -->
         <div class="flex flex-col md:flex-row gap-4 animate-fade-in" style="animation-delay: 0.45s;">
             <a href="{{ request.script_root }}/dashboard"
                 class="neon-btn px-10 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all duration-300 flex items-center gap-3 relative z-10">
-                <span>Enter Terminal</span>
+                <span>Open workspace</span>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3">
                     </path>
                 </svg>
             </a>
-            <a href="https://github.com/your-repo"
+            <a href="{{ request.script_root }}/screener"
                 class="px-10 py-4 bg-white/[0.03] hover:bg-white/[0.06] text-gray-300 border border-white/[0.08] rounded-xl font-medium transition-all duration-300 backdrop-blur-sm hover:border-white/[0.15]">
-                View Documentation
+                Browse stocks
             </a>
-        </div>
-
-        <!-- Stats Row -->
-        <div class="flex gap-12 mt-16 animate-fade-in" style="animation-delay: 0.6s;">
-            <div class="text-center">
-                <div class="text-3xl font-bold font-display stat-glow text-white">5,000+</div>
-                <div class="text-xs text-gray-600 mt-1 uppercase tracking-wider">Stocks Tracked</div>
-            </div>
-            <div class="text-center">
-                <div class="text-3xl font-bold font-display stat-glow text-white">75%+</div>
-                <div class="text-xs text-gray-600 mt-1 uppercase tracking-wider">AI Precision</div>
-            </div>
-            <div class="text-center">
-                <div class="text-3xl font-bold font-display stat-glow text-white">&lt;10m</div>
-                <div class="text-xs text-gray-600 mt-1 uppercase tracking-wider">Scan Time</div>
-            </div>
         </div>
 
         <!-- Feature Cards -->
@@ -317,11 +298,10 @@
                             d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
                     </svg>
                 </div>
-                <h3 class="text-white font-bold mb-2 text-[15px]">XGBoost Engine</h3>
-                <p class="text-sm text-gray-500 leading-relaxed">Predictive modeling with 75%+ historical precision on
-                    trend reversals.</p>
+                <h3 class="text-white font-bold mb-2 text-[15px]">Price signals</h3>
+                <p class="text-sm text-gray-500 leading-relaxed">Review technical indicators and trend signals for a stock.</p>
                 <div class="mt-5 pt-4 border-t border-white/[0.04] flex items-center gap-2 text-xs text-gray-600">
-                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Active
+                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Technical indicators
                 </div>
             </div>
 
@@ -335,14 +315,12 @@
                     </svg>
                 </div>
                 <div class="flex justify-between items-start">
-                    <h3 class="text-white font-bold mb-2 text-[15px]">Macro Radar</h3>
-                    <span class="text-[9px] font-display font-bold tracking-wider px-2 py-0.5 rounded-full"
-                        style="background: rgba(168,85,247,0.1); color: #c084fc; border: 1px solid rgba(168,85,247,0.2);">NEW</span>
+                    <h3 class="text-white font-bold mb-2 text-[15px]">Market context</h3>
+
                 </div>
-                <p class="text-sm text-gray-500 leading-relaxed">Real-time VIX and USD/INR correlation to prevent buying
-                    in a crash.</p>
+                <p class="text-sm text-gray-500 leading-relaxed">Review broader market indicators alongside stock signals.</p>
                 <div class="mt-5 pt-4 border-t border-white/[0.04] flex items-center gap-2 text-xs text-gray-600">
-                    <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span> Monitoring
+                    <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span> Market indicators
                 </div>
             </div>
 
@@ -355,30 +333,17 @@
                         </path>
                     </svg>
                 </div>
-                <h3 class="text-white font-bold mb-2 text-[15px]">Automated Hunter</h3>
-                <p class="text-sm text-gray-500 leading-relaxed">Parallel processing scans 5,000+ stocks in &lt;10
-                    minutes daily.</p>
+                <h3 class="text-white font-bold mb-2 text-[15px]">Market screener</h3>
+                <p class="text-sm text-gray-500 leading-relaxed">Filter stocks by oversold, momentum, and volume signals.</p>
                 <div class="mt-5 pt-4 border-t border-white/[0.04] flex items-center gap-2 text-xs text-gray-600">
-                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span> Scanning
+                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span> Screener
                 </div>
             </div>
         </div>
 
     </main>
 
-    <!-- FOOTER -->
-    <footer class="p-8 text-center text-xs font-mono footer-glow relative z-10">
-        <div class="flex justify-center items-center gap-6 text-gray-600">
-            <span class="flex items-center gap-2">
-                <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                SYSTEM STATUS: NORMAL
-            </span>
-            <span class="text-gray-800">|</span>
-            <span>LATENCY: 12ms</span>
-            <span class="text-gray-800">|</span>
-            <span>SERVER: MUMBAI-1</span>
-        </div>
-    </footer>
+    <footer class="p-8 text-center text-xs text-gray-500 relative z-10">Stock AI</footer>
 
 </body>
 
