@@ -26,7 +26,7 @@ docker compose -p sourcepoint-institute -f docker-compose.prod.yml --env-file .e
   --admin-name "Institute Administrator"
 ```
 
-Use the SourcePoint administrator's email for `--admin-email` to enable SourcePoint single sign-on. The CLI prints a temporary password once; change it after the first sign-in. This command is a one-time setup for an empty institute database.
+Use the SourcePoint administrator's email for `--admin-email` to enable SourcePoint single sign-on. The CLI prints a temporary password once. On first sign-in, the account must choose a new Institute password; that forced change does not ask for the temporary password again. Normal password changes still require the current Institute password. This command is a one-time setup for an empty institute database.
 
 ## Teaching module removal
 

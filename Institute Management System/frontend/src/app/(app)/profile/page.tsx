@@ -13,7 +13,8 @@ import { fmtDateTime } from "@/lib/utils";
 function Profile() {
   const { me, reload, signOut } = useSession();
   const router = useRouter();
-  const force = useSearchParams().get("force") === "1" || me?.user.must_change_password;
+  const mustChangePassword = Boolean(me?.user.must_change_password);
+  const force = useSearchParams().get("force") === "1" || mustChangePassword;
   const [name, setName] = useState(me?.user.full_name ?? "");
   const [phone, setPhone] = useState(me?.user.phone ?? "");
   const [pw, setPw] = useState({ current_password: "", new_password: "", confirm: "" });
@@ -36,11 +37,11 @@ function Profile() {
         </Card>
         <Card title="Change password">
           <div className="space-y-3">
-            <Field label="Current password"><Input type="password" autoComplete="current-password" value={pw.current_password} onChange={(e) => setPw({ ...pw, current_password: e.target.value })} /></Field>
+            {!mustChangePassword && <Field label="Current password"><Input type="password" autoComplete="current-password" value={pw.current_password} onChange={(e) => setPw({ ...pw, current_password: e.target.value })} /></Field>}
             <Field label="New password" hint="≥10 characters with 3 of: upper, lower, digit, symbol"><Input type="password" autoComplete="new-password" value={pw.new_password} onChange={(e) => setPw({ ...pw, new_password: e.target.value })} /></Field>
             <Field label="Confirm new password"><Input type="password" autoComplete="new-password" value={pw.confirm} onChange={(e) => setPw({ ...pw, confirm: e.target.value })} /></Field>
-            <Button disabled={!pw.current_password || pw.new_password.length < 10 || pw.new_password !== pw.confirm} onClick={async () => {
-              try { await api("/auth/change-password", { method: "POST", body: { current_password: pw.current_password, new_password: pw.new_password } }); toast.success("Password changed. Other sessions were signed out."); setPw({ current_password: "", new_password: "", confirm: "" }); await reload(); router.replace("/dashboard"); }
+            <Button disabled={(!mustChangePassword && !pw.current_password) || pw.new_password.length < 10 || pw.new_password !== pw.confirm} onClick={async () => {
+              try { await api("/auth/change-password", { method: "POST", body: { current_password: mustChangePassword ? null : pw.current_password, new_password: pw.new_password } }); toast.success("Password changed. Other sessions were signed out."); setPw({ current_password: "", new_password: "", confirm: "" }); await reload(); router.replace("/dashboard"); }
               catch (e) { toast.error(errorMessage(e)); }
             }}>Change password</Button>
           </div>

@@ -114,7 +114,7 @@ def sourcepoint_login(
 
 
 class ChangePasswordIn(BaseModel):
-    current_password: str = Field(max_length=256)
+    current_password: str | None = Field(default=None, max_length=256)
     new_password: str = Field(min_length=10, max_length=256)
 
 
@@ -381,7 +381,10 @@ def update_profile(body: ProfileIn, user: User = Depends(current_user), db: Sess
 @router.post("/change-password", status_code=204)
 def change_password(body: ChangePasswordIn, request: Request, response: Response, user: User = Depends(current_user), db: Session = Depends(get_db)):
     hit(f"chpw:{user.id}", 10, 300)
-    if not verify_password(body.current_password, user.password_hash):
+    # A user authenticated through a first-login or admin-reset session must
+    # be able to replace the temporary password without knowing it. Normal
+    # password changes still require the current password.
+    if not user.must_change_password and not verify_password(body.current_password, user.password_hash):
         raise ValidationFailed("Current password is incorrect")
     try:
         validate_password_strength(body.new_password)
