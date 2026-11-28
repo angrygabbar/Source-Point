@@ -18,13 +18,17 @@ the browser (only "configured" indicators). Each provider also has a feature fla
 | video | `zoom` | account_id, client_id, host_user | client_secret | `video_meetings` |
 | video | `google_meet` | client_id, calendar_id | client_secret, refresh_token | `video_meetings` |
 
-Environment fallbacks: `SMTP_*` (email) and `VAPID_*` (push) are used when an institute has no
-enabled configuration of that type.
+Environment fallbacks: `BREVO_*` or `SMTP_*` (email) and `VAPID_*` (push) are used when an institute has no
+enabled configuration of that type. The SourcePoint deployment syncs its Brevo key into the Institute
+stack's private environment file; the key is not stored in Git or the Institute database.
 
-## Email (SMTP)
-Any SMTP relay (SES, SendGrid SMTP, Microsoft 365, Gmail Workspace relay). Used for password resets,
-notifications and fee reminders. Without email, password resets are issued by administrators as
-reset links (Users → Reset link).
+## Email (Brevo or SMTP)
+The SourcePoint deployment uses Brevo's transactional email API for Institute notifications and
+password resets. A standalone deployment can instead configure an SMTP relay (SES, SendGrid SMTP,
+Microsoft 365, Gmail Workspace relay) with `SMTP_*` settings or in Settings → Integrations. Notification
+templates are seeded per institute for each supported event and can be edited in the application. Email
+is enabled automatically when a provider is configured unless an institute has explicitly disabled it.
+Without email, password resets are issued by administrators as reset links (Users → Reset link).
 
 ## SMS
 - **MSG91** – India DLT: create a Flow whose template uses a single variable named `message`,

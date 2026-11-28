@@ -82,20 +82,29 @@ def get_active(db: Session, institute_id: uuid.UUID | None, provider_type: str) 
             secrets = json.loads(raw) if raw else {}
             return ProviderConfig(provider_type, row.provider, dict(row.config or {}), secrets, row)
     # Platform-level fallbacks from environment variables.
-    if provider_type == "email" and settings.SMTP_HOST and settings.SMTP_FROM:
-        return ProviderConfig(
-            "email",
-            "smtp",
-            {
-                "host": settings.SMTP_HOST,
-                "port": settings.SMTP_PORT,
-                "username": settings.SMTP_USERNAME,
-                "from_address": settings.SMTP_FROM,
-                "use_tls": settings.SMTP_USE_TLS,
-            },
-            {"password": settings.SMTP_PASSWORD},
-            None,
-        )
+    if provider_type == "email":
+        if settings.BREVO_API_KEY and settings.BREVO_FROM_EMAIL:
+            return ProviderConfig(
+                "email",
+                "brevo",
+                {"from_address": settings.BREVO_FROM_EMAIL, "from_name": settings.BREVO_FROM_NAME},
+                {"api_key": settings.BREVO_API_KEY},
+                None,
+            )
+        if settings.SMTP_HOST and settings.SMTP_FROM:
+            return ProviderConfig(
+                "email",
+                "smtp",
+                {
+                    "host": settings.SMTP_HOST,
+                    "port": settings.SMTP_PORT,
+                    "username": settings.SMTP_USERNAME,
+                    "from_address": settings.SMTP_FROM,
+                    "use_tls": settings.SMTP_USE_TLS,
+                },
+                {"password": settings.SMTP_PASSWORD},
+                None,
+            )
     if provider_type == "push" and settings.VAPID_PRIVATE_KEY and settings.VAPID_PUBLIC_KEY:
         return ProviderConfig(
             "push",

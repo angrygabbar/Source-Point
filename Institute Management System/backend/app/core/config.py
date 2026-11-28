@@ -57,6 +57,9 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM: str = ""
     SMTP_USE_TLS: bool = True
+    BREVO_API_KEY: str = ""
+    BREVO_FROM_EMAIL: str = "notifications@sourcepoint.in"
+    BREVO_FROM_NAME: str = "Source Point"
     VAPID_PUBLIC_KEY: str = ""
     VAPID_PRIVATE_KEY: str = ""
     VAPID_SUBJECT: str = "mailto:admin@example.com"

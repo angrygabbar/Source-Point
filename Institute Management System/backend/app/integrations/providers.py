@@ -1,7 +1,9 @@
 """Concrete provider adapters. Each function performs a real API call and raises on failure."""
 
 import base64
+import html as html_lib
 import json
+import re
 import smtplib
 import ssl
 from datetime import datetime, timedelta
@@ -25,13 +27,33 @@ class ProviderError(Exception):
 
 def send_email(cfg: ProviderConfig, to: str, subject: str, body: str, html: str | None = None) -> str:
     c, s = cfg.config, cfg.secrets
+    html_body = html or _notification_email_html(subject, body)
+    if cfg.provider == "brevo":
+        try:
+            response = httpx.post(
+                "https://api.brevo.com/v3/smtp/email",
+                headers={"api-key": s["api_key"], "accept": "application/json", "content-type": "application/json"},
+                json={
+                    "sender": {"name": c.get("from_name") or "Source Point", "email": c["from_address"]},
+                    "to": [{"email": to}],
+                    "subject": subject,
+                    "textContent": body,
+                    "htmlContent": html_body,
+                },
+                timeout=TIMEOUT,
+            )
+            if response.status_code >= 300:
+                raise ProviderError(f"Brevo delivery failed: HTTP {response.status_code}")
+            return str(response.json().get("messageId", ""))
+        except httpx.RequestError as exc:
+            raise ProviderError(f"Brevo delivery failed: {type(exc).__name__}") from exc
+
     msg = EmailMessage()
     msg["From"] = c.get("from_address")
     msg["To"] = to
     msg["Subject"] = subject
     msg.set_content(body)
-    if html:
-        msg.add_alternative(html, subtype="html")
+    msg.add_alternative(html_body, subtype="html")
     port = int(c.get("port") or 587)
     use_tls = str(c.get("use_tls", True)).lower() in {"1", "true", "yes"}
     try:
@@ -48,6 +70,26 @@ def send_email(cfg: ProviderConfig, to: str, subject: str, body: str, html: str 
     except (smtplib.SMTPException, OSError) as exc:
         raise ProviderError(f"SMTP delivery failed: {type(exc).__name__}") from exc
     return msg.get("Message-ID") or ""
+
+
+def _notification_email_html(subject: str, body: str) -> str:
+    safe_subject = html_lib.escape(subject)
+    safe_body = html_lib.escape(body)
+    safe_body = re.sub(
+        r"(https?://[^\s<]+)",
+        lambda match: f'<a href="{match.group(1)}" style="color:#1769aa;">{match.group(1)}</a>',
+        safe_body,
+    ).replace("\n", "<br>")
+    return (
+        "<!doctype html><html><body style=\"margin:0;background:#f3f5f8;font-family:Arial,sans-serif;color:#172033;\">"
+        "<table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" style=\"padding:32px 12px;\"><tr><td align=\"center\">"
+        "<table role=\"presentation\" width=\"600\" cellspacing=\"0\" cellpadding=\"0\" style=\"max-width:600px;width:100%;background:#fff;border:1px solid #e3e8ef;border-radius:10px;overflow:hidden;\">"
+        "<tr><td style=\"padding:18px 26px;background:#143c69;color:#fff;font-size:14px;font-weight:700;\">SourcePoint <span style=\"font-weight:400;opacity:.86;\">· Institute Management System</span></td></tr>"
+        f"<tr><td style=\"padding:28px 26px 8px;font-size:21px;font-weight:700;\">{safe_subject}</td></tr>"
+        f"<tr><td style=\"padding:12px 26px 30px;font-size:15px;line-height:1.65;color:#3c4657;\">{safe_body}</td></tr>"
+        "<tr><td style=\"padding:15px 26px;border-top:1px solid #e9edf2;color:#7a8493;font-size:12px;\">This is an automated Institute Management System notification.</td></tr>"
+        "</table></td></tr></table></body></html>"
+    )
 
 
 # ----------------------------------------------------------------------------- sms

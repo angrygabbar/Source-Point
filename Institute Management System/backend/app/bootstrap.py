@@ -12,6 +12,7 @@ from app.models import (
     AcademicYear,
     Branch,
     ExpenseCategory,
+    FeatureFlag,
     GradeScale,
     Institute,
     NotificationTemplate,
@@ -22,15 +23,31 @@ from app.models import (
     User,
     UserRole,
 )
+from app.integrations import registry
 
 DEFAULT_TEMPLATES = [
     ("student_absence", "email", "Absence: {student_name}", "Dear {name},\n\n{student_name} was marked {status} for {subject} on {date}.\n\n— {institute}"),
+    ("teacher_absence", "email", "Teacher absence notice", "Dear {name},\n\n{body}\n\n— {institute}"),
     ("fee_due", "email", "Fee due: {invoice_number}", "Dear {name},\n\nInvoice {invoice_number} for {amount} is due on {due_date}.\n\n— {institute}"),
     ("fee_overdue", "email", "Overdue: {invoice_number}", "Dear {name},\n\nInvoice {invoice_number} ({amount}) is overdue since {due_date}. Please clear the balance.\n\n— {institute}"),
     ("payment_received", "email", "Payment received {receipt_number}", "Dear {name},\n\nWe received {amount} (receipt {receipt_number}). Thank you.\n\n— {institute}"),
     ("class_cancelled", "email", "Class cancelled", "Dear {name},\n\n{body}\n\n— {institute}"),
+    ("class_rescheduled", "email", "Class rescheduled", "Dear {name},\n\n{body}\n\n— {institute}"),
+    ("material_uploaded", "email", "New study material: {title}", "Dear {name},\n\nNew study material is available: {body}\n\n— {institute}"),
     ("assignment_published", "email", "New homework: {title}", "Dear {name},\n\n{body}\n\n— {institute}"),
+    ("homework_deadline", "email", "Homework due soon: {title}", "Dear {name},\n\n{body}\n\nPlease submit your work before the deadline.\n\n— {institute}"),
+    ("submission_received", "email", "Submission received: {title}", "Dear {name},\n\nA learner submitted work for {title}. {body}\n\n— {institute}"),
+    ("submission_evaluated", "email", "Homework evaluated: {title}", "Dear {name},\n\nYour homework has been evaluated. {body}\n\n— {institute}"),
+    ("admission", "email", "Admission update: {title}", "Dear {name},\n\n{body}\n\n— {institute}"),
     ("announcement", "email", "{title}", "Dear {name},\n\n{body}\n\n— {institute}"),
+    ("leave_decision", "email", "Leave request update", "Dear {name},\n\n{body}\n\n— {institute}"),
+    ("follow_up_due", "email", "Admission follow-up due", "Dear {name},\n\n{body}\n\n— {institute}"),
+    ("evaluation_pending", "email", "Evaluations pending: {title}", "Dear {name},\n\n{body}\n\n— {institute}"),
+    ("syllabus_delay", "email", "Syllabus progress needs attention", "Dear {name},\n\n{body}\n\n— {institute}"),
+    ("attendance_alert", "email", "Attendance alert", "Dear {name},\n\n{body}\n\n— {institute}"),
+    ("message", "email", "{title}", "Dear {name},\n\n{body}\n\n— {institute}"),
+    ("exam_results", "email", "Exam results: {title}", "Dear {name},\n\nYour exam results have been published. {body}\n\n— {institute}"),
+    ("system", "email", "Institute Management System update: {title}", "Dear {name},\n\n{body}\n\n— {institute}"),
 ]
 
 DEFAULT_EXPENSE_CATEGORIES = [
@@ -73,7 +90,44 @@ def seed_system(db: Session) -> dict:
         db.add(SubscriptionPlan(code="self_hosted", name="Self-hosted", description="Single self-hosted institute (no billing)",
                                 price_monthly=0, price_annual=0, modules=[], trial_days=0))
     db.flush()
-    return {"permissions": len(existing), "roles": len(DEFAULT_ROLES)}
+    added_templates = 0
+    enabled_email_flags = 0
+    for inst in db.scalars(select(Institute).where(Institute.is_active.is_(True))):
+        added_templates += seed_notification_templates(db, inst.id)
+        # Default email notifications on only when a provider is configured. An
+        # existing per-institute flag remains authoritative so admins can opt out.
+        email_flag = db.scalar(
+            select(FeatureFlag).where(FeatureFlag.institute_id == inst.id, FeatureFlag.key == "email")
+        )
+        if email_flag is None and registry.get_active(db, inst.id, "email") is not None:
+            db.add(FeatureFlag(institute_id=inst.id, key="email", enabled=True,
+                               description="Email notifications (requires provider)"))
+            enabled_email_flags += 1
+    db.flush()
+    return {
+        "permissions": len(existing),
+        "roles": len(DEFAULT_ROLES),
+        "notification_templates": added_templates,
+        "email_flags": enabled_email_flags,
+    }
+
+
+def seed_notification_templates(db: Session, institute_id) -> int:
+    existing = {
+        (row.event_type, row.channel)
+        for row in db.scalars(
+            select(NotificationTemplate).where(NotificationTemplate.institute_id == institute_id)
+        )
+    }
+    added = 0
+    for event, channel, subject, body in DEFAULT_TEMPLATES:
+        if (event, channel) in existing:
+            continue
+        db.add(NotificationTemplate(institute_id=institute_id, event_type=event, channel=channel,
+                                    subject=subject, body=body))
+        added += 1
+    db.flush()
+    return added
 
 
 def _fy_bounds(today: date, start_month: int = 4) -> tuple[date, date, str]:
@@ -105,8 +159,7 @@ def provision_institute(
     for c, n in DEFAULT_EXPENSE_CATEGORIES:
         db.add(ExpenseCategory(institute_id=inst.id, code=c, name=n))
     db.add(GradeScale(institute_id=inst.id, name="Default percentage scale", bands=DEFAULT_GRADE_BANDS, is_default=True))
-    for event, channel, subject, body in DEFAULT_TEMPLATES:
-        db.add(NotificationTemplate(institute_id=inst.id, event_type=event, channel=channel, subject=subject, body=body))
+    seed_notification_templates(db, inst.id)
     temp = None
     if admin_password:
         validate_password_strength(admin_password)

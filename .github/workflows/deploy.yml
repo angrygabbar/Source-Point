@@ -166,6 +166,15 @@ jobs:
               'NEXT_PUBLIC_API_BASE': '/institute-api/api/v1',
           }
           updates = {key: value for key, value in required.items() if not current.get(key) or key == 'SOURCEPOINT_SSO_SECRET'}
+          # SourcePoint uses Brevo for transactional email. Keep the API key in
+          # the Institute stack's private env file; never expose it in logs or Git.
+          brevo_key = sourcepoint.get('BREVO_API_KEY')
+          if brevo_key:
+              updates.update({
+                  'BREVO_API_KEY': brevo_key,
+                  'BREVO_FROM_EMAIL': 'notifications@sourcepoint.in',
+                  'BREVO_FROM_NAME': 'Source Point',
+              })
           write_env(ims_env_path, current, updates)
           sourcepoint_path.chmod(0o600)
           ims_env_path.chmod(0o600)

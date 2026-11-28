@@ -28,7 +28,8 @@ Configuration has three layers:
 | `S3_BUCKET` / `S3_REGION` | classflow / us-east-1 | Bucket (auto-created) |
 | `MAX_UPLOAD_MB` | 25 | Per-file upload limit (nginx allows 30 MB bodies) |
 | `DEFAULT_TIMEZONE` / `DEFAULT_CURRENCY` | Asia/Kolkata / INR | Defaults for new institutes |
-| `SMTP_*` | – | Fallback email transport if not configured in the UI |
+| `BREVO_API_KEY` / `BREVO_FROM_EMAIL` / `BREVO_FROM_NAME` | – | Brevo transactional email fallback; synced from SourcePoint by deployment |
+| `SMTP_*` | – | SMTP fallback email transport if not configured in the UI |
 | `VAPID_PUBLIC_KEY/PRIVATE_KEY/SUBJECT` | – | Fallback Web Push keys |
 | `HTTP_PORT` | 8080 dev / 80 prod | Published nginx port |
 | `MINIO_CONSOLE_PORT` | 9001 | Dev only, bound to 127.0.0.1 |

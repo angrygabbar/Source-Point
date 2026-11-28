@@ -35,7 +35,10 @@ def cmd_migrate(_args) -> None:
 
     with session_scope() as db:
         result = seed_system(db)
-    print(f"Migrations applied. Seeded {result['permissions']} permissions and {result['roles']} system roles.")
+    print(
+        f"Migrations applied. Seeded {result['permissions']} permissions, {result['roles']} system roles, "
+        f"and {result['notification_templates']} email templates; enabled email for {result['email_flags']} institute(s)."
+    )
 
 
 def cmd_create_institute(args) -> None:

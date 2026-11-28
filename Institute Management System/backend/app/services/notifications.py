@@ -7,12 +7,14 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.integrations import registry
 from app.models import (
     Notification,
     NotificationDelivery,
     NotificationPreference,
     NotificationTemplate,
+    Institute,
     Parent,
     StudentParent,
     Student,
@@ -83,7 +85,13 @@ def notify(
     users = {u.id: u for u in db.scalars(select(User).where(User.id.in_(ids), User.is_active.is_(True)))}
     created = 0
     now = datetime.now(timezone.utc)
-    ctx = {"title": title, "body": body, "link": link or "", **(context or {})}
+    portal_link = link or ""
+    if portal_link and not portal_link.startswith(("http://", "https://")):
+        portal_link = f"{settings.PUBLIC_BASE_URL.rstrip('/')}/{portal_link.lstrip('/')}"
+    ctx = {"title": title, "body": body, "link": portal_link, **(context or {})}
+    if institute_id is not None and "institute" not in ctx:
+        institute = db.get(Institute, institute_id)
+        ctx["institute"] = institute.name if institute else ""
     for uid, user in users.items():
         if prefs.get((uid, "in_app"), True) is False and not channels:
             continue
@@ -120,6 +128,8 @@ def notify(
             tpl = templates.get(ch)
             subject = render(tpl.subject, {**ctx, "name": user.full_name}) if tpl and tpl.subject else title
             text = render(tpl.body, {**ctx, "name": user.full_name}) if tpl else f"{title}\n\n{body}".strip()
+            if ch == "email" and portal_link and not (tpl and "{link}" in tpl.body):
+                text = f"{text}\n\nOpen in Institute Management System:\n{portal_link}"
             db.add(
                 NotificationDelivery(
                     institute_id=institute_id,
