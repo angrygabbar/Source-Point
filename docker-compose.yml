@@ -17,6 +17,9 @@ services:
       - COINBACK_API_URL=http://coinback-api:8000
       - COINBACK_FRONTEND_URL=http://coinback-frontend:3000
       - COINBACK_SSO_SECRET=${COINBACK_SSO_SECRET:?Set COINBACK_SSO_SECRET in the SourcePoint .env file}
+      - INSTITUTE_FRONTEND_URL=${INSTITUTE_FRONTEND_URL:-http://institute-frontend:3000}
+      - INSTITUTE_API_URL=${INSTITUTE_API_URL:-http://institute-backend:8000}
+      - INSTITUTE_SSO_SECRET=${INSTITUTE_SSO_SECRET:?Set INSTITUTE_SSO_SECRET in the SourcePoint .env file}
     volumes:
       # APK files get their OWN named volume — survives container restarts,
       # rebuilds, and code redeployments. Files are NEVER lost.
@@ -36,6 +39,9 @@ services:
       timeout: 5s
       retries: 12
       start_period: 20s
+    networks:
+      - default
+      - sourcepoint_modules
 
   db:
     image: postgres:15
@@ -276,3 +282,7 @@ volumes:
   apk_storage:
   stockai_db_data:
   stockai_model_data:
+
+networks:
+  sourcepoint_modules:
+    name: sourcepoint_modules

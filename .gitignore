@@ -18,9 +18,15 @@ docker-compose.yml
 docker-compose.override.yml
 docker-compose*.yml
 !docker-compose.yml
+!Institute Management System/docker-compose.prod.yml
 Dockerfile
 .dockerignore
 !Wealth Manager/backend/Dockerfile
+!Institute Management System/backend/Dockerfile
+!Institute Management System/frontend/Dockerfile
+!Institute Management System/infrastructure/scripts/Dockerfile
+!Institute Management System/backend/.dockerignore
+!Institute Management System/frontend/.dockerignore
 !coinback-finder/backend/Dockerfile
 !coinback-finder/frontend/Dockerfile
 celerybeat-schedule

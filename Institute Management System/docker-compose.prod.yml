@@ -1,0 +1,225 @@
+# Institute Management System production stack, attached privately to SourcePoint's gateway.
+# Run from this folder with: docker compose -p sourcepoint-institute -f docker-compose.prod.yml --env-file .env up -d --build
+# This stack publishes no host ports and keeps PostgreSQL, Redis and storage on an internal network.
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "5"
+
+x-backend-env: &backend-env
+  APP_NAME: ${APP_NAME:-Institute Management System}
+  SOURCEPOINT_SSO_SECRET: ${SOURCEPOINT_SSO_SECRET:?SOURCEPOINT_SSO_SECRET is required}
+  APP_ENV: production
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
+  ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
+  DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+  REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+  S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+  S3_ACCESS_KEY: ${MINIO_ROOT_USER}
+  S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+  S3_BUCKET: ${S3_BUCKET:-classflow}
+  S3_REGION: ${S3_REGION:-us-east-1}
+  PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?PUBLIC_BASE_URL is required}
+  CORS_ORIGINS: ${CORS_ORIGINS:-}
+  COOKIE_SECURE: ${COOKIE_SECURE:-true}
+  ACCESS_TOKEN_MINUTES: ${ACCESS_TOKEN_MINUTES:-15}
+  REFRESH_TOKEN_DAYS: ${REFRESH_TOKEN_DAYS:-14}
+  REFRESH_COOKIE_PATH: ${REFRESH_COOKIE_PATH:-/institute-api/api/v1/auth}
+  MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-25}
+  DEFAULT_TIMEZONE: ${DEFAULT_TIMEZONE:-Asia/Kolkata}
+  DEFAULT_CURRENCY: ${DEFAULT_CURRENCY:-INR}
+  SMTP_HOST: ${SMTP_HOST:-}
+  SMTP_PORT: ${SMTP_PORT:-587}
+  SMTP_USERNAME: ${SMTP_USERNAME:-}
+  SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+  SMTP_FROM: ${SMTP_FROM:-}
+  SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
+  VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+  VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+  VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:admin@example.com}
+
+services:
+  postgres:
+    image: postgres:16.4-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits: { cpus: "2.0", memory: 2g }
+    logging: *logging
+    networks: [classflow]
+
+  redis:
+    image: redis:7.4.1-alpine
+    restart: always
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD is required}", "--maxmemory", "256mb", "--maxmemory-policy", "noeviction"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits: { cpus: "0.5", memory: 384m }
+    logging: *logging
+    networks: [classflow]
+
+  minio:
+    image: pgsty/silo:RELEASE.2026-11-12T00-00-00Z
+    restart: always
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 1g }
+    logging: *logging
+    networks: [classflow]
+
+  migrate:
+    build:
+      context: ./backend
+      args:
+        PREBUILT_WHEELS: ${PREBUILT_WHEELS:-0}
+    image: classflow-backend:latest
+    command: ["python", "-m", "app.cli", "migrate"]
+    environment: *backend-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging: *logging
+    networks: [classflow]
+    restart: "no"
+
+  backend:
+    image: classflow-backend:latest
+    command: ["gunicorn", "app.main:app", "-k", "uvicorn.workers.UvicornWorker", "-w", "${BACKEND_WORKERS:-3}", "-b", "0.0.0.0:8000", "--graceful-timeout", "30", "--timeout", "120", "--forwarded-allow-ips", "*", "--access-logfile", "-"]
+    restart: always
+    environment: *backend-env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    stop_grace_period: 40s
+    deploy:
+      resources:
+        limits: { cpus: "2.0", memory: 1g }
+    logging: *logging
+    networks:
+      classflow: {}
+      sourcepoint_modules:
+        aliases: [institute-backend]
+
+  worker:
+    image: classflow-backend:latest
+    command: ["celery", "-A", "app.workers.celery_app:celery_app", "worker", "--beat", "--loglevel=INFO", "--concurrency=2", "--schedule=/tmp/celerybeat-schedule"]
+    restart: always
+    environment: *backend-env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    stop_grace_period: 60s
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 768m }
+    logging: *logging
+    networks: [classflow]
+
+  frontend:
+    image: classflow-frontend:prod
+    build:
+      context: ./frontend
+      target: runner
+      args:
+        NEXT_PUBLIC_BASE_PATH: ${NEXT_PUBLIC_BASE_PATH:-/institute}
+        NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-/institute-api/api/v1}
+        NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-Institute Management System}
+    restart: always
+    environment:
+      NEXT_TELEMETRY_DISABLED: "1"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/institute/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 512m }
+    logging: *logging
+    networks:
+      sourcepoint_modules:
+        aliases: [institute-frontend]
+
+  backup:
+    build:
+      context: ./infrastructure/scripts
+    restart: always
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_BUCKET: ${S3_BUCKET:-classflow}
+      BACKUP_DIR: /backups
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      BACKUP_ENCRYPTION_PASSPHRASE: ${BACKUP_ENCRYPTION_PASSPHRASE:?BACKUP_ENCRYPTION_PASSPHRASE is required}
+      BACKUP_SCHEDULE_HOUR: ${BACKUP_SCHEDULE_HOUR:-2}
+    volumes:
+      - backup_data:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    logging: *logging
+    networks: [classflow]
+
+networks:
+  classflow:
+    internal: true
+  sourcepoint_modules:
+    external: true
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  backup_data:

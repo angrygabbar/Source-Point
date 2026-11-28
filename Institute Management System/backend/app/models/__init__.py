@@ -1,0 +1,10 @@
+from app.models.base import Base  # noqa: F401
+from app.models.tenancy import *  # noqa: F401,F403
+from app.models.identity import *  # noqa: F401,F403
+from app.models.scheduling import *  # noqa: F401,F403
+from app.models.learning import *  # noqa: F401,F403
+from app.models.exams import *  # noqa: F401,F403
+from app.models.admissions import *  # noqa: F401,F403
+from app.models.finance import *  # noqa: F401,F403
+from app.models.communication import *  # noqa: F401,F403
+from app.models.platform import *  # noqa: F401,F403

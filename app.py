@@ -142,7 +142,7 @@ def create_app():
     from blueprints.app_release import app_release_bp
     from blueprints.newsletter import newsletter_bp
     from blueprints.admin_assets import admin_assets_bp
-    from blueprints.teaching import teaching_bp
+    from blueprints.institute_module import institute_module_bp
     from blueprints.coinback_module import coinback_module_bp
     from blueprints.stock_ai_module import stock_ai_module_bp
 
@@ -169,7 +169,7 @@ def create_app():
     app.register_blueprint(app_release_bp)
     app.register_blueprint(newsletter_bp)
     app.register_blueprint(admin_assets_bp)
-    app.register_blueprint(teaching_bp)
+    app.register_blueprint(institute_module_bp)
     app.register_blueprint(coinback_module_bp)
     app.register_blueprint(stock_ai_module_bp)
 

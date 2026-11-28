@@ -23,7 +23,7 @@ jobs:
           # Copy files from Runner -> Live Server
           # -a: preserve permissions, -v: verbose
           # --exclude: protect local environments and configs
-          rsync -av --exclude='.git' --exclude='venv' --exclude='__pycache__' ./ /Users/gaurav/Developer/Source-Point/
+          rsync -av --exclude='.git' --exclude='venv' --exclude='__pycache__' --exclude='.env' --exclude='**/.env' ./ /Users/gaurav/Developer/Source-Point/
 
       - name: Prepare Stock AI deployment settings
         run: |
@@ -87,6 +87,91 @@ jobs:
           print('The Stock AI database dump directory is available.')
           PY
 
+      - name: Prepare Institute Management deployment settings
+        run: |
+          set -euo pipefail
+          cd /Users/gaurav/Developer/Source-Point
+          python3 - <<'PY'
+          import base64
+          import json
+          import secrets
+          from pathlib import Path
+
+          def read_env(path):
+              result = {}
+              if not path.exists():
+                  return result
+              for line in path.read_text().splitlines():
+                  stripped = line.strip()
+                  if not stripped or stripped.startswith('#') or '=' not in stripped:
+                      continue
+                  key, value = stripped.split('=', 1)
+                  result[key] = value.strip().strip('"').strip("'")
+              return result
+
+          def write_env(path, current, updates):
+              if not updates:
+                  return
+              lines = path.read_text().splitlines() if path.exists() else []
+              keys = set(updates)
+              lines = [line for line in lines if not any(line.strip().startswith(f'{key}=') for key in keys)]
+              lines.extend(f'{key}={json.dumps(value.replace("$", "$$"))}' for key, value in updates.items())
+              path.write_text('\n'.join(lines).rstrip() + '\n')
+
+          sourcepoint_path = Path('.env')
+          sourcepoint = read_env(sourcepoint_path)
+          sso_secret = sourcepoint.get('INSTITUTE_SSO_SECRET') or secrets.token_urlsafe(48)
+          if not sourcepoint.get('INSTITUTE_SSO_SECRET'):
+              write_env(sourcepoint_path, sourcepoint, {'INSTITUTE_SSO_SECRET': sso_secret})
+
+          ims_dir = Path('Institute Management System')
+          ims_env_path = ims_dir / '.env'
+          current = read_env(ims_env_path)
+          site_url = (
+              sourcepoint.get('INSTITUTE_PUBLIC_URL')
+              or sourcepoint.get('SOURCEPOINT_PUBLIC_URL')
+              or sourcepoint.get('PUBLIC_BASE_URL')
+              or current.get('PUBLIC_BASE_URL')
+              or 'http://localhost:5000'
+          ).rstrip('/')
+          if not site_url.endswith('/institute'):
+              site_url += '/institute'
+
+          required = {
+              'COMPOSE_PROJECT_NAME': 'sourcepoint-institute',
+              'APP_ENV': 'production',
+              'APP_NAME': 'Institute Management System',
+              'LOG_LEVEL': current.get('LOG_LEVEL') or 'INFO',
+              'SECRET_KEY': secrets.token_urlsafe(64),
+              'ENCRYPTION_KEY': base64.urlsafe_b64encode(secrets.token_bytes(32)).decode(),
+              'SOURCEPOINT_SSO_SECRET': sso_secret,
+              'PUBLIC_BASE_URL': site_url,
+              'COOKIE_SECURE': 'true',
+              'CORS_ORIGINS': '',
+              'POSTGRES_DB': 'sourcepoint_institute',
+              'POSTGRES_USER': 'sourcepoint_institute',
+              'POSTGRES_PASSWORD': secrets.token_urlsafe(36),
+              'REDIS_PASSWORD': secrets.token_urlsafe(36),
+              'MINIO_ROOT_USER': 'sourcepoint-institute-storage',
+              'MINIO_ROOT_PASSWORD': secrets.token_urlsafe(36),
+              'S3_BUCKET': 'institute-management',
+              'S3_REGION': 'us-east-1',
+              'S3_ENDPOINT': 'http://minio:9000',
+              'BACKUP_RETENTION_DAYS': '14',
+              'BACKUP_ENCRYPTION_PASSPHRASE': secrets.token_urlsafe(48),
+              'BACKUP_SCHEDULE_HOUR': '2',
+              'REFRESH_COOKIE_PATH': '/institute-api/api/v1/auth',
+              'NEXT_PUBLIC_APP_NAME': 'Institute Management System',
+              'NEXT_PUBLIC_BASE_PATH': '/institute',
+              'NEXT_PUBLIC_API_BASE': '/institute-api/api/v1',
+          }
+          updates = {key: value for key, value in required.items() if not current.get(key) or key == 'SOURCEPOINT_SSO_SECRET'}
+          write_env(ims_env_path, current, updates)
+          sourcepoint_path.chmod(0o600)
+          ims_env_path.chmod(0o600)
+          print('Institute secrets are configured, isolated from SourcePoint PostgreSQL, and preserved for future deployments.')
+          PY
+
       # 3. Build Docker images without touching the currently running app yet.
       - name: Build Application Images
         run: |
@@ -103,6 +188,7 @@ jobs:
           if [ ! -f "$HASH_FILE" ] || [ "$(cat "$HASH_FILE")" != "$REQUIREMENTS_HASH" ]; then
             docker run --rm \
               --user "$(id -u):$(id -g)" \
+              --env HOME=/tmp \
               --env PIP_INDEX_URL=https://pypi.org/simple \
               --env PIP_DEFAULT_TIMEOUT=1800 \
               --env PIP_RETRIES=20 \
@@ -137,6 +223,7 @@ jobs:
             sh -ceu 'libgomp=$(find /usr/lib -name libgomp.so.1.0.0 -print -quit); test -n "$libgomp"; cp "$libgomp" /wheelhouse/libgomp.so.1.0.0'
           docker run --rm \
             --user "$(id -u):$(id -g)" \
+            --env HOME=/tmp \
             --env PIP_INDEX_URL=https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple \
             --env PIP_DEFAULT_TIMEOUT=60 \
             --env PIP_RETRIES=5 \
@@ -157,6 +244,31 @@ jobs:
                 --no-deps --timeout 60 --retries 5 xgboost==3.2.0; \
               fi'
           docker compose build --build-arg PREBUILT_WHEELS=1 stockai
+
+          # Build Institute Management with dependencies fetched outside BuildKit.
+          INSTITUTE_DIR="$PWD/Institute Management System"
+          INSTITUTE_WHEELHOUSE="$INSTITUTE_DIR/backend/.docker-wheelhouse"
+          mkdir -p "$INSTITUTE_WHEELHOUSE"
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            --env HOME=/tmp \
+            --env PIP_INDEX_URL=https://pypi.org/simple \
+            --env PIP_DEFAULT_TIMEOUT=1800 \
+            --env PIP_RETRIES=20 \
+            --mount "type=bind,source=$INSTITUTE_DIR/backend/requirements.txt,target=/tmp/requirements.txt,readonly" \
+            --mount "type=bind,source=$INSTITUTE_WHEELHOUSE,target=/wheelhouse" \
+            python:3.12-bookworm \
+            sh -ceu 'python -m pip install --disable-pip-version-check --no-cache-dir \
+              --index-url https://pypi.org/simple --find-links /wheelhouse \
+              --timeout 1800 --retries 20 setuptools wheel && \
+              python -m pip wheel --disable-pip-version-check --no-cache-dir \
+              --index-url https://pypi.org/simple \
+              --wheel-dir /wheelhouse --find-links /wheelhouse \
+              --no-build-isolation --timeout 1800 --retries 20 \
+              -r /tmp/requirements.txt'
+          cd "$INSTITUTE_DIR"
+          docker compose -p sourcepoint-institute -f docker-compose.prod.yml --env-file .env build --build-arg PREBUILT_WHEELS=1 migrate frontend backup
+          cd ..
 
           # Wealth Manager has a separate API container. CoinBack has an API,
           # frontend, and scanner container; the migration service shares the API image.
@@ -199,6 +311,10 @@ jobs:
           set -euo pipefail
           cd /Users/gaurav/Developer/Source-Point
           docker compose up -d --no-build web worker scheduler wealth-manager-api coinback-api coinback-frontend coinback-scanner stockai-db stockai
+
+          cd "Institute Management System"
+          docker compose -p sourcepoint-institute -f docker-compose.prod.yml --env-file .env up -d --no-build
+          cd ..
 
           echo "Waiting for web container health..."
           WEB_READY=0
@@ -260,6 +376,42 @@ jobs:
             docker compose logs --tail 120 wealth-manager-api coinback-api coinback-frontend coinback-scanner stockai-db stockai || true
             exit 1
           fi
+
+          echo "Waiting for Institute Management services..."
+          cd "Institute Management System"
+          IMS_READY=0
+          for attempt in {1..60}; do
+            IMS_READY=1
+            for service in postgres redis minio backend frontend worker backup; do
+              CONTAINER_ID=$(docker compose -p sourcepoint-institute -f docker-compose.prod.yml --env-file .env ps -q "$service")
+              if [ -z "$CONTAINER_ID" ]; then
+                echo "Institute service $service has no container."
+                IMS_READY=0
+                continue
+              fi
+              STATE=$(docker inspect -f '{{.State.Status}}|{{if .State.Health}}{{.State.Health.Status}}{{else}}unconfigured{{end}}' "$CONTAINER_ID")
+              STATUS=${STATE%%|*}
+              HEALTH=${STATE#*|}
+              echo "Institute $service: $STATUS; health: $HEALTH"
+              if [ "$STATUS" != "running" ] || { [ "$HEALTH" != "unconfigured" ] && [ "$HEALTH" != "healthy" ]; }; then
+                IMS_READY=0
+              fi
+            done
+            if [ "$IMS_READY" = "1" ]; then
+              break
+            fi
+            sleep 5
+          done
+
+          if [ "$IMS_READY" != "1" ]; then
+            echo "One or more Institute Management services did not start successfully."
+            docker compose -p sourcepoint-institute -f docker-compose.prod.yml --env-file .env ps
+            docker compose -p sourcepoint-institute -f docker-compose.prod.yml --env-file .env logs --tail 120 postgres redis minio backend frontend worker backup || true
+            exit 1
+          fi
+          cd ..
+
+          docker exec sourcepoint_app python -c 'import urllib.request; targets=("http://institute-frontend:3000/institute/login", "http://institute-backend:8000/health"); [urllib.request.urlopen(url, timeout=8).close() for url in targets]; print("Institute gateway upstreams are reachable.")'
 
           docker compose ps
 
